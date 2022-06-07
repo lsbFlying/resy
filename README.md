@@ -193,7 +193,7 @@ function Count() {
  * re-render是指：
  * 如果A、B同级别，同级别A的或者A的子级别组件的数据变化渲染了不会导致B组件渲染
  * 如果是父组件渲染了子级别必然渲染，毕竟只是仅仅额外避免了re-render，
- * 还不是像solid.js那样"真正的react"哪里变化"炫"哪里
+ * 还不是像solid.js那样 "真正的react" 哪里变化 "更新" 哪里
  */
 function App() {
   const { countAddFun } = store;
@@ -209,5 +209,5 @@ function App() {
 ```
 
 ## License
-[MIT License](https://gitlab.com/1262300490/awesome-scroll/-/blob/master/LICENSE) (c) [刘善保](https://gitlab.com/1262300490)
+[MIT License](https://github.com/lsbFlying/resy/blob/master/LICENSE) (c) [刘善保](https://github.com/lsbFlying)
 

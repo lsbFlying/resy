@@ -49,8 +49,16 @@ import { useEffect } from "react";
  * 所以unmountClear默认设置为true，符合常规使用即可，
  * 除非遇到像上述登录信息数据那样的全局数据而言才会设置为false
  */
-type ResyStore = { count: number, text: string, testObj: { name: "Paul" } };
-const store = resy<ResyStore>({count: 0, text: "123qwe"});
+type ResyStore = {
+  count: number,
+  text: string,
+  testObj: { name: string },
+};
+const store = resy<ResyStore>({
+  count: 0,
+  text: "123qwe",
+  testObj: { name: "Paul" },
+});
 
 /**
  * resy 是自动细粒度更新，哪里使用属性数据参与渲染哪里更新，避免了re-render

@@ -1,0 +1,64 @@
+{
+  "name": "resy",
+  "version": "1.5.2",
+  "description": "React state easy",
+  "license": "MIT",
+  "keywords": [
+    "react",
+    "hooks",
+    "flux",
+    "redux",
+    "store",
+    "state",
+    "resy"
+  ],
+  "repository": "https://github.com/lsbFlying/resy.git",
+  "author": "liushanbao <1262300490@qq.com>",
+  "homepage": "https://github.com/lsbFlying/resy",
+  "bugs": "https://github.com/lsbFlying/resy/issues",
+  "main": "dist/resy.cjs.js",
+  "module": "dist/resy.esm.js",
+  "types": "dist/resy.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "test": "vitest run --coverage --environment jsdom",
+    "watch": "rollup -wc --configPlugin @rollup/plugin-typescript",
+    "build": "rm -rf dist coverage && rollup -c --configPlugin @rollup/plugin-typescript"
+  },
+  "dependencies": {
+    "use-sync-external-store": "^1.1.0"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^8.3.1",
+    "@testing-library/react": "^13.0.0",
+    "@types/node": "^17.0.23",
+    "@types/react": "^17.0.43",
+    "@types/react-dom": "^17.0.14",
+    "@types/use-sync-external-store": "^0.0.3",
+    "@typescript-eslint/eslint-plugin": "^5.18.0",
+    "@typescript-eslint/parser": "^5.18.0",
+    "c8": "^7.11.0",
+    "eslint": "^8.12.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-react-hooks": "^4.4.0",
+    "jsdom": "^19.0.0",
+    "prettier": "^2.6.2",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "rollup": "^2.70.1",
+    "rollup-plugin-dts": "^4.2.0",
+    "tslib": "^2.3.1",
+    "typescript": "^4.6.3",
+    "vitest": "^0.9.0"
+  },
+  "eslintIgnore": [
+    "dist"
+  ]
+}

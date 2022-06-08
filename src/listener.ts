@@ -1,10 +1,5 @@
 import { EffectState, ListenerHandle, ResyType } from "./model";
 
-/**
- * created by liushanbao
- * @description 自定义监听事件
- * @author liushanbao
- */
 export function EventDispatcher(this: any) {
   this.events = {};
 }

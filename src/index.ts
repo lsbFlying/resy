@@ -60,8 +60,11 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   // 数据存储容器store
   const store: Store<T> = {} as Store<T>;
   
-  // 初始化默认数据缓存，方便配合unmountClear参数重置模块状态数据
-  let initialState: T = Object.assign({}, state);
+  /**
+   * 初始化默认数据缓存，方便配合unmountClear参数重置模块状态数据，
+   * 保证不改变初始化入参state，方便后续开发者进行可能的state重置数据的操作
+   */
+  let stateTemp: T = Object.assign({}, state);
   
   // 生成store元素Item
   function genStoreItem(key: keyof T) {
@@ -79,19 +82,19 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
             unmountClear = false;
             const timeId = setTimeout(() => {
               unmountClear = true;
-              initialState = Object.assign({}, state);
+              stateTemp = Object.assign({}, state);
               clearTimeout(timeId);
             }, 0);
           }
         };
       },
-      getString: () => initialState[key],
+      getString: () => stateTemp[key],
       setString: (val) => {
-        const preState = Object.assign({}, initialState);
+        const preState = Object.assign({}, stateTemp);
         // 避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
-        if (Object.is(val, initialState[key]) || typeof val === "function") return;
-        initialState[key] = val;
-        const nextState = Object.assign({}, initialState);
+        if (Object.is(val, stateTemp[key]) || typeof val === "function") return;
+        stateTemp[key] = val;
+        const nextState = Object.assign({}, stateTemp);
         storeChanges.forEach(storeChange => storeChange());
         const effectState = { [key]: val } as EffectState<T>;
         dispatchAllStoreEffect<T>(effectState, preState, nextState);
@@ -113,8 +116,8 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       return store[key];
     }
     // 解决一开始?的属性后续设置是函数的情况
-    if (!initialState[key] && store[key] === void 0 && typeof val === "function") {
-      initialState[key] = val;
+    if (!stateTemp[key] && store[key] === void 0 && typeof val === "function") {
+      stateTemp[key] = val;
     }
     return store[key];
   }
@@ -129,8 +132,8 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
    * 主要是为了弥补上面两个缘由，但实际上这并不会影响导致数据状态的混乱与错误
    *
    * 因为：
-   * A、解构(属性读取)的时候有异常了之后会捕捉在catch中return initialState[key]返回正常的值，
-   * 且在setString中有initialState[key] = val始终保持着最新值的赋值更新给予，所以这里能够取到最新值，
+   * A、解构(属性读取)的时候有异常了之后会捕捉在catch中return stateTemp[key]返回正常的值，
+   * 且在setString中有stateTemp[key] = val始终保持着最新值的赋值更新给予，所以这里能够取到最新值，
    * 而我们getString中得到的也始终是state中的值，也就是初始化的默认常量对象，
    * 至于页面的更新渲染本质上是useSyncExternalStore这个hook内部的监听变化函数调用内部的setHook更新进而触发的
    *
@@ -138,7 +141,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
    *
    * 2、这里所说的的避免hook规则报错主要是针对use(Layout)Effect/useMemo等hook，
    * 但这本质上也不属于异常捕捉处理，因为resy返回的store为了使用上的极简方便性-随取随用，所以这里返回来最新数据值
-   * 而在setString中有initialState[key] = val始终保持着最新值的赋值更新给予，所以这里能够取到最新值
+   * 而在setString中有stateTemp[key] = val始终保持着最新值的赋值更新给予，所以这里能够取到最新值
    *
    * 3、但是对于useMemo这个hook却很奇怪无法避免该hook的规则报错，即resy不能在useMemo中使用解构(属性读取)
    * 就是即使你使用了try catch捕捉报错也无法规避useMemo的hook规则报错
@@ -155,7 +158,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       try {
         return resolveInitialValueLinkStore(key).useString();
       } catch (e) {
-        return initialState[key];
+        return stateTemp[key];
       }
     },
     set: (_, key: keyof T, val: T[keyof T]) => {

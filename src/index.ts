@@ -61,7 +61,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   const store: Store<T> = {} as Store<T>;
   
   // 初始化默认数据缓存，方便配合unmountClear参数重置模块状态数据
-  const defaultState: T = {} as T;
+  let initialState: T = Object.assign({}, state);
   
   // 生成store元素Item
   function genStoreItem(key: keyof T) {
@@ -79,21 +79,19 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
             unmountClear = false;
             const timeId = setTimeout(() => {
               unmountClear = true;
-              Object.keys(store).forEach((key: keyof T) => {
-                state[key] = defaultState[key];
-              });
+              initialState = Object.assign({}, state);
               clearTimeout(timeId);
             }, 0);
           }
         };
       },
-      getString: () => state[key],
+      getString: () => initialState[key],
       setString: (val) => {
-        const preState = Object.assign({}, state);
+        const preState = Object.assign({}, initialState);
         // 避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
-        if (Object.is(val, state[key]) || typeof val === "function") return;
-        state[key] = val;
-        const nextState = Object.assign({}, state);
+        if (Object.is(val, initialState[key]) || typeof val === "function") return;
+        initialState[key] = val;
+        const nextState = Object.assign({}, initialState);
         storeChanges.forEach(storeChange => storeChange());
         const effectState = { [key]: val } as EffectState<T>;
         dispatchAllStoreEffect<T>(effectState, preState, nextState);
@@ -107,27 +105,16 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
     };
   }
   
-  /**
-   * 循环遍历的方式本身并不会对性能造成多大的损失
-   * 会对性能造成一定开销的是resy最终输出的proxy构成的观察者模式
-   * 但是本身resy的工作方式是细粒度更新的，全局引用，是一个"自由的"全局状态，它是调用的范围更广
-   * 且连接的更新是细粒度更新，避免了re-render是它一方面的弥补性能差距的小优势
-   */
-  Object.keys(state).forEach((key: keyof T) => {
-    defaultState[key] = state[key];
-    if (typeof state[key] === "function") return;
-    genStoreItem(key);
-  });
-  
-  // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
-  function resolveInitValueUndefined(key: keyof T, val?: any) {
+  // 为每一个数据字段储存链接到store容器中，这样渲染并发执行提升渲染流畅度
+  function resolveInitialValueLinkStore(key: keyof T, val?: any) {
+    // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
     if (store[key] === void 0 && typeof val !== "function") {
       genStoreItem(key);
       return store[key];
     }
     // 解决一开始?的属性后续设置是函数的情况
-    if (!state[key] && store[key] === void 0 && typeof val === "function") {
-      state[key] = val;
+    if (!initialState[key] && store[key] === void 0 && typeof val === "function") {
+      initialState[key] = val;
     }
     return store[key];
   }
@@ -142,8 +129,8 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
    * 主要是为了弥补上面两个缘由，但实际上这并不会影响导致数据状态的混乱与错误
    *
    * 因为：
-   * A、解构(属性读取)的时候有异常了之后会捕捉在catch中return state[key]返回正常的值，
-   * 且在setString中有state[key] = val始终保持着最新值的赋值更新给予，所以这里能够取到最新值，
+   * A、解构(属性读取)的时候有异常了之后会捕捉在catch中return initialState[key]返回正常的值，
+   * 且在setString中有initialState[key] = val始终保持着最新值的赋值更新给予，所以这里能够取到最新值，
    * 而我们getString中得到的也始终是state中的值，也就是初始化的默认常量对象，
    * 至于页面的更新渲染本质上是useSyncExternalStore这个hook内部的监听变化函数调用内部的setHook更新进而触发的
    *
@@ -151,7 +138,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
    *
    * 2、这里所说的的避免hook规则报错主要是针对use(Layout)Effect/useMemo等hook，
    * 但这本质上也不属于异常捕捉处理，因为resy返回的store为了使用上的极简方便性-随取随用，所以这里返回来最新数据值
-   * 而在setString中有state[key] = val始终保持着最新值的赋值更新给予，所以这里能够取到最新值
+   * 而在setString中有initialState[key] = val始终保持着最新值的赋值更新给予，所以这里能够取到最新值
    *
    * 3、但是对于useMemo这个hook却很奇怪无法避免该hook的规则报错，即resy不能在useMemo中使用解构(属性读取)
    * 就是即使你使用了try catch捕捉报错也无法规避useMemo的hook规则报错
@@ -159,10 +146,6 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
    * 而不是一个方法的调用如：{useMemo(() => xxxFunction(), [])}，这样就不会出现hook使用规则报错的问题了
    * 但是有时候我们仅仅只是一个逻辑的调用而不是组件的调用的情况下就没法避免useMemo的hook规则报错了
    * 对于这种memo逻辑调用出现的hook规则报错，resyMemo可解决该问题
-   *
-   * todo resy的观察者模式导致它的性能上可能会受到一定的损失，
-   * todo 但事实上valtio甚至对数据进行了纵深递归代理，其内存消耗依赖相对而言更高
-   * todo 所以这里resy是否有性能损失还有待考究或者说待优化，至少目前使用上并未有性能问题
    */
   return new Proxy(state, {
     get: (_, key: keyof T) => {
@@ -170,13 +153,13 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         return storeListener;
       }
       try {
-        return resolveInitValueUndefined(key).useString();
+        return resolveInitialValueLinkStore(key).useString();
       } catch (e) {
-        return state[key];
+        return initialState[key];
       }
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
-      resolveInitValueUndefined(key, val)?.setString(val);
+      resolveInitialValueLinkStore(key, val)?.setString(val);
       return true;
     },
   } as ProxyHandler<T>);

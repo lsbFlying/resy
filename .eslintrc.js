@@ -1,17 +1,17 @@
 module.exports = {
-  parser: '@typescript-eslint/parser',
+  parser: "@typescript-eslint/parser",
   parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: './tsconfig.json',
+    ecmaVersion: "latest",
+    sourceType: "module",
+    project: "./tsconfig.json",
     createDefaultProgram: true, // https://github.com/typescript-eslint/typescript-eslint/issues/967
   },
-  plugins: ['@typescript-eslint'],
+  plugins: ["@typescript-eslint"],
   extends: [
-    'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',
-    'plugin:react-hooks/recommended',
-    'prettier',
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react-hooks/recommended",
+    "prettier",
   ],
   env: {
     browser: true,
@@ -19,6 +19,6 @@ module.exports = {
     es6: true,
   },
   settings: {
-    'import/resolver': { node: { extensions: ['.js', '.ts'] } },
+    "import/resolver": { node: { extensions: [".js", ".ts"] } },
   },
 };

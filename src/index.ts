@@ -90,12 +90,12 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       },
       getString: () => stateTemp[key],
       setString: (val) => {
-        const preState = Object.assign({}, stateTemp);
         // 避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
         if (Object.is(val, stateTemp[key]) || typeof val === "function") return;
+        const preState = Object.assign({}, stateTemp);
         stateTemp[key] = val;
-        const nextState = Object.assign({}, stateTemp);
         storeChanges.forEach(storeChange => storeChange());
+        const nextState = Object.assign({}, stateTemp);
         const effectState = { [key]: val } as EffectState<T>;
         dispatchAllStoreEffect<T>(effectState, preState, nextState);
         storeListener.dispatchStoreEffect<T>(effectState, preState, nextState);
@@ -124,9 +124,8 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   
   /**
    * @description
-   * 1、下面会使用try catch一是用来捕捉undefined的属性调用报错，
-   * 二是为了避免在hook中去解构(属性读取)的时候调用hook导致的hook规则报错
-   * 虽然说不要在别的hook中对store使用解构(属性读取)，否则会报错hook使用规则错误，
+   * 1、下面会使用try catch
+   * 是为了避免在非组件的函数中去解构(属性读取)的时候导致的hook规则报错
    * 而且我们理论上也确实应该在函数组件的最顶层使用，即也要符合hook的使用规则，
    * 但实际上这些规则的限制导致我们在使用状态数据的时候极为不便，所以这里，try catch使用
    * 主要是为了弥补上面两个缘由，但实际上这并不会影响导致数据状态的混乱与错误
@@ -139,11 +138,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
    *
    * B、赋值更新的时候属于更新状态并没有调用hook，它是hook本身状态内部的监听函数的执行进行的更新渲染
    *
-   * 2、这里所说的的避免hook规则报错主要是针对use(Layout)Effect/useMemo等hook，
-   * 但这本质上也不属于异常捕捉处理，因为resy返回的store为了使用上的极简方便性-随取随用，所以这里返回来最新数据值
-   * 而在setString中有stateTemp[key] = val始终保持着最新值的赋值更新给予，所以这里能够取到最新值
-   *
-   * 3、但是对于useMemo这个hook却很奇怪无法避免该hook的规则报错，即resy不能在useMemo中使用解构(属性读取)
+   * 2、但是对于useMemo这个hook却很奇怪无法避免该hook的规则报错，即resy不能在useMemo中使用解构(属性读取)
    * 就是即使你使用了try catch捕捉报错也无法规避useMemo的hook规则报错
    * 但这种限制又很奇特，如果你将useMemo中的hook调用变成组件，如：{useMemo(() => <Components/>, [])}
    * 而不是一个方法的调用如：{useMemo(() => xxxFunction(), [])}，这样就不会出现hook使用规则报错的问题了

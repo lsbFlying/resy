@@ -10,8 +10,10 @@ const plugins = [typescript(), terser()];
 
 // 打包文件的头部声明
 const banner =
-  "/**\n" +
+  "/**" +
   ` * ${pkg.name} v${pkg.version}\n` +
+  ` * created by ${pkg.author}` +
+  ` * @description 一款简单易用的React数据状态管理器` +
   ` * (c) 2020-${new Date().getFullYear()} ${pkg.author}\n` +
   ` * Released under the ${pkg.license} License.\n` +
   " */";

@@ -1,15 +1,24 @@
-import typescript from '@rollup/plugin-typescript';
-import dts from 'rollup-plugin-dts';
-import pkg from './package.json';
+import typescript from "@rollup/plugin-typescript";
+import dts from "rollup-plugin-dts";
+import pkg from "./package.json";
+import { terser } from "rollup-plugin-terser"; // 压缩打包文件
 
-const input = 'src/index.ts';
+const input = "src/index.ts";
 const deps = Object.keys({ ...pkg.dependencies, ...pkg.peerDependencies });
 const external = (id: string) => deps.some((dep) => id.startsWith(dep));
-const plugins = [typescript()];
+const plugins = [typescript(), terser()];
 
-const cjsOutput = { file: pkg.main, format: 'cjs', exports: 'auto' };
-const esmOutput = { file: pkg.module, format: 'es' };
-const dtsOutput = { file: pkg.types, format: 'es' };
+// 打包文件的头部声明
+const banner =
+  "/**\n" +
+  ` * ${pkg.name} v${pkg.version}\n` +
+  ` * (c) 2020-${new Date().getFullYear()} ${pkg.author}\n` +
+  ` * Released under the ${pkg.license} License.\n` +
+  " */";
+
+const cjsOutput = { file: pkg.main, format: "cjs", banner, exports: "auto" };
+const esmOutput = { file: pkg.module, format: "es", banner };
+const dtsOutput = { file: pkg.types, format: "es", banner };
 
 export default [
   { input, output: cjsOutput, external, plugins },

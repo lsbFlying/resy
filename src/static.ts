@@ -35,3 +35,6 @@ export function dispatchAllStoreEffect<T extends ResyType>(
 
 // 某一个store的监听订阅对象的唯一标识key值
 export const storeListenerKey = "resyStoreListenerSymbolKey";
+
+// resyMemo使用的获取数据的key值
+export const getResyStateKey = "getResyStateSymbolKey";

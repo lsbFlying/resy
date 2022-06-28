@@ -10,17 +10,7 @@
 
 ## Introduction
 <p>
-在状态管理器满天飞的时代里，作为一个开发者而言，感受只有两个字，心累。。。<br/>
-如同每个人都认为自己写的代码是最好的一样，看一种语言不爽于是诞生了新的让其他人觉得不爽的语言，<br/>
-而其他人看这种语言也不爽，于是呼又诞生了新的令人不爽的语言，当然这并不完全是坏事，<br/>
-促进发展与进步是没有错的，但凡事过犹不及。<br/>
-但不得不说react蓬勃发展的生态发展到有些混乱了，后hook时代的发展更是异常激烈，<br/>
-甚至于即使是class的react时代中官方也并没有占领着一席不受争议的高地，<br/>
-redux终究老气横秋，毛子丹依然跟你谈哲学。<br/>
-苦命的程序员打工者依然学无止境-"乐此不疲"的内卷着。<br/>
-作为卑微小码农的我无力于参与这些大争论，只是想提供一份心意，为心累的码农们提供一个世外桃源。<br/>
-这也是resy创作的初衷，受resso、valtio以及solid-js的启发，于是resy：一个简单的状态管理器诞生了<br/>
-致力于最简单的使用：freedom use!
+fork form resso, at the same time reference valtio
 </p>
 
 ## Install
@@ -77,6 +67,7 @@ const store = resy<ResyStore>({
  * resy 是自动细粒度更新，哪里使用属性数据参与渲染哪里更新，避免了re-render
  */
 function App() {
+  // store的数据读取（解构）需要在组件顶层使用，它本质上依然是useState该hook的调用
   const { count, text, testObj: { name } } = store;
   
   useEffect(() => {
@@ -113,8 +104,8 @@ function App() {
   /**
    * @description 对useMemo使用store属性读取导致报错hook使用规则的兼容，
    * 事实上只要不在useMemo中使用resy返回的store进行解构读取属性值就不会报错hook规则
-   * 且useMemo中如果是返回的JSX/TSX也不会报错hook规则
-   * 因此原则上我们不建议使用resyMemo，尽量在memo的hook规则中符合它的要求规范
+   * 且useMemo中如果是返回的JSX/TSX也不会报错hook规则，
+   * 我们尽量在useMemo中不使用resy的store的属性读取即可
    */
   const memoRes = resyMemo(store, (dStore) => {
     // console.log(dStore);
@@ -141,11 +132,6 @@ function App() {
           store.testObj = {
             name: "Jack",
           };
-          /**
-           * 异步操作更新数据之后如果紧接着就想拿到最新的数据值
-           * 可以直接使用store.testObj即可获取到更新后的最新值
-           * resy中使用store[key]永远可以获取到最新数据
-           */
         }}
       >
         名称按钮
@@ -166,19 +152,38 @@ function App() {
          *   store.count = 123;
          *   store.text = "updateText";
          * });
-         * @example B
+         * @example B1
          * resyUpdate(store, {
          *   count: 123,
          *   text: "updateText",
+         * });
+         * @example B2  (在B1的使用方式下可以衍生B2这种使用方式，通过回调回去最新数据)
+         * resyUpdate(store, {
+         *   count: 123,
+         *   text: "updateText",
+         * }, (dStore) => {
+         *   // dStore：即deconstructedStore，已解构的数据，可安全使用
+         *   console.log(dStore);
          * });
          */
         // resyUpdate(() => {
         //   store.count++;
         //   store.text = "456asd";
         // });
+        /**
+         * 异步操作更新数据之后如果紧接着就想拿到最新的数据值
+         * 可以直接使用store.testObj即可获取到更新后的最新值
+         * 
+         * <------->resy中使用store[key]永远可以获取到最新数据<------->
+         * 
+         * 但是我们不建议这样获取最新数据
+         * 可以通过B2的使用方式来获取最新数据
+         */
         resyUpdate(store, {
           count: count++,
           text: "456asd",
+        }, (dStore) => {
+          console.log(dStore);
         });
       }}
       >

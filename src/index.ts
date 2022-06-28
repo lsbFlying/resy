@@ -7,7 +7,7 @@
  * @name resy
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import { dispatchAllStoreEffect, storeListenerKey } from "./static";
+import { dispatchAllStoreEffect, getResyStateKey, storeListenerKey } from "./static";
 import { Callback, State, Store, EffectState, CustomEventDispatcherInterface } from "./model";
 
 /**
@@ -60,10 +60,6 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   // 数据存储容器store
   const store: Store<T> = {} as Store<T>;
   
-  /**
-   * 初始化默认数据缓存，方便配合unmountClear参数重置模块状态数据，
-   * 保证不改变初始化入参state，方便后续开发者进行可能的state重置数据的操作
-   */
   let stateTemp: T = Object.assign({}, state);
   
   // 生成store元素Item
@@ -111,12 +107,12 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   // 为每一个数据字段储存链接到store容器中，这样渲染并发执行提升渲染流畅度
   function resolveInitialValueLinkStore(key: keyof T, val?: any) {
     // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
-    if (store[key] === void 0 && typeof val !== "function") {
+    if (store[key] === undefined && typeof val !== "function") {
       genStoreItem(key);
       return store[key];
     }
     // 解决一开始?的属性后续设置是函数的情况
-    if (!stateTemp[key] && store[key] === void 0 && typeof val === "function") {
+    if (stateTemp[key] === undefined && store[key] === undefined && typeof val === "function") {
       stateTemp[key] = val;
     }
     return store[key];
@@ -147,9 +143,8 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
    */
   return new Proxy(state, {
     get: (_, key: keyof T) => {
-      if (key === storeListenerKey) {
-        return storeListener;
-      }
+      if (key === storeListenerKey) return storeListener;
+      if (key === getResyStateKey) return stateTemp;
       try {
         return resolveInitialValueLinkStore(key).useString();
       } catch (e) {
@@ -163,4 +158,4 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   } as ProxyHandler<T>);
 }
 
-export * from "./api";
+export * from "./utils";

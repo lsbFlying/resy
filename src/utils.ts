@@ -1,8 +1,12 @@
 import { useMemo } from "react";
 import {
-  Callback, ResyType, ListenerHandle, CustomEventDispatcherInterface, StoreListener, EffectState,
+  Callback, ResyType, ListenerHandle,
+  CustomEventDispatcherInterface, StoreListener, EffectState,
 } from "./model";
-import { batchUpdate, resyAllStoreListenerEventType, dispatchAllStoreEffectSet, storeListenerKey } from "./static";
+import {
+  batchUpdate, resyAllStoreListenerEventType,
+  dispatchAllStoreEffectSet, storeListenerKey, getResyStateKey,
+} from "./static";
 import { EventDispatcher } from "./listener";
 
 /**
@@ -10,18 +14,30 @@ import { EventDispatcher } from "./listener";
  * @description 本质上是为了批量更新孕育而出的方法，但同样可以单次更新
  * 巧合的是React-v18中已经自动做了批处理更新，所以这里算是给v<18以下的React版本做一个兼容吧
  * 如果是在循环中更新，则resyUpdate直接给callback，在callback中写循环更新即可
- * @example A
+ * @example A1
  * resyUpdate(() => {
  *   store.count = 123;
  *   store.text = "updateText";
  * });
- * @example B
+ * @example B1
  * resyUpdate(store, {
  *   count: 123,
  *   text: "updateText",
  * });
+ * @example B2
+ * resyUpdate(store, {
+ *   count: 123,
+ *   text: "updateText",
+ * }, (dStore) => {
+ *   // dStore：即deconstructedStore，已解构的数据，可安全使用
+ *   console.log(dStore);
+ * });
  */
-export function resyUpdate<T extends ResyType>(store: T | Callback, state: Partial<T> | T = {}) {
+export function resyUpdate<T extends ResyType>(
+  store: T | Callback,
+  state: Partial<T> | T = {},
+  callback?: (dStore: T) => void,
+) {
   if (typeof store === "function") {
     batchUpdate(store as Callback);
     return;
@@ -31,23 +47,22 @@ export function resyUpdate<T extends ResyType>(store: T | Callback, state: Parti
       (store as any)[key] = (state as Partial<T> | T)[key];
     });
   });
+  typeof store !== "function" && callback?.(store[getResyStateKey]);
 }
 
 /**
  * resyMemo
  * @description 除了useMemo会报错hook规则外，其他的react的hook都能正常使用，这里写一个resyMemo进行一个相应的弥补兼容
  * 事实上只有不要useMemo中使用resy返回的store进行解构读取属性值就不会报错hook规则
- * 且useMemo中如果是返回的JSX/TSX也不会报错hook规则
- * 总体而言不建议使用resyMemo，一是性能原因：它会解构所有属性值
- * 二是它需要规避react-hooks/rules-of-hooks的hook规则报错
- * 因此我们尽量在useMemo中不使用resy的store的属性读取即可
+ * 且useMemo中如果是返回的JSX/TSX也不会报错hook规则，我们尽量在useMemo中不使用resy的store的属性读取即可
  */
 export function resyMemo<Sto extends ResyType, Res>(
-  factory: (deconstructedStore: Sto) => Res,
   store: Sto,
+  // dStore：即deconstructedStore，已解构的数据，可安全使用
+  factory: (dStore: Sto) => Res,
   deps?: ReadonlyArray<any>,
 ) {
-  const dStore = Object.assign({}, store) as Sto;
+  const dStore = store[getResyStateKey] as Sto;
   // eslint-disable-next-line react-hooks/rules-of-hooks
   return useMemo(factory.bind(null, dStore), !deps ? undefined : deps);
 }

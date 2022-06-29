@@ -22,16 +22,17 @@ npm i resy
 
 ```tsx
 /**
- * resy有五个API，如下所示，
- * 常规情况下一般不需要复杂的运用到resyMemo/resyListener
- * 最常用的还是resy/resyUpdate与这两个api
+ * resy有四个API，如下所示：
+ * 常用的还是resy/resyUpdate/resySyncState与这三个api
  * 甚至到了React V18+的版本都不需要用resyUpdate这个api
- * resy完全可以融合使用react本身具有的hook使用
- * resyMemo的出现只是为了解决报错问题，后续会详细介绍
+ * 
+ * resyListener用于订阅监听resy生成的store数据的变化
+ * 
+ * resy的store数据完全可以融合使用react本身具有的hook使用
  * 
  * 其次由于resy引入了react-dom，所以暂不支持服务端渲染
  */
-import { resy, resyUpdate, resySyncState, resyMemo, resyListener } from "resy";
+import { resy, resyUpdate, resySyncState, resyListener } from "resy";
 import { useEffect } from "react";
 
 /**
@@ -102,19 +103,6 @@ function App() {
     // cancelListener();
     return cancelListener;
   }, []);
-  
-  /**
-   * @description 对useMemo使用store属性读取导致报错hook使用规则的兼容，
-   * 事实上只要不在useMemo中使用resy返回的store进行解构读取属性值就不会报错hook规则
-   * 且useMemo中如果是返回的JSX/TSX也不会报错hook规则，
-   * 我们尽量在useMemo中不使用resy的store的属性读取即可
-   */
-  const memoRes = resyMemo(store, (dStore) => {
-    // console.log(dStore);
-    // 传入store也是为了解构store生成安全的可读数据对象dStore
-    const {count} = dStore;
-    return `count:${count}`;
-  }, [count]);
   
   return (
     <>

@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import {
   Callback, ResyType, ListenerHandle,
   CustomEventDispatcherInterface, StoreListener, EffectState,
@@ -51,20 +50,11 @@ export function resyUpdate<T extends ResyType>(
 }
 
 /**
- * resyMemo
- * @description 除了useMemo会报错hook规则外，其他的react的hook都能正常使用，这里写一个resyMemo进行一个相应的弥补兼容
- * 事实上只有不要useMemo中使用resy返回的store进行解构读取属性值就不会报错hook规则
- * 且useMemo中如果是返回的JSX/TSX也不会报错hook规则，我们尽量在useMemo中不使用resy的store的属性读取即可
+ * resySyncState
+ * @description 为了解决hooks调用时序规则的问题，去除try catch的使用
  */
-export function resyMemo<Sto extends ResyType, Res>(
-  store: Sto,
-  // dStore：即deconstructedStore，已解构的数据，可安全使用
-  factory: (dStore: Sto) => Res,
-  deps?: ReadonlyArray<any>,
-) {
-  const dStore = store[getResyStateKey] as Sto;
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  return useMemo(factory.bind(null, dStore), !deps ? undefined : deps);
+export function resySyncState<T extends ResyType>(store: T): T {
+  return store[getResyStateKey] as T;
 }
 
 /**
@@ -136,12 +126,4 @@ export function resyListener<T extends ResyType>(
     };
   };
   return resyListenerHandle();
-}
-
-/**
- * resySyncState
- * @description 为了解决hooks调用时序规则的问题，去除try catch的使用
- */
-export function resySyncState<T extends ResyType>(store: T): T {
-  return store[getResyStateKey] as T;
 }

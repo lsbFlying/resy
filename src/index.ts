@@ -125,38 +125,11 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
     return store[key];
   }
   
-  /**
-   * @description
-   * 1、下面会使用try catch
-   * 是为了避免在非组件的函数中去解构(属性读取)的时候导致的hook规则报错
-   * 而且我们理论上也确实应该在函数组件的最顶层使用，即也要符合hook的使用规则，
-   * 但实际上这些规则的限制导致我们在使用状态数据的时候极为不便，所以这里，try catch使用
-   * 主要是为了弥补上面两个缘由，但实际上这并不会影响导致数据状态的混乱与错误
-   *
-   * 因为：
-   * A、解构(属性读取)的时候有异常了之后会捕捉在catch中return stateTemp[key]返回正常的值，
-   * 且在setString中有stateTemp[key] = val始终保持着最新值的赋值更新给予，所以这里能够取到最新值，
-   * 而我们getString中得到的也始终是state中的值，也就是初始化的默认常量对象，
-   * 至于页面的更新渲染本质上是useSyncExternalStore这个hook内部的监听变化函数调用内部的setHook更新进而触发的
-   *
-   * B、赋值更新的时候属于更新状态并没有调用hook，它是hook本身状态内部的监听函数的执行进行的更新渲染
-   *
-   * 2、但是对于useMemo这个hook却很奇怪无法避免该hook的规则报错，即resy不能在useMemo中使用解构(属性读取)
-   * 就是即使你使用了try catch捕捉报错也无法规避useMemo的hook规则报错
-   * 但这种限制又很奇特，如果你将useMemo中的hook调用变成组件，如：{useMemo(() => <Components/>, [])}
-   * 而不是一个方法的调用如：{useMemo(() => xxxFunction(), [])}，这样就不会出现hook使用规则报错的问题了
-   * 但是有时候我们仅仅只是一个逻辑的调用而不是组件的调用的情况下就没法避免useMemo的hook规则报错了
-   * 对于这种memo逻辑调用出现的hook规则报错，resyMemo可解决该问题
-   */
   return new Proxy(state, {
     get: (_, key: keyof T) => {
       if (key === storeListenerKey) return storeListener;
       if (key === getResyStateKey) return stateTemp;
-      try {
-        return resolveInitialValueLinkStore(key).useString();
-      } catch (e) {
-        return stateTemp[key];
-      }
+      return resolveInitialValueLinkStore(key).useString();
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
       resolveInitialValueLinkStore(key, val)?.setString(val);

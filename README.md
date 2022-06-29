@@ -22,7 +22,7 @@ npm i resy
 
 ```tsx
 /**
- * resy有四个API，如下所示，
+ * resy有五个API，如下所示，
  * 常规情况下一般不需要复杂的运用到resyMemo/resyListener
  * 最常用的还是resy/resyUpdate与这两个api
  * 甚至到了React V18+的版本都不需要用resyUpdate这个api
@@ -31,7 +31,7 @@ npm i resy
  * 
  * 其次由于resy引入了react-dom，所以暂不支持服务端渲染
  */
-import { resy, resyUpdate, resyMemo, resyListener } from "resy";
+import { resy, resyUpdate, resySyncState, resyMemo, resyListener } from "resy";
 import { useEffect } from "react";
 
 /**
@@ -174,12 +174,10 @@ function App() {
         // });
         /**
          * 异步操作更新数据之后如果紧接着就想拿到最新的数据值
-         * 可以直接使用store.testObj即可获取到更新后的最新值
          * 
-         * <------->resy中使用store[key]永远可以获取到最新数据<------->
+         * 可以直接使用resySyncState(store)即可获取到更新后的最新值
          * 
-         * 但是我们不建议这样获取最新数据
-         * 可以通过B2的使用方式来获取最新数据
+         * 也可以通过B2的使用方式来获取最新数据
          */
         resyUpdate(store, {
           count: count++,
@@ -187,6 +185,9 @@ function App() {
         }, (dStore) => {
           console.log(dStore);
         });
+        
+        const lastState = resySyncState(store);
+        console.log(lastState);
       }}
       >
         按钮+

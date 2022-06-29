@@ -137,3 +137,11 @@ export function resyListener<T extends ResyType>(
   };
   return resyListenerHandle();
 }
+
+/**
+ * resySyncState
+ * @description 为了解决hooks调用时序规则的问题，去除try catch的使用
+ */
+export function resySyncState<T extends ResyType>(store: T): T {
+  return store[getResyStateKey] as T;
+}

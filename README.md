@@ -10,7 +10,7 @@
 
 ## Introduction
 <p>
-fork form resso, at the same time reference valtio
+use for reference the experience of resso、valtio and @risingstack/react-easy-state.
 </p>
 
 ## Install
@@ -174,6 +174,11 @@ function App() {
           console.log(dStore);
         });
         
+        /**
+         * 与valtio使用了相反的使用模式，valtio是在组件顶层使用自定义hook包裹组件
+         * 使用useSnapshot进行驱动更新，而这里我想着使用的简便化，就省略了驱动更新hook
+         * 而是使用了直接的数据解构，相反的在需要获取同步最新数据的时候使用resySyncState进行获取
+         */
         const lastState = resySyncState(store);
         console.log(lastState);
       }}

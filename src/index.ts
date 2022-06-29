@@ -7,7 +7,7 @@
  * @name resy
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import { dispatchAllStoreEffect, getResyStateKey, storeListenerKey } from "./static";
+import { dispatchAllStoreEffect, getResySyncStateKey, storeListenerKey } from "./static";
 import { Callback, State, Store, EffectState, CustomEventDispatcherInterface } from "./model";
 
 /**
@@ -128,7 +128,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   return new Proxy(state, {
     get: (_, key: keyof T) => {
       if (key === storeListenerKey) return storeListener;
-      if (key === getResyStateKey) return stateTemp;
+      if (key === getResySyncStateKey) return stateTemp;
       return resolveInitialValueLinkStore(key).useString();
     },
     set: (_, key: keyof T, val: T[keyof T]) => {

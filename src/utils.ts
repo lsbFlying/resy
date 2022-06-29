@@ -4,7 +4,7 @@ import {
 } from "./model";
 import {
   batchUpdate, resyAllStoreListenerEventType,
-  dispatchAllStoreEffectSet, storeListenerKey, getResyStateKey,
+  dispatchAllStoreEffectSet, storeListenerKey, getResySyncStateKey,
 } from "./static";
 import { EventDispatcher } from "./listener";
 
@@ -46,15 +46,18 @@ export function resyUpdate<T extends ResyType>(
       (store as any)[key] = (state as Partial<T> | T)[key];
     });
   });
-  typeof store !== "function" && callback?.(store[getResyStateKey]);
+  typeof store !== "function" && callback?.(store[getResySyncStateKey]);
 }
 
 /**
  * resySyncState
  * @description 为了解决hooks调用时序规则的问题，去除try catch的使用
+ * 与valtio使用了相反的使用模式，valtio是在组件顶层使用自定义hook包裹组件
+ * 使用useSnapshot进行驱动更新，而这里我想着使用的简便化，就省略了驱动更新hook
+ * 而使用了直接的数据解构，相反的在需要获取同步最新数据的时候使用resySyncState进行获取
  */
 export function resySyncState<T extends ResyType>(store: T): T {
-  return store[getResyStateKey] as T;
+  return store[getResySyncStateKey] as T;
 }
 
 /**

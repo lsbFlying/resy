@@ -37,4 +37,4 @@ export function dispatchAllStoreEffect<T extends ResyType>(
 export const storeListenerKey = "resyStoreListenerSymbolKey";
 
 // resyMemo使用的获取数据的key值
-export const getResyStateKey = "getResyStateSymbolKey";
+export const getResySyncStateKey = "getResySyncStateSymbolKey";

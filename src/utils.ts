@@ -53,8 +53,9 @@ export function resyUpdate<T extends ResyType>(
  * resySyncState
  * @description 为了解决hooks调用时序规则的问题，去除try catch的使用
  * 与valtio使用了相反的使用模式，valtio是在组件顶层使用自定义hook包裹组件
- * 使用useSnapshot进行驱动更新，而这里我想着使用的简便化，就省略了驱动更新hook
- * 而使用了直接的数据解构，相反的在需要获取同步最新数据的时候使用resySyncState进行获取
+ * 使用useSnapshot进行驱动更新，而直接使用数据进行获取最新数据
+ * 而这里我想着使用的简便化，就省略了驱动更新hook，而是使用了直接的数据解构
+ * 相反的在需要获取同步最新数据的时候使用resySyncState进行获取
  */
 export function resySyncState<T extends ResyType>(store: T): T {
   return store[getResySyncStateKey] as T;

@@ -41,7 +41,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   const storeListener = {
     listenerEventType: Symbol("storeListenerSymbol"),
     dispatchStoreEffectSet: new Set<CustomEventDispatcherInterface<any>>(),
-    dispatchStoreEffect: <T extends State>(effectData: EffectState<T>, preState: T, nextState: T) => {
+    dispatchStoreEffect: <T extends State>(effectData: EffectState<T>, prevState: T, nextState: T) => {
       /**
        * 采用这种全触发：
        * 一是为了支持所有store所有数据的订阅支持，
@@ -51,7 +51,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       storeListener.dispatchStoreEffectSet.forEach(item => item.dispatchEvent(
         storeListener.listenerEventType,
         effectData,
-        preState,
+        prevState,
         nextState,
       ));
     },
@@ -60,6 +60,13 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   // 数据存储容器store
   const store: Store<T> = {} as Store<T>;
   
+  /**
+   * 为了保证不改变传入的state参数，使用一个状态数据桥，
+   * Object.assign或者{...}扩展符都会对于第二级别的数据结构进行引用共用，但是这里不受影响
+   * 因为resy本身只做了数据的一级代理，二级数据的更新需要新的对象直接赋值
+   * 所以这里巧妙的避免的数据桥的非一级数据引用公用的问题
+   * 同时也达到了数据"克隆"的效果，包括后面订阅监听里面的prevState与nextState也是如此
+   */
   let stateTemp: T = Object.assign({}, state);
   
   // 生成store元素Item
@@ -88,13 +95,13 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       setString: (val) => {
         // 避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
         if (Object.is(val, stateTemp[key]) || typeof val === "function") return;
-        const preState = Object.assign({}, stateTemp);
+        const prevState = Object.assign({}, stateTemp);
         stateTemp[key] = val;
         storeChanges.forEach(storeChange => storeChange());
         const nextState = Object.assign({}, stateTemp);
         const effectState = { [key]: val } as EffectState<T>;
-        dispatchAllStoreEffect<T>(effectState, preState, nextState);
-        storeListener.dispatchStoreEffect<T>(effectState, preState, nextState);
+        dispatchAllStoreEffect<T>(effectState, prevState, nextState);
+        storeListener.dispatchStoreEffect<T>(effectState, prevState, nextState);
       },
       // 去react官方找一下useSyncExternalStore的源码并看懂它，这一段就可以理解resy实现细粒度更新的巧妙
       useString: () => useSyncExternalStore(

@@ -28,6 +28,8 @@ npm i resy
  * 甚至到了React V18+的版本都不需要用resyUpdate这个api
  * resy完全可以融合使用react本身具有的hook使用
  * resyMemo的出现只是为了解决报错问题，后续会详细介绍
+ * 
+ * 其次由于resy引入了react-dom，所以暂不支持服务端渲染
  */
 import { resy, resyUpdate, resyMemo, resyListener } from "resy";
 import { useEffect } from "react";

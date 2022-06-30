@@ -46,7 +46,7 @@ export function resyUpdate<T extends ResyType>(
       (store as any)[key] = (state as Partial<T> | T)[key];
     });
   });
-  typeof store !== "function" && callback?.(store[getResySyncStateKey]);
+  typeof store !== "function" && callback?.(store[getResySyncStateKey as any as string]);
 }
 
 /**
@@ -58,7 +58,7 @@ export function resyUpdate<T extends ResyType>(
  * 相反的在需要获取同步最新数据的时候使用resySyncState进行获取
  */
 export function resySyncState<T extends ResyType>(store: T): T {
-  return store[getResySyncStateKey] as T;
+  return store[getResySyncStateKey as any as string] as T;
 }
 
 /**
@@ -98,11 +98,11 @@ export function resyListener<T extends ResyType>(
 ): Callback {
   const resyListenerHandle = (): Callback => {
     const resyListenerEventType = listenerKey
-      ? (store[storeListenerKey] as StoreListener).listenerEventType
+      ? (store[storeListenerKey as any as string] as StoreListener).listenerEventType
       : resyStoreListenerEventType;
     
     const dispatchStoreEffectSetTemp = listenerKey
-      ? (store[storeListenerKey] as StoreListener).dispatchStoreEffectSet
+      ? (store[storeListenerKey as any as string] as StoreListener).dispatchStoreEffectSet
       : dispatchStoreEffectSet;
     
     const listenerOrigin = (effectState: EffectState<T>, prevState: T, nextState: T) => {

@@ -14,7 +14,7 @@ export function batchUpdateShimRun(fn: Callback) { fn() }
 export const batchUpdate = ReactDOM.unstable_batchedUpdates || batchUpdateShimRun;
 
 // 所有store的监听事件类型的eventType常量
-export const resyStoreListenerEventType = "resyStoreChangedListenerEventType";
+export const resyStoreListenerEventType = Symbol("resyStoreChangedListenerEventType");
 
 // 触发store的任何一个数据的变化的Set监听储存
 export const dispatchStoreEffectSet = new Set<CustomEventInterface<any>>();
@@ -34,7 +34,7 @@ export function dispatchStoreEffect<T extends ResyType>(
 }
 
 // 某一个store的监听订阅对象的唯一标识key值
-export const storeListenerKey = "resyStoreListenerSymbolKey";
+export const storeListenerKey = Symbol("resyStoreListenerSymbolKey");
 
 // resyMemo使用的获取数据的key值
-export const getResySyncStateKey = "getResySyncStateSymbolKey";
+export const getResySyncStateKey = Symbol("getResySyncStateSymbolKey");

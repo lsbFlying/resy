@@ -139,3 +139,4 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
 }
 
 export * from "./utils";
+export * from "./withStore";

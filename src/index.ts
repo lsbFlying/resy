@@ -7,8 +7,8 @@
  * @name resy
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import { dispatchAllStoreEffect, getResySyncStateKey, storeListenerKey } from "./static";
-import { Callback, State, Store, EffectState, CustomEventDispatcherInterface } from "./model";
+import { dispatchStoreEffect, getResySyncStateKey, storeListenerKey } from "./static";
+import { Callback, State, Store, EffectState, CustomEventInterface } from "./model";
 
 /**
  * 从use-sync-external-store包的导入方式到下面的引用方式
@@ -40,7 +40,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   // 每一个store具有的监听订阅对象
   const storeListener = {
     listenerEventType: Symbol("storeListenerSymbol"),
-    dispatchStoreEffectSet: new Set<CustomEventDispatcherInterface<any>>(),
+    dispatchStoreEffectSet: new Set<CustomEventInterface<any>>(),
     dispatchStoreEffect: <T extends State>(effectData: EffectState<T>, prevState: T, nextState: T) => {
       /**
        * 采用这种全触发：
@@ -100,7 +100,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         storeChanges.forEach(storeChange => storeChange());
         const nextState = Object.assign({}, stateTemp);
         const effectState = { [key]: val } as EffectState<T>;
-        dispatchAllStoreEffect<T>(effectState, prevState, nextState);
+        dispatchStoreEffect<T>(effectState, prevState, nextState);
         storeListener.dispatchStoreEffect<T>(effectState, prevState, nextState);
       },
       // 去react官方找一下useSyncExternalStore的源码并看懂它，这一段就可以理解resy实现细粒度更新的巧妙
@@ -119,7 +119,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       return store[key];
     }
     // 解决一开始?的属性后续设置是函数的情况
-    if (stateTemp[key] === undefined && store[key] === undefined && typeof val === "function") {
+    if (store[key] === undefined && stateTemp[key] === undefined && typeof val === "function") {
       stateTemp[key] = val;
     }
     return store[key];

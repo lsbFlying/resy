@@ -84,18 +84,15 @@ function App() {
      *
      * @param listener 监听订阅的回调函数
      *
-     * @param store 监听订阅具体的某一个store容器的数据状态变化，
-     * 无则默认监听resy产生的所有store的变化
+     * @param store 监听订阅具体的某一个store容器的数据状态变化
      *
      * @param listenerKey 监听的具体的某一个store容器的某一个数据字段的变化
+     * 如果没有则默认监听store的任何一个数据的变化
      *
      * @return Callback 返回取消监听的函数
      */
-    const cancelListener = resyListener((
-      effectState,
-      prevState,
-      nextState,
-    ) => {
+    const cancelListener = resyListener((effectState, prevState, nextState) => {
+      // effectState：当前变化的数据；prevState：变化之前的数据；nextState：变化之后的数据
       console.log("count", effectState, prevState, nextState);
     }, store, "count");
     

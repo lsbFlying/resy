@@ -1,5 +1,5 @@
 import ReactDOM from "react-dom";
-import { Callback, CustomEventDispatcherInterface, EffectState, ResyType } from "./model";
+import { Callback, CustomEventInterface, EffectState, ResyType } from "./model";
 
 /**
  * batchUpdateShimRun
@@ -14,19 +14,19 @@ export function batchUpdateShimRun(fn: Callback) { fn() }
 export const batchUpdate = ReactDOM.unstable_batchedUpdates || batchUpdateShimRun;
 
 // 所有store的监听事件类型的eventType常量
-export const resyAllStoreListenerEventType = "resyAllStoreChangedListenerEventType";
+export const resyStoreListenerEventType = "resyStoreChangedListenerEventType";
 
-// 触发所有store的数据变化的Set监听储存
-export const dispatchAllStoreEffectSet = new Set<CustomEventDispatcherInterface<any>>();
+// 触发store的任何一个数据的变化的Set监听储存
+export const dispatchStoreEffectSet = new Set<CustomEventInterface<any>>();
 
-// 触发所有store的数据变化
-export function dispatchAllStoreEffect<T extends ResyType>(
+// 触发store任何一个数据的变化
+export function dispatchStoreEffect<T extends ResyType>(
   effectData: EffectState<T>,
   preState: T,
   nextState: T,
 ) {
-  dispatchAllStoreEffectSet.forEach(item => item.dispatchEvent(
-    resyAllStoreListenerEventType,
+  dispatchStoreEffectSet.forEach(item => item.dispatchEvent(
+    resyStoreListenerEventType,
     effectData,
     preState,
     nextState,

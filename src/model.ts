@@ -33,7 +33,7 @@ export type ListenerHandle<T extends ResyType> = (
 ) => void;
 
 // 自定义订阅监听函数接口类型
-export interface CustomEventDispatcherInterface<T extends ResyType> {
+export interface CustomEventInterface<T extends ResyType> {
   addEventListener<T>(type: string | symbol, handle: ListenerHandle<T>): void,
   dispatchEvent(
     type: string | symbol,
@@ -47,6 +47,6 @@ export interface CustomEventDispatcherInterface<T extends ResyType> {
 // 每一个store的监听订阅对象
 export type StoreListener = {
   listenerEventType: string | symbol;
-  dispatchStoreEffectSet: Set<CustomEventDispatcherInterface<any>>;
+  dispatchStoreEffectSet: Set<CustomEventInterface<any>>;
   dispatchStoreEffect: <T extends State>(effectData: EffectState<T>) => void,
 };

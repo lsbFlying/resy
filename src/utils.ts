@@ -1,10 +1,10 @@
 import {
   Callback, ResyType, ListenerHandle,
-  CustomEventDispatcherInterface, StoreListener, EffectState,
+  CustomEventInterface, StoreListener, EffectState,
 } from "./model";
 import {
-  batchUpdate, resyAllStoreListenerEventType,
-  dispatchAllStoreEffectSet, storeListenerKey, getResySyncStateKey,
+  batchUpdate, resyStoreListenerEventType,
+  dispatchStoreEffectSet, storeListenerKey, getResySyncStateKey,
 } from "./static";
 import { EventDispatcher } from "./listener";
 
@@ -86,24 +86,24 @@ export function resySyncState<T extends ResyType>(store: T): T {
  * 就目前而言其功能使用基本完备，后续如果确实有强烈的批量处理监听的必要再考量完善
  *
  * @param listener 监听订阅的回调函数
- * @param store 监听订阅的具体的某一个store容器，
- * 如果没有则默认监听resy产生的所有store的变化，但是常规而言理论上我们一般不会这样监听所有store数据的变化
- * @param listenerKey 监听订阅的具体的某一个store容器的某一个字段数据变化，存在store参数的前提下生效
+ * @param store 监听订阅的具体的某一个store容器
+ * @param listenerKey 监听订阅的具体的某一个store容器的某一个字段数据变化，
+ * 如果没有则默认监听store的任何一个数据的变化
  * @return Callback 返回取消监听的函数
  */
 export function resyListener<T extends ResyType>(
   listener: ListenerHandle<T>,
-  store?: T,
+  store: T,
   listenerKey?: keyof T,
-) {
+): Callback {
   const resyListenerHandle = (): Callback => {
-    const resyListenerEventType = store && typeof store === "object"
+    const resyListenerEventType = listenerKey
       ? (store[storeListenerKey] as StoreListener).listenerEventType
-      : resyAllStoreListenerEventType;
+      : resyStoreListenerEventType;
     
-    const dispatchStoreEffectSet = store && typeof store === "object"
+    const dispatchStoreEffectSetTemp = listenerKey
       ? (store[storeListenerKey] as StoreListener).dispatchStoreEffectSet
-      : dispatchAllStoreEffectSet;
+      : dispatchStoreEffectSet;
     
     const listenerOrigin = (effectState: EffectState<T>, prevState: T, nextState: T) => {
       let includesFlag = true;
@@ -118,15 +118,15 @@ export function resyListener<T extends ResyType>(
       }
     }
     
-    const customEventDispatcher: CustomEventDispatcherInterface<T> = new (EventDispatcher as any)();
+    const customEventDispatcher: CustomEventInterface<T> = new (EventDispatcher as any)();
     customEventDispatcher.addEventListener(resyListenerEventType, listenerOrigin);
-    dispatchStoreEffectSet.add(customEventDispatcher);
+    dispatchStoreEffectSetTemp.add(customEventDispatcher);
     
     return () => {
-      dispatchStoreEffectSet.forEach(item => {
+      dispatchStoreEffectSetTemp.forEach(item => {
         if (item === customEventDispatcher) item.removeEventListener(resyListenerEventType)
       });
-      dispatchStoreEffectSet.delete(customEventDispatcher);
+      dispatchStoreEffectSetTemp.delete(customEventDispatcher);
     };
   };
   return resyListenerHandle();

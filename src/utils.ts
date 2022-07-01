@@ -9,17 +9,13 @@ import { EventDispatcher } from "./listener";
 /**
  * resyUpdate
  * @description 本质上是为了批量更新孕育而出的方法，但同样可以单次更新
- * 巧合的是React-v18中已经自动做了批处理更新，所以这里算是给v<18以下的React版本做一个兼容吧
- * 如果是在循环中更新，则resyUpdate直接给callback，在callback中写循环更新即可
+ * 如果是在循环中更新，则resyUpdate的state参数可以直接给callback，在callback中写循环更新即可
+ * todo 事实上如果是react v18及以上，也可以不通过resyUpdate批量更新
+ * todo 而直接使用store.xxx = x;单次更新的方式，因为v18及以上是自动处理批更新
+ * todo 那么就会导致resyListener的监听有问题，会重复本该批量的key值监听触发
+ * todo 这个问题待解决...
+ *
  * @example A
- * resyUpdate(() => {
- *   store.count = 123;
- *   store.text = "updateText";
- * }, (dStore) => {
- *   // dStore：即deconstructedStore，已解构的数据，可安全使用
- *   console.log(dStore);
- * });
- * @example B
  * resyUpdate(store, {
  *   count: 123,
  *   text: "updateText",
@@ -27,22 +23,25 @@ import { EventDispatcher } from "./listener";
  *   // dStore：即deconstructedStore，已解构的数据，可安全使用
  *   console.log(dStore);
  * });
+ * @example B
+ * resyUpdate(store, () => {
+ *   store.count = 123;
+ *   store.text = "updateText";
+ * }, (dStore) => {
+ *   // dStore：即deconstructedStore，已解构的数据，可安全使用
+ *   console.log(dStore);
+ * });
  */
 export function resyUpdate<T extends ResyType>(
-  store: T | Callback,
-  state: Partial<T> | T = {},
+  store: T,
+  state: Partial<T> | T | Callback = {},
   callback?: (dStore: T) => void,
 ) {
-  // todo 1、如果store是回调函数，则无法通过getResySyncStateKey取到内部最新数据
-  
-  // todo 2、如果是react v18以上，也可以不通过resyUpdate批量更新而直接store.xxx = x;自动化处理批量更新
-  // todo 2、那么resyListener的监听会有问题，会重复本该批量的key值监听触发
-  
-  const prevState = Object.assign({}, (store as T)[getResySyncStateKey as keyof T]);
+  const prevState = Object.assign({}, store[getResySyncStateKey as keyof T]);
   try {
     scheduler.on();
-    if (typeof store === "function") {
-      batchUpdate(store as Callback);
+    if (typeof state === "function") {
+      batchUpdate(state);
     } else {
       batchUpdate(() => {
         Object.keys(state).forEach(key => {
@@ -53,7 +52,7 @@ export function resyUpdate<T extends ResyType>(
   } finally {
     scheduler.off();
   }
-  const nextState = Object.assign({}, (store as T)[getResySyncStateKey as keyof T]);
+  const nextState = Object.assign({}, store[getResySyncStateKey as keyof T]);
   
   const effectState = {} as EffectState<T>;
   Object.keys(nextState).forEach((key: keyof T) => {
@@ -62,7 +61,7 @@ export function resyUpdate<T extends ResyType>(
     }
   });
   // 批量触发变动
-  ((store as T)[storeListenerKey as keyof T] as StoreListener).dispatchStoreEffect(effectState, prevState, nextState);
+  (store[storeListenerKey as keyof T] as StoreListener).dispatchStoreEffect(effectState, prevState, nextState);
   
   callback?.(nextState);
 }

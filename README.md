@@ -142,7 +142,7 @@ function App() {
            * 在callback中写循环更新即可
            */
           // @example A
-          // resyUpdate(() => {
+          // resyUpdate(store, () => {
           //   store.count++;
           //   store.text = "456asd";
           // }, (dStore) => {

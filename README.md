@@ -10,7 +10,7 @@
 
 ## 特点
 - 支持hook组件与class组件<br/>
-- 自动细粒度更新，哪里使用数据参与渲染哪里更新，避免了re-render<br/>
+- 细粒度更新，规避了re-render<br/>
 - 易掌握，学习成本几乎为0
 
 ## 安装
@@ -19,7 +19,6 @@ npm i resy
 ```
 
 ## 使用
-
 ```tsx
 /**
  * 总体概览：
@@ -33,7 +32,8 @@ npm i resy
  *
  *  resyListener：用于订阅监听resy生成的store数据的变化
  *
- * withResyStore：用于class组件获取resy生成的状态数据
+ * withResyStore：用于组件获取resy生成的状态数据，
+ * class组件与hook组件都支持，同时使得组件规避re-render的方式更完善
  *
  */
 import React, { useEffect } from "react";
@@ -187,7 +187,7 @@ function App() {
 }
 ```
 
-## 重渲染
+## resy自身特性的规避re-render
 ```tsx
 import React from "react";
 import { resy } from "resy";
@@ -230,12 +230,13 @@ function App() {
 }
 ```
 
-## 支持class组件
+## withResyStore规避的re-render(相较于resy自身特性的re-render更加完善)
 ```tsx
 // store单独文件（引用路径设定为xxx）
 export type StoreType = {
   appTestState: string;
   classComTestState: string;
+  hookComTestState: string;
   count: number;
   text: string;
   countAddFun: () => void,
@@ -244,6 +245,7 @@ export type StoreType = {
 const store = resy({
   appTestState: "appTestState",
   classComTestState: "classComTestState",
+  hookComTestState: "classComTestState",
   count: 123,
   text: "123qwe",
   countAddFun: () => store.count++,
@@ -253,6 +255,8 @@ export default store;
 ```
 
 ```tsx
+// withResyStore对class组件的支持
+
 // ClassCom类组件的单独文件（引用路径设定为yyy）
 import React from "react";
 import { withResyStore, WithResyStateToProps } from "resy";
@@ -261,21 +265,52 @@ import store, { StoreType } from "xxx";
 
 class ClassCom extends React.PureComponent<WithResyStateToProps<StoreType>> {
   /**
-   * 首先，store中的count与text数据属性无法影响ClassCom的rerender
+   * 首先，store中的count与text、hookComTestState数据属性
+   * 无法影响ClassCom的rerender
    * 其次父组件App的appTestState变化也无法影响ClassCom的rerender
    * 只有ClassCom本身引用的classComTestState数据才会影响自身的渲染
    * 
    * 也就是说withResyStore形成的规避rerender的效果
-   * 比resy本身针对hook组件而规避的rerender的效果更好
+   * 比resy本身自带的规避rerender的效果更完善
    */
   render() {
     // withResyStore会将store数据挂载到props上新增的state属性上
     const { classComTestState } = this.props.state;
     console.log(classComTestState);
     return (
-      <span>{classComTestState}</span>
+      <div>{classComTestState}</div>
     );
   }
+}
+
+export default withResyStore(store, ClassCom);
+```
+
+```tsx
+// withResyStore对hook组件的支持
+
+// HookCom hook组件的单独文件（引用路径设定为zzz）
+import React from "react";
+import { withResyStore, WithResyStateToProps } from "resy";
+// "xxx"：某个引用路径
+import store, { StoreType } from "xxx";
+
+const HookCom = (props: WithResyStateToProps<StoreType>) => {
+  // withResyStore会将store数据挂载到props上新增的state属性上
+  const { hookComTestState } = props.state;
+  /**
+   * 首先，store中的count与text、classComTestState数据属性
+   * 无法影响HookCom的rerender
+   * 其次父组件App的appTestState变化也无法影响HookCom的rerender
+   * 只有HookCom本身引用的hookComTestState数据才会影响自身的渲染
+   *
+   * 也就是说withResyStore形成的规避rerender的效果
+   * 比resy本身自带的规避rerender的效果更完善
+   */
+  console.log(hookComTestState);
+  return (
+    <div>{hookComTestState}</div>
+  );
 }
 
 export default withResyStore(store, ClassCom);
@@ -286,6 +321,7 @@ import React from "react";
 // "xxx"：某个引用路径
 import store from "xxx";
 import ClassCom from "yyy";
+import HookCom from "zzz";
 
 // count数据状态的变化不会引起Text的re-render
 function Text() {
@@ -300,23 +336,31 @@ function Count() {
 }
 
 function App() {
-  const { appTestState, classComTestState, countAddFun } = store;
+  const {
+    appTestState, classComTestState, hookComTestState, countAddFun,
+  } = store;
   
   function appTestClick() {
-    store.appTestState = `${Math.random()}~~~~~appTestState~~~~~`;
+    store.appTestState = `${Math.random()}~appTestState~`;
   }
   
   function classComTestStateClick() {
-    store.classComTestState = `${Math.random()}classComTestState`;
+    store.classComTestState = `*${Math.random()}classComTestState*`;
+  }
+  
+  function hookComTestStateClick() {
+    store.classComTestState = `!${Math.random()}hookComTestState!`;
   }
   
   return (
     <>
       <div onClick={appTestClick}>{appTestState}</div>
       <div onClick={classComTestStateClick}>{classComTestState}</div>
+      <div onClick={hookComTestStateClick}>{hookComTestState}</div>
       <Text/>
       <Count/>
       <ClassCom/>
+      <HookCom/>
       <button onClick={countAddFun}>按钮+</button>
       <button onClick={() => store.count--}>按钮-</button>
     </>

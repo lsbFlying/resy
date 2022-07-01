@@ -21,6 +21,9 @@ import { EventDispatcher } from "./listener";
  *   text: "updateText",
  * }, (dStore) => {
  *   // dStore：即deconstructedStore，已解构的数据，可安全使用
+ *   // 可以理解dStore即为this.setState中的回调中的this.state
+ *   // 同时这一点也弥补了：
+ *   // hook组件中setState后只能通过useEffect来获取最新数据的方式
  *   console.log(dStore);
  * });
  * @example B
@@ -28,7 +31,6 @@ import { EventDispatcher } from "./listener";
  *   store.count = 123;
  *   store.text = "updateText";
  * }, (dStore) => {
- *   // dStore：即deconstructedStore，已解构的数据，可安全使用
  *   console.log(dStore);
  * });
  */

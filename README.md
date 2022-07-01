@@ -13,7 +13,7 @@
 resy 的特点：<br/>
 1、支持hook组件与class组件<br/>
 2、自动细粒度更新，哪里使用数据参与渲染哪里更新，避免了re-render<br/>
-3、掌握easy，学习成本几乎为0
+3、易掌握，学习成本几乎为0
 </p>
 
 ## Install
@@ -135,30 +135,13 @@ function App() {
           // store.count++;
           // store.text = "456asd";
           /**
-            * @description resyUpdate是为了批量更新孕育而出的方法
-            * 但同样可以单次更新
-            * 如果是在循环中更新
-            * 则resyUpdate直接给callback
-            * 在callback中写循环更新即可
-            * 
-            * @example A
-            * resyUpdate(() => {
-            *   store.count = 123;
-            *   store.text = "updateText";
-            * }, (dStore) => {
-            *   // dStore：即deconstructedStore，已解构的数据，可安全使用
-            *   // 可以理解dStore即为this.setState中的回调中的this.state
-            *   // 同时这一点也弥补了hook组件中setState后没有回调获取最新数据的遗憾
-            *   console.log(dStore);
-            * });
-            * @example B
-            * resyUpdate(store, {
-            *   count: 123,
-            *   text: "updateText",
-            * }, (dStore) => {
-            *   console.log(dStore);
-            * });
-            */
+           * @description resyUpdate是为了批量更新孕育而出的方法
+           * 但同样可以单次更新
+           * 如果是在循环中更新
+           * 则resyUpdate直接给callback
+           * 在callback中写循环更新即可
+           */
+          // @example A
           // resyUpdate(() => {
           //   store.count++;
           //   store.text = "456asd";
@@ -166,24 +149,27 @@ function App() {
           //   console.log(dStore);
           // });
           /**
-            * 异步操作更新数据之后如果紧接着就想拿到最新的数据值
-            * 
-            * 可以直接使用resySyncState(store)即可获取到更新后的最新值
-            * 
-            * 也可以通过回调函数的方式来获取最新数据
-            */
+           * 异步操作更新数据之后如果紧接着就想拿到最新的数据值
+           * 
+           * 可以直接使用resySyncState(store)即可获取到更新后的最新值
+           * 
+           * 也可以通过回调函数的方式来获取最新数据
+           */
+          // @example B
           resyUpdate(store, {
             count: count++,
             text: "456asd",
           }, (dStore) => {
+            // dStore：即deconstructedStore，已解构的数据，可安全使用
+            // 可以理解dStore即为this.setState中的回调中的this.state
+            // 同时这一点也弥补了：
+            // hook组件中setState后只能通过useEffect来获取最新数据的方式
             console.log(dStore);
           });
           /**
-            * 与valtio使用了相反的使用模式，valtio是在组件顶层使用自定义hook包裹组件
-            * 使用useSnapshot进行驱动更新，而直接使用数据进行获取最新数据
-            * 而这里我想着使用的简便化，就省略了驱动更新hook，而是使用了直接的数据解构
-            * 相反的在需要获取同步最新数据的时候使用resySyncState进行获取
-            */
+           * 常见使用场景一般是单次更新store.xxx = xx;的形式更新后
+           * 需要获取最新数据的时候可以使用resySyncState进行获取
+           */
           const latestState = resySyncState(store);
           console.log(latestState);
         }}

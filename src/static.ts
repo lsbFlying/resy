@@ -1,5 +1,5 @@
 import ReactDOM from "react-dom";
-import { Callback, CustomEventInterface, EffectState, ResyType } from "./model";
+import { Callback } from "./model";
 
 /**
  * batchUpdateShimRun
@@ -12,26 +12,6 @@ export function batchUpdateShimRun(fn: Callback) { fn() }
  * 但不保证未来会有去除这个非正式API的可能性，所以做一个垫片保证代码的安全稳健性
  */
 export const batchUpdate = ReactDOM.unstable_batchedUpdates || batchUpdateShimRun;
-
-// 所有store的监听事件类型的eventType常量
-export const resyStoreListenerEventType = Symbol("resyStoreChangedListenerEventType");
-
-// 触发store的任何一个数据的变化的Set监听储存
-export const dispatchStoreEffectSet = new Set<CustomEventInterface<any>>();
-
-// 触发store任何一个数据的变化
-export function dispatchStoreEffect<T extends ResyType>(
-  effectData: EffectState<T>,
-  preState: T,
-  nextState: T,
-) {
-  dispatchStoreEffectSet.forEach(item => item.dispatchEvent(
-    resyStoreListenerEventType,
-    effectData,
-    preState,
-    nextState,
-  ));
-}
 
 // 某一个store的监听订阅对象的唯一标识key值
 export const storeListenerKey = Symbol("resyStoreListenerSymbolKey");

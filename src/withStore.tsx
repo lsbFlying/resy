@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
 import { ResyType, State } from "./model";
 import { getResySyncStateKey } from "./static";
 import { resyListener } from "./utils";
@@ -20,19 +20,43 @@ export interface WithResyStateToProps<T extends ResyType> extends State {
  * 至少目前来看二者两分天下才是对代码更友好健康的方式
  *
  * C：withResyStore连接了resy生成的store数据，使得class组件可以共享store
- * 同时完善了class组件的shouldComponentUpdate（SCU），让class组件自动避免rerender
+ * 同时完善了class组件自动避免rerender
  */
-export function withResyStore<S extends ResyType>(store: S, Component: React.ComponentClass<WithResyStateToProps<S>>) {
+export function withResyStore<S extends ResyType>(store: S, ClassComp: React.ComponentClass<WithResyStateToProps<S>>) {
   const dStore = store[getResySyncStateKey as any as string] as S;
-  return function () {
-    const [state, setState] = useState(dStore);
+  
+  // dStore代理的Set
+  const dStoreSet = new Set();
+  
+  // 给dStore做一个代理，从而让其知晓class组件内部使用了哪些数据
+  const dStoreProxy = new Proxy(dStore, {
+    get: (target: S, key: keyof S) => {
+      dStoreSet.add(key);
+      return target[key];
+    },
+  } as ProxyHandler<S>) as S;
+  
+  const HookComp = () => {
+    const [state, setState] = useState(dStoreProxy);
     
     useEffect(() => {
-      return resyListener((_E, _P, nextState) => {
-        setState(nextState);
+      return resyListener((_, prevState, nextState) => {
+        // console.log(dStoreSet);
+  
+        const prevStateKeys = Object.keys(prevState);
+        const nextStateKeys = Object.keys(nextState);
+        // if (
+        //   [...dStoreSet].includes() && (
+        //     nextStateKeys.length !== prevStateKeys.length ||
+        //     nextStateKeys.some((key: keyof S) => prevStateKeys[key] !== nextStateKeys[key])
+        //   )
+        // ) {
+        //   setState(nextState);
+        // }
       }, store);
     }, []);
     
-    return <Component state={state}/>;
+    return <ClassComp state={state}/>;
   };
+  return HookComp;
 }

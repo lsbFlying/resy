@@ -138,13 +138,11 @@ function App() {
          * resyUpdate(() => {
          *   store.count = 123;
          *   store.text = "updateText";
+         * }, (dStore) => {
+         *   // dStore：即deconstructedStore，已解构的数据，可安全使用
+         *   console.log(dStore);
          * });
-         * @example B1
-         * resyUpdate(store, {
-         *   count: 123,
-         *   text: "updateText",
-         * });
-         * @example B2  (在B1的使用方式下可以衍生B2这种使用方式，通过回调回去最新数据)
+         * @example B
          * resyUpdate(store, {
          *   count: 123,
          *   text: "updateText",
@@ -156,13 +154,15 @@ function App() {
         // resyUpdate(() => {
         //   store.count++;
         //   store.text = "456asd";
+        // }, (dStore) => {
+        //   console.log(dStore);
         // });
         /**
          * 异步操作更新数据之后如果紧接着就想拿到最新的数据值
          * 
          * 可以直接使用resySyncState(store)即可获取到更新后的最新值
          * 
-         * 也可以通过B2的使用方式来获取最新数据
+         * 也可以通过回调函数的方式来获取最新数据
          */
         resyUpdate(store, {
           count: count++,

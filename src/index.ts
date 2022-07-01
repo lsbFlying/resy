@@ -7,7 +7,7 @@
  * @name resy
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import { dispatchStoreEffect, getResySyncStateKey, storeListenerKey } from "./static";
+import { getResySyncStateKey, storeListenerKey } from "./static";
 import { Callback, State, Store, EffectState, CustomEventInterface } from "./model";
 
 /**
@@ -42,12 +42,6 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
     listenerEventType: Symbol("storeListenerSymbol"),
     dispatchStoreEffectSet: new Set<CustomEventInterface<any>>(),
     dispatchStoreEffect: <T extends State>(effectData: EffectState<T>, prevState: T, nextState: T) => {
-      /**
-       * 采用这种全触发：
-       * 一是为了支持所有store所有数据的订阅支持，
-       * 二是这种写法简单，
-       * 三是考虑订阅监听的场景并不多，即使有几个订阅也不影响性能
-       */
       storeListener.dispatchStoreEffectSet.forEach(item => item.dispatchEvent(
         storeListener.listenerEventType,
         effectData,
@@ -100,7 +94,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         storeChanges.forEach(storeChange => storeChange());
         const nextState = Object.assign({}, stateTemp);
         const effectState = { [key]: val } as EffectState<T>;
-        dispatchStoreEffect<T>(effectState, prevState, nextState);
+        // 单一属性触发数据变动
         storeListener.dispatchStoreEffect<T>(effectState, prevState, nextState);
       },
       // 去react官方找一下useSyncExternalStore的源码并看懂它，这一段就可以理解resy实现细粒度更新的巧妙

@@ -48,5 +48,5 @@ export interface CustomEventInterface<T extends ResyType> {
 export type StoreListener = {
   listenerEventType: string | symbol;
   dispatchStoreEffectSet: Set<CustomEventInterface<any>>;
-  dispatchStoreEffect: <T extends State>(effectData: EffectState<T>) => void,
+  dispatchStoreEffect: <T extends State>(effectState: EffectState<T>, prevState: T, nextState: T) => void,
 };

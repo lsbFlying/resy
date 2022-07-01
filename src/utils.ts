@@ -2,10 +2,7 @@ import {
   Callback, ResyType, ListenerHandle,
   CustomEventInterface, StoreListener, EffectState,
 } from "./model";
-import {
-  batchUpdate, resyStoreListenerEventType,
-  dispatchStoreEffectSet, storeListenerKey, getResySyncStateKey,
-} from "./static";
+import { batchUpdate, storeListenerKey, getResySyncStateKey } from "./static";
 import { EventDispatcher } from "./listener";
 
 /**
@@ -13,17 +10,15 @@ import { EventDispatcher } from "./listener";
  * @description 本质上是为了批量更新孕育而出的方法，但同样可以单次更新
  * 巧合的是React-v18中已经自动做了批处理更新，所以这里算是给v<18以下的React版本做一个兼容吧
  * 如果是在循环中更新，则resyUpdate直接给callback，在callback中写循环更新即可
- * @example A1
+ * @example A
  * resyUpdate(() => {
  *   store.count = 123;
  *   store.text = "updateText";
+ * }, (dStore) => {
+ *   // dStore：即deconstructedStore，已解构的数据，可安全使用
+ *   console.log(dStore);
  * });
- * @example B1
- * resyUpdate(store, {
- *   count: 123,
- *   text: "updateText",
- * });
- * @example B2
+ * @example B
  * resyUpdate(store, {
  *   count: 123,
  *   text: "updateText",
@@ -37,16 +32,28 @@ export function resyUpdate<T extends ResyType>(
   state: Partial<T> | T = {},
   callback?: (dStore: T) => void,
 ) {
+  const prevState = Object.assign({}, (store as T)[getResySyncStateKey as keyof T]);
   if (typeof store === "function") {
     batchUpdate(store as Callback);
-    return;
-  }
-  batchUpdate(() => {
-    Object.keys(state).forEach(key => {
-      (store as any)[key] = (state as Partial<T> | T)[key];
+  } else {
+    batchUpdate(() => {
+      Object.keys(state).forEach(key => {
+        (store as any)[key] = (state as Partial<T> | T)[key];
+      });
     });
+  }
+  const nextState = Object.assign({}, (store as T)[getResySyncStateKey as keyof T]);
+  
+  const effectState = {} as EffectState<T>;
+  Object.keys(nextState).forEach((key: keyof T) => {
+    if (!Object.is(nextState[key], prevState[key])) {
+      effectState[key] = nextState[key];
+    }
   });
-  typeof store !== "function" && callback?.(store[getResySyncStateKey as any as string]);
+  // 批量触发变动
+  ((store as T)[storeListenerKey as keyof T] as StoreListener).dispatchStoreEffect(effectState, prevState, nextState);
+  
+  callback?.(nextState);
 }
 
 /**
@@ -58,7 +65,7 @@ export function resyUpdate<T extends ResyType>(
  * 相反的在需要获取同步最新数据的时候使用resySyncState进行获取
  */
 export function resySyncState<T extends ResyType>(store: T): T {
-  return store[getResySyncStateKey as any as string] as T;
+  return store[getResySyncStateKey as keyof T] as T;
 }
 
 /**
@@ -97,13 +104,9 @@ export function resyListener<T extends ResyType>(
   listenerKey?: keyof T,
 ): Callback {
   const resyListenerHandle = (): Callback => {
-    const resyListenerEventType = listenerKey
-      ? (store[storeListenerKey as any as string] as StoreListener).listenerEventType
-      : resyStoreListenerEventType;
+    const resyListenerEventType = (store[storeListenerKey as keyof T] as StoreListener).listenerEventType;
     
-    const dispatchStoreEffectSetTemp = listenerKey
-      ? (store[storeListenerKey as any as string] as StoreListener).dispatchStoreEffectSet
-      : dispatchStoreEffectSet;
+    const dispatchStoreEffectSetTemp = (store[storeListenerKey as keyof T] as StoreListener).dispatchStoreEffectSet;
     
     const listenerOrigin = (effectState: EffectState<T>, prevState: T, nextState: T) => {
       let includesFlag = true;

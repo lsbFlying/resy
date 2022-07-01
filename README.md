@@ -8,20 +8,17 @@
 
 ---
 
-## Introduction
-<p>
-resy 的特点：<br/>
-1、支持hook组件与class组件<br/>
-2、自动细粒度更新，哪里使用数据参与渲染哪里更新，避免了re-render<br/>
-3、易掌握，学习成本几乎为0
-</p>
+## 特点
+- 支持hook组件与class组件<br/>
+- 自动细粒度更新，哪里使用数据参与渲染哪里更新，避免了re-render<br/>
+- 易掌握，学习成本几乎为0
 
-## Install
+## 安装
 ```sh
 npm i resy
 ```
 
-## Usage
+## 使用
 
 ```tsx
 /**
@@ -83,7 +80,7 @@ const store = resy<ResyStore>(
 
 function App() {
   /**
-   * 注意：resy生成的store的数据读取（解构）需要在组件顶层使用
+   * 注意：resy生成的store的数据读取（解构）需要在组件顶层解构
    * 它本质上依然是useState该hook的调用
    */
   const { count, text, testObj: { name } } = store;
@@ -190,7 +187,7 @@ function App() {
 }
 ```
 
-## Re-render
+## 重渲染
 ```tsx
 import React from "react";
 import { resy } from "resy";

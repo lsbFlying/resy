@@ -41,7 +41,7 @@ export function resyUpdate<T extends ResyType>(
   try {
     scheduler.on();
     if (typeof state === "function") {
-      batchUpdate(state);
+      batchUpdate(state as Callback);
     } else {
       batchUpdate(() => {
         Object.keys(state).forEach(key => {

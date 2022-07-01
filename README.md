@@ -183,6 +183,8 @@ function App() {
 
 ## Re-render
 ```tsx
+import { resy } from "resy";
+
 const store = resy({
   count: 123,
   text: "123qwe",
@@ -214,6 +216,105 @@ function App() {
     <>
       <Text/>
       <Count/>
+      <button onClick={countAddFun}>按钮+</button>
+      <button onClick={() => store.count--}>按钮-</button>
+    </>
+  );
+}
+```
+
+## 支持class组件
+```tsx
+// store单独文件（引用路径设定为xxx）
+export type StoreType = {
+  appTestState: string;
+  classComTestState: string;
+  count: number;
+  text: string;
+  countAddFun: () => void,
+};
+
+const store = resy({
+  appTestState: "appTestState",
+  classComTestState: "classComTestState",
+  count: 123,
+  text: "123qwe",
+  countAddFun: () => store.count++,
+});
+
+export default store;
+```
+
+```tsx
+// ClassCom类组件的单独文件（引用路径设定为yyy）
+import React from "react";
+import { withResyStore, WithResyStateToProps } from "resy";
+// "xxx"：某个引用路径
+import store, { StoreType } from "xxx";
+
+class ClassCom extends React.PureComponent<WithResyStateToProps<StoreType>> {
+  /**
+   * 首先，store中的count与text数据属性无法影响ClassCom的rerender
+   * 其次父组件App的appTestState变化也无法影响ClassCom的rerender
+   * 只有ClassCom本身引用的classComTestState数据才会影响自身的渲染
+   * 
+   * 也就是说withResyStore形成的规避rerender的效果
+   * 比resy本身针对hook组件而规避的rerender的效果更好
+   */
+  render() {
+    const { classComTestState } = this.props.state;
+    console.log(classComTestState);
+    return (
+      <span>{classComTestState}</span>
+    );
+  }
+}
+
+export default withResyStore(store, ClassCom);
+```
+
+```tsx
+// "xxx"：某个引用路径
+import store from "xxx";
+import ClassCom from "yyy";
+
+// count数据状态的变化不会引起Text的re-render
+function Text() {
+  const { text } = store;
+  return <p>{text}</p>;
+}
+
+// text数据状态的变化不会引起Count的re-render
+function Count() {
+  const { count } = store;
+  return <p>{count}</p>;
+}
+
+/**
+ * 没有额外的多余的渲染避免re-render不代表-"父组件渲染了子组件仍然不渲染"，
+ * re-render是指：
+ * 如果A、B同级别，同级别A的或者A的子级别组件的数据变化渲染了不会导致B组件渲染
+ * 如果是父组件渲染了子级别必然渲染，毕竟只是仅仅额外避免了re-render，
+ * 还不是像solid.js那样 "真正的react" 哪里变化 "更新" 哪里
+ */
+function App() {
+  const { appTestState, classComTestState, countAddFun } = store;
+  
+  function appTestClick() {
+    store.appTestState = `${Math.random()}~~~~~appTestState~~~~~`;
+  }
+  
+  function classComTestStateClick() {
+    store.classComTestState = `${Math.random()}classComTestState`;
+  }
+  
+  return (
+    <>
+      <div onClick={appTestClick}>{appTestState}</div>
+      <div onClick={classComTestStateClick}>{classComTestState}</div>
+      <Text/>
+      <Count/>
+      <ClassCom/>
       <button onClick={countAddFun}>按钮+</button>
       <button onClick={() => store.count--}>按钮-</button>
     </>

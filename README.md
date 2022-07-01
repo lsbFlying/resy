@@ -230,7 +230,7 @@ function App() {
 }
 ```
 
-## withResyStore规避的re-render(相较于resy自身特性的re-render更加完善)
+## withResyStore规避的re-render
 ```tsx
 // store单独文件（引用路径设定为xxx）
 export type StoreType = {
@@ -313,7 +313,7 @@ const HookCom = (props: WithResyStateToProps<StoreType>) => {
   );
 }
 
-export default withResyStore(store, ClassCom);
+export default withResyStore(store, HookCom);
 ```
 
 ```tsx
@@ -352,6 +352,10 @@ function App() {
     store.classComTestState = `!${Math.random()}hookComTestState!`;
   }
   
+  /**
+   * 总结：相较于resy自身特性的re-render
+   * withResyStore处理规避的re-render更加完善
+   */
   return (
     <>
       <div onClick={appTestClick}>{appTestState}</div>

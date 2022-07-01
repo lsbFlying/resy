@@ -319,7 +319,6 @@ export default withResyStore(store, HookCom);
 
 ```tsx
 import React from "react";
-// "xxx"：某个引用路径
 import store from "xxx";
 import ClassCom from "yyy";
 import HookCom from "zzz";

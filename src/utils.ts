@@ -1,3 +1,4 @@
+import scheduler from "./scheduler";
 import {
   Callback, ResyType, ListenerHandle,
   CustomEventInterface, StoreListener, EffectState,
@@ -33,14 +34,19 @@ export function resyUpdate<T extends ResyType>(
   callback?: (dStore: T) => void,
 ) {
   const prevState = Object.assign({}, (store as T)[getResySyncStateKey as keyof T]);
-  if (typeof store === "function") {
-    batchUpdate(store as Callback);
-  } else {
-    batchUpdate(() => {
-      Object.keys(state).forEach(key => {
-        (store as any)[key] = (state as Partial<T> | T)[key];
+  try {
+    scheduler.on();
+    if (typeof store === "function") {
+      batchUpdate(store as Callback);
+    } else {
+      batchUpdate(() => {
+        Object.keys(state).forEach(key => {
+          (store as any)[key] = (state as Partial<T> | T)[key];
+        });
       });
-    });
+    }
+  } finally {
+    scheduler.off();
   }
   const nextState = Object.assign({}, (store as T)[getResySyncStateKey as keyof T]);
   
@@ -80,17 +86,6 @@ export function resySyncState<T extends ResyType>(store: T): T {
  * 其实这里的监听订阅还可以使用proxy进行拦截监听，但是并没有使用这种方式
  * 因为resy产生的store数据存储本身就已经是proxy了，而proxy本身是有一定内存消耗的
  * 对性能而言有一定的考量因素，这里在resy已经使用了proxy拦截监听之后配合函数监听是更好的选择
- *
- * 如果是监听所有resy产生的store的情况下，由于泛型的困扰，
- * 导致resyListener中的回调函数中的effectData的类型判别较为不便
- * 但如果传入了store监听具体某一个store的变化则可以自动识别类型
- *
- * 暂未实现批量触发监听订阅，所以目前如果传入listenerKey是针对某一个store的数据字段属性
- * 是因为resy的实现方式不擅长批量处理，如果要实现它需要拿到react本身内部调度的状态
- * 难度复杂度有所增加，带来的收益效能并不高，因为仅仅订阅功能而言本身并不需要多么复杂的使用场景
- * 且相较于其他的状态管理器如redux，它的订阅设计甚至没有某一个数据属性key的支持
- * 而resyListener与valtio一样具备对某一个store的某一个数据属性key字段的变化监听订阅
- * 就目前而言其功能使用基本完备，后续如果确实有强烈的批量处理监听的必要再考量完善
  *
  * @param listener 监听订阅的回调函数
  * @param store 监听订阅的具体的某一个store容器

@@ -7,6 +7,7 @@
  * @name resy
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
+import scheduler from "./scheduler";
 import { getResySyncStateKey, storeListenerKey } from "./static";
 import { Callback, State, Store, EffectState, CustomEventInterface } from "./model";
 
@@ -92,10 +93,12 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         const prevState = Object.assign({}, stateTemp);
         stateTemp[key] = val;
         storeChanges.forEach(storeChange => storeChange());
-        const nextState = Object.assign({}, stateTemp);
-        const effectState = { [key]: val } as EffectState<T>;
-        // 单一属性触发数据变动
-        storeListener.dispatchStoreEffect<T>(effectState, prevState, nextState);
+        if (!scheduler.isBatchUpdating) {
+          const nextState = Object.assign({}, stateTemp);
+          const effectState = { [key]: val } as EffectState<T>;
+          // 单一属性触发数据变动
+          storeListener.dispatchStoreEffect<T>(effectState, prevState, nextState);
+        }
       },
       // 去react官方找一下useSyncExternalStore的源码并看懂它，这一段就可以理解resy实现细粒度更新的巧妙
       useString: () => useSyncExternalStore(

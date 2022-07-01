@@ -20,7 +20,8 @@ export interface WithResyStateToProps<T extends ResyType> extends State {
  * 至少目前来看二者两分天下才是对代码更友好健康的方式
  *
  * C：withResyStore连接了resy生成的store数据，使得class组件可以共享store
- * 同时完善了class组件自动避免rerender
+ * 同时完善了class组件自动避免rerender，并且特殊的是，它比resy本身针对hook的规避rerender的效果更强
+ * withResyStore包裹的class类组件即使在其父组件更新渲染了，只要内部使用的数据没有更新，那么它本身不会rerender
  */
 export function withResyStore<S extends ResyType>(store: S, ClassComp: React.ComponentClass<WithResyStateToProps<S>>) {
   const dStore = store[getResySyncStateKey as any as string] as S;
@@ -36,27 +37,20 @@ export function withResyStore<S extends ResyType>(store: S, ClassComp: React.Com
     },
   } as ProxyHandler<S>) as S;
   
-  const HookComp = () => {
+  return () => {
     const [state, setState] = useState(dStoreProxy);
     
     useEffect(() => {
-      return resyListener((_, prevState, nextState) => {
-        // console.log(dStoreSet);
-  
-        const prevStateKeys = Object.keys(prevState);
-        const nextStateKeys = Object.keys(nextState);
-        // if (
-        //   [...dStoreSet].includes() && (
-        //     nextStateKeys.length !== prevStateKeys.length ||
-        //     nextStateKeys.some((key: keyof S) => prevStateKeys[key] !== nextStateKeys[key])
-        //   )
-        // ) {
-        //   setState(nextState);
-        // }
+      return resyListener((effectState, _, nextState) => {
+        // class组件内部使用到的数据属性字段数组
+        const innerLinkUseFields = Array.from(dStoreSet);
+        const effectStateFields = Object.keys(effectState);
+        if (innerLinkUseFields.some(key => effectStateFields.includes(key as string))) {
+          setState(nextState);
+        }
       }, store);
     }, []);
     
     return <ClassComp state={state}/>;
   };
-  return HookComp;
 }

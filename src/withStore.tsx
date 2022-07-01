@@ -41,7 +41,7 @@ function proxyDStoreHandle<S extends ResyType>(dStore: S, dStoreSet: Set<keyof S
  */
 export function withResyStore<S extends ResyType>(store: S, Comp: React.ComponentType<WithResyStateToProps<S>>) {
   const isFuncComp = !(Comp.prototype && Comp.prototype.isReactComponent);
-  const dStore = store[getResySyncStateKey as any as string] as S;
+  const dStore = store[getResySyncStateKey as keyof S] as S;
   
   // dStore代理的Set
   const dStoreSet: Set<keyof S> = new Set();

@@ -10,10 +10,14 @@ import { EventDispatcher } from "./listener";
  * resyUpdate
  * @description 本质上是为了批量更新孕育而出的方法，但同样可以单次更新
  * 如果是在循环中更新，则resyUpdate的state参数可以直接给callback，在callback中写循环更新即可
- * todo 事实上如果是react v18及以上，也可以不通过resyUpdate批量更新
- * todo 而直接使用store.xxx = x;单次更新的方式，因为v18及以上是自动处理批更新
- * todo 那么就会导致resyListener的监听有问题，会重复本该批量的key值监听触发
- * todo 这个问题待解决...
+ *
+ * 事实上如果是react v18及以上，也可以不通过resyUpdate批量更新
+ * 而直接使用store.xxx = x;单次更新的方式，因为v18及以上是自动处理批更新
+ * 那么就会导致resyListener的监听有问题，会重复本该批量的key值监听触发
+ *
+ * 所以这里为了解决这个问题，采用的方式就是resy不建议在v18及以上的react版本中
+ * 来直接使用store.xxx = x;单次更新的方式依靠react本身自动化批处理更新😎
+ * 除非用户看源码并且读到这里的注释😊，todo 该问题暂时待解决啦...
  *
  * @example A
  * resyUpdate(store, {

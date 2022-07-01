@@ -8,6 +8,17 @@ export interface WithResyStateToProps<T extends ResyType> extends State {
   state: T;
 }
 
+// 给Comp组件的props上挂载的state属性数据做一层引用代理
+function proxyDStoreHandle<S extends ResyType>(dStore: S, dStoreSet: Set<keyof S>) {
+  return new Proxy(dStore, {
+    get: (target: S, key: keyof S) => {
+      dStoreSet.add(key);
+      // dStore给出了resy生成的store内部数据的引用，这里始终能获取到最新数据
+      return target[key];
+    },
+  } as ProxyHandler<S>) as S;
+}
+
 /**
  * withResyStore
  *
@@ -33,16 +44,10 @@ export function withResyStore<S extends ResyType>(store: S, Comp: React.Componen
   const dStore = store[getResySyncStateKey as any as string] as S;
   
   // dStore代理的Set
-  const dStoreSet = new Set();
+  const dStoreSet: Set<keyof S> = new Set();
   
   // 给dStore做一个代理，从而让其知晓Comp组件内部使用了哪些数据
-  const dStoreProxy = new Proxy(dStore, {
-    get: (target: S, key: keyof S) => {
-      dStoreSet.add(key);
-      // dStore给出了resy生成的store内部数据的引用，这里始终能获取到最新数据
-      return target[key];
-    },
-  } as ProxyHandler<S>) as S;
+  const dStoreProxy = proxyDStoreHandle(dStore, dStoreSet);
   
   return () => {
     const [state, setState] = useState(dStoreProxy);
@@ -54,7 +59,8 @@ export function withResyStore<S extends ResyType>(store: S, Comp: React.Componen
         const innerLinkUseFields = Array.from(dStoreSet);
         const effectStateFields = Object.keys(effectState);
         if (innerLinkUseFields.some(key => effectStateFields.includes(key as string))) {
-          setState(nextState);
+          // 保持代理数据的更新从而保持innerLinkUseFields的最新化
+          setState(proxyDStoreHandle(nextState, dStoreSet));
         }
       }, store);
     }, []);

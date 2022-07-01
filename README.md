@@ -39,8 +39,8 @@ npm i resy
  * withResyStore：用于class组件获取resy生成的状态数据
  *
  */
+import React, { useEffect } from "react";
 import { resy, resyUpdate, resySyncState, resyListener } from "resy";
-import { useEffect } from "react";
 
 /**
  * 关于resy这个核心API的介绍：
@@ -192,6 +192,7 @@ function App() {
 
 ## Re-render
 ```tsx
+import React from "react";
 import { resy } from "resy";
 
 const store = resy({
@@ -284,6 +285,7 @@ export default withResyStore(store, ClassCom);
 ```
 
 ```tsx
+import React from "react";
 // "xxx"：某个引用路径
 import store from "xxx";
 import ClassCom from "yyy";

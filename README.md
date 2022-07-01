@@ -82,7 +82,10 @@ const store = resy<ResyStore>(
 );
 
 function App() {
-  // 注意：resy生成的store的数据读取（解构）需要在组件顶层使用，它本质上依然是useState该hook的调用
+  /**
+   * 注意：resy生成的store的数据读取（解构）需要在组件顶层使用
+   * 它本质上依然是useState该hook的调用
+   */
   const { count, text, testObj: { name } } = store;
   
   useEffect(() => {
@@ -96,8 +99,14 @@ function App() {
      *
      * @return Callback 返回取消监听的函数
      */
-    const cancelListener = resyListener((effectState, prevState, nextState) => {
-      // effectState：当前变化的数据；prevState：变化之前的数据；nextState：变化之后的数据
+    const cancelListener = resyListener((
+      effectState, prevState, nextState,
+    ) => {
+      /**
+       * effectState：当前变化的数据
+       *   prevState：变化之前的数据
+       *   nextState：变化之后的数据
+       */
       console.log("count", effectState, prevState, nextState);
     }, store, "count");
     

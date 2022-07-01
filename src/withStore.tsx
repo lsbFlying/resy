@@ -59,6 +59,7 @@ export function withResyStore<S extends ResyType>(store: S, Comp: React.Componen
         const innerLinkUseFields = Array.from(dStoreSet);
         const effectStateFields = Object.keys(effectState);
         if (innerLinkUseFields.some(key => effectStateFields.includes(key as string))) {
+          dStoreSet.clear();
           // 保持代理数据的更新从而保持innerLinkUseFields的最新化
           setState(proxyDStoreHandle(nextState, dStoreSet));
         }

@@ -33,6 +33,11 @@ export function resyUpdate<T extends ResyType>(
   state: Partial<T> | T = {},
   callback?: (dStore: T) => void,
 ) {
+  // todo 1、如果store是回调函数，则无法通过getResySyncStateKey取到内部最新数据
+  
+  // todo 2、如果是react v18以上，也可以不通过resyUpdate批量更新而直接store.xxx = x;自动化处理批量更新
+  // todo 2、那么resyListener的监听会有问题，会重复本该批量的key值监听触发
+  
   const prevState = Object.assign({}, (store as T)[getResySyncStateKey as keyof T]);
   try {
     scheduler.on();

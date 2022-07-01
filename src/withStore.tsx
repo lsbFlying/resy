@@ -4,6 +4,7 @@ import { getResySyncStateKey } from "./static";
 import { resyListener } from "./utils";
 
 export interface WithResyStateToProps<T extends ResyType> extends State {
+  // 将resy生成的store容器数据挂载到class类组件的props的state属性上
   state: T;
 }
 
@@ -33,6 +34,7 @@ export function withResyStore<S extends ResyType>(store: S, ClassComp: React.Com
   const dStoreProxy = new Proxy(dStore, {
     get: (target: S, key: keyof S) => {
       dStoreSet.add(key);
+      // dStore给出了resy生成的store内部数据的引用，这里始终能获取到最新数据
       return target[key];
     },
   } as ProxyHandler<S>) as S;

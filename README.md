@@ -262,6 +262,7 @@ class ClassCom extends React.PureComponent<WithResyStateToProps<StoreType>> {
    * 比resy本身针对hook组件而规避的rerender的效果更好
    */
   render() {
+    // withResyStore会将store数据挂载到props上新增的state属性上
     const { classComTestState } = this.props.state;
     console.log(classComTestState);
     return (

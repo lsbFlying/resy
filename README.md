@@ -10,7 +10,10 @@
 
 ## Introduction
 <p>
-use for reference the experience of resso、valtio and @risingstack/react-easy-state.
+resy 的特点：<br/>
+1、支持hook组件与class组件<br/>
+2、自动细粒度更新，哪里使用数据参与渲染哪里更新，避免了re-render<br/>
+3、掌握easy，学习成本几乎为0
 </p>
 
 ## Install
@@ -22,21 +25,28 @@ npm i resy
 
 ```tsx
 /**
- * resy有四个API，如下所示：
- * 常用的还是resy/resyUpdate/resySyncState与这三个api
- * 甚至到了React V18+的版本都不需要用resyUpdate这个api
- * 
- * resyListener用于订阅监听resy生成的store数据的变化
- * 
- * resy的store数据完全可以融合使用react本身具有的hook使用
- * 
- * 其次由于resy引入了react-dom，所以暂不支持服务端渲染
+ * 总体概览：
+ * resy有五个API，分别是：
+ *
+ *          resy：用于生成一个全局状态数据的存储容器
+ *
+ *    resyUpdate：用于更新或者批量更新状态数据
+ *
+ * resySyncState：在异步操作更新数据之后需要同步获取最新数据的方法
+ *
+ *  resyListener：用于订阅监听resy生成的store数据的变化
+ *
+ * withResyStore：用于class组件获取resy生成的状态数据
+ *
  */
 import { resy, resyUpdate, resySyncState, resyListener } from "resy";
 import { useEffect } from "react";
 
 /**
- * @description A、初始化状态编写的时候最好加上一个自定义的准确的范型类型，
+ * 关于resy这个核心API的介绍：
+ * 
+ * @description A、resy这个核心API使用时，
+ * 初始化状态编写的时候最好加上一个自定义的准确的范型类型，
  * 虽然resy会有类型自动推断，但是对于数据状态类型可能变化的情况下还是不够准确的
  *
  * @description B、 resy有第二个参数：unmountClear
@@ -55,33 +65,28 @@ import { useEffect } from "react";
  * 所以unmountClear默认设置为true，符合常规使用即可，
  * 除非遇到像上述登录信息数据那样的全局数据而言才会设置为false
  */
+// 数据范型类型接口
 type ResyStore = {
   count: number,
   text: string,
   testObj: { name: string },
 };
-const store = resy<ResyStore>({
-  count: 0,
-  text: "123qwe",
-  testObj: { name: "Paul" },
-});
+const store = resy<ResyStore>(
+  {
+    count: 0,
+    text: "123qwe",
+    testObj: { name: "Paul" },
+  },
+  // 第二个参数，默认为true
+  // false,
+);
 
-/**
- * resy 是自动细粒度更新，哪里使用属性数据参与渲染哪里更新，避免了re-render
- */
 function App() {
-  // store的数据读取（解构）需要在组件顶层使用，它本质上依然是useState该hook的调用
+  // 注意：resy生成的store的数据读取（解构）需要在组件顶层使用，它本质上依然是useState该hook的调用
   const { count, text, testObj: { name } } = store;
   
   useEffect(() => {
     /**
-     * @description resyListener的存在是必要的，它的作用并不类比于useEffect，
-     * 而是像subscribe或者addEventListener的效果，监听订阅数据的变化，
-     * 不会像effect那样初始化执行一次
-     * 且核心关键点在于它可以监听不同store的数据变化
-     * 并且它是更具数据的变化才触发执行
-     * 并不会像useEffect那样进行数据前后的对比
-     *
      * @param listener 监听订阅的回调函数
      *
      * @param store 监听订阅具体的某一个store容器的数据状态变化
@@ -111,8 +116,9 @@ function App() {
         onClick={() => {
           /**
            * 如下更新方式无效
-           * 即不允许直接属性链式更新，因为resy只代理映射了第一层的数据属性
-           * 目前出于性能考量暂不深度递归代理，后续会再考虑是否深度递归代理
+           * 即不允许直接属性链式更新
+           * 因为resy只代理映射了第一层的数据属性
+           * 目前出于性能考量暂不深度递归代理
            */
           // store.testObj.name = "Jack";
           // 需要新值赋值
@@ -123,63 +129,64 @@ function App() {
       >
         名称按钮
       </button>
-      <button onClick={() => {
-        // 可以直接赋值更新
-        // store.count++;
-        // store.text = "456asd";
-        
-        /**
-         * @description resyUpdate是为了批量更新孕育而出的方法，
-         * 但同样可以单次更新，巧合的是React-v18中已经自动做了批处理更新，
-         * 所以这里算是给v<18以下的React版本做一个兼容吧
-         * 如果是在循环中更新，则resyUpdate直接给callback，
-         * 在callback中写循环更新即可
-         * @example A
-         * resyUpdate(() => {
-         *   store.count = 123;
-         *   store.text = "updateText";
-         * }, (dStore) => {
-         *   // dStore：即deconstructedStore，已解构的数据，可安全使用
-         *   console.log(dStore);
-         * });
-         * @example B
-         * resyUpdate(store, {
-         *   count: 123,
-         *   text: "updateText",
-         * }, (dStore) => {
-         *   // dStore：即deconstructedStore，已解构的数据，可安全使用
-         *   console.log(dStore);
-         * });
-         */
-        // resyUpdate(() => {
-        //   store.count++;
-        //   store.text = "456asd";
-        // }, (dStore) => {
-        //   console.log(dStore);
-        // });
-        /**
-         * 异步操作更新数据之后如果紧接着就想拿到最新的数据值
-         * 
-         * 可以直接使用resySyncState(store)即可获取到更新后的最新值
-         * 
-         * 也可以通过回调函数的方式来获取最新数据
-         */
-        resyUpdate(store, {
-          count: count++,
-          text: "456asd",
-        }, (dStore) => {
-          console.log(dStore);
-        });
-        
-        /**
-         * 与valtio使用了相反的使用模式，valtio是在组件顶层使用自定义hook包裹组件
-         * 使用useSnapshot进行驱动更新，而直接使用数据进行获取最新数据
-         * 而这里我想着使用的简便化，就省略了驱动更新hook，而是使用了直接的数据解构
-         * 相反的在需要获取同步最新数据的时候使用resySyncState进行获取
-         */
-        const lastState = resySyncState(store);
-        console.log(lastState);
-      }}
+      <button
+        onClick={() => {
+          // 可以直接赋值更新
+          // store.count++;
+          // store.text = "456asd";
+          /**
+            * @description resyUpdate是为了批量更新孕育而出的方法
+            * 但同样可以单次更新
+            * 如果是在循环中更新
+            * 则resyUpdate直接给callback
+            * 在callback中写循环更新即可
+            * 
+            * @example A
+            * resyUpdate(() => {
+            *   store.count = 123;
+            *   store.text = "updateText";
+            * }, (dStore) => {
+            *   // dStore：即deconstructedStore，已解构的数据，可安全使用
+            *   // 可以理解dStore即为this.setState中的回调中的this.state
+            *   // 同时这一点也弥补了hook组件中setState后没有回调获取最新数据的遗憾
+            *   console.log(dStore);
+            * });
+            * @example B
+            * resyUpdate(store, {
+            *   count: 123,
+            *   text: "updateText",
+            * }, (dStore) => {
+            *   console.log(dStore);
+            * });
+            */
+          // resyUpdate(() => {
+          //   store.count++;
+          //   store.text = "456asd";
+          // }, (dStore) => {
+          //   console.log(dStore);
+          // });
+          /**
+            * 异步操作更新数据之后如果紧接着就想拿到最新的数据值
+            * 
+            * 可以直接使用resySyncState(store)即可获取到更新后的最新值
+            * 
+            * 也可以通过回调函数的方式来获取最新数据
+            */
+          resyUpdate(store, {
+            count: count++,
+            text: "456asd",
+          }, (dStore) => {
+            console.log(dStore);
+          });
+          /**
+            * 与valtio使用了相反的使用模式，valtio是在组件顶层使用自定义hook包裹组件
+            * 使用useSnapshot进行驱动更新，而直接使用数据进行获取最新数据
+            * 而这里我想着使用的简便化，就省略了驱动更新hook，而是使用了直接的数据解构
+            * 相反的在需要获取同步最新数据的时候使用resySyncState进行获取
+            */
+          const latestState = resySyncState(store);
+          console.log(latestState);
+        }}
       >
         按钮+
       </button>

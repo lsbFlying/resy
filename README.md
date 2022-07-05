@@ -21,7 +21,7 @@ npm i resy
 ## 使用
 ```tsx
 /**
- * 总体概览：resy需要react版本在16.8及以上
+ * 总体概览：resy需要react版本 v >= 16.8
  * 
  * resy有五个API，分别是：
  *

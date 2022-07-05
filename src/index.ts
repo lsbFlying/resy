@@ -126,7 +126,17 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
     get: (_, key: keyof T) => {
       if (key === storeListenerKey) return storeListener;
       if (key === getResySyncStateKey) return stateTemp;
-      return resolveInitialValueLinkStore(key).useString();
+      try {
+        return resolveInitialValueLinkStore(key).useString();
+      } catch (e) {
+        console.error(
+          "If possible, try not to deconstruct and read data" +
+          " at the non top level of the function component!" +
+          " It may also be that you use the self increment '++' or self decrement '--' operator to cause an error" +
+          "The current error attribute key is [" + key + "]"
+        );
+        return stateTemp[key];
+      }
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
       resolveInitialValueLinkStore(key, val)?.setString(val);

@@ -39,7 +39,7 @@ function proxyDStoreHandle<S extends ResyType>(dStore: S, dStoreSet: Set<keyof S
  * 即如果withResyStore包裹的Comp组件即使在其父组件更新渲染了
  * 只要内部使用的数据没有更新，那么它本身不会渲染re-render
  */
-export function withResyStore<S extends ResyType>(store: S, Comp: React.ComponentType<WithResyStateToProps<S>>) {
+export function withResyStore<S extends ResyType>(store: S, Comp: React.ComponentType<WithResyStateToProps<S> | any>) {
   const isFuncComp = !(Comp.prototype && Comp.prototype.isReactComponent);
   
   const dStore = store[getResySyncStateKey as keyof S] as S;

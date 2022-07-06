@@ -41,16 +41,19 @@ function proxyDStoreHandle<S extends ResyType>(dStore: S, dStoreSet: Set<keyof S
  */
 export function withResyStore<S extends ResyType>(store: S, Comp: React.ComponentType<WithResyStateToProps<S>>) {
   const isFuncComp = !(Comp.prototype && Comp.prototype.isReactComponent);
-  const dStore = store[getResySyncStateKey as keyof S] as S;
   
+  const dStore = store[getResySyncStateKey as keyof S] as S;
   // dStore代理的Set
   const dStoreSet: Set<keyof S> = new Set();
   
-  // 给dStore做一个代理，从而让其知晓Comp组件内部使用了哪些数据
-  const dStoreProxy = proxyDStoreHandle(dStore, dStoreSet);
-  
   return () => {
-    const [state, setState] = useState(dStoreProxy);
+    /**
+     * 给dStore做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
+     * 恰巧由于这里的proxy代理，导致在挂载属性数据的时候不能使用扩展运算符，
+     * 扩展运算符...会读取所有的属性数据，导致内部关联使用数据属性失去准确性
+     * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
+     */
+    const [state, setState] = useState(proxyDStoreHandle(dStore, dStoreSet));
     
     useEffect(() => {
       // 刚好巧妙的与resy的订阅监听resyListener结合起来，形成一个reactive更新的包裹容器
@@ -58,6 +61,7 @@ export function withResyStore<S extends ResyType>(store: S, Comp: React.Componen
         // Comp组件内部使用到的数据属性字段数组
         const innerLinkUseFields = Array.from(dStoreSet);
         const effectStateFields = Object.keys(effectState);
+        
         if (innerLinkUseFields.some(key => effectStateFields.includes(key as string))) {
           dStoreSet.clear();
           // 保持代理数据的更新从而保持innerLinkUseFields的最新化

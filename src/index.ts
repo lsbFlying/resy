@@ -71,6 +71,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
      * 就是Set或者Map类型在频繁添加和删除元素的情况下有明显的性能优势
      */
     const storeChanges = new Set<Callback>();
+    
     store[key] = {
       subscribe: (storeChange) => {
         storeChanges.add(storeChange);

@@ -79,6 +79,9 @@ export function resyUpdate<T extends ResyType>(
  * 使用useSnapshot进行驱动更新，而直接使用数据进行获取最新数据
  * 而这里我想着使用的简便化，就省略了驱动更新hook，而是使用了直接的数据解构
  * 相反的在需要获取同步最新数据的时候使用resySyncState进行获取
+ *
+ * 这样设计的理由是根据常规代码业务编写逻辑场景而言
+ * 直接使用数据读取顶层解构的频率是高于获取同步数据的场景频率
  */
 export function resySyncState<T extends ResyType>(store: T): T {
   return store[getResySyncStateKey as keyof T] as T;

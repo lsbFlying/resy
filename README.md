@@ -22,7 +22,9 @@ npm i resy
 ```tsx
 /**
  * 总体概览：resy需要react版本 v >= 16.8
- * 
+ *
+ * resy受resso、valtio、react-easy-state的设计思路的牵引
+ *
  * resy有五个API，分别是：
  *
  *          resy：用于生成一个全局状态数据的存储容器

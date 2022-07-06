@@ -134,7 +134,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
           "If possible, try not to deconstruct and read data" +
           " at the non top level of the function component!" +
           " It may also be that you use the self increment '++' or self decrement '--' operator to cause an error" +
-          "The current error attribute key is [" + key + "]"
+          "The current error attribute key is [" + (key as string) + "]"
         );
         return stateTemp[key];
       }

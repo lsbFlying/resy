@@ -283,7 +283,7 @@ class ClassCom extends React.PureComponent<WithResyStateToProps<StoreType>> {
    * 无法影响ClassCom的rerender
    * 其次父组件App的appTestState变化也无法影响ClassCom的rerender
    * 只有ClassCom本身引用的classComTestState数据才会影响自身的渲染
-   * 
+   *
    * 也就是说withResyStore形成的规避rerender的效果
    * 比resy本身自带的规避rerender的效果更完善
    */

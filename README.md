@@ -123,6 +123,9 @@ function App() {
       <p>{name}</p>
       <button
         onClick={() => {
+          // 可以直接赋值更新
+          store.count = count + 1;
+          store.text = "456asd";
           /**
            * 如下更新方式无效
            * 即不允许直接属性链式更新
@@ -140,9 +143,6 @@ function App() {
       </button>
       <button
         onClick={() => {
-          // 可以直接赋值更新
-          // store.count++;
-          // store.text = "456asd";
           /**
            * @description resyUpdate是为了批量更新孕育而出的方法
            * 但同样可以单次更新
@@ -152,7 +152,7 @@ function App() {
            */
           // @example A
           // resyUpdate(store, () => {
-          //   store.count++;
+          //   store.count = count + 1;
           //   store.text = "456asd";
           // }, (dStore) => {
           //   console.log(dStore);
@@ -166,7 +166,7 @@ function App() {
            */
           // @example B
           resyUpdate(store, {
-            count: count++,
+            count: count + 1,
             text: "456asd",
           }, (dStore) => {
             // dStore：即deconstructedStore，已解构的数据，可安全使用
@@ -193,12 +193,15 @@ function App() {
 ## resy自身特性的规避re-render
 ```tsx
 import React from "react";
-import { resy } from "resy";
+import { resy, resySyncState } from "resy";
 
 const store = resy({
   count: 123,
   text: "123qwe",
-  countAddFun: () => store.count++,
+  countAddFun: () => {
+    const { count } = resySyncState(store);
+    store.count = count + 1;
+  },
 });
 
 // count数据状态的变化不会引起Text的re-render
@@ -227,7 +230,10 @@ function App() {
       <Text/>
       <Count/>
       <button onClick={countAddFun}>按钮+</button>
-      <button onClick={() => store.count--}>按钮-</button>
+      <button onClick={() => {
+        const { count } = resySyncState(store);
+        store.count = count - 1;
+      }}>按钮-</button>
     </>
   );
 }
@@ -236,6 +242,8 @@ function App() {
 ## withResyStore规避的re-render
 ```tsx
 // store单独文件（引用路径设定为xxx）
+import { resy, resySyncState } from "resy";
+
 export type StoreType = {
   appTestState: string;
   classComTestState: string;
@@ -251,7 +259,10 @@ const store = resy({
   hookComTestState: "classComTestState",
   count: 123,
   text: "123qwe",
-  countAddFun: () => store.count++,
+  countAddFun: () => {
+    const { count } = resySyncState(store);
+    store.count = count + 1;
+  },
 });
 
 export default store;
@@ -368,7 +379,10 @@ function App() {
       <ClassCom/>
       <HookCom/>
       <button onClick={countAddFun}>按钮+</button>
-      <button onClick={() => store.count--}>按钮-</button>
+      <button onClick={() => {
+        const { count } = resySyncState(store);
+        store.count = count - 1;
+      }}>按钮-</button>
     </>
   );
 }

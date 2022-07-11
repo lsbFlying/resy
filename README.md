@@ -184,7 +184,7 @@ function App() {
       // hook组件中setState后只能通过useEffect来获取最新数据的方式
       console.log(dStore);
     });
-    // B的方式可以在回调函数中直接写循环，更方便某些复杂的业务逻辑的更新
+    // B的方式可以在回调函数中直接写循环更新，更方便某些复杂的业务逻辑的更新
     // @example B
     // resyUpdate(store, () => {
     //   store.count = count + 1;

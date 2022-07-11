@@ -89,8 +89,13 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       },
       getString: () => stateTemp[key],
       setString: (val) => {
-        // 避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
-        if (Object.is(val, stateTemp[key]) || typeof val === "function") return;
+        
+        /**
+         * 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
+         * 那么也会即使更新stateTemp来保持内部state数据的最新情况，所以这里把函数类型放开
+         * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
+         */
+        if (Object.is(val, stateTemp[key])) return;
         const prevState = Object.assign({}, stateTemp);
         stateTemp[key] = val;
         storeChanges.forEach(storeChange => storeChange());
@@ -110,15 +115,11 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   }
   
   // 为每一个数据字段储存链接到store容器中，这样渲染并发执行提升渲染流畅度
-  function resolveInitialValueLinkStore(key: keyof T, val?: any) {
+  function resolveInitialValueLinkStore(key: keyof T) {
     // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
-    if (store[key] === undefined && typeof val !== "function") {
+    if (store[key] === undefined) {
       genStoreItem(key);
       return store[key];
-    }
-    // 解决一开始?的属性后续设置是函数的情况
-    if (store[key] === undefined && stateTemp[key] === undefined && typeof val === "function") {
-      stateTemp[key] = val;
     }
     return store[key];
   }
@@ -144,7 +145,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       }
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
-      resolveInitialValueLinkStore(key, val)?.setString(val);
+      resolveInitialValueLinkStore(key)?.setString(val);
       return true;
     },
   } as ProxyHandler<T>);

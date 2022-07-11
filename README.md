@@ -9,8 +9,8 @@
 ---
 
 ## 特点
-- 支持hook组件与class组件<br/>
-- 细粒度更新，规避了re-render<br/>
+- 支持hook组件与class组件
+- 细粒度更新，规避了re-render
 - 易掌握，学习成本几乎为0
 
 ## 安装
@@ -18,29 +18,18 @@
 npm i resy
 ```
 
-## 使用
+## 概览
+resy需要react版本 v >= 16.8；resy有五个API，分别是：
+- resy：用于生成一个全局状态数据的存储容器
+- resyUpdate：用于更新或者批量更新状态数据
+- resySyncState：在异步操作更新数据之后需要同步获取最新数据的方法
+- resyListener：用于订阅监听resy生成的store数据的变化
+- withResyStore：用于组件获取resy生成的状态数据
+
+## resy 生成全局共享数据
 ```tsx
-/**
- * 总体概览：resy需要react版本 v >= 16.8
- *
- * resy受resso、valtio、react-easy-state的设计思路的牵引
- *
- * resy有五个API，分别是：
- *
- *          resy：用于生成一个全局状态数据的存储容器
- *
- *    resyUpdate：用于更新或者批量更新状态数据
- *
- * resySyncState：在异步操作更新数据之后需要同步获取最新数据的方法
- *
- *  resyListener：用于订阅监听resy生成的store数据的变化
- *
- * withResyStore：用于组件获取resy生成的状态数据，
- * class组件与hook组件都支持，同时使得组件规避re-render的方式更完善
- *
- */
-import React, { useEffect } from "react";
-import { resy, resyUpdate, resySyncState, resyListener } from "resy";
+import React from "react";
+import { resy } from "resy";
 
 /**
  * 关于resy这个核心API的介绍：
@@ -67,15 +56,20 @@ import { resy, resyUpdate, resySyncState, resyListener } from "resy";
  */
 // 数据范型类型接口
 type ResyStore = {
-  count: number,
-  text: string,
-  testObj: { name: string },
+  count: number;
+  text: string;
+  testObj: { name: string };
+  testArr: { age: number }[];
+  testFun: () => void;
 };
+// 生成的这个store可以全局共享
 const store = resy<ResyStore>(
   {
     count: 0,
     text: "123qwe",
     testObj: { name: "Paul" },
+    testArr: [{age: 12}, { age: 16 }],
+    testFun: () => { console.log("testFun") },
   },
   // 第二个参数，默认为true
   // false,
@@ -84,19 +78,168 @@ const store = resy<ResyStore>(
 function App() {
   /**
    * 注意：resy生成的store的数据读取（解构）需要在组件顶层解构
-   * 它本质上依然是useState该hook的调用
+   * 它本质上依然是useState的调用，而对于想要读取（解构）store
+   * 的数据进行相关逻辑处理或者使用等，可以使用"resySyncState"
+   * 该api可以获取最新的安全的数据供开发使用，后续详细介绍
+   * store本身数据的读取或解构是用于驱动组件更新
    */
-  const { count, text, testObj: { name } } = store;
+  const {
+    count, text, testObj: { name }, testArr, testFun,
+  } = store;
+  
+  return (
+    <>
+      <p>{count}</p>
+      <p>{text}</p>
+      <p>{name}</p>
+      <button onClick={testFun}>测试按钮</button><br/>
+      {testArr.map(item => `年龄：${item}`)}
+    </>
+  );
+}
+```
+
+## 赋值更新
+```tsx
+function App() {
+  const {
+    count, text, testObj: { name }, testArr, testFun,
+  } = store;
+  
+  function btn2() {
+    // 可以直接赋值更新（最简单的更新方式）
+    store.count = count + 1;
+    /**
+     * 注意：这里count的number类型的更新不建议使用自增/自减运算符
+     * 比如store.count++或者store.count--等；
+     * 因为在"resy 生成全局共享数据"这一块有过说明
+     * resy本身生成的全局状态数据的本质还是useState的使用
+     * 它需要符合react的hook调用时序规则
+     * 但是store.count++或者store.count--这种方式依然有效
+     * 是因为resy本身对这种方式做了兼容的处理，但是推荐
+     * store.count = count + 1;或者store.count = count - 1;
+     * 这样安全更新使用
+     */
+    store.text = "456asd";
+    /**
+     * 不允许直接属性链式更新
+     * 因为resy只代理映射了第一层的数据属性
+     * 目前出于性能考量暂不深度递归代理
+     * 如下更新方式无效
+     */
+    // store.testObj.name = "Jack";
+    // 需要新值赋值（有效更新）
+    store.testObj = {
+      name: "Jack",
+    };
+    /**
+     * 同样，数组也不允许通过直接更改索引值的方式更新数据
+     * 如下更新方式无效
+     */
+    // store.testArr[0] = { age: 7 };
+    // 也需要新值赋值（有效更新）
+    store.testArr = [{ age: 7 }];
+    
+    /**
+     * 总结：基本数据类型可以直接赋值更新，引用数据类型的更新方式需要新的引用值
+     * 那么可以使用新值直接覆盖更新，
+     * 或者使用Object.assign/...扩展运算符等
+     * 它们也是产生新的引用地址，也是新的数据值
+     */
+  }
+  
+  return (
+    <>
+      <p>{count}</p>
+      <p>{text}</p>
+      <p>{name}</p>
+      <button onClick={testFun}>测试按钮</button><br/>
+      {testArr.map(item => `年龄：${item}`)}<br/>
+      <button onClick={btn2}>按钮2</button>
+    </>
+  );
+}
+```
+
+## resyUpdate 批量更新
+```tsx
+import { resyUpdate } from "resy";
+
+function App() {
+  
+  function btnClick() {
+    /**
+     * @description resyUpdate是为了批量更新孕育而出的方法
+     * 但同样可以单次更新，如果是在循环中更新
+     * 则resyUpdate直接给callback，在callback中写循环更新即可
+     */
+    // @example A
+    resyUpdate(store, {
+      count: count + 1,
+      text: "456asd",
+    }, (dStore) => {
+      // dStore：即deconstructedStore，已解构的数据，可安全使用
+      // 可以理解dStore即为this.setState中的回调中的this.state
+      // 同时这一点也弥补了：
+      // hook组件中setState后只能通过useEffect来获取最新数据的方式
+      console.log(dStore);
+    });
+    // B的方式可以在回调函数中直接写循环，更方便某些复杂的业务逻辑的更新
+    // @example B
+    // resyUpdate(store, () => {
+    //   store.count = count + 1;
+    //   store.text = "456asd";
+    // }, (dStore) => {
+    //   console.log(dStore);
+    // });
+  }
+  
+  return (
+    <button onClick={btnClick}>resyUpdate更新按钮</button>
+  );
+}
+```
+
+## resySyncState 获取同步最新数据
+```tsx
+import { resySyncState } from "resy";
+
+function App() {
+  
+  function btnClick() {
+    /**
+     * 如果是resyUpdate，可以有回调获取最新同步数据
+     * 但是如果是单次更新也没有使用resyUpdate
+     * 那么可以使用"resySyncState"这个api来获取最新同步数据
+     * 
+     * 同时这个api可以在"非驱动组件更新"(函数组件顶层)的任何地方使用
+     * 来获取最新同步数据，进行相应的业务逻辑处理
+     */
+    store.text = "456asd";
+    const latestState = resySyncState(store);
+    console.log(latestState);
+  }
+  
+  return (
+    <button onClick={btnClick}>测试按钮</button>
+  );
+}
+```
+
+## resyListener 订阅监听
+```tsx
+import React, { useEffect } from "react";
+import { resyListener } from "resy";
+
+function App() {
+  const { count } = store;
   
   useEffect(() => {
     /**
      * @param listener 监听订阅的回调函数
-     *
      * @param store 监听订阅具体的某一个store容器的数据状态变化
-     *
      * @param listenerKey 监听的具体的某一个store容器的某一个数据字段的变化
      * 如果没有则默认监听store的任何一个数据的变化
-     *
      * @return Callback 返回取消监听的函数
      */
     const cancelListener = resyListener((
@@ -109,88 +252,26 @@ function App() {
        */
       console.log("count", effectState, prevState, nextState);
     }, store, "count");
-    
+  
     // 取消订阅监听
     // cancelListener();
     return cancelListener;
   }, []);
   
+  function btnClick() {
+    store.count = count + 1;
+  }
+  
   return (
     <>
       <p>{count}</p>
-      <p>{text}</p>
-      <p>{memoRes}</p>
-      <p>{name}</p>
-      <button
-        onClick={() => {
-          // 可以直接赋值更新
-          store.count = count + 1;
-          store.text = "456asd";
-          /**
-           * 如下更新方式无效
-           * 即不允许直接属性链式更新
-           * 因为resy只代理映射了第一层的数据属性
-           * 目前出于性能考量暂不深度递归代理
-           */
-          // store.testObj.name = "Jack";
-          // 需要新值赋值
-          store.testObj = {
-            name: "Jack",
-          };
-        }}
-      >
-        名称按钮
-      </button>
-      <button
-        onClick={() => {
-          /**
-           * @description resyUpdate是为了批量更新孕育而出的方法
-           * 但同样可以单次更新
-           * 如果是在循环中更新
-           * 则resyUpdate直接给callback
-           * 在callback中写循环更新即可
-           */
-          // @example A
-          // resyUpdate(store, () => {
-          //   store.count = count + 1;
-          //   store.text = "456asd";
-          // }, (dStore) => {
-          //   console.log(dStore);
-          // });
-          /**
-           * 异步操作更新数据之后如果紧接着就想拿到最新的数据值
-           * 
-           * 可以直接使用resySyncState(store)即可获取到更新后的最新值
-           * 
-           * 也可以通过回调函数的方式来获取最新数据
-           */
-          // @example B
-          resyUpdate(store, {
-            count: count + 1,
-            text: "456asd",
-          }, (dStore) => {
-            // dStore：即deconstructedStore，已解构的数据，可安全使用
-            // 可以理解dStore即为this.setState中的回调中的this.state
-            // 同时这一点也弥补了：
-            // hook组件中setState后只能通过useEffect来获取最新数据的方式
-            console.log(dStore);
-          });
-          /**
-           * 常见使用场景一般是单次更新store.xxx = xx;的形式更新后
-           * 需要获取最新数据的时候可以使用resySyncState进行获取
-           */
-          const latestState = resySyncState(store);
-          console.log(latestState);
-        }}
-      >
-        按钮+
-      </button>
+      <button onClick={btnClick}>测试按钮</button>
     </>
   );
 }
 ```
 
-## resy自身特性的规避re-render
+## resy 自身特性的规避re-render
 ```tsx
 import React from "react";
 import { resy, resySyncState } from "resy";
@@ -239,9 +320,9 @@ function App() {
 }
 ```
 
-## withResyStore规避的re-render
+## withResyStore 更完善的规避re-render
 ```tsx
-// store单独文件（引用路径设定为xxx）
+// store 单独文件（引用路径设定为xxx）
 import { resy, resySyncState } from "resy";
 
 export type StoreType = {
@@ -271,10 +352,9 @@ export default store;
 ```tsx
 // withResyStore对class组件的支持
 
-// ClassCom类组件的单独文件（引用路径设定为yyy）
+// ClassCom 类组件的单独文件（引用路径设定为yyy）
 import React from "react";
 import { withResyStore, WithResyStateToProps } from "resy";
-// "xxx"：某个引用路径
 import store, { StoreType } from "xxx";
 
 class ClassCom extends React.PureComponent<WithResyStateToProps<StoreType>> {
@@ -306,7 +386,6 @@ export default withResyStore(store, ClassCom);
 // HookCom hook组件的单独文件（引用路径设定为zzz）
 import React from "react";
 import { withResyStore, WithResyStateToProps } from "resy";
-// "xxx"：某个引用路径
 import store, { StoreType } from "xxx";
 
 const HookCom = (props: WithResyStateToProps<StoreType>) => {
@@ -368,6 +447,14 @@ function App() {
   /**
    * 总结：相较于resy自身特性的re-render
    * withResyStore处理规避的re-render更加完善
+   * 
+   * 完善的点在于：
+   * 首先明确的一点是，
+   * withResyStore本就具备resy本身的规避re-render的特性
+   * 其次完善的核心点在于，即使父组件更新了
+   * 只要withResyStore包裹的组件本身
+   * 没有使用到父组件中更新缘由的属性数据
+   * 那么withResyStore包裹的组件就不会re-render
    */
   return (
     <>
@@ -376,16 +463,31 @@ function App() {
       <div onClick={hookComTestStateClick}>{hookComTestState}</div>
       <Text/>
       <Count/>
-      <ClassCom/>
-      <HookCom/>
       <button onClick={countAddFun}>按钮+</button>
       <button onClick={() => {
         const { count } = resySyncState(store);
         store.count = count - 1;
       }}>按钮-</button>
+      <br/>
+      <ClassCom/>
+      <HookCom/>
     </>
   );
 }
+
+/**
+ * withResyStore 的创建初衷：
+ * resy本身是为hook而生的，但是还是需要对class组件进行支持
+ * 毕竟class组件与hook组件不是非此即彼，class组件的存在还是很有必要的
+ * class组件依然具有很好的性能与代码健壮读写能力(其实就性能而言class是高于hook)
+ * hook可以认为是react如虎添翼/锦上添花，但是不能把class组件作为虎腿而卸掉
+ * 至少目前来看二者两分天下才是对代码更友好健康的方式
+ * 同时resy本身具备的规避re-render的特性一定程度上优化了渲染
+ * 但是还不够完善，即父组件的更新依然会导致子组件无脑re-render
+ * withResyStore就是为了解决这种问题，同时降低了开发者的心智负担
+ * 相较于开发者额外确定class类组件的SCU或者Hook组件的useMemo
+ * 所需要控制选择的属性数据字段这种心智负担而言，withResyStore可就太轻松了
+ */
 ```
 
 ## License

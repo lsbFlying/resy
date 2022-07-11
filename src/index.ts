@@ -88,7 +88,6 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       },
       getString: () => stateTemp[key],
       setString: (val) => {
-        
         /**
          * 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
          * 那么也会即使更新stateTemp来保持内部state数据的最新情况，所以这里把函数类型放开

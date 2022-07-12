@@ -53,7 +53,7 @@ export function withResyStore<S extends ResyType>(store: S, Comp: React.Componen
      * 扩展运算符...会读取所有的属性数据，导致内部关联使用数据属性失去准确性
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
-    const [state, setState] = useState(proxyDStoreHandle(dStore, dStoreSet));
+    const [state, setState] = useState<S>(proxyDStoreHandle(dStore, dStoreSet));
     
     useEffect(() => {
       // 刚好巧妙的与resy的订阅监听resyListener结合起来，形成一个reactive更新的包裹容器

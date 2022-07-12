@@ -76,14 +76,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         storeChanges.add(storeChange);
         return () => {
           storeChanges.delete(storeChange);
-          if (unmountClear) {
-            unmountClear = false;
-            const timeId = setTimeout(() => {
-              unmountClear = true;
-              stateTemp = Object.assign({}, state);
-              clearTimeout(timeId);
-            }, 0);
-          }
+          if (unmountClear) stateTemp[key] = state[key];
         };
       },
       getString: () => stateTemp[key],

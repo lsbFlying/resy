@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ResyType, State } from "./model";
 import { getResySyncStateKey } from "./static";
-import { resyListener } from "./utils";
+import {resyListener, resySyncState} from "./utils";
 
 export interface WithResyStateToProps<T extends ResyType> extends State {
   // 将resy生成的store容器数据挂载到组件的props的state属性上
@@ -56,10 +56,10 @@ export function withResyStore<S extends ResyType>(store: S, Comp: React.Componen
     const [state, setState] = useState<S>(proxyDStoreHandle(dStore, dStoreSet));
     
     useEffect(() => {
+      // Comp组件内部使用到的数据属性字段数组
+      const innerLinkUseFields = Array.from(dStoreSet);
       // 刚好巧妙的与resy的订阅监听resyListener结合起来，形成一个reactive更新的包裹容器
-      return resyListener((effectState, _, nextState) => {
-        // Comp组件内部使用到的数据属性字段数组
-        const innerLinkUseFields = Array.from(dStoreSet);
+      const cancelListener = resyListener((effectState, _, nextState) => {
         const effectStateFields = Object.keys(effectState);
         
         if (innerLinkUseFields.some(key => effectStateFields.includes(key as string))) {
@@ -68,6 +68,13 @@ export function withResyStore<S extends ResyType>(store: S, Comp: React.Componen
           setState(proxyDStoreHandle(nextState, dStoreSet));
         }
       }, store);
+      return () => {
+        const stateTemp = resySyncState(store);
+        Object.keys(innerLinkUseFields).forEach((key: keyof S) => {
+          // stateTemp[key];
+        });
+        cancelListener();
+      };
     }, []);
     
     return isFuncComp

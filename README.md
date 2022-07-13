@@ -34,11 +34,12 @@ import { resy } from "resy";
 /**
  * 关于resy这个核心API的介绍：
  * 
- * @description A、resy这个核心API使用时，
+ * @description 
+ * A、resy这个核心API使用时，
  * 初始化状态编写的时候最好加上一个自定义的准确的范型类型，
  * 虽然resy会有类型自动推断，但是对于数据状态类型可能变化的情况下还是不够准确的
  *
- * @description B、 resy有第二个参数：unmountClear
+ * B、resy有第二个参数：unmountClear
  * unmountClear参数主要是为了在某模块卸载的时候自动清除初始化数据，
  * 恢复数据为初始化传入的state数据
  * 之所以会有unmountClear这样的参数设计是因为resy为了极简的使用便利性，

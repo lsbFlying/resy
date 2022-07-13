@@ -43,7 +43,10 @@ export function resyUpdate<T extends ResyType>(
   state: Partial<T> | T | Callback = {},
   callback?: (dStore: T) => void,
 ) {
-  const prevState = Object.assign({}, (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).state);
+  const prevState = Object.assign(
+    {},
+    (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).getState(),
+  );
   try {
     scheduler.on();
     if (typeof state === "function") {
@@ -58,7 +61,10 @@ export function resyUpdate<T extends ResyType>(
   } finally {
     scheduler.off();
   }
-  const nextState = Object.assign({}, (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).state);
+  const nextState = Object.assign(
+    {},
+    (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).getState(),
+  );
   
   const effectState = {} as EffectState<T>;
   Object.keys(nextState).forEach((key: keyof T) => {
@@ -67,7 +73,11 @@ export function resyUpdate<T extends ResyType>(
     }
   });
   // 批量触发变动
-  (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).dispatchStoreEffect(effectState, prevState, nextState);
+  (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).dispatchStoreEffect(
+    effectState,
+    prevState,
+    nextState,
+  );
   
   callback?.(nextState);
 }
@@ -77,7 +87,7 @@ export function resyUpdate<T extends ResyType>(
  * @description 获取同步最新数据
  */
 export function resySyncState<T extends ResyType>(store: T): T {
-  return (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).state as T;
+  return (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).getState() as T;
 }
 
 /**

@@ -47,7 +47,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   
   // 每一个store具有的监听订阅对象
   const storeListenerState: StoreListenerState<T> = {
-    state: stateTemp,
+    getState: () => stateTemp,
     resetState: () => {
       if (unmountClear) stateTemp = Object.assign({}, state);
     },

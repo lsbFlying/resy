@@ -42,11 +42,12 @@ function proxyDStoreHandle<S extends ResyType>(dStore: S, dStoreSet: Set<keyof S
 export function withResyStore<S extends ResyType>(store: S, Comp: React.ComponentType<WithResyStateToProps<S> | any>) {
   const isFuncComp = !(Comp.prototype && Comp.prototype.isReactComponent);
   
-  const dStore = (store[storeListenerStateKey as keyof S] as StoreListenerState<S>).state as S;
   // dStore代理的Set
   const dStoreSet: Set<keyof S> = new Set();
   
   return () => {
+    // 需要使用getState获取store内部的即时最新数据值
+    const dStore = (store[storeListenerStateKey as keyof S] as StoreListenerState<S>).getState() as S;
     /**
      * 给dStore做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
      * 恰巧由于这里的proxy代理，导致在挂载属性数据的时候不能使用扩展运算符，
@@ -61,7 +62,6 @@ export function withResyStore<S extends ResyType>(store: S, Comp: React.Componen
       // 刚好巧妙的与resy的订阅监听resyListener结合起来，形成一个reactive更新的包裹容器
       const cancelListener = resyListener((effectState, _, nextState) => {
         const effectStateFields = Object.keys(effectState);
-        
         if (innerLinkUseFields.some(key => effectStateFields.includes(key as string))) {
           dStoreSet.clear();
           // 保持代理数据的更新从而保持innerLinkUseFields的最新化
@@ -75,6 +75,7 @@ export function withResyStore<S extends ResyType>(store: S, Comp: React.Componen
          */
         (store[storeListenerStateKey as keyof S] as StoreListenerState<S>).resetState();
         cancelListener();
+        dStoreSet.clear();
       };
     }, []);
     

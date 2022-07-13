@@ -3,7 +3,7 @@ import { ResyType, State, StoreListenerState } from "./model";
 import { storeListenerStateKey } from "./static";
 import { resyListener } from "./utils";
 
-export interface WithResyStateToProps<T extends ResyType> extends State {
+export interface ResyStateToProps<T extends ResyType> extends State {
   // 将resy生成的store容器数据挂载到组件的props的state属性上
   state: T;
 }
@@ -36,10 +36,10 @@ function proxyDStoreHandle<S extends ResyType>(dStore: S, dStoreSet: Set<keyof S
  * C：withResyStore连接了resy生成的store数据，使得Comp组件可以共享store
  * 同时完善了Comp组件自动避免rerender，并且特殊的是
  * 它比resy本身自带的规避rerender的效果更完善
- * 即如果withResyStore包裹的Comp组件即使在其父组件更新渲染了
+ * 即如果resyView包裹的Comp组件即使在其父组件更新渲染了
  * 只要内部使用的数据没有更新，那么它本身不会渲染re-render
  */
-export function withResyStore<S extends ResyType>(store: S, Comp: React.ComponentType<WithResyStateToProps<S> | any>) {
+export function resyView<S extends ResyType>(store: S, Comp: React.ComponentType<ResyStateToProps<S> | any>) {
   const isFuncComp = !(Comp.prototype && Comp.prototype.isReactComponent);
   
   // dStore代理的Set

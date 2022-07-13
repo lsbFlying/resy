@@ -24,7 +24,7 @@ resy需要react版本 v >= 16.8；resy有五个API，分别是：
 - resyUpdate：用于更新或者批量更新状态数据
 - resySyncState：在异步操作更新数据之后需要同步获取最新数据的方法
 - resyListener：用于订阅监听resy生成的store数据的变化
-- withResyStore：用于组件获取resy生成的状态数据
+- resyView：帮助组件具备 "更完善的规避re-render的方式" 的能力
 
 ## resy 生成全局共享数据
 ```tsx
@@ -320,7 +320,7 @@ function App() {
 }
 ```
 
-## withResyStore 更完善的规避re-render
+## resyView 更完善的规避re-render
 ```tsx
 // store 单独文件（引用路径设定为xxx）
 import { resy, resySyncState } from "resy";
@@ -350,25 +350,25 @@ export default store;
 ```
 
 ```tsx
-// withResyStore对class组件的支持
+// resyView对class组件的支持
 
 // ClassCom 类组件的单独文件（引用路径设定为yyy）
 import React from "react";
-import { withResyStore, WithResyStateToProps } from "resy";
+import { resyView, ResyStateToProps } from "resy";
 import store, { StoreType } from "xxx";
 
-class ClassCom extends React.PureComponent<WithResyStateToProps<StoreType>> {
+class ClassCom extends React.PureComponent<ResyStateToProps<StoreType>> {
   /**
    * 首先，store中的count与text、hookComTestState数据属性
    * 无法影响ClassCom的rerender
    * 其次父组件App的appTestState变化也无法影响ClassCom的rerender
    * 只有ClassCom本身引用的classComTestState数据才会影响自身的渲染
    *
-   * 也就是说withResyStore形成的规避rerender的效果
+   * 也就是说resyView形成的规避re-render的效果
    * 比resy本身自带的规避rerender的效果更完善
    */
   render() {
-    // withResyStore会将store数据挂载到props上新增的state属性上
+    // resyView会将store数据挂载到props上新增的state属性上
     const { classComTestState } = this.props.state;
     console.log(classComTestState);
     return (
@@ -377,19 +377,19 @@ class ClassCom extends React.PureComponent<WithResyStateToProps<StoreType>> {
   }
 }
 
-export default withResyStore(store, ClassCom);
+export default resyView(store, ClassCom);
 ```
 
 ```tsx
-// withResyStore对hook组件的支持
+// resyView对hook组件的支持
 
 // HookCom hook组件的单独文件（引用路径设定为zzz）
 import React from "react";
-import { withResyStore, WithResyStateToProps } from "resy";
+import { resyView, ResyStateToProps } from "resy";
 import store, { StoreType } from "xxx";
 
-const HookCom = (props: WithResyStateToProps<StoreType>) => {
-  // withResyStore会将store数据挂载到props上新增的state属性上
+const HookCom = (props: ResyStateToProps<StoreType>) => {
+  // resyView会将store数据挂载到props上新增的state属性上
   const { hookComTestState } = props.state;
   /**
    * 首先，store中的count与text、classComTestState数据属性
@@ -397,7 +397,7 @@ const HookCom = (props: WithResyStateToProps<StoreType>) => {
    * 其次父组件App的appTestState变化也无法影响HookCom的rerender
    * 只有HookCom本身引用的hookComTestState数据才会影响自身的渲染
    *
-   * 也就是说withResyStore形成的规避rerender的效果
+   * 也就是说resyView形成的规避rerender的效果
    * 比resy本身自带的规避rerender的效果更完善
    */
   console.log(hookComTestState);
@@ -406,7 +406,7 @@ const HookCom = (props: WithResyStateToProps<StoreType>) => {
   );
 }
 
-export default withResyStore(store, HookCom);
+export default resyView(store, HookCom);
 ```
 
 ```tsx
@@ -446,15 +446,15 @@ function App() {
   
   /**
    * 总结：相较于resy自身特性的re-render
-   * withResyStore处理规避的re-render更加完善
+   * resyView处理规避的re-render更加完善
    * 
    * 完善的点在于：
    * 首先明确的一点是，
-   * withResyStore本就具备resy本身的规避re-render的特性
+   * resyView本就具备resy本身的规避re-render的特性
    * 其次完善的核心点在于，即使父组件更新了
-   * 只要withResyStore包裹的组件本身
+   * 只要resyView包裹的组件本身
    * 没有使用到父组件中更新缘由的属性数据
-   * 那么withResyStore包裹的组件就不会re-render
+   * 那么resyView包裹的组件就不会re-render
    */
   return (
     <>
@@ -476,7 +476,7 @@ function App() {
 }
 
 /**
- * withResyStore 的创建初衷：
+ * resyView 的创建初衷：
  * resy本身是为hook而生的，但是还是需要对class组件进行支持
  * 毕竟class组件与hook组件不是非此即彼，class组件的存在还是很有必要的
  * class组件依然具有很好的性能与代码健壮读写能力(其实就性能而言class是高于hook)
@@ -484,9 +484,9 @@ function App() {
  * 至少目前来看二者两分天下才是对代码更友好健康的方式
  * 同时resy本身具备的规避re-render的特性一定程度上优化了渲染
  * 但是还不够完善，即父组件的更新依然会导致子组件无脑re-render
- * withResyStore就是为了解决这种问题，同时降低了开发者的心智负担
+ * resyView就是为了解决这种问题，同时降低了开发者的心智负担
  * 相较于开发者额外确定class类组件的SCU或者Hook组件的useMemo
- * 所需要控制选择的属性数据字段这种心智负担而言，withResyStore可就太轻松了
+ * 所需要控制选择的属性数据字段这种心智负担而言，resyView可就太轻松了
  */
 ```
 

@@ -13,8 +13,5 @@ export function batchUpdateShimRun(fn: Callback) { fn() }
  */
 export const batchUpdate = ReactDOM.unstable_batchedUpdates || batchUpdateShimRun;
 
-// 某一个store的监听订阅对象的唯一标识key值
-export const storeListenerKey = Symbol("resyStoreListenerSymbolKey");
-
-// 获取同步数据的key值
-export const getResySyncStateKey = Symbol("getResySyncStateSymbolKey");
+// 某一个store的监听订阅对象、内部state数据的唯一标识key值
+export const storeListenerStateKey = Symbol("resyStoreListenerSymbolKey");

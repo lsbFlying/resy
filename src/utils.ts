@@ -1,9 +1,9 @@
 import scheduler from "./scheduler";
 import {
   Callback, ResyType, ListenerHandle,
-  CustomEventInterface, StoreListener, EffectState,
+  CustomEventInterface, StoreListenerState, EffectState,
 } from "./model";
-import { batchUpdate, storeListenerKey, getResySyncStateKey } from "./static";
+import { batchUpdate, storeListenerStateKey } from "./static";
 import { EventDispatcher } from "./listener";
 
 /**
@@ -43,7 +43,7 @@ export function resyUpdate<T extends ResyType>(
   state: Partial<T> | T | Callback = {},
   callback?: (dStore: T) => void,
 ) {
-  const prevState = Object.assign({}, store[getResySyncStateKey as keyof T]);
+  const prevState = Object.assign({}, (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).state);
   try {
     scheduler.on();
     if (typeof state === "function") {
@@ -58,7 +58,7 @@ export function resyUpdate<T extends ResyType>(
   } finally {
     scheduler.off();
   }
-  const nextState = Object.assign({}, store[getResySyncStateKey as keyof T]);
+  const nextState = Object.assign({}, (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).state);
   
   const effectState = {} as EffectState<T>;
   Object.keys(nextState).forEach((key: keyof T) => {
@@ -67,7 +67,7 @@ export function resyUpdate<T extends ResyType>(
     }
   });
   // 批量触发变动
-  (store[storeListenerKey as keyof T] as StoreListener).dispatchStoreEffect(effectState, prevState, nextState);
+  (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).dispatchStoreEffect(effectState, prevState, nextState);
   
   callback?.(nextState);
 }
@@ -77,7 +77,7 @@ export function resyUpdate<T extends ResyType>(
  * @description 获取同步最新数据
  */
 export function resySyncState<T extends ResyType>(store: T): T {
-  return store[getResySyncStateKey as keyof T] as T;
+  return (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).state as T;
 }
 
 /**
@@ -105,9 +105,9 @@ export function resyListener<T extends ResyType>(
   listenerKey?: keyof T,
 ): Callback {
   const resyListenerHandle = (): Callback => {
-    const resyListenerEventType = (store[storeListenerKey as keyof T] as StoreListener).listenerEventType;
+    const resyListenerEventType = (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).listenerEventType;
     
-    const dispatchStoreEffectSetTemp = (store[storeListenerKey as keyof T] as StoreListener).dispatchStoreEffectSet;
+    const dispatchStoreEffectSetTemp = (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).dispatchStoreEffectSet;
     
     const listenerOrigin = (effectState: EffectState<T>, prevState: T, nextState: T) => {
       let includesFlag = true;

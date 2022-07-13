@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ResyType, State } from "./model";
-import { getResySyncStateKey } from "./static";
-import {resyListener, resySyncState} from "./utils";
+import { ResyType, State, StoreListenerState } from "./model";
+import { storeListenerStateKey } from "./static";
+import { resyListener } from "./utils";
 
 export interface WithResyStateToProps<T extends ResyType> extends State {
   // 将resy生成的store容器数据挂载到组件的props的state属性上
@@ -42,7 +42,7 @@ function proxyDStoreHandle<S extends ResyType>(dStore: S, dStoreSet: Set<keyof S
 export function withResyStore<S extends ResyType>(store: S, Comp: React.ComponentType<WithResyStateToProps<S> | any>) {
   const isFuncComp = !(Comp.prototype && Comp.prototype.isReactComponent);
   
-  const dStore = store[getResySyncStateKey as keyof S] as S;
+  const dStore = (store[storeListenerStateKey as keyof S] as StoreListenerState<S>).state as S;
   // dStore代理的Set
   const dStoreSet: Set<keyof S> = new Set();
   
@@ -69,10 +69,11 @@ export function withResyStore<S extends ResyType>(store: S, Comp: React.Componen
         }
       }, store);
       return () => {
-        const stateTemp = resySyncState(store);
-        Object.keys(innerLinkUseFields).forEach((key: keyof S) => {
-          // stateTemp[key];
-        });
+        /**
+         * wirthResyStore会使得组件销毁时不执行subscribe，因为它本身是订阅监听执行的，不属于组件的生命周期发生
+         * 所以这里需要特定的数据恢复，同时resetState内部注意关联到unmountClear的逻辑处理
+         */
+        (store[storeListenerStateKey as keyof S] as StoreListenerState<S>).resetState();
         cancelListener();
       };
     }, []);

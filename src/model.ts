@@ -45,9 +45,16 @@ export interface CustomEventInterface<T extends ResyType> {
   removeEventListener(type: string | symbol): void,
 }
 
-// 每一个store的监听订阅对象
-export type StoreListener = {
+// 每一个store的监听订阅对象、内部stateTemp数据以及重置初始化数据的方法
+export type StoreListenerState<T extends State> = {
+  // store内部的state数据对象
+  state: T,
+  // 重置(恢复)初始化数据（供withResyStore使用）
+  resetState: Callback;
+  // 订阅监听的事件类型
   listenerEventType: string | symbol;
+  // 触发订阅监听的影响Set容器
   dispatchStoreEffectSet: Set<CustomEventInterface<any>>;
-  dispatchStoreEffect: <T extends State>(effectState: EffectState<T>, prevState: T, nextState: T) => void,
+  // 触发订阅监听的变动影响
+  dispatchStoreEffect: (effectState: EffectState<T>, prevState: T, nextState: T) => void,
 };

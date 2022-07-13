@@ -8,8 +8,8 @@
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
-import { getResySyncStateKey, storeListenerKey } from "./static";
-import { Callback, State, Store, EffectState, CustomEventInterface } from "./model";
+import { storeListenerStateKey } from "./static";
+import { Callback, State, Store, EffectState, CustomEventInterface, StoreListenerState } from "./model";
 
 /**
  * 从use-sync-external-store包的导入方式到下面的引用方式
@@ -36,14 +36,26 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * 所以unmountClear默认设置为true，符合常规使用即可，除非遇到像上述登录信息数据那样的全局数据而言才会设置为false
  */
 export function resy<T extends State>(state: T, unmountClear: boolean = true): T {
+  /**
+   * 为了保证不改变传入的state参数，使用一个状态数据桥，
+   * Object.assign或者{...}扩展符都会对于第二级别的数据结构进行引用共用，但是这里不受影响
+   * 因为resy本身只做了数据的一级代理，二级数据的更新需要新的对象直接赋值
+   * 所以这里巧妙的避免的数据桥的非一级数据引用公用的问题
+   * 同时也达到了数据"克隆"的效果，包括后面订阅监听里面的prevState与nextState也是如此
+   */
+  let stateTemp: T = Object.assign({}, state);
   
   // 每一个store具有的监听订阅对象
-  const storeListener = {
+  const storeListenerState: StoreListenerState<T> = {
+    state: stateTemp,
+    resetState: () => {
+      if (unmountClear) stateTemp = Object.assign({}, state);
+    },
     listenerEventType: Symbol("storeListenerSymbol"),
     dispatchStoreEffectSet: new Set<CustomEventInterface<any>>(),
-    dispatchStoreEffect: <T extends State>(effectData: EffectState<T>, prevState: T, nextState: T) => {
-      storeListener.dispatchStoreEffectSet.forEach(item => item.dispatchEvent(
-        storeListener.listenerEventType,
+    dispatchStoreEffect: (effectData: EffectState<T>, prevState: T, nextState: T) => {
+      storeListenerState.dispatchStoreEffectSet.forEach(item => item.dispatchEvent(
+        storeListenerState.listenerEventType,
         effectData,
         prevState,
         nextState,
@@ -53,15 +65,6 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   
   // 数据存储容器store
   const store: Store<T> = {} as Store<T>;
-  
-  /**
-   * 为了保证不改变传入的state参数，使用一个状态数据桥，
-   * Object.assign或者{...}扩展符都会对于第二级别的数据结构进行引用共用，但是这里不受影响
-   * 因为resy本身只做了数据的一级代理，二级数据的更新需要新的对象直接赋值
-   * 所以这里巧妙的避免的数据桥的非一级数据引用公用的问题
-   * 同时也达到了数据"克隆"的效果，包括后面订阅监听里面的prevState与nextState也是如此
-   */
-  let stateTemp: T = Object.assign({}, state);
   
   // 生成store元素Item
   function genStoreItem(key: keyof T) {
@@ -94,7 +97,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
           const nextState = Object.assign({}, stateTemp);
           const effectState = { [key]: val } as EffectState<T>;
           // 单一属性触发数据变动
-          storeListener.dispatchStoreEffect<T>(effectState, prevState, nextState);
+          storeListenerState.dispatchStoreEffect(effectState, prevState, nextState);
         }
       },
       // 去react官方找一下useSyncExternalStore的源码并看懂它，这一段就可以理解resy实现细粒度更新的巧妙
@@ -117,8 +120,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   
   return new Proxy(state, {
     get: (_, key: keyof T) => {
-      if (key === storeListenerKey) return storeListener;
-      if (key === getResySyncStateKey) return stateTemp;
+      if (key === storeListenerStateKey) return storeListenerState;
       try {
         return resolveInitialValueLinkStore(key).useString();
       } catch (e) {

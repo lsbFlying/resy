@@ -3,9 +3,10 @@
 
 **Re**act **st**ate **ea**sy
 
-<h1>一款简单的react状态管理器</h1>
+<h3>一款简单的react状态管理器</h3>
 
 [![GitHub license](https://img.shields.io/github/license/lsbFlying/resy?style=flat-square)](https://github.com/lsbFlying/resy/blob/master/LICENSE)
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/lsbFlying/resy/CI?color=red&style=flat-square)](https://github.com/lsbFlying/resy/actions?query=workflow%3ATest)
 [![npm type definitions](https://img.shields.io/npm/types/typescript?color=orange&style=flat-square)](https://github.com/lsbFlying/resy/blob/master/src/index.ts)
 [![npm](https://img.shields.io/npm/v/resy?color=blue&style=flat-square)](https://www.npmjs.com/package/resy)
 [![npm bundle size](https://img.shields.io/bundlephobia/minzip/resy?color=brightgreen&style=flat-square)](https://bundlephobia.com/result?p=resy)
@@ -13,17 +14,17 @@
 
 ---
 
-## 特点
+### 特点
 - 支持hook组件与class组件
 - 细粒度更新，更完善的规避re-render
 - 易掌握，学习成本几乎为0
 
-## 安装
+### 安装
 ```sh
 npm i resy
 ```
 
-## 概览
+### 概览
 resy需要react版本 v >= 16.8；resy有五个API，分别是：
 - resy：用于生成一个全局状态数据的存储容器
 - resyUpdate：用于更新或者批量更新状态数据
@@ -31,7 +32,7 @@ resy需要react版本 v >= 16.8；resy有五个API，分别是：
 - resyListener：用于订阅监听resy生成的store数据的变化
 - resyView：帮助组件具备 "更完善的规避re-render的方式" 的能力
 
-## resy 生成全局共享数据
+### resy 生成全局共享数据
 ```tsx
 import React from "react";
 import { resy } from "resy";
@@ -105,7 +106,7 @@ function App() {
 }
 ```
 
-## 赋值更新
+### 赋值更新
 ```tsx
 function App() {
   const {
@@ -167,7 +168,7 @@ function App() {
 }
 ```
 
-## resyUpdate 批量更新
+### resyUpdate 批量更新
 ```tsx
 import { resyUpdate } from "resy";
 
@@ -206,7 +207,7 @@ function App() {
 }
 ```
 
-## resySyncState 获取同步最新数据
+### resySyncState 获取同步最新数据
 ```tsx
 import { resySyncState } from "resy";
 
@@ -232,7 +233,7 @@ function App() {
 }
 ```
 
-## resyListener 订阅监听
+### resyListener 订阅监听
 ```tsx
 import React, { useEffect } from "react";
 import { resyListener } from "resy";
@@ -277,7 +278,7 @@ function App() {
 }
 ```
 
-## resy 自身特性的规避re-render
+### resy 自身特性的规避re-render
 ```tsx
 import React from "react";
 import { resy, resySyncState } from "resy";
@@ -326,7 +327,7 @@ function App() {
 }
 ```
 
-## resyView 更完善的规避re-render
+### resyView 更完善的规避re-render
 ```tsx
 // store 单独文件（引用路径设定为xxx）
 import { resy, resySyncState } from "resy";
@@ -496,6 +497,6 @@ function App() {
  */
 ```
 
-## License
+### License
 [MIT License](https://github.com/lsbFlying/resy/blob/master/LICENSE) (c) [刘善保](https://github.com/lsbFlying)
 

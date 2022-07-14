@@ -125,14 +125,14 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         return resolveInitialValueLinkStore(key).useString();
       } catch (e) {
         console.error(
-          "If possible, try not to deconstruct and read data" +
-          " at the non top level of the function component!" +
-          " It may also be that you use the self increment" +
-          " '++' or self decrement '--' operator to cause an error," +
-          " However, no matter which station of the current two methods causes errors," +
-          " it will not affect the rendering of the page and the execution of code logic," +
-          " but it is still not recommended!" +
-          " The current error attribute key is [" + (key as string) + "]"
+          "If possible, try not to deconstruct and read data " +
+          "at the non top level of the function component! " +
+          "It may also be that you use the self increment " +
+          "'++' or self decrement '--' operator to cause an error, " +
+          "However, no matter which station of the current two methods causes errors, " +
+          "it will not affect the rendering of the page and the execution of code logic, " +
+          "but it is still not recommended! " +
+          "The current error attribute key is [" + (key as string) + "]"
         );
         return stateTemp[key];
       }

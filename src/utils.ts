@@ -43,6 +43,7 @@ export function resyUpdate<T extends ResyType>(
   state: Partial<T> | T | Callback = {},
   callback?: (dStore: T) => void,
 ) {
+  // 必须在更新之前执行，获取更新之前的数据
   const prevState = Object.assign(
     {},
     (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).getState(),
@@ -60,26 +61,27 @@ export function resyUpdate<T extends ResyType>(
     }
   } finally {
     scheduler.off();
+    
+    const nextState = Object.assign(
+      {},
+      (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).getState(),
+    );
+  
+    const effectState = {} as EffectState<T>;
+    Object.keys(nextState).forEach((key: keyof T) => {
+      if (!Object.is(nextState[key], prevState[key])) {
+        effectState[key] = nextState[key];
+      }
+    });
+    // 批量触发变动
+    (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).dispatchStoreEffect(
+      effectState,
+      prevState,
+      nextState,
+    );
+  
+    callback?.(nextState);
   }
-  const nextState = Object.assign(
-    {},
-    (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).getState(),
-  );
-  
-  const effectState = {} as EffectState<T>;
-  Object.keys(nextState).forEach((key: keyof T) => {
-    if (!Object.is(nextState[key], prevState[key])) {
-      effectState[key] = nextState[key];
-    }
-  });
-  // 批量触发变动
-  (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).dispatchStoreEffect(
-    effectState,
-    prevState,
-    nextState,
-  );
-  
-  callback?.(nextState);
 }
 
 /**

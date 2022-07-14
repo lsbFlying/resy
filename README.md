@@ -10,25 +10,29 @@
 [![npm type definitions](https://img.shields.io/npm/types/typescript?color=orange&style=flat-square)](https://github.com/lsbFlying/resy/blob/master/src/index.ts)
 [![npm](https://img.shields.io/npm/v/resy?color=blue&style=flat-square)](https://www.npmjs.com/package/resy)
 [![npm bundle size](https://img.shields.io/bundlephobia/minzip/resy?color=brightgreen&style=flat-square)](https://bundlephobia.com/result?p=resy)
+
+简体中文 · [English](./README-EN.md)
 </div>
 
 ---
 
 ### 特点
-- 支持hook组件与class组件
-- 细粒度更新，更完善的规避re-render
-- 易掌握，学习成本几乎为0
+- 支持hook组件与class组件 🪩
+- 细粒度更新，更完善的规避re-render 🪩
+- 易掌握，学习成本几乎为0 🪩
 
 ### 安装
 ```sh
 npm i resy
+
+# yarn add resy
 ```
 
 ### 概览
 resy需要react版本 v >= 16.8；resy有五个API，分别是：
 - resy：用于生成一个全局状态数据的存储容器
 - resyUpdate：用于更新或者批量更新状态数据
-- resySyncState：在异步操作更新数据之后需要同步获取最新数据的方法
+- resySyncState：在异步更新数据之后需要同步获取最新数据的方法
 - resyListener：用于订阅监听resy生成的store数据的变化
 - resyView：帮助组件具备 "更完善的规避re-render的方式" 的能力
 
@@ -46,13 +50,13 @@ import { resy } from "resy";
  * 虽然resy会有类型自动推断，但是对于数据状态类型可能变化的情况下还是不够准确的
  *
  * B、resy有第二个参数：unmountClear
- * unmountClear参数主要是为了在某模块卸载的时候自动清除初始化数据，
+ * unmountClear参数主要是为了在某模块卸载的时候自动清除数据，
  * 恢复数据为初始化传入的state数据
  * 之所以会有unmountClear这样的参数设计是因为resy为了极简的使用便利性，
  * 一般是放在某个文件中进行调用返回一个store
  * 但是之后再进入该模块之后都是走的Node.js的import的缓存了，
- * 即没有再次执行resy方法了导致数据状态始终保持
- * 也就是在 "静态模板" 的实现方式下，函数是不会再次运行的
+ * 即没有再次执行resy这个核心api方法了，导致数据状态始终保持
+ * 也就是在 "静态模板" 的实现方式下，resy这个核心api是不会再次运行的
  * 但这不是一个坏事儿，因为本身store作为一个全局范围内可控可引用的状态存储器而言，
  * 具备这样的能力是有益的
  * 比如登录后的用户信息数据作为一个全局模块都可公用分享的数据而言就很好的体现了这一点
@@ -69,7 +73,7 @@ type ResyStore = {
   testArr: { age: number }[];
   testFun: () => void;
 };
-// 生成的这个store可以全局共享
+// 生成的这个store可以全局共享，直接引入store即可
 const store = resy<ResyStore>(
   {
     count: 0,
@@ -84,11 +88,12 @@ const store = resy<ResyStore>(
 
 function App() {
   /**
-   * 注意：resy生成的store的数据读取（解构）需要在组件顶层解构
-   * 它本质上依然是useState的调用，而对于想要读取（解构）store
-   * 的数据进行相关逻辑处理或者使用等，可以使用"resySyncState"
-   * 该api可以获取最新的安全的数据供开发使用，后续详细介绍
-   * store本身数据的读取或解构是用于驱动组件更新
+   * 注意：resy生成的store的数据读取（解构）需要先在组件顶层解构
+   * 因为它本质上依然是useState的调用，所以它在组件顶层解构是为了驱动组件渲染更新
+   * 而对于想要读取（解构）store的数据进行相关逻辑处理或者使用等，
+   * 可以使用"resySyncState"—该api可以获取最新的安全的数据供开发使用，后续详细介绍
+   * 与此同时也说明resy生成的store无法用于class组件，
+   * 但是可以通过resyView来对class组件进行支持
    */
   const {
     count, text, testObj: { name }, testArr, testFun,
@@ -106,7 +111,7 @@ function App() {
 }
 ```
 
-### 赋值更新
+### 直接更新
 ```tsx
 function App() {
   const {
@@ -186,7 +191,7 @@ function App() {
       text: "456asd",
     }, (dStore) => {
       // dStore：即deconstructedStore，已解构的数据，可安全使用
-      // 可以理解dStore即为this.setState中的回调中的this.state
+      // 可以理解dStore即为"this.setState"的回调函数中的this.state
       // 同时这一点也弥补了：
       // hook组件中setState后只能通过useEffect来获取最新数据的方式
       console.log(dStore);
@@ -202,7 +207,7 @@ function App() {
   }
   
   return (
-    <button onClick={btnClick}>resyUpdate更新按钮</button>
+    <button onClick={btnClick}>按钮</button>
   );
 }
 ```
@@ -228,7 +233,7 @@ function App() {
   }
   
   return (
-    <button onClick={btnClick}>测试按钮</button>
+    <button onClick={btnClick}>按钮</button>
   );
 }
 ```
@@ -243,11 +248,11 @@ function App() {
   
   useEffect(() => {
     /**
-     * @param listener 监听订阅的回调函数
-     * @param store 监听订阅具体的某一个store容器的数据状态变化
-     * @param listenerKey 监听的具体的某一个store容器的某一个数据字段的变化
+     * @param listener 订阅监听的回调函数
+     * @param store 订阅监听具体的某一个store容器的数据状态变化
+     * @param listenerKey 订阅监听的具体的某一个store容器的某一个数据字段的变化
      * 如果没有则默认监听store的任何一个数据的变化
-     * @return Callback 返回取消监听的函数
+     * @return Callback 返回取消订阅监听的函数
      */
     const cancelListener = resyListener((
       effectState, prevState, nextState,
@@ -272,7 +277,7 @@ function App() {
   return (
     <>
       <p>{count}</p>
-      <button onClick={btnClick}>测试按钮</button>
+      <button onClick={btnClick}>按钮</button>
     </>
   );
 }
@@ -318,10 +323,14 @@ function App() {
       <Text/>
       <Count/>
       <button onClick={countAddFun}>按钮+</button>
-      <button onClick={() => {
-        const { count } = resySyncState(store);
-        store.count = count - 1;
-      }}>按钮-</button>
+      <button
+        onClick={() => {
+          const { count } = resySyncState(store);
+          store.count = count - 1;
+        }}
+      >
+        按钮-
+      </button>
     </>
   );
 }
@@ -329,7 +338,7 @@ function App() {
 
 ### resyView 更完善的规避re-render
 ```tsx
-// store 单独文件（引用路径设定为xxx）
+// store 单独文件
 import { resy, resySyncState } from "resy";
 
 export type StoreType = {
@@ -359,7 +368,7 @@ export default store;
 ```tsx
 // resyView对class组件的支持
 
-// ClassCom 类组件的单独文件（引用路径设定为yyy）
+// ClassCom 类组件的单独文件
 import React from "react";
 import { resyView, ResyStateToProps } from "resy";
 import store, { StoreType } from "xxx";
@@ -390,7 +399,7 @@ export default resyView(store, ClassCom);
 ```tsx
 // resyView对hook组件的支持
 
-// HookCom hook组件的单独文件（引用路径设定为zzz）
+// HookCom hook组件的单独文件
 import React from "react";
 import { resyView, ResyStateToProps } from "resy";
 import store, { StoreType } from "xxx";
@@ -418,9 +427,6 @@ export default resyView(store, HookCom);
 
 ```tsx
 import React from "react";
-import store from "xxx";
-import ClassCom from "yyy";
-import HookCom from "zzz";
 
 // count数据状态的变化不会引起Text的re-render
 function Text() {
@@ -487,7 +493,7 @@ function App() {
  * resy本身是为hook而生的，但是还是需要对class组件进行支持
  * 毕竟class组件与hook组件不是非此即彼，class组件的存在还是很有必要的
  * class组件依然具有很好的性能与代码健壮读写能力(其实就性能而言class是高于hook)
- * hook可以认为是react如虎添翼/锦上添花，但是不能把class组件作为虎腿而卸掉
+ * hook可以认为是"react"的如虎添翼或者锦上添花，但是不能把class组件作为虎腿而卸掉
  * 至少目前来看二者两分天下才是对代码更友好健康的方式
  * 同时resy本身具备的规避re-render的特性一定程度上优化了渲染
  * 但是还不够完善，即父组件的更新依然会导致子组件无脑re-render

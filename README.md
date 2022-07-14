@@ -7,8 +7,8 @@
 
 [![GitHub license](https://img.shields.io/github/license/lsbFlying/resy?style=flat-square)](https://github.com/lsbFlying/resy/blob/master/LICENSE)
 [![npm type definitions](https://img.shields.io/npm/types/typescript?color=orange&style=flat-square)](https://github.com/lsbFlying/resy/blob/master/src/index.ts)
-[![npm](https://img.shields.io/npm/v/resy?color=blueviolet&style=flat-square)](https://www.npmjs.com/package/resy)
-[![npm bundle size](https://img.shields.io/bundlephobia/minzip/resy?color=yellowgreen&style=flat-square)](https://bundlephobia.com/result?p=resy)
+[![npm](https://img.shields.io/npm/v/resy?color=blue&style=flat-square)](https://www.npmjs.com/package/resy)
+[![npm bundle size](https://img.shields.io/bundlephobia/minzip/resy?color=brightgreen&style=flat-square)](https://bundlephobia.com/result?p=resy)
 </div>
 
 ---

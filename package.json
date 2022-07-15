@@ -23,8 +23,6 @@
     "dist"
   ],
   "scripts": {
-    "test": "vitest run --coverage --environment jsdom",
-    "watch": "rollup -wc --configPlugin @rollup/plugin-typescript",
     "build": "rm -rf dist coverage && rollup -c --configPlugin @rollup/plugin-typescript"
   },
   "dependencies": {

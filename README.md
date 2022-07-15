@@ -338,6 +338,26 @@ function App() {
 
 ### resyView 更完善的规避re-render
 ```tsx
+/**
+ * @description
+ * A、resyView 的创建初衷：
+ * resy本身是为hook而生的，但是还是需要对class组件进行支持
+ * 毕竟class组件与hook组件不是非此即彼，class组件的存在还是很有必要的
+ * class组件依然具有很好的性能与代码健壮读写能力(其实就性能而言class是高于hook)
+ * hook可以认为是"react"的如虎添翼或者锦上添花，但是不能把class组件作为虎腿而卸掉
+ * 至少目前来看二者两分天下才是对代码更友好健康的方式
+ * 同时resy本身具备的规避re-render的特性一定程度上优化了渲染
+ * 但是还不够完善，即父组件的更新依然会导致子组件无脑re-render
+ * resyView就是为了解决这种问题，同时降低了开发者的心智负担
+ * 相较于开发者额外确定class类组件的SCU或者Hook组件的useMemo
+ * 所需要控制选择的属性数据字段这种心智负担而言，resyView可就太轻松了
+ * 
+ * B、另外由于resyView特殊的处理，使得resy生成的数据可以不用在组件顶层先解构来驱动更新使用
+ * 这也弥补了resy的数据使用需要在组件顶层先解构的这样一个"特点"
+ */
+```
+
+```tsx
 // store 单独文件
 import { resy, resySyncState } from "resy";
 
@@ -487,20 +507,6 @@ function App() {
     </>
   );
 }
-
-/**
- * resyView 的创建初衷：
- * resy本身是为hook而生的，但是还是需要对class组件进行支持
- * 毕竟class组件与hook组件不是非此即彼，class组件的存在还是很有必要的
- * class组件依然具有很好的性能与代码健壮读写能力(其实就性能而言class是高于hook)
- * hook可以认为是"react"的如虎添翼或者锦上添花，但是不能把class组件作为虎腿而卸掉
- * 至少目前来看二者两分天下才是对代码更友好健康的方式
- * 同时resy本身具备的规避re-render的特性一定程度上优化了渲染
- * 但是还不够完善，即父组件的更新依然会导致子组件无脑re-render
- * resyView就是为了解决这种问题，同时降低了开发者的心智负担
- * 相较于开发者额外确定class类组件的SCU或者Hook组件的useMemo
- * 所需要控制选择的属性数据字段这种心智负担而言，resyView可就太轻松了
- */
 ```
 
 ### License

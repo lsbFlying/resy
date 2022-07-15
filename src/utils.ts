@@ -15,9 +15,9 @@ import { EventDispatcher } from "./listener";
  * 而直接使用store.xxx = x;单次更新的方式，因为v18及以上是自动处理批更新
  * 那么就会导致resyListener的监听有问题，会重复本该批量的key值监听触发
  *
- * 所以这里为了解决这个问题，采用的方式就是resy不建议在v18及以上的react版本中
- * 来直接使用store.xxx = x;单次更新的方式依靠react本身自动化批处理更新😎
- * 除非用户看源码并且读到这里的注释😊，todo 该问题暂时待解决啦...
+ * 所以这里暂且不建议在v18及以上的react版本中依靠react本身自动化批处理更新
+ * 除非用户看源码并且读到这里的注释😎
+ * todo 该问题暂时待解决啦，比较难，可能需要了解到react相关调度...😊
  *
  * @example A
  * resyUpdate(store, {

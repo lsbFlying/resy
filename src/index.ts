@@ -120,6 +120,8 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   
   return new Proxy(state, {
     get: (_, key: keyof T) => {
+      // todo 很奇怪有些情况下react会对proxy代理对象进行一个属性为"$$typeof"的调用访问
+      if (key === "$$typeof") return;
       if (key === storeListenerStateKey) return storeListenerState;
       try {
         return resolveInitialValueLinkStore(key).useString();

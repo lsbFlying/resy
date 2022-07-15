@@ -2,16 +2,6 @@
   "name": "resy",
   "version": "1.8.0",
   "description": "React State Easy",
-  "license": "MIT",
-  "keywords": [
-    "react",
-    "hooks",
-    "flux",
-    "redux",
-    "store",
-    "state",
-    "resy"
-  ],
   "repository": "https://github.com/lsbFlying/resy.git",
   "author": "liushanbao <1262300490@qq.com>",
   "homepage": "https://github.com/lsbFlying/resy",
@@ -64,5 +54,15 @@
   },
   "eslintIgnore": [
     "dist"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "react",
+    "hooks",
+    "flux",
+    "redux",
+    "store",
+    "state",
+    "resy"
   ]
 }

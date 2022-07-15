@@ -19,8 +19,7 @@
     "use-sync-external-store": "^1.1.0"
   },
   "peerDependencies": {
-    "react": ">=16.8.0",
-    "react-dom": ">=16.8.0"
+    "react": ">=16.8.0"
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^13.3.0",

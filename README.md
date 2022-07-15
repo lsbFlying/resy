@@ -94,6 +94,9 @@ function App() {
    * 可以使用"resySyncState"—该api可以获取最新的安全的数据供开发使用，后续详细介绍
    * 与此同时也说明resy生成的store无法用于class组件，
    * 但是可以通过resyView来对class组件进行支持，后续会详细介绍
+   * 
+   * 如果不想先解构使用，可以使用"resyView"这个api来解决"先解构"的问题
+   * 后续会对"resyView"这个api进行详细介绍
    */
   const {
     count, text, testObj: { name }, testArr, testFun,

@@ -401,12 +401,12 @@ import store, { StoreType } from "xxx";
 class ClassCom extends React.PureComponent<ResyStateToProps<StoreType>> {
   /**
    * First of all, count and text, hookcomteststate data attributes in the store
-   * Cannot affect the rerender of classcom
+   * Cannot affect the re-render of classcom
    * Secondly, the change of the appteststate of the parent component app cannot affect the renewal of classcom
    * Only the classcomteststate data referenced by classcom itself will affect its rendering
    *
    * That is to say, resyView has the effect of avoiding re render
-   * It is more perfect than resy's own effect of avoiding rerender
+   * It is more perfect than resy's own effect of avoiding re-render
    */
   render() {
     // resyView will mount the store data to the new state attribute on props
@@ -438,8 +438,8 @@ const HookCom = (props: ResyStateToProps<StoreType>) => {
    * Secondly, the change of the appteststate of the parent component app cannot affect the renewal of hookcom
    * Only the hookcomteststate data referenced by hookcom itself will affect its rendering
    *
-   * That is to say, resyView has the effect of avoiding rerender
-   * It is more perfect than resy's own effect of avoiding rerender
+   * That is to say, resyView has the effect of avoiding re-render
+   * It is more perfect than resy's own effect of avoiding re-render
    */
   console.log(hookComTestState);
   return (

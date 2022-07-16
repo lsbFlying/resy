@@ -400,12 +400,12 @@ import store, { StoreType } from "xxx";
 class ClassCom extends React.PureComponent<ResyStateToProps<StoreType>> {
   /**
    * 首先，store中的count与text、hookComTestState数据属性
-   * 无法影响ClassCom的rerender
-   * 其次父组件App的appTestState变化也无法影响ClassCom的rerender
+   * 无法影响ClassCom的re-render
+   * 其次父组件App的appTestState变化也无法影响ClassCom的re-render
    * 只有ClassCom本身引用的classComTestState数据才会影响自身的渲染
    *
    * 也就是说resyView形成的规避re-render的效果
-   * 比resy本身自带的规避rerender的效果更完善
+   * 比resy本身自带的规避re-render的效果更完善
    */
   render() {
     // resyView会将store数据挂载到props上新增的state属性上
@@ -433,12 +433,12 @@ const HookCom = (props: ResyStateToProps<StoreType>) => {
   const { hookComTestState } = props.state;
   /**
    * 首先，store中的count与text、classComTestState数据属性
-   * 无法影响HookCom的rerender
-   * 其次父组件App的appTestState变化也无法影响HookCom的rerender
+   * 无法影响HookCom的re-render
+   * 其次父组件App的appTestState变化也无法影响HookCom的re-render
    * 只有HookCom本身引用的hookComTestState数据才会影响自身的渲染
    *
-   * 也就是说resyView形成的规避rerender的效果
-   * 比resy本身自带的规避rerender的效果更完善
+   * 也就是说resyView形成的规避re-render的效果
+   * 比resy本身自带的规避re-render的效果更完善
    */
   console.log(hookComTestState);
   return (

@@ -1,7 +1,7 @@
 <div align="center">
 <h1>resy</h1>
 
-**Re**act **st**ate **ea**sy
+**re**act **s**tate eas**y**
 
 <h3>一款简单的react状态管理器</h3>
 <h4>（支持React Native、SSR、小程序等）</h4>

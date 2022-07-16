@@ -1,7 +1,7 @@
 <div align="center">
 <h1>resy</h1>
 
-**Re**act **st**ate **ea**sy
+**re**act **s**tate eas**y**
 
 <h3>A simple react state manager</h3>
 <h4>(Support React Native、SSR、Mini WeChat Apps)</h4>
@@ -30,7 +30,7 @@ npm i resy
 ```
 
 ### overview
-Resy requires react version V >= 16.8; Resy has five APIs, which are:
+resy requires react version V >= 16.8; resy has five APIs, which are:
 - resy：Storage container for generating a global status data
 - resyUpdate：Used to update or batch update status data
 - resySyncState：The method of obtaining the latest data synchronously after asynchronously updating data

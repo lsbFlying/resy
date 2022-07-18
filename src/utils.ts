@@ -17,7 +17,7 @@ import { EventDispatcher } from "./listener";
  *
  * 所以这里暂且不建议在v18及以上的react版本中依靠react本身自动化批处理更新
  * 除非用户看源码并且读到这里的注释😎
- * todo 该问题暂时待解决啦，比较难，可能需要了解到react相关调度...😊
+ * todo 该问题暂时待解决啦...😊
  *
  * @example A
  * resyUpdate(store, {
@@ -116,34 +116,26 @@ export function resyListener<T extends ResyType>(
   store: T,
   listenerKey?: keyof T,
 ): Callback {
-  const resyListenerHandle = (): Callback => {
-    const resyListenerEventType = (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).listenerEventType;
-    
-    const dispatchStoreEffectSetTemp = (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).dispatchStoreEffectSet;
-    
-    const listenerOrigin = (effectState: EffectState<T>, prevState: T, nextState: T) => {
-      let includesFlag = true;
-      if (listenerKey) {
-        const effectStateFields = Object.keys(effectState);
-        if (listenerKey !== effectStateFields[0]) {
-          includesFlag = false;
-        }
-      }
-      if (!listenerKey || (listenerKey && includesFlag)) {
-        listener(effectState, prevState, nextState);
-      }
+  const resyListenerEventType = (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).listenerEventType;
+  const dispatchStoreEffectSetTemp = (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).dispatchStoreEffectSet;
+  
+  const listenerOrigin = (effectState: EffectState<T>, prevState: T, nextState: T) => {
+    let includesFlag = true;
+    if (listenerKey) {
+      const effectStateFields = Object.keys(effectState);
+      if (!effectStateFields.includes(listenerKey as string)) includesFlag = false;
     }
-    
-    const customEventDispatcher: CustomEventInterface<T> = new (EventDispatcher as any)();
-    customEventDispatcher.addEventListener(resyListenerEventType, listenerOrigin);
-    dispatchStoreEffectSetTemp.add(customEventDispatcher);
-    
-    return () => {
-      dispatchStoreEffectSetTemp.forEach(item => {
-        if (item === customEventDispatcher) item.removeEventListener(resyListenerEventType)
-      });
-      dispatchStoreEffectSetTemp.delete(customEventDispatcher);
-    };
+    if (!listenerKey || (listenerKey && includesFlag)) listener(effectState, prevState, nextState);
+  }
+  
+  const customEventDispatcher: CustomEventInterface<T> = new (EventDispatcher as any)();
+  customEventDispatcher.addEventListener(resyListenerEventType, listenerOrigin);
+  dispatchStoreEffectSetTemp.add(customEventDispatcher);
+  
+  return () => {
+    dispatchStoreEffectSetTemp.forEach(item => {
+      if (item === customEventDispatcher) item.removeEventListener(resyListenerEventType)
+    });
+    dispatchStoreEffectSetTemp.delete(customEventDispatcher);
   };
-  return resyListenerHandle();
 }

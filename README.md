@@ -4,7 +4,7 @@
 **re**act **s**tate eas**y**
 
 <h3>一款简单的react状态管理器</h3>
-<h4>（支持React Native、SSR、小程序等）</h4>
+<h4>支持React Native、SSR、小程序(有平台兼容处理的如Taro、rax或remax等)等</h4>
 
 [![GitHub license](https://img.shields.io/github/license/lsbFlying/resy?style=flat-square)](https://github.com/lsbFlying/resy/blob/master/LICENSE)
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/lsbFlying/resy/CI?color=red&style=flat-square)](https://github.com/lsbFlying/resy/actions?query=workflow%3ATest)

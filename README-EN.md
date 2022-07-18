@@ -4,7 +4,7 @@
 **re**act **s**tate eas**y**
 
 <h3>A simple react state manager</h3>
-<h4>(Support React Native、SSR、Mini WeChat Apps)</h4>
+<h4>Support React Native、SSR、Mini WeChat Apps (with platform compatible processing, such as taro, rax, remax etc)</h4>
 
 [![GitHub license](https://img.shields.io/github/license/lsbFlying/resy?style=flat-square)](https://github.com/lsbFlying/resy/blob/master/LICENSE)
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/lsbFlying/resy/CI?color=red&style=flat-square)](https://github.com/lsbFlying/resy/actions?query=workflow%3ATest)

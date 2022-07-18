@@ -16,7 +16,7 @@
     "build": "rm -rf dist coverage && rollup -c --configPlugin @rollup/plugin-typescript"
   },
   "dependencies": {
-    "use-sync-external-store": "^1.1.0"
+    "use-sync-external-store": "^1.2.0"
   },
   "peerDependencies": {
     "react": ">=16.8.0"

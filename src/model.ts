@@ -19,22 +19,22 @@ export type Store<T> = {
   };
 };
 
-export type ResyType = ReturnType<typeof resy>;
+export type ResyStateType = Omit<ReturnType<typeof resy>, "resyUpdate">;
 
 // 订阅事件的回调的当前变化的数据
-export type EffectState<T extends ResyType> = {
+export type EffectState<T extends ResyStateType> = {
   [K in keyof T]: any;
 }
 
 // 订阅事件的监听回调函数类型
-export type ListenerHandle<T extends ResyType> = (
+export type ListenerHandle<T extends ResyStateType> = (
   effectState: EffectState<T>,
   prevState: T,
   nextState: T,
 ) => void;
 
 // 自定义订阅监听函数接口类型
-export interface CustomEventInterface<T extends ResyType> {
+export interface CustomEventInterface<T extends ResyStateType> {
   addEventListener<T>(type: string | symbol, handle: ListenerHandle<T>): void,
   dispatchEvent(
     type: string | symbol,
@@ -58,3 +58,11 @@ export type StoreListenerState<T extends State> = {
   // 触发订阅监听的变动影响
   dispatchStoreEffect: (effectState: EffectState<T>, prevState: T, nextState: T) => void,
 };
+
+// resy生成的store上挂载的更新方法
+export type ResyUpdate<T extends ResyStateType> = {
+  resyUpdate(
+    state: Partial<T> | T | Callback,
+    callback?: (dStore: T) => void,
+  ): void;
+}

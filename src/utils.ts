@@ -1,95 +1,16 @@
-import scheduler from "./scheduler";
 import {
-  Callback, ResyType, ListenerHandle,
+  Callback, ResyStateType, ListenerHandle,
   CustomEventInterface, StoreListenerState, EffectState,
 } from "./model";
-import { batchUpdate, storeListenerStateKey, useResyDriverKey } from "./static";
+import { storeListenerStateKey, useResyDriverKey } from "./static";
 import { EventDispatcher } from "./listener";
 
 /**
  * useResy
  * @description 驱动组件更新的hook，以use开头显然是要符合react的hook使用时序规则
  */
-export function useResy<T extends ResyType>(store: T): T {
+export function useResy<T extends ResyStateType>(store: T): T {
   return store[useResyDriverKey as keyof T];
-}
-
-/**
- * resyUpdate
- * @description 本质上是为了批量更新孕育而出的方法，但同样可以单次更新
- * 如果是在循环中更新，则resyUpdate的state参数可以直接给callback，在callback中写循环更新即可
- *
- * 事实上如果是react v18及以上，也可以不通过resyUpdate批量更新
- * 而直接使用store.xxx = x;单次更新的方式，因为v18及以上是自动处理批更新
- * 那么就会导致resyListener的监听有问题，会重复本该批量的key值监听触发
- *
- * 所以这里暂且不建议在v18及以上的react版本中依靠react本身自动化批处理更新
- * 除非用户看源码并且读到这里的注释😎
- * todo 该问题暂时待解决啦...😊
- *
- * @example A
- * resyUpdate(store, {
- *   count: 123,
- *   text: "updateText",
- * }, (dStore) => {
- *   // dStore：即deconstructedStore，已解构的数据，可安全使用
- *   // 可以理解dStore即为this.setState中的回调中的this.state
- *   // 同时这一点也弥补了：
- *   // hook组件中setState后只能通过useEffect来获取最新数据的方式
- *   console.log(dStore);
- * });
- * @example B
- * resyUpdate(store, () => {
- *   store.count = 123;
- *   store.text = "updateText";
- * }, (dStore) => {
- *   console.log(dStore);
- * });
- */
-export function resyUpdate<T extends ResyType>(
-  store: T,
-  state: Partial<T> | T | Callback = {},
-  callback?: (dStore: T) => void,
-) {
-  // 必须在更新之前执行，获取更新之前的数据
-  const prevState = Object.assign(
-    {},
-    (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).getState(),
-  );
-  try {
-    scheduler.on();
-    if (typeof state === "function") {
-      batchUpdate(state as Callback);
-    } else {
-      batchUpdate(() => {
-        Object.keys(state).forEach(key => {
-          (store as any)[key] = (state as Partial<T> | T)[key];
-        });
-      });
-    }
-  } finally {
-    scheduler.off();
-    
-    const nextState = Object.assign(
-      {},
-      (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).getState(),
-    );
-  
-    const effectState = {} as EffectState<T>;
-    Object.keys(nextState).forEach((key: keyof T) => {
-      if (!Object.is(nextState[key], prevState[key])) {
-        effectState[key] = nextState[key];
-      }
-    });
-    // 批量触发变动
-    (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).dispatchStoreEffect(
-      effectState,
-      prevState,
-      nextState,
-    );
-  
-    callback?.(nextState);
-  }
 }
 
 /**
@@ -111,7 +32,7 @@ export function resyUpdate<T extends ResyType>(
  * 如果没有则默认监听store的任何一个数据的变化
  * @return Callback 返回取消监听的函数
  */
-export function resyListener<T extends ResyType>(
+export function resyListener<T extends ResyStateType>(
   listener: ListenerHandle<T>,
   store: T,
   listenerKey?: keyof T,

@@ -8,8 +8,10 @@
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
-import { useResyDriverKey, storeListenerStateKey } from "./static";
-import { Callback, State, Store, EffectState, CustomEventInterface, StoreListenerState } from "./model";
+import { useResyDriverKey, storeListenerStateKey, batchUpdate } from "./static";
+import {
+  Callback, State, Store, EffectState, CustomEventInterface, StoreListenerState, ResyUpdate,
+} from "./model";
 
 /**
  * 从use-sync-external-store包的导入方式到下面的引用方式
@@ -35,7 +37,7 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * 但这种全局真正公用分享的数据是相对而言少数的，大部分情况下是没那么多要全局分享公用的数据的
  * 所以unmountClear默认设置为true，符合常规使用即可，除非遇到像上述登录信息数据那样的全局数据而言才会设置为false
  */
-export function resy<T extends State>(state: T, unmountClear: boolean = true): T {
+export function resy<T extends State>(state: T, unmountClear: boolean = true): T & ResyUpdate<T> {
   /**
    * 为了保证不改变传入的state参数，使用一个状态数据桥，
    * Object.assign或者{...}扩展符都会对于第二级别的数据结构进行引用共用，但是这里不受影响
@@ -118,7 +120,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
     return store;
   }
   
-  return new Proxy(state, {
+  const resyStore: T & ResyUpdate<T> = new Proxy(state, {
     get: (_, key: keyof T) => {
       if (key === useResyDriverKey) {
         // 给useResy的驱动更新代理
@@ -136,7 +138,80 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       initialValueLinkStore(key)[key]?.setString(val);
       return true;
     },
-  } as ProxyHandler<T>);
+  } as ProxyHandler<T>) as T & ResyUpdate<T>;
+  
+  /**
+   * resyUpdate
+   * @description 本质上是为了批量更新孕育而出的方法，但同样可以单次更新
+   * 如果是在循环中更新，则resyUpdate的state参数可以直接给callback，在callback中写循环更新即可
+   *
+   * 事实上如果是react v18及以上，也可以不通过resyUpdate批量更新
+   * 而直接使用store.xxx = x;单次更新的方式，因为v18及以上是自动处理批更新
+   * 那么就会导致resyListener的监听有问题，会重复本该批量的key值监听触发
+   *
+   * 所以这里暂且不建议在v18及以上的react版本中依靠react本身自动化批处理更新
+   * 除非用户看源码并且读到这里的注释😎
+   * todo 该问题暂时待解决啦...😊
+   *
+   * @example A
+   * store.resyUpdate({
+   *   count: 123,
+   *   text: "updateText",
+   * }, (state) => {
+   *   // state：最新的数据值
+   *   // 可以理解为this.setState中的回调中的this.state
+   *   // 同时这一点也弥补了：
+   *   // hook组件中setState后只能通过useEffect来获取最新数据的方式
+   *   console.log(state);
+   * });
+   * @example B
+   * store.resyUpdate(() => {
+   *   store.count = 123;
+   *   store.text = "updateText";
+   * }, (state) => {
+   *   console.log(state);
+   * });
+   */
+  resyStore.resyUpdate = (
+    stateParams: Partial<T> | T | Callback = {},
+    callback?: (dStore: T) => void,
+  ) => {
+    // 必须在更新之前执行，获取更新之前的数据
+    const prevState = Object.assign({}, stateTemp);
+    try {
+      scheduler.on();
+      if (typeof stateParams === "function") {
+        batchUpdate(stateParams as Callback);
+      } else {
+        batchUpdate(() => {
+          Object.keys(stateParams).forEach(key => {
+            (store as any)[key].setString((stateParams as Partial<T> | T)[key]);
+          });
+        });
+      }
+    } finally {
+      scheduler.off();
+      
+      const nextState = Object.assign({}, stateTemp);
+      
+      const effectState = {} as EffectState<T>;
+      Object.keys(nextState).forEach((key: keyof T) => {
+        if (!Object.is(nextState[key], prevState[key])) {
+          effectState[key] = nextState[key];
+        }
+      });
+      // 批量触发变动
+      storeListenerState.dispatchStoreEffect(
+        effectState,
+        prevState,
+        nextState,
+      );
+      
+      callback?.(nextState);
+    }
+  };
+  
+  return resyStore;
 }
 
 export * from "./utils";

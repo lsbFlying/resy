@@ -1,4 +1,4 @@
-import { EffectState, ListenerHandle, ResyType } from "./model";
+import { EffectState, ListenerHandle, ResyStateType } from "./model";
 
 /**
  * created by liushanbao
@@ -14,7 +14,7 @@ EventDispatcher.prototype.addEventListener = function <T>(this: any, type: strin
 EventDispatcher.prototype.removeEventListener = function (type: string | symbol) {
   this.events[type] = undefined;
 }
-EventDispatcher.prototype.dispatchEvent = function <T extends ResyType>(
+EventDispatcher.prototype.dispatchEvent = function <T extends ResyStateType>(
   this: any,
   type: string,
   effectState: EffectState<T>,

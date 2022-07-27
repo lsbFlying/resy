@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ResyType, State, StoreListenerState } from "./model";
+import { ResyStateType, State, StoreListenerState } from "./model";
 import { storeListenerStateKey } from "./static";
 import { resyListener } from "./utils";
 
-export interface ResyStateToProps<T extends ResyType> extends State {
+export interface ResyStateToProps<T extends ResyStateType> extends State {
   // 将resy生成的store容器数据挂载到组件的props的state属性上
   state: T;
 }
 
 // 给Comp组件的props上挂载的state属性数据做一层引用代理
-function proxyDStoreHandle<S extends ResyType>(dStore: S, dStoreSet: Set<keyof S>) {
+function proxyDStoreHandle<S extends ResyStateType>(dStore: S, dStoreSet: Set<keyof S>) {
   return new Proxy(dStore, {
     get: (target: S, key: keyof S) => {
       dStoreSet.add(key);
@@ -39,7 +39,7 @@ function proxyDStoreHandle<S extends ResyType>(dStore: S, dStoreSet: Set<keyof S
  * 即如果resyView包裹的Comp组件即使在其父组件更新渲染了
  * 只要内部使用的数据没有更新，那么它本身不会渲染re-render
  */
-export function resyView<S extends ResyType>(store: S, Comp: React.ComponentType<ResyStateToProps<S> | any>) {
+export function resyView<S extends ResyStateType>(store: S, Comp: React.ComponentType<ResyStateToProps<S> | any>) {
   const isFuncComp = !(Comp.prototype && Comp.prototype.isReactComponent);
   
   // dStore代理的Set

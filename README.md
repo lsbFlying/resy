@@ -75,7 +75,7 @@ type ResyStore = {
   testFun: () => void;
 };
 // 生成的这个store可以全局共享，直接引入store即可
-const store = resy<ResyStore>(
+export const store = resy<ResyStore>(
   {
     count: 0,
     text: "123qwe",
@@ -171,6 +171,8 @@ function App() {
 
 ### resyUpdate 批量更新
 ```tsx
+import { store } from "store";
+
 function App() {
   
   function btnClick() {
@@ -195,7 +197,7 @@ function App() {
     });
     // B的方式可以在回调函数中直接写循环更新，更方便某些复杂的业务逻辑的更新
     // @example B
-    // resyUpdate(store, () => {
+    // store.resyUpdate(() => {
     //   store.count++;
     //   store.text = "456asd";
     // }, (dStore) => {

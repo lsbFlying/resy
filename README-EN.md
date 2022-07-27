@@ -75,7 +75,7 @@ type ResyStore = {
   testFun: () => void;
 };
 // The generated store can be shared globally and can be imported directly
-const store = resy<ResyStore>(
+export const store = resy<ResyStore>(
   {
     count: 0,
     text: "123qwe",
@@ -148,9 +148,10 @@ function App() {
     store.testArr = [{ age: 7 }];
     
     /**
-     * Summary: basic data types can be directly assigned and updated, and the update method of reference data types requires new reference values,
-     * Then you can directly overwrite the update with the new value,
-     * Or use object assign/... Extension operators etc,
+     * Summary: basic data types can be directly assigned and updated,
+     * and the update method of reference data types requires new reference values.
+     * Then you can directly overwrite the update with the new value.
+     * Or use object assign/... Extension operators etc.
      * They also generate new reference addresses and new data values.
      */
   }
@@ -170,6 +171,8 @@ function App() {
 
 ### resyUpdate — Batch update
 ```tsx
+import { store } from "store";
+
 function App() {
   
   function btnClick() {
@@ -195,7 +198,7 @@ function App() {
     // B way can directly write circular updates in the callback function,
     // which is more convenient for the update of some complex business logic
     // @example B
-    // resyUpdate(store, () => {
+    // store.resyUpdate(() => {
     //   store.count++;
     //   store.text = "456asd";
     // }, (state) => {

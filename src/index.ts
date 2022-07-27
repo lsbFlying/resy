@@ -8,7 +8,7 @@
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
-import { storeListenerStateKey } from "./static";
+import { useResyDriverKey, storeListenerStateKey } from "./static";
 import { Callback, State, Store, EffectState, CustomEventInterface, StoreListenerState } from "./model";
 
 /**
@@ -109,38 +109,31 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   }
   
   // 为每一个数据字段储存链接到store容器中，这样渲染并发执行提升渲染流畅度
-  function resolveInitialValueLinkStore(key: keyof T) {
+  function solveInitialValueLinkStore(key: keyof T) {
     // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
     if (store[key] === undefined) {
       genStoreItem(key);
-      return store[key];
+      return store;
     }
-    return store[key];
+    return store;
   }
   
   return new Proxy(state, {
     get: (_, key: keyof T) => {
-      // todo 很奇怪有些情况下react会对proxy代理对象进行一个属性为"$$typeof"的调用访问
-      if (key === "$$typeof") return;
-      if (key === storeListenerStateKey) return storeListenerState;
-      try {
-        return resolveInitialValueLinkStore(key).useString();
-      } catch (e) {
-        console.error(
-          "If possible, try not to deconstruct and read data " +
-          "at the non top level of the function component! " +
-          "It may also be that you use the self increment " +
-          "'++' or self decrement '--' operator to cause an error, " +
-          "However, no matter which station of the current two methods causes errors, " +
-          "it will not affect the rendering of the page and the execution of code logic, " +
-          "but it is still not recommended! " +
-          "The current error attribute key is [" + (key as string) + "]"
-        );
-        return stateTemp[key];
+      if (key === useResyDriverKey) {
+        // 给useResy的驱动更新代理
+        return new Proxy(store, {
+          get: (_t, tempKey: keyof T) => {
+            const storeTemp = solveInitialValueLinkStore(tempKey);
+            return storeTemp[tempKey].useString();
+          },
+        } as ProxyHandler<T>);
       }
+      if (key === storeListenerStateKey) return storeListenerState;
+      return stateTemp[key];
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
-      resolveInitialValueLinkStore(key)?.setString(val);
+      solveInitialValueLinkStore(key)[key]?.setString(val);
       return true;
     },
   } as ProxyHandler<T>);

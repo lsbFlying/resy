@@ -3,8 +3,16 @@ import {
   Callback, ResyType, ListenerHandle,
   CustomEventInterface, StoreListenerState, EffectState,
 } from "./model";
-import { batchUpdate, storeListenerStateKey } from "./static";
+import { batchUpdate, storeListenerStateKey, useResyDriverKey } from "./static";
 import { EventDispatcher } from "./listener";
+
+/**
+ * useResy
+ * @description 驱动组件更新的hook，以use开头显然是要符合react的hook使用时序规则
+ */
+export function useResy<T extends ResyType>(store: T): T {
+  return store[useResyDriverKey as keyof T];
+}
 
 /**
  * resyUpdate
@@ -82,14 +90,6 @@ export function resyUpdate<T extends ResyType>(
   
     callback?.(nextState);
   }
-}
-
-/**
- * resySyncState
- * @description 获取同步最新数据
- */
-export function resySyncState<T extends ResyType>(store: T): T {
-  return (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).getState() as T;
 }
 
 /**

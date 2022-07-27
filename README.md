@@ -116,7 +116,6 @@ function App() {
 ```
 
 ### 直接更新
-
 ```tsx
 import { useResy } from "resy";
 
@@ -172,26 +171,27 @@ function App() {
 
 ### resyUpdate 批量更新
 ```tsx
-import { resyUpdate } from "resy";
-
 function App() {
   
   function btnClick() {
     /**
-     * @description resyUpdate是为了批量更新孕育而出的方法
+     * @description
+     * 1、resyUpdate是为了批量更新孕育而出的方法
      * 但同样可以单次更新，如果是在循环中更新
      * 则resyUpdate直接给callback，在callback中写循环更新即可
+     * 
+     * 2、resyUpdate是挂载在每一个resy生成的store数据上面的方法
      */
     // @example A
-    resyUpdate(store, {
+    store.resyUpdate({
       count: count++,
       text: "456asd",
-    }, (dStore) => {
-      // dStore：即deconstructedStore，已解构的数据，可安全使用
-      // 可以理解dStore即为"this.setState"的回调函数中的this.state
+    }, (state) => {
+      // state：最新的数据值
+      // 可以理解state即为"this.setState"的回调函数中的this.state
       // 同时这一点也弥补了：
       // hook组件中setState后只能通过useEffect来获取最新数据的方式
-      console.log(dStore);
+      console.log(state);
     });
     // B的方式可以在回调函数中直接写循环更新，更方便某些复杂的业务逻辑的更新
     // @example B

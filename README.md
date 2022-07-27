@@ -394,7 +394,7 @@ export default resyView(store, ClassCom);
 // HookCom hook组件的单独文件
 import React from "react";
 import { resyView, ResyStateToProps } from "resy";
-import store, { StoreType } from "xxx";
+import store, { StoreType } from "store";
 
 const HookCom = (props: ResyStateToProps<StoreType>) => {
   // resyView会将store数据挂载到props上新增的state属性上

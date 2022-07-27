@@ -394,7 +394,7 @@ export default resyView(store, ClassCom);
 // HookCom single file
 import React from "react";
 import { resyView, ResyStateToProps } from "resy";
-import store, { StoreType } from "xxx";
+import store, { StoreType } from "store";
 
 const HookCom = (props: ResyStateToProps<StoreType>) => {
   // resyView will mount the store data to the new state attribute on props

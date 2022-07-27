@@ -18,8 +18,7 @@ export function useResy<T extends ResyStateType>(store: T): T {
  * @description 监听订阅，类似subscribe/addEventListener，但是这里对应的数据的变化监听订阅
  * resyListener的存在是必要的，它的作用并不类比于useEffect，
  * 而是像subscribe或者addEventListener的效果，监听订阅数据的变化
- * 不会像effect那样初始化执行一次，且核心关键点在于它可以监听不同store的数据变化
- * 并且它是更具数据的变化才触发执行，并不会像useEffect那样进行数据前后的对比
+ * 核心关键点在于它可以监听不同store的数据变化，具备多数据订阅监听的能力
  *
  * 本质上我是写了一个监听事件，而在resy里面的数据更新的情况下触发了这个监听的dispatch
  * 其实这里的监听订阅还可以使用proxy进行拦截监听，但是并没有使用这种方式

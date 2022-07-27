@@ -2,7 +2,7 @@ import {
   Callback, ResyStateType, ListenerHandle,
   CustomEventInterface, StoreListenerState, EffectState,
 } from "./model";
-import { storeListenerStateKey, useResyDriverKey } from "./static";
+import { storeListenerStateKey, useResyDriveKey } from "./static";
 import { EventDispatcher } from "./listener";
 
 /**
@@ -10,7 +10,7 @@ import { EventDispatcher } from "./listener";
  * @description 驱动组件更新的hook，以use开头显然是要符合react的hook使用时序规则
  */
 export function useResy<T extends ResyStateType>(store: T): T {
-  return store[useResyDriverKey as keyof T];
+  return store[useResyDriveKey as keyof T];
 }
 
 /**

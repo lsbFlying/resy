@@ -18,4 +18,4 @@ export const batchUpdate = unstable_batchedUpdates || batchUpdateShimRun;
 export const storeListenerStateKey = Symbol("resyStoreListenerSymbolKey");
 
 // useResy驱动更新的key
-export const useResyDriverKey = Symbol("useResyDriverKey");
+export const useResyDriveKey = Symbol("useResyDriveKey");

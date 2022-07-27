@@ -8,7 +8,7 @@
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
-import { useResyDriverKey, storeListenerStateKey, batchUpdate } from "./static";
+import { useResyDriveKey, storeListenerStateKey, batchUpdate } from "./static";
 import {
   Callback, State, Store, EffectState, CustomEventInterface, StoreListenerState, ResyUpdate,
 } from "./model";
@@ -122,7 +122,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   
   const resyStore: T & ResyUpdate<T> = new Proxy(state, {
     get: (_, key: keyof T) => {
-      if (key === useResyDriverKey) {
+      if (key === useResyDriveKey) {
         // 给useResy的驱动更新代理
         return new Proxy(store, {
           get: (_t, tempKey: keyof T) => {

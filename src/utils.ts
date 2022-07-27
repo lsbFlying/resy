@@ -45,7 +45,7 @@ export function resyListener<T extends ResyStateType>(
     const listenerKeysIsEmpty = listenerKeys === undefined || !(listenerKeys && listenerKeys.length !== 0);
     if (!listenerKeysIsEmpty) {
       const effectStateFields = Object.keys(effectState);
-      if (!effectStateFields.some(key => listenerKeys.includes(key))) includesFlag = true;
+      if (effectStateFields.some(key => listenerKeys.includes(key))) includesFlag = true;
     }
     if (listenerKeysIsEmpty || (!listenerKeysIsEmpty && includesFlag)) listener(effectState, prevState, nextState);
   }

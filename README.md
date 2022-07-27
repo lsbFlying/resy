@@ -32,15 +32,15 @@ npm i resy
 ### 概览
 resy需要react版本 v >= 16.8；resy有五个API，分别是：
 - resy：用于生成一个全局状态数据的存储容器
-- resyUpdate：用于更新或者批量更新状态数据
-- resySyncState：在异步更新数据之后需要同步获取最新数据的方法
+- useResy：驱动resy生成的数据来更新组件的hook
+- resyUpdate：用于更新或者批量更新数据
 - resyListener：用于订阅监听resy生成的store数据的变化
 - resyView：帮助组件具备 "更完善的规避re-render的方式" 的能力
 
 ### resy 生成全局共享数据
 ```tsx
 import React from "react";
-import { resy } from "resy";
+import { resy, useResy } from "resy";
 
 /**
  * 关于resy这个核心API的介绍：
@@ -81,7 +81,10 @@ const store = resy<ResyStore>(
     text: "123qwe",
     testObj: { name: "Paul" },
     testArr: [{age: 12}, { age: 16 }],
-    testFun: () => { console.log("testFun") },
+    testFun: () => {
+      store.count++;
+      console.log("testFun");
+    },
   },
   // 第二个参数，默认为true
   // false,
@@ -89,19 +92,16 @@ const store = resy<ResyStore>(
 
 function App() {
   /**
-   * 注意：resy生成的store的数据读取（解构）需要先在组件顶层解构
-   * 因为它本质上依然是useState的调用，所以它在组件顶层解构是为了驱动组件渲染更新
-   * 而对于想要读取（解构）store的数据进行相关逻辑处理或者使用等，
-   * 可以使用"resySyncState"—该api可以获取最新的安全的数据供开发使用，后续详细介绍
-   * 与此同时也说明resy生成的store无法用于class组件，
-   * 但是可以通过resyView来对class组件进行支持，后续会详细介绍
+   * 或者：const snapshot = useResy(store);
+   * snapshot.count; ...etc
    * 
-   * 如果不想先解构使用，可以使用"resyView"这个api来解决"先解构"的问题
-   * 后续会对"resyView"这个api进行详细介绍
+   * useResy用于组件的驱动更新，
+   * 如果不用useResy直接使用store，
+   * 则只能获取最新数据无法驱动组件更新重新渲染
    */
   const {
     count, text, testObj: { name }, testArr, testFun,
-  } = store;
+  } = useResy(store);
   
   return (
     <>
@@ -116,26 +116,18 @@ function App() {
 ```
 
 ### 直接更新
+
 ```tsx
+import { useResy } from "resy";
+
 function App() {
   const {
-    count, text, testObj: { name }, testArr, testFun,
-  } = store;
+    count, text, testObj: {name}, testArr, testFun,
+  } = useResy(store);
   
   function btn2() {
     // 可以直接赋值更新（最简单的更新方式）
-    store.count = count + 1;
-    /**
-     * 注意：这里count的number类型的更新不建议使用自增/自减运算符
-     * 比如store.count++或者store.count--等；
-     * 因为在"resy 生成全局共享数据"这一块有过说明
-     * resy本身生成的全局状态数据的本质还是useState的使用
-     * 它需要符合react的hook调用时序规则
-     * 但是store.count++或者store.count--这种方式依然有效
-     * 是因为resy本身对这种方式做了兼容的处理，但是推荐
-     * store.count = count + 1;或者store.count = count - 1;
-     * 这样安全更新使用
-     */
+    store.count++;
     store.text = "456asd";
     /**
      * 不允许直接属性链式更新
@@ -154,7 +146,7 @@ function App() {
      */
     // store.testArr[0] = { age: 7 };
     // 也需要新值赋值（有效更新）
-    store.testArr = [{ age: 7 }];
+    store.testArr = [{age: 7}];
     
     /**
      * 总结：基本数据类型可以直接赋值更新，引用数据类型的更新方式需要新的引用值
@@ -169,7 +161,8 @@ function App() {
       <p>{count}</p>
       <p>{text}</p>
       <p>{name}</p>
-      <button onClick={testFun}>测试按钮</button><br/>
+      <button onClick={testFun}>测试按钮</button>
+      <br/>
       {testArr.map(item => `年龄：${item}`)}<br/>
       <button onClick={btn2}>按钮2</button>
     </>
@@ -191,7 +184,7 @@ function App() {
      */
     // @example A
     resyUpdate(store, {
-      count: count + 1,
+      count: count++,
       text: "456asd",
     }, (dStore) => {
       // dStore：即deconstructedStore，已解构的数据，可安全使用
@@ -203,7 +196,7 @@ function App() {
     // B的方式可以在回调函数中直接写循环更新，更方便某些复杂的业务逻辑的更新
     // @example B
     // resyUpdate(store, () => {
-    //   store.count = count + 1;
+    //   store.count++;
     //   store.text = "456asd";
     // }, (dStore) => {
     //   console.log(dStore);
@@ -216,39 +209,13 @@ function App() {
 }
 ```
 
-### resySyncState 获取同步最新数据
-```tsx
-import { resySyncState } from "resy";
-
-function App() {
-  
-  function btnClick() {
-    /**
-     * 如果是resyUpdate，可以有回调获取最新同步数据
-     * 但是如果是单次更新也没有使用resyUpdate
-     * 那么可以使用"resySyncState"这个api来获取最新同步数据
-     * 
-     * 同时这个api可以在"非驱动组件更新"(即非函数组件顶层)的任何地方使用
-     * 来获取最新同步数据，进行相应的业务逻辑处理
-     */
-    store.text = "456asd";
-    const latestState = resySyncState(store);
-    console.log(latestState);
-  }
-  
-  return (
-    <button onClick={btnClick}>按钮</button>
-  );
-}
-```
-
 ### resyListener 订阅监听
 ```tsx
 import React, { useEffect } from "react";
-import { resyListener } from "resy";
+import { resyListener, useResy } from "resy";
 
 function App() {
-  const { count } = store;
+  const { count } = useResy(store);
   
   /**
    * 这里以函数组件举例
@@ -279,7 +246,7 @@ function App() {
   }, []);
   
   function btnClick() {
-    store.count = count + 1;
+    store.count++;
   }
   
   return (
@@ -294,26 +261,25 @@ function App() {
 ### resy 自身特性的规避re-render
 ```tsx
 import React from "react";
-import { resy, resySyncState } from "resy";
+import { resy, useResy } from "resy";
 
 const store = resy({
   count: 123,
   text: "123qwe",
   countAddFun: () => {
-    const { count } = resySyncState(store);
-    store.count = count + 1;
+    store.count++;
   },
 });
 
 // count数据状态的变化不会引起Text的re-render
 function Text() {
-  const { text } = store;
+  const { text } = useResy(store);
   return <p>{text}</p>;
 }
 
 // text数据状态的变化不会引起Count的re-render
 function Count() {
-  const { count } = store;
+  const { count } = useResy(store);
   return <p>{count}</p>;
 }
 
@@ -325,7 +291,7 @@ function Count() {
  * 还不是像solid.js那样 "真正的react" 哪里变化 "更新" 哪里
  */
 function App() {
-  const { countAddFun } = store;
+  const { countAddFun } = useResy(store);
   return (
     <>
       <Text/>
@@ -333,8 +299,7 @@ function App() {
       <button onClick={countAddFun}>按钮+</button>
       <button
         onClick={() => {
-          const { count } = resySyncState(store);
-          store.count = count - 1;
+          store.count--;
         }}
       >
         按钮-
@@ -367,7 +332,7 @@ function App() {
 
 ```tsx
 // store 单独文件
-import { resy, resySyncState } from "resy";
+import { resy } from "resy";
 
 export type StoreType = {
   appTestState: string;
@@ -385,8 +350,7 @@ const store = resy({
   count: 123,
   text: "123qwe",
   countAddFun: () => {
-    const { count } = resySyncState(store);
-    store.count = count + 1;
+    store.count++;
   },
 });
 
@@ -399,7 +363,7 @@ export default store;
 // ClassCom 类组件的单独文件
 import React from "react";
 import { resyView, ResyStateToProps } from "resy";
-import store, { StoreType } from "xxx";
+import store, { StoreType } from "store";
 
 class ClassCom extends React.PureComponent<ResyStateToProps<StoreType>> {
   /**
@@ -455,23 +419,24 @@ export default resyView(store, HookCom);
 
 ```tsx
 import React from "react";
+import { useResy } from "resy";
 
 // count数据状态的变化不会引起Text的re-render
 function Text() {
-  const { text } = store;
+  const { text } = useResy(store);
   return <p>{text}</p>;
 }
 
 // text数据状态的变化不会引起Count的re-render
 function Count() {
-  const { count } = store;
+  const { count } = useResy(store);
   return <p>{count}</p>;
 }
 
 function App() {
   const {
     appTestState, classComTestState, hookComTestState, countAddFun,
-  } = store;
+  } = useResy(store);
   
   function appTestClick() {
     store.appTestState = `${Math.random()}~appTestState~`;
@@ -506,8 +471,7 @@ function App() {
       <Count/>
       <button onClick={countAddFun}>按钮+</button>
       <button onClick={() => {
-        const { count } = resySyncState(store);
-        store.count = count - 1;
+        store.count--;
       }}>按钮-</button>
       <br/>
       <ClassCom/>

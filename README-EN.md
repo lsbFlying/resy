@@ -251,6 +251,10 @@ import { resyListener } from "resy";
 function App() {
   const { count } = store;
   
+  /**
+   * Here is an example of a function component
+   * If it is a class component, you can use resylistener in componentDidMount
+   */
   useEffect(() => {
     /**
      * @param listener: Callback function of subscription listening

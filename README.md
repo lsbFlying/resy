@@ -250,6 +250,10 @@ import { resyListener } from "resy";
 function App() {
   const { count } = store;
   
+  /**
+   * 这里以函数组件举例
+   * 如果是class组件可以在componentDidMount中使用resyListener
+   */
   useEffect(() => {
     /**
      * @param listener 订阅监听的回调函数

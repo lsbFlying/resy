@@ -109,7 +109,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   }
   
   // 为每一个数据字段储存链接到store容器中，这样渲染并发执行提升渲染流畅度
-  function solveInitialValueLinkStore(key: keyof T) {
+  function initialValueLinkStore(key: keyof T) {
     // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
     if (store[key] === undefined) {
       genStoreItem(key);
@@ -124,7 +124,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         // 给useResy的驱动更新代理
         return new Proxy(store, {
           get: (_t, tempKey: keyof T) => {
-            const storeTemp = solveInitialValueLinkStore(tempKey);
+            const storeTemp = initialValueLinkStore(tempKey);
             return storeTemp[tempKey].useString();
           },
         } as ProxyHandler<T>);
@@ -133,7 +133,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       return stateTemp[key];
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
-      solveInitialValueLinkStore(key)[key]?.setString(val);
+      initialValueLinkStore(key)[key]?.setString(val);
       return true;
     },
   } as ProxyHandler<T>);

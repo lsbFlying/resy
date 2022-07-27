@@ -28,25 +28,26 @@ export function useResy<T extends ResyStateType>(store: T): T {
  *
  * @param listener 监听订阅的回调函数
  * @param store 监听订阅的具体的某一个store容器
- * @param listenerKey 监听订阅的具体的某一个store容器的某一个字段数据变化，
- * 如果没有则默认监听store的任何一个数据的变化
+ * @param listenerKeys 监听订阅的具体的某一个store容器的某些字段数据变化，
+ * 如果为空则默认监听store的任何一个数据的变化
  * @return Callback 返回取消监听的函数
  */
 export function resyListener<T extends ResyStateType>(
   listener: ListenerHandle<T>,
   store: T,
-  listenerKey?: keyof T,
+  listenerKeys?: (keyof T)[],
 ): Callback {
   const resyListenerEventType = (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).listenerEventType;
   const dispatchStoreEffectSetTemp = (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).dispatchStoreEffectSet;
   
   const listenerOrigin = (effectState: EffectState<T>, prevState: T, nextState: T) => {
-    let includesFlag = true;
-    if (listenerKey) {
+    let includesFlag = false;
+    const listenerKeysIsEmpty = listenerKeys === undefined || !(listenerKeys && listenerKeys.length !== 0);
+    if (!listenerKeysIsEmpty) {
       const effectStateFields = Object.keys(effectState);
-      if (!effectStateFields.includes(listenerKey as string)) includesFlag = false;
+      if (!effectStateFields.some(key => listenerKeys.includes(key))) includesFlag = true;
     }
-    if (!listenerKey || (listenerKey && includesFlag)) listener(effectState, prevState, nextState);
+    if (listenerKeysIsEmpty || (!listenerKeysIsEmpty && includesFlag)) listener(effectState, prevState, nextState);
   }
   
   const customEventDispatcher: CustomEventInterface<T> = new (EventDispatcher as any)();

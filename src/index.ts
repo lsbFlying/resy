@@ -70,7 +70,6 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
     ));
   });
   
-  
   // 数据存储容器storeMap
   const storeMap: StoreMap<T> = new Map();
   

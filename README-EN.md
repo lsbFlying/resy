@@ -228,8 +228,8 @@ function App() {
     /**
      * @param listener: Callback function of subscription listening
      * @param store: Subscribe to monitor the data status changes of a specific store container
-     * @param listenerKey: Subscribe to the change of a data field of a specific store container monitored
-     * If not, the default is to listen for any data changes in the store.
+     * @param listenerKey: Subscribe to the change of some data field of a specific store container monitored
+     * If it is empty, it will listen to the changes of any data in the store by default.
      * @return Callback: Return the function of unsubscribing
      */
     const cancelListener = resyListener((
@@ -240,8 +240,8 @@ function App() {
        *   prevState：Data before change
        *   nextState：Data after change
        */
-      console.log("count", effectState, prevState, nextState);
-    }, store, "count");
+      console.log(effectState, prevState, nextState);
+    }, store, ["count", "text"]);
   
     // Unsubscribe
     // cancelListener();

@@ -10,8 +10,8 @@ import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import { useResyDriveKey, storeHeartMapKey, batchUpdate } from "./static";
 import {
-  Callback, State, EffectState, CustomEventInterface,
-  ResyUpdateType, StoreMap, StoreValueMap, StoreValueMapType, StoreHeartMapType, StoreHeartMapValueType,
+  Callback, State, EffectState, CustomEventInterface, ResyUpdateType, StoreMap,
+  StoreValueMap, StoreValueMapType, StoreHeartMapType, StoreHeartMapValueType,
 } from "./model";
 
 /**

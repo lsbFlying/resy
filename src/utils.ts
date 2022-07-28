@@ -1,8 +1,8 @@
 import {
-  Callback, ResyStateType, ListenerHandle,
-  CustomEventInterface, StoreListenerState, EffectState,
+  Callback, ResyStateType, ListenerHandle, CustomEventInterface,
+  StoreHeartMapType, StoreHeartMapValueType, EffectState,
 } from "./model";
-import { storeListenerStateKey, useResyDriveKey } from "./static";
+import { storeHeartMapKey, useResyDriveKey } from "./static";
 import { EventDispatcher } from "./listener";
 
 /**
@@ -36,8 +36,8 @@ export function resyListener<T extends ResyStateType>(
   store: T,
   listenerKeys?: (keyof T)[],
 ): Callback {
-  const resyListenerEventType = (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).listenerEventType;
-  const dispatchStoreEffectSetTemp = (store[storeListenerStateKey as keyof T] as StoreListenerState<T>).dispatchStoreEffectSet;
+  const resyListenerEventType = (store[storeHeartMapKey as keyof T] as StoreHeartMapType<T>).get("listenerEventType") as StoreHeartMapValueType<T>["listenerEventType"];
+  const dispatchStoreEffectSetTemp = (store[storeHeartMapKey as keyof T] as StoreHeartMapType<T>).get("dispatchStoreEffectSet") as StoreHeartMapValueType<T>["dispatchStoreEffectSet"];
   
   const listenerOrigin = (effectState: EffectState<T>, prevState: T, nextState: T) => {
     let includesFlag = false;

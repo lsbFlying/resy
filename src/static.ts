@@ -14,8 +14,8 @@ export function batchUpdateShimRun(fn: Callback) { fn() }
  */
 export const batchUpdate = unstable_batchedUpdates || batchUpdateShimRun;
 
-// 某一个store的监听订阅对象、内部state数据的唯一标识key值
-export const storeListenerStateKey = Symbol("resyStoreListenerSymbolKey");
+// 每一个resy生成store的监听订阅对象、内部state数据的唯一标识key值
+export const storeHeartMapKey = Symbol("resyStoreListenerSymbolKey");
 
 // useResy驱动更新的key
 export const useResyDriveKey = Symbol("useResyDriveKey");

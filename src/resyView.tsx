@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ResyStateType, State, StoreListenerState } from "./model";
-import { storeListenerStateKey } from "./static";
+import { ResyStateType, State, StoreHeartMapType, StoreHeartMapValueType } from "./model";
+import { storeHeartMapKey } from "./static";
 import { resyListener } from "./utils";
 
 export interface ResyStateToProps<T extends ResyStateType> extends State {
@@ -9,11 +9,11 @@ export interface ResyStateToProps<T extends ResyStateType> extends State {
 }
 
 // 给Comp组件的props上挂载的state属性数据做一层引用代理
-function proxyDStoreHandle<S extends ResyStateType>(dStore: S, dStoreSet: Set<keyof S>) {
-  return new Proxy(dStore, {
+function proxyStateHandle<S extends ResyStateType>(lastState: S, linkStateSet: Set<keyof S>) {
+  return new Proxy(lastState, {
     get: (target: S, key: keyof S) => {
-      dStoreSet.add(key);
-      // dStore给出了resy生成的store内部数据的引用，这里始终能获取到最新数据
+      linkStateSet.add(key);
+      // lastState给出了resy生成的store内部数据的引用，这里始终能获取到最新数据
       return target[key];
     },
   } as ProxyHandler<S>) as S;
@@ -42,30 +42,34 @@ function proxyDStoreHandle<S extends ResyStateType>(dStore: S, dStoreSet: Set<ke
 export function resyView<S extends ResyStateType>(store: S, Comp: React.ComponentType<ResyStateToProps<S> | any>) {
   const isFuncComp = !(Comp.prototype && Comp.prototype.isReactComponent);
   
-  // dStore代理的Set
-  const dStoreSet: Set<keyof S> = new Set();
+  // 引用数据的代理Set
+  const linkStateSet: Set<keyof S> = new Set();
   
   return () => {
     // 需要使用getState获取store内部的即时最新数据值
-    const dStore = (store[storeListenerStateKey as keyof S] as StoreListenerState<S>).getState() as S;
+    const lastState = (
+      (
+        store[storeHeartMapKey as keyof S] as StoreHeartMapType<S>
+      ).get("getState") as StoreHeartMapValueType<S>["getState"]
+    )() as S;
     /**
-     * 给dStore做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
+     * 给state数据做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
      * 恰巧由于这里的proxy代理，导致在挂载属性数据的时候不能使用扩展运算符，
      * 扩展运算符...会读取所有的属性数据，导致内部关联使用数据属性失去准确性
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
-    const [state, setState] = useState<S>(proxyDStoreHandle(dStore, dStoreSet));
+    const [state, setState] = useState<S>(proxyStateHandle(lastState, linkStateSet));
     
     useEffect(() => {
       // Comp组件内部使用到的数据属性字段数组
-      const innerLinkUseFields = Array.from(dStoreSet);
+      const innerLinkUseFields = Array.from(linkStateSet);
       // 刚好巧妙的与resy的订阅监听resyListener结合起来，形成一个reactive更新的包裹容器
       const cancelListener = resyListener((effectState, _, nextState) => {
         const effectStateFields = Object.keys(effectState);
         if (innerLinkUseFields.some(key => effectStateFields.includes(key as string))) {
-          dStoreSet.clear();
+          linkStateSet.clear();
           // 保持代理数据的更新从而保持innerLinkUseFields的最新化
-          setState(proxyDStoreHandle(nextState, dStoreSet));
+          setState(proxyStateHandle(nextState, linkStateSet));
         }
       }, store);
       return () => {
@@ -73,9 +77,13 @@ export function resyView<S extends ResyStateType>(store: S, Comp: React.Componen
          * resyView会使得组件销毁时不执行subscribe，因为它本身是订阅监听执行的，不属于组件的生命周期发生
          * 所以这里需要特定的数据恢复，同时resetState内部注意关联到unmountClear的逻辑处理
          */
-        (store[storeListenerStateKey as keyof S] as StoreListenerState<S>).resetState();
+        (
+          (
+            store[storeHeartMapKey as keyof S] as StoreHeartMapType<S>
+          ).get("resetState") as StoreHeartMapValueType<S>["resetState"]
+        )();
         cancelListener();
-        dStoreSet.clear();
+        linkStateSet.clear();
       };
     }, []);
     

@@ -103,7 +103,9 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         const nextState = mapToObject<T>(stateMap);
         const effectState = { [key]: val } as EffectState<T>;
         // 单一属性触发数据变动
-        (storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValueType<T>["dispatchStoreEffect"])(effectState, prevState, nextState);
+        (
+          storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValueType<T>["dispatchStoreEffect"]
+        )(effectState, prevState, nextState);
       }
     });
     storeValueMap.set("useString", () => useSyncExternalStore(
@@ -191,7 +193,9 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         }
       });
       // 批量触发变动
-      (storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValueType<T>["dispatchStoreEffect"])(effectState, prevState, nextState);
+      (
+        storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValueType<T>["dispatchStoreEffect"]
+      )(effectState, prevState, nextState);
       callback?.(nextState);
     }
   }

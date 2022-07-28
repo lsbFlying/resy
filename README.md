@@ -31,13 +31,13 @@ npm i resy
 
 ### 概览
 resy需要react版本 v >= 16.8；resy有五个API，分别是：
-- resy：用于生成一个全局状态数据的存储容器
+- resy：生成一个全局状态数据的存储容器
 - useResy：驱动resy生成的数据来更新组件的hook
 - resyUpdate：用于更新或者批量更新数据
 - resyListener：用于订阅监听resy生成的store数据的变化
 - resyView：帮助组件具备 "更完善的规避re-render的方式" 的能力
 
-### resy 生成全局共享数据
+### resy、useResy
 ```tsx
 import React from "react";
 import { resy, useResy } from "resy";

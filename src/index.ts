@@ -47,7 +47,7 @@ function mapToObject<T>(map: Map<keyof T, T[keyof T]>): T {
 export function resy<T extends State>(state: T, unmountClear: boolean = true): T & ResyUpdateType<T> {
   
   /**
-   * 不改变传参state，同时resy大量使用Map与Set提示性能
+   * 不改变传参state，同时resy使用Map与Set提升性能
    * 如stateMap、storeMap、storeHeartMap、storeChanges等
    */
   let stateMap: Map<keyof T, T[keyof T]> = new Map(Object.entries(state));
@@ -159,7 +159,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
    */
   function resyUpdate(
     stateParams: Partial<T> | T | Callback = {},
-    callback?: (dStore: T) => void,
+    callback?: (nextState: T) => void,
   ) {
     /**
      * 减少try执行之前的耗时，这样一句变量耗时可以忽略不计，
@@ -175,7 +175,10 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       } else {
         batchUpdate(() => {
           Object.keys(stateParams).forEach(key => {
-            ((storeMap.get(key) as StoreValueMap<T>).get("setString") as StoreValueMapType<T>["setString"])((stateParams as Partial<T> | T)[key]);
+            (
+              (initialValueLinkStore(key).get(key) as StoreValueMap<T>)
+              .get("setString") as StoreValueMapType<T>["setString"]
+            )((stateParams as Partial<T> | T)[key]);
           });
         });
       }
@@ -214,7 +217,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       return stateMap.get(key);
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
-      initialValueLinkStore(key).get(key)?.get("setString")?.(val);
+      (initialValueLinkStore(key).get(key) as StoreValueMap<T>).get("setString")?.(val);
       return true;
     },
   } as ProxyHandler<T>) as T & ResyUpdateType<T>;

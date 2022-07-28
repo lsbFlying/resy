@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ResyStateType, State, StoreHeartMapType, StoreHeartMapValueType } from "./model";
+import { ResyStateType, ResyUpdateType, State, StoreHeartMapType, StoreHeartMapValueType } from "./model";
 import { storeHeartMapKey } from "./static";
 import { resyListener } from "./utils";
 
@@ -9,7 +9,7 @@ export interface ResyStateToProps<T extends ResyStateType> extends State {
 }
 
 // 给Comp组件的props上挂载的state属性数据做一层引用代理
-function proxyStateHandle<S extends ResyStateType>(lastState: S, linkStateSet: Set<keyof S>) {
+function proxyStateHandle<S extends ResyStateType>(lastState: Omit<S, keyof ResyUpdateType<S>>, linkStateSet: Set<keyof S>) {
   return new Proxy(lastState, {
     get: (target: S, key: keyof S) => {
       linkStateSet.add(key);
@@ -64,7 +64,11 @@ export function resyView<S extends ResyStateType>(store: S, Comp: React.Componen
       // Comp组件内部使用到的数据属性字段数组
       const innerLinkUseFields = Array.from(linkStateSet);
       // 刚好巧妙的与resy的订阅监听resyListener结合起来，形成一个reactive更新的包裹容器
-      const cancelListener = resyListener((effectState, _, nextState) => {
+      const cancelListener = resyListener((
+        effectState,
+        _,
+        nextState,
+      ) => {
         const effectStateFields = Object.keys(effectState);
         if (innerLinkUseFields.some(key => effectStateFields.includes(key as string))) {
           linkStateSet.clear();

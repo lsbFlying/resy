@@ -29,9 +29,9 @@ export type EffectState<T extends ResyStateType> = {
 
 // 订阅事件的监听回调函数类型
 export type ListenerHandle<T extends ResyStateType> = (
-  effectState: EffectState<T>,
-  prevState: T,
-  nextState: T,
+  effectState: EffectState<Omit<T, keyof ResyUpdateType<T>>>,
+  prevState: Omit<T, keyof ResyUpdateType<T>>,
+  nextState: Omit<T, keyof ResyUpdateType<T>>,
 ) => void;
 
 // 自定义订阅监听函数接口类型
@@ -49,8 +49,8 @@ export interface CustomEventInterface<T extends ResyStateType> {
 export type StoreHeartMapValueType<T> = {
   // store内部的state数据对象（使用函数来维持数据获取最新数据值）
   getState: () => T,
-    // 重置(恢复)初始化数据（供resyView使用）
-    resetState: Callback;
+  // 重置(恢复)初始化数据（供resyView使用）
+  resetState: Callback;
   // 订阅监听的事件类型
   listenerEventType: string | symbol;
   // 触发订阅监听的影响Set容器
@@ -69,6 +69,6 @@ export type StoreHeartMapType<T> = Map<
 export type ResyUpdateType<T extends ResyStateType> = {
   resyUpdate(
     state: Partial<T> | T | Callback,
-    callback?: (dStore: T) => void,
+    callback?: (nextState: T) => void,
   ): void;
 }

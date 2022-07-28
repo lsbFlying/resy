@@ -220,7 +220,11 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       return stateMap.get(key);
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
-      (initialValueLinkStore(key).get(key) as StoreValueMap<T>).get("setString")?.(val);
+      (
+        (
+          initialValueLinkStore(key).get(key) as StoreValueMap<T>
+        ).get("setString") as StoreValueMapType<T>["setString"]
+      )(val);
       return true;
     },
   } as ProxyHandler<T>) as T & ResyUpdateType<T>;

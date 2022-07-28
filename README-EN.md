@@ -248,14 +248,25 @@ function App() {
     return cancelListener;
   }, []);
   
-  function btnClick() {
+  function btnClickA() {
     store.count++;
+  }
+	
+  function btnClickB() {
+  	store.text = "qweiop123";
+  }
+	
+  function btnClickC() {
+  	store.count++;
+  	store.text = "098123kjhkhdfs";
   }
   
   return (
     <>
       <p>{count}</p>
-      <button onClick={btnClick}>Button</button>
+      <button onClick={btnClickA}>ButtonA</button><br/>
+      <button onClick={btnClickB}>ButtonB</button><br/>
+      <button onClick={btnClickC}>ButtonC</button>
     </>
   );
 }

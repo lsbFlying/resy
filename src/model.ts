@@ -22,14 +22,9 @@ export type StoreMap<T> = Map<keyof T, StoreValueMap<T>>;
 
 export type ResyStateType = Omit<ReturnType<typeof resy>, "resyUpdate">;
 
-// 订阅事件的回调的当前变化的数据
-export type EffectState<T extends ResyStateType> = {
-  [K in keyof T]: any;
-}
-
 // 订阅事件的监听回调函数类型
 export type ListenerHandle<T extends ResyStateType> = (
-  effectState: EffectState<Omit<T, keyof ResyUpdateType<T>>>,
+  effectState: Partial<Omit<T, keyof ResyUpdateType<T>>>,
   prevState: Omit<T, keyof ResyUpdateType<T>>,
   nextState: Omit<T, keyof ResyUpdateType<T>>,
 ) => void;
@@ -39,7 +34,7 @@ export interface CustomEventInterface<T extends ResyStateType> {
   addEventListener<T>(type: string | symbol, handle: ListenerHandle<T>): void,
   dispatchEvent(
     type: string | symbol,
-    effectState: EffectState<T>,
+    effectState: Partial<T>,
     prevState: T,
     nextState: T,
   ): void,
@@ -56,7 +51,7 @@ export type StoreHeartMapValueType<T> = {
   // 触发订阅监听的影响Set容器
   dispatchStoreEffectSet: Set<CustomEventInterface<any>>;
   // 触发订阅监听的变动影响
-  dispatchStoreEffect: (effectState: EffectState<T>, prevState: T, nextState: T) => void,
+  dispatchStoreEffect: (effectState: Partial<T>, prevState: T, nextState: T) => void,
 }
 
 // 每一个resy生成的store的监听订阅对象、内部stateMap数据以及重置初始化数据的方法

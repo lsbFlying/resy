@@ -10,7 +10,7 @@ import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import { useResyDriveKey, storeHeartMapKey, batchUpdate } from "./static";
 import {
-  Callback, State, EffectState, CustomEventInterface, ResyUpdateType, StoreMap,
+  Callback, State, CustomEventInterface, ResyUpdateType, StoreMap,
   StoreValueMap, StoreValueMapType, StoreHeartMapType, StoreHeartMapValueType,
 } from "./model";
 
@@ -60,7 +60,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   });
   storeHeartMap.set("listenerEventType", Symbol("storeListenerSymbol"));
   storeHeartMap.set("dispatchStoreEffectSet", new Set<CustomEventInterface<any>>());
-  storeHeartMap.set("dispatchStoreEffect", (effectData: EffectState<T>, prevState: T, nextState: T) => {
+  storeHeartMap.set("dispatchStoreEffect", (effectData: Partial<T>, prevState: T, nextState: T) => {
     (storeHeartMap.get("dispatchStoreEffectSet") as StoreHeartMapValueType<T>["dispatchStoreEffectSet"])
     .forEach(item => item.dispatchEvent(
       storeHeartMap.get("listenerEventType") as string | symbol,
@@ -101,7 +101,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       storeChanges.forEach(storeChange => storeChange());
       if (!scheduler.isBatchUpdating) {
         const nextState = mapToObject<T>(stateMap);
-        const effectState = { [key]: val } as EffectState<T>;
+        const effectState = { [key]: val } as Partial<T>;
         // 单一属性触发数据变动
         (
           storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValueType<T>["dispatchStoreEffect"]
@@ -186,7 +186,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
     } finally {
       scheduler.off();
       const nextState = mapToObject<T>(stateMap);
-      const effectState = {} as EffectState<T>;
+      const effectState = {} as Partial<T>;
       Object.keys(nextState).forEach((key: keyof T) => {
         if (!Object.is(nextState[key], prevState[key])) {
           effectState[key] = nextState[key];

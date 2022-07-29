@@ -8,7 +8,7 @@
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
-import { useResyDriveKey, storeHeartMapKey, batchUpdate } from "./static";
+import { useResyDriveKey, storeHeartMapKey, batchUpdate, resyUpdateKey } from "./static";
 import {
   Callback, State, CustomEventInterface, ResyUpdateType, StoreMap,
   StoreValueMap, StoreValueMapType, StoreHeartMapType, StoreHeartMapValueType,
@@ -206,6 +206,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         // 给useResy的驱动更新代理
         return new Proxy(storeMap, {
           get: (_t, tempKey: keyof T) => {
+            if (tempKey === resyUpdateKey) return resyUpdate;
             return (
               (
                 (initialValueLinkStore(tempKey) as StoreMap<T>)
@@ -216,7 +217,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         } as ProxyHandler<StoreMap<T>>);
       }
       if (key === storeHeartMapKey) return storeHeartMap;
-      if (key === "resyUpdate") return resyUpdate;
+      if (key === resyUpdateKey) return resyUpdate;
       return stateMap.get(key);
     },
     set: (_, key: keyof T, val: T[keyof T]) => {

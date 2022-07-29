@@ -19,3 +19,6 @@ export const storeHeartMapKey = Symbol("resyStoreListenerSymbolKey");
 
 // useResy驱动更新的key
 export const useResyDriveKey = Symbol("useResyDriveKey");
+
+// resyUpdate的更新函数key
+export const resyUpdateKey = "resyUpdate";

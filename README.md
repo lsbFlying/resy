@@ -39,7 +39,6 @@ resy需要react版本 v >= 16.8；resy有五个API，分别是：
 
 ### resy、useResy
 ```tsx
-import React from "react";
 import { resy, useResy } from "resy";
 
 /**
@@ -75,7 +74,7 @@ type ResyStore = {
   testFun: () => void;
 };
 // 生成的这个store可以全局共享，直接引入store即可
-export const store = resy<ResyStore>(
+const store = resy<ResyStore>(
   {
     count: 0,
     text: "123qwe",
@@ -171,10 +170,7 @@ function App() {
 
 ### resyUpdate 批量更新
 ```tsx
-import { store } from "store";
-
 function App() {
-  
   function btnClick() {
     /**
      * @description
@@ -213,7 +209,7 @@ function App() {
 
 ### resyListener 订阅监听
 ```tsx
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { resyListener, useResy } from "resy";
 
 function App() {
@@ -273,7 +269,6 @@ function App() {
 
 ### resy 自身特性的规避re-render
 ```tsx
-import React from "react";
 import { resy, useResy } from "resy";
 
 const store = resy({

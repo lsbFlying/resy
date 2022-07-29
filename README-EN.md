@@ -39,7 +39,6 @@ resy requires react version V >= 16.8; resy has five APIs, which are:
 
 ### resy、useResy
 ```tsx
-import React from "react";
 import { resy, useResy } from "resy";
 
 /**
@@ -75,7 +74,7 @@ type ResyStore = {
   testFun: () => void;
 };
 // The generated store can be shared globally and can be imported directly
-export const store = resy<ResyStore>(
+const store = resy<ResyStore>(
   {
     count: 0,
     text: "123qwe",
@@ -171,10 +170,7 @@ function App() {
 
 ### resyUpdate — Batch update
 ```tsx
-import { store } from "store";
-
 function App() {
-  
   function btnClick() {
     /**
      * @description
@@ -214,7 +210,7 @@ function App() {
 
 ### resyListener — Subscription listening
 ```tsx
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { resyListener, useResy } from "resy";
 
 function App() {
@@ -274,7 +270,6 @@ function App() {
 
 ### resy — Avoidance of its own characteristics re render
 ```tsx
-import React from "react";
 import { resy, useResy } from "resy";
 
 const store = resy({

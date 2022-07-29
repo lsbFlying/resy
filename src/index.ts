@@ -131,11 +131,14 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
    * @description 本质上是为了批量更新孕育而出的方法，但同样可以单次更新
    * 如果是在循环中更新，则resyUpdate的state参数可以直接给callback，在callback中写循环更新即可
    *
-   * 事实上如果是react v18及以上，也可以不通过resyUpdate批量更新
-   * 而直接使用store.xxx = x;单次更新的方式，因为v18及以上是自动处理批更新
+   * 事实上如果是react v18及以上也可以不通过resyUpdate批量更新，
+   * 因为v >= 18 React会自动批处理更新，甚至是 v<18 React可以管理到的地方也可以自动批处理更新
+   * Promise或者setTimeout等就属于React18以下管理不到的地方，
+   *
+   * 那么此时在React会自动批处理的情况而直接使用store.xxx = x;单次更新的方式，也可以达到批处理更新的效果
    * 那么就会导致resyListener的监听有问题，会重复本该批量的key值监听触发
    *
-   * 所以这里暂且不建议在v18及以上的react版本中依靠react本身自动化批处理更新
+   * 所以这里暂且不建议多值更新时依靠自动批处理实现批量更新
    * 除非用户看源码并且读到这里的注释😎
    * todo 该问题暂时待解决啦...😊
    *

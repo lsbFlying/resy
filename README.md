@@ -295,8 +295,8 @@ function Count() {
  * 没有额外的多余的渲染避免re-render不代表-"父组件渲染了子组件仍然不渲染"，
  * re-render是指：
  * 如果A、B同级别，同级别A的或者A的子级别组件的数据变化渲染了不会导致B组件渲染
- * 如果是父组件渲染了子级别必然渲染，毕竟只是仅仅额外避免了re-render，
- * 还不是像solid.js那样 "真正的react" 哪里变化 "更新" 哪里
+ * 如果是父组件渲染了子组件在没有SCU或者useMemo的情况下必然渲染，毕竟只是仅仅额外避免了re-render，
+ * 还不是像solid-js那样 "真正的react" 哪里变化 "更新" 哪里
  */
 function App() {
   const { countAddFun } = useResy(store);

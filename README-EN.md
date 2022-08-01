@@ -293,11 +293,11 @@ function Count() {
 }
 
 /**
- * No extra rendering to avoid re render does not mean - "the parent component renders the child component and still does not render",
+ * No extra rendering to avoid re render does not mean - "the parent component renders the child component and still does not render".
  * Re render refers to:
- * If a and B are at the same level, the data of components at the same level a or sub level a is rendered, it will not lead to the rendering of B components,
- * If the parent component renders the child level, it must render. After all, it only avoids re render,
- * Not like solid JS, where the "real react" changes and "updates".
+ * If a and B are at the same level, the data of components at the same level a or sub level a is rendered, it will not lead to the rendering of B components.
+ * If the parent component renders the child component, it must render without SCU or useMemo. After all, it only avoids re render.
+ * Not like solid-js, where the "real react" changes and "updates".
  */
 function App() {
   const { countAddFun } = useResy(store);

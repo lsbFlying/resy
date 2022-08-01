@@ -18,9 +18,9 @@
 ---
 
 ### Features
-- Support hook components and class components 🪩
-- Fine grained update, better avoid re-render 🪩
-- Easy to master, and the learning cost is almost zero 🪩
+- Support hook components and class components 😎
+- Fine grained update, better avoid re-render 😎
+- Easy to master, and the learning cost is almost zero 😎
 
 ### Install
 ```sh

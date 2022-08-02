@@ -20,5 +20,9 @@ export const storeHeartMapKey = Symbol("resyStoreListenerSymbolKey");
 // useResy驱动更新的key
 export const useResyDriveKey = Symbol("useResyDriveKey");
 
-// resyUpdate的更新函数key
+/**
+ * resyUpdate的更新函数key
+ * 不能是symbol类型，因为这个key访问的时候是外部使用访问，就是这个固定的key->resyUpdate
+ * 不像storeHeartMapKey或者useResyDriveKey这样是内部使用的key
+ */
 export const resyUpdateKey = "resyUpdate";

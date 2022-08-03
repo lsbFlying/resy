@@ -190,11 +190,14 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       scheduler.off();
       const nextState = mapToObject<T>(stateMap);
       const effectState = {} as Partial<T>;
-      Object.keys(nextState).forEach((key: keyof T) => {
-        if (!Object.is(nextState[key], prevState[key])) {
+      
+      const keysStateTemp = typeof stateParams === "function" ? nextState : stateParams;
+      Object.keys(keysStateTemp).forEach((key: keyof T) => {
+        if (!Object.is(keysStateTemp[key], prevState[key])) {
           effectState[key] = nextState[key];
         }
       });
+      
       // 批量触发变动
       (
         storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValueType<T>["dispatchStoreEffect"]

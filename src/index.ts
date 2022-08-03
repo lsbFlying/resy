@@ -173,6 +173,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
      */
     let prevState = {} as T;
     try {
+      // 打开批量更新标识，让单次更新内部的单一属性数据订阅监听先不触发，统一在批量更新这里触发，避免单次更新那里重复触发
       scheduler.on();
       // 必须在更新之前执行，获取更新之前的数据
       prevState = mapToObject<T>(stateMap);

@@ -102,7 +102,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       if (!scheduler.isBatchUpdating) {
         const nextState = mapToObject<T>(stateMap);
         const effectState = { [key]: val } as Partial<T>;
-        // 单一属性触发数据变动
+        // 单一属性触发订阅监听的数据变动
         (
           storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValueType<T>["dispatchStoreEffect"]
         )(effectState, prevState, nextState);
@@ -198,7 +198,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         }
       });
       
-      // 批量触发变动
+      // 批量触发订阅监听的数据变动
       (
         storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValueType<T>["dispatchStoreEffect"]
       )(effectState, prevState, nextState);

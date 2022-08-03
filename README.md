@@ -173,11 +173,23 @@ function App() {
 function App() {
   function btnClick() {
     /**
-     * @description
-     * 1、resyUpdate是为了批量更新孕育而出的方法
-     * 但同样可以单次更新，如果是在循环中更新
-     * 则resyUpdate直接给callback，在callback中写循环更新即可
-     * 
+     * @description 
+     * 1、首先需要说明的是resy是具备自动批处理更新的，
+     * 即你使用直接更新的方式会有自动批处理更新，如下：
+     * store.count++;
+     * store.text = "456asd";
+     * 上述方式可以具备自动化批处理更新，但是resy保留了resyUpdate
+     *
+     * 之所以说是保留是因为在resy <= v1.9.1版本之前
+     * 如果在React18以下的非批处理领域还是需要使用resyUpdate来进行批处理更新
+     * 但是在resy > v1.9.1版本之后则不需要，可以直接使用如下方式
+     * store.count++;
+     * store.text = "456asd";
+     * 会自动会批处理更新，
+     *
+     * 保留resyUpdate的原因是出于它本身的使用方式在编码的时候具备很好的读写能力
+     * 以及对象数据更新的便捷、可以直接写循环更新、具备的回调能力都让resyUpdate具备更强的生命力，所以仍然保留
+     *
      * 2、resyUpdate是挂载在每一个resy生成的store数据上面的方法
      */
     // @example A

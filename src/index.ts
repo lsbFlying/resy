@@ -96,19 +96,10 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
        * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
        */
       if (Object.is(val, stateMap.get(key))) return;
-      const prevState = mapToObject<T>(stateMap);
       // 这一步是为了配合getString，使得getString可以获得最新值
       stateMap.set(key, val);
       // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
       storeChanges.forEach(storeChange => storeChange());
-      if (!scheduler.isBatchUpdating) {
-        const nextState = mapToObject<T>(stateMap);
-        const effectState = { [key]: val } as Partial<T>;
-        // 单一属性触发订阅监听的数据变动
-        (
-          storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValueType<T>["dispatchStoreEffect"]
-        )(effectState, prevState, nextState);
-      }
     });
     storeValueMap.set("useString", () => useSyncExternalStore(
       (storeMap.get(key) as StoreValueMap<T>).get("subscribe") as StoreValueMapType<T>["subscribe"],
@@ -130,19 +121,9 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   
   /**
    * resyUpdate
-   * @description 本质上是为了批量更新孕育而出的方法，但同样可以单次更新
-   * 如果是在循环中更新，则resyUpdate的state参数可以直接给callback，在callback中写循环更新即可
-   *
-   * 事实上如果是react v18及以上也可以不通过resyUpdate批量更新，
-   * 因为v >= 18 React会自动批处理更新，甚至是 v<18 React可以管理到的地方也可以自动批处理更新
-   * Promise或者setTimeout等就属于React18以下管理不到的地方，
-   *
-   * 那么此时在React会自动批处理的情况而直接使用store.xxx = x;单次更新的方式，也可以达到批处理更新的效果
-   * 那么就会导致resyListener的监听有问题，会重复本该批量的key值监听触发
-   *
-   * 所以这里暂且不建议多值更新时依靠自动批处理实现批量更新
-   * 除非用户看源码并且读到这里的注释😎
-   * todo 该问题暂时待解决啦...😊
+   * @description 最初是为了批量更新而创建的方法
+   * 后完善来resy的批处理，而resyUpdate依然保留
+   * 它的使用方式以及回调依然具有很好的代码编写能力
    *
    * @example A
    * store.resyUpdate({
@@ -173,8 +154,6 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
      */
     let prevState = {} as T;
     try {
-      // 打开批量更新标识，让单次更新内部的单一属性数据订阅监听先不触发，统一在批量更新这里触发，避免单次更新那里重复触发
-      scheduler.on();
       // 必须在更新之前执行，获取更新之前的数据
       prevState = mapToObject<T>(stateMap);
       if (typeof stateParams === "function") {
@@ -190,23 +169,25 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         });
       }
     } finally {
-      scheduler.off();
-      const nextState = mapToObject<T>(stateMap);
-      const effectState = {} as Partial<T>;
-      
-      const keysStateTemp = typeof stateParams === "function" ? nextState : stateParams;
-      Object.keys(keysStateTemp).forEach((key: keyof T) => {
-        if (!Object.is(keysStateTemp[key], prevState[key])) {
-          effectState[key] = nextState[key];
-        }
-      });
-      
-      // 批量触发订阅监听的数据变动
-      (
-        storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValueType<T>["dispatchStoreEffect"]
-      )(effectState, prevState, nextState);
-      callback?.(nextState);
+      const changedData = typeof stateParams === "function" ? mapToObject<T>(stateMap) : stateParams;
+      batchDispatch(prevState, changedData);
+      callback?.(mapToObject<T>(stateMap));
     }
+  }
+  
+  /** 批量触发订阅监听函数 */
+  function batchDispatch(prevState: T, changedData: Partial<T>) {
+    const nextState = mapToObject<T>(stateMap);
+    const effectState = {} as Partial<T>;
+    Object.keys(changedData).forEach((key: keyof T) => {
+      if (!Object.is(changedData[key], prevState[key])) {
+        effectState[key] = nextState[key];
+      }
+    });
+    // 批量触发订阅监听的数据变动
+    (
+      storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValueType<T>["dispatchStoreEffect"]
+    )(effectState, prevState, nextState);
   }
   
   return new Proxy(state, {
@@ -230,11 +211,39 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       return stateMap.get(key);
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
-      (
-        (
-          initialValueLinkStore(key).get(key) as StoreValueMap<T>
-        ).get("setString") as StoreValueMapType<T>["setString"]
-      )(val);
+      scheduler.add(
+        () => (
+          (
+            initialValueLinkStore(key).get(key) as StoreValueMap<T>
+          ).get("setString") as StoreValueMapType<T>["setString"]
+        )(val),
+        key,
+        val,
+      ).then(() => {
+        /**
+         * 巧妙的地方在于then的执行时机是在所有属性赋值语句执行之后再执行，
+         * 即在如下赋值更新语句执行完之后：
+         * store.x1 = xxx1;
+         * store.x2 = xxx2;
+         * 这刚好使得：
+         * store.x1 = xxx1;
+         * store.x2 = xxx2;
+         * 这种形式的更新写法的批量处理得到的巧妙的处理
+         * 它使得这种写法的批量更新得到实现，并且可以在任何地方得到实现
+         * 这种写法不再需要借助与React本身具备的批处理实现批量更新
+         * 同时可以帮助React v18以下的版本实现React管理不到的地方自动批处理更新
+         */
+        let prevState = {} as T;
+        try {
+          if (!scheduler.isEmpty()) prevState = mapToObject<T>(stateMap);
+          scheduler.flush();
+        } finally {
+          if (!scheduler.isEmpty()) {
+            batchDispatch(prevState, scheduler.getTaskData());
+            scheduler.clear();
+          }
+        }
+      });
       return true;
     },
   } as ProxyHandler<T>) as T & ResyUpdateType<T>;

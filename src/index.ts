@@ -228,7 +228,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
          * 这刚好使得：
          * store.x1 = xxx1;
          * store.x2 = xxx2;
-         * 这种形式的更新写法的批量处理得到的巧妙的处理
+         * 这种形式的更新写法的批量更新得到的巧妙的处理
          * 它使得这种写法的批量更新得到实现，并且可以在任何地方得到实现
          * 这种写法不再需要借助与React本身具备的批处理实现批量更新
          * 同时可以帮助React v18以下的版本实现React管理不到的地方自动批处理更新

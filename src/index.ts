@@ -7,7 +7,7 @@
  * @name resy
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import scheduler from "./scheduler";
+import scheduler, { SchedulerType } from "./scheduler";
 import { useResyDriveKey, storeHeartMapKey, batchUpdate, resyUpdateKey } from "./static";
 import {
   Callback, State, CustomEventInterface, ResyUpdateType, StoreMap,
@@ -211,7 +211,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
       return stateMap.get(key);
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
-      scheduler.add(
+      (scheduler.get("add") as SchedulerType["add"])(
         () => (
           (
             initialValueLinkStore(key).get(key) as StoreValueMap<T>
@@ -235,11 +235,11 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
          */
         let prevState = {} as T;
         try {
-          if (!scheduler.isEmpty()) prevState = mapToObject<T>(stateMap);
-          scheduler.flush();
+          if (!(scheduler.get("isEmpty") as SchedulerType["isEmpty"])()) prevState = mapToObject<T>(stateMap);
+          (scheduler.get("flush") as SchedulerType["flush"])();
         } finally {
-          if (!scheduler.isEmpty()) {
-            batchDispatch(prevState, scheduler.getTaskData());
+          if (!(scheduler.get("isEmpty") as SchedulerType["isEmpty"])) {
+            batchDispatch(prevState, (scheduler.get("getTaskData") as SchedulerType["getTaskData"])());
             scheduler.clear();
           }
         }

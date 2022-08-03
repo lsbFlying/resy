@@ -97,7 +97,9 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
        */
       if (Object.is(val, stateMap.get(key))) return;
       const prevState = mapToObject<T>(stateMap);
+      // 这一步是为了配合getString，使得getString可以获得最新值
       stateMap.set(key, val);
+      // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
       storeChanges.forEach(storeChange => storeChange());
       if (!scheduler.isBatchUpdating) {
         const nextState = mapToObject<T>(stateMap);

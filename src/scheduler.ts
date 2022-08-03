@@ -12,7 +12,8 @@ export type SchedulerType<T extends State = {}> = {
   add<T>(task: Callback, key: keyof T, val: T[keyof T]): Promise<void>;
   flush(): void;
   isEmpty(): boolean;
-  clear(): void;
+  // 注意这里的clean不能与Map的原型方法clear重名
+  clean(): void;
   getTaskData(): TaskDataType<T>;
 };
 
@@ -26,7 +27,7 @@ scheduler.set("flush", () => {
   batchUpdate(() => taskQueue.forEach(task => task()));
 });
 scheduler.set("isEmpty", () => taskQueue.size === 0);
-scheduler.set("clear", taskQueue.clear);
+scheduler.set("clean", () => taskQueue.clear());
 scheduler.set("getTaskData", () => taskData);
 
-export default scheduler;
+export { scheduler };

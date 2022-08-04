@@ -262,11 +262,11 @@ function App() {
   }
 	
   function btnClickB() {
-  	store.text = "qweiop123";
+    store.text = "qweiop123";
   }
 	
   function btnClickC() {
-  	store.count++;
+    store.count++;
     store.text = "098123kjhkhdfs";
   }
   

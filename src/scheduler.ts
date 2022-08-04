@@ -2,7 +2,7 @@ import { Callback, State } from "./model";
 import { batchUpdate } from "./static";
 
 // 更新的任务队列
-const taskQueue: Set<Callback> = new Set();
+const taskQueueSet: Set<Callback> = new Set();
 
 type TaskDataType<T> = Map<keyof T, T[keyof T]>;
 // 更新的任务数据
@@ -20,17 +20,17 @@ export type SchedulerType<T extends State = {}> = {
 const scheduler = new Map<keyof SchedulerType, SchedulerType[keyof SchedulerType]>();
 scheduler.set("add", async (task, key, val) => {
   if (!Object.is(taskDataMap.get(key), val)) {
-    taskQueue.add(task);
+    taskQueueSet.add(task);
     taskDataMap.set(key, val);
   }
 });
 scheduler.set("flush", () => {
-  if (taskQueue.size === 0) return;
-  batchUpdate(() => taskQueue.forEach(task => task()));
+  if (taskQueueSet.size === 0) return;
+  batchUpdate(() => taskQueueSet.forEach(task => task()));
 });
-scheduler.set("isEmpty", () => taskQueue.size === 0);
+scheduler.set("isEmpty", () => taskQueueSet.size === 0);
 scheduler.set("clean", () => {
-  taskQueue.clear();
+  taskQueueSet.clear();
   taskDataMap.clear();
 });
 scheduler.set("getTaskDataMap", () => taskDataMap);

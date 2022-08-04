@@ -26,3 +26,9 @@ export const useResyDriveKey = Symbol("useResyDriveKey");
  * 不像storeHeartMapKey或者useResyDriveKey这样是内部使用的key
  */
 export const resyUpdateKey = "resyUpdate";
+
+// Map转Object的方法
+export function mapToObject<T>(map: Map<keyof T, T[keyof T]>): T {
+  // @ts-ignore
+  return [...map.entries()].reduce((obj, [key, value]) => (obj[key] = value, obj), {});
+}

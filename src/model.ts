@@ -43,7 +43,7 @@ export interface CustomEventInterface<T extends ResyStateType> {
 
 export type StoreHeartMapValueType<T> = {
   // store内部的state数据对象（使用函数来维持数据获取最新数据值）
-  getState: () => T,
+  getState: () => Map<keyof T, T[keyof T]>,
   // 重置(恢复)初始化数据（供resyView使用）
   resetState: Callback;
   // 订阅监听的事件类型

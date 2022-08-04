@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ResyStateType, ResyUpdateType, State, StoreHeartMapType, StoreHeartMapValueType } from "./model";
+import { ResyStateType, State, StoreHeartMapType, StoreHeartMapValueType } from "./model";
 import { storeHeartMapKey } from "./static";
 import { resyListener } from "./utils";
 
@@ -8,15 +8,18 @@ export interface ResyStateToProps<T extends ResyStateType> extends State {
   state: T;
 }
 
-// 给Comp组件的props上挂载的state属性数据做一层引用代理
-function proxyStateHandle<S extends ResyStateType>(lastState: Omit<S, keyof ResyUpdateType<S>>, linkStateSet: Set<keyof S>) {
-  return new Proxy(lastState, {
-    get: (target: S, key: keyof S) => {
+/**
+ * 给Comp组件的props上挂载的state属性数据做一层引用代理
+ * 核心作用是找出SCU或者useMemo所需要的更新依赖的数据属性
+ */
+function proxyStateHandle<S extends ResyStateType>(latestState: Map<keyof S, S[keyof S]>, linkStateSet: Set<keyof S>) {
+  return new Proxy(latestState, {
+    get: (target: Map<keyof S, S[keyof S]>, key: keyof S) => {
       linkStateSet.add(key);
-      // lastState给出了resy生成的store内部数据的引用，这里始终能获取到最新数据
-      return target[key];
+      // latestState给出了resy生成的store内部数据的引用，这里始终能获取到最新数据
+      return target.get(key);
     },
-  } as ProxyHandler<S>) as S;
+  } as ProxyHandler<Map<keyof S, S[keyof S]>>) as any as S;
 }
 
 /**
@@ -47,18 +50,18 @@ export function resyView<S extends ResyStateType>(store: S, Comp: React.Componen
   
   return () => {
     // 需要使用getState获取store内部的即时最新数据值
-    const lastState = (
+    const latestState = (
       (
         store[storeHeartMapKey as keyof S] as StoreHeartMapType<S>
       ).get("getState") as StoreHeartMapValueType<S>["getState"]
-    )() as S;
+    )();
     /**
      * 给state数据做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
      * 恰巧由于这里的proxy代理，导致在挂载属性数据的时候不能使用扩展运算符，
      * 扩展运算符...会读取所有的属性数据，导致内部关联使用数据属性失去准确性
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
-    const [state, setState] = useState<S>(proxyStateHandle(lastState, linkStateSet));
+    const [state, setState] = useState<S>(proxyStateHandle(latestState, linkStateSet));
     
     useEffect(() => {
       // Comp组件内部使用到的数据属性字段数组
@@ -73,7 +76,7 @@ export function resyView<S extends ResyStateType>(store: S, Comp: React.Componen
         if (innerLinkUseFields.some(key => effectStateFields.includes(key as string))) {
           linkStateSet.clear();
           // 保持代理数据的更新从而保持innerLinkUseFields的最新化
-          setState(proxyStateHandle(nextState, linkStateSet));
+          setState(proxyStateHandle(new Map(Object.entries(nextState)), linkStateSet));
         }
       }, store);
       return () => {

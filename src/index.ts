@@ -8,7 +8,9 @@
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { scheduler, SchedulerType } from "./scheduler";
-import { useResyDriveKey, storeHeartMapKey, batchUpdate, resyUpdateKey } from "./static";
+import {
+  useResyDriveKey, storeHeartMapKey, batchUpdate, resyUpdateKey, mapToObject,
+} from "./static";
 import {
   Callback, State, CustomEventInterface, ResyUpdateType, StoreMap,
   StoreValueMap, StoreValueMapType, StoreHeartMapType, StoreHeartMapValueType,
@@ -19,12 +21,6 @@ import {
  * 是为了解决该包在ESM中的有效执行，至少目前该包不这样是解决不了ESM执行的问题
  */
 const { useSyncExternalStore } = useSyncExternalStoreExports;
-
-/** Map转Object的方法 */
-function mapToObject<T>(map: Map<keyof T, T[keyof T]>): T {
-  // @ts-ignore
-  return [...map.entries()].reduce((obj, [key, value]) => (obj[key] = value, obj), {});
-}
 
 /**
  * resy: react state easy
@@ -54,7 +50,7 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   
   // 每一个resy生成的store具有的监听订阅处理，并且可以获取最新state数据，像心脏一样核心重要
   const storeHeartMap: StoreHeartMapType<T> = new Map();
-  storeHeartMap.set("getState", () => mapToObject<T>(stateMap));
+  storeHeartMap.set("getState", () => stateMap);
   storeHeartMap.set("resetState", () => {
     if (unmountClear) stateMap = new Map(Object.entries(state));
   });

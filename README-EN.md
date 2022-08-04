@@ -124,7 +124,14 @@ function App() {
   } = useResy(store);
   
   function btn2() {
-    // It can be updated by direct assignment (the simplest update method)
+    /**
+     * 1、It can be updated by direct assignment (the simplest update method)
+     * 2、Secondly, resy has automatic batch update
+     * That is, if you use the direct update method, there will be automatic batch updates, as follows:
+     * store.count++;
+     * store.text = "456asd";
+     * The above method can have automatic batch update,
+     */
     store.count++;
     store.text = "456asd";
     /**
@@ -174,12 +181,7 @@ function App() {
   function btnClick() {
     /**
      * @description
-     * 1、First of all, resy has automatic batch update
-     * That is, if you use the direct update method, there will be automatic batch updates, as follows:
-     * store.count++;
-     * store.text = "456asd";
-     * The above method can have automatic batch update, but resy retains resyUpdate
-     * 
+     * 1、resy retains resyUpdate
      * It is reserved because it was before resy <= v1.9.1
      * In non batch fields below react18, resyupdate is still needed for batch update
      * However, it is not required after resy > v1.9.1. You can directly use the following methods

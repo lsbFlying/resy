@@ -124,7 +124,14 @@ function App() {
   } = useResy(store);
   
   function btn2() {
-    // 可以直接赋值更新（最简单的更新方式）
+    /**
+     * 1、可以直接赋值更新（最简单的更新方式）
+     * 2、其次需要说明的是resy是具备自动批处理更新的，
+     * 即你使用直接更新的方式会有自动批处理更新，如下：
+     * store.count++;
+     * store.text = "456asd";
+     * 上述方式可以具备自动化批处理更新 
+     */
     store.count++;
     store.text = "456asd";
     /**
@@ -174,12 +181,7 @@ function App() {
   function btnClick() {
     /**
      * @description 
-     * 1、首先需要说明的是resy是具备自动批处理更新的，
-     * 即你使用直接更新的方式会有自动批处理更新，如下：
-     * store.count++;
-     * store.text = "456asd";
-     * 上述方式可以具备自动化批处理更新，但是resy保留了resyUpdate
-     *
+     * 1、resy保留了resyUpdate
      * 之所以说是保留是因为在resy <= v1.9.1版本之前
      * 如果在React18以下的非批处理领域还是需要使用resyUpdate来进行批处理更新
      * 但是在resy > v1.9.1版本之后则不需要，可以直接使用如下方式

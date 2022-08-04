@@ -281,7 +281,7 @@ function App() {
 }
 ```
 
-### resy 自身特性的规避re-render
+### resy自身特性的规避re-render
 ```tsx
 import { resy, useResy } from "resy";
 

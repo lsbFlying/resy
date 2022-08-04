@@ -29,7 +29,7 @@ npm i resy
 # yarn add resy
 ```
 
-### overview
+### Overview
 resy requires react version V >= 16.8; resy has five APIs, which are:
 - resy：Storage container for generating a global status data
 - useResy：Hook that drives component updates
@@ -283,7 +283,7 @@ function App() {
 }
 ```
 
-### resy — Avoidance of its own characteristics re render
+### Avoidance re-render of resy its own characteristics
 ```tsx
 import { resy, useResy } from "resy";
 

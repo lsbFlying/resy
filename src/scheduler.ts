@@ -2,11 +2,10 @@ import { Callback, State } from "./model";
 import { batchUpdate } from "./static";
 
 // 更新的任务队列
-const taskQueueSet: Set<Callback> = new Set();
+const taskQueueMap = new Map<string | number | symbol, Callback>();
 
-type TaskDataType<T> = Map<keyof T, T[keyof T]>;
 // 更新的任务数据
-const taskDataMap: TaskDataType<any> = new Map();
+const taskDataMap = new Map();
 
 export type SchedulerType<T extends State = {}> = {
   add<T>(task: Callback, key: keyof T, val: T[keyof T]): Promise<void>;
@@ -14,23 +13,32 @@ export type SchedulerType<T extends State = {}> = {
   isEmpty(): boolean;
   // 注意这里的clean最好不要与Map的原型方法clear重名
   clean(): void;
-  getTaskDataMap(): TaskDataType<T>;
+  getTaskDataMap(): Map<keyof T, T[keyof T]>;
 };
 
+/**
+ * 批量处理更新的调度Map
+ * 主要是为了完成react18以下的非管理领域的批处理更新的调度协调性
+ */
 const scheduler = new Map<keyof SchedulerType, SchedulerType[keyof SchedulerType]>();
 scheduler.set("add", async (task, key, val) => {
+  /**
+   * 这里需要注意避免重复添加相同赋值更新的情况
+   * 同时需要注意在一个批次里同一个数据属性的更新
+   * 只按最后一次赋值更新处理，避免多余添加
+   */
   if (!Object.is(taskDataMap.get(key), val)) {
-    taskQueueSet.add(task);
+    taskQueueMap.set(key, task);
     taskDataMap.set(key, val);
   }
 });
 scheduler.set("flush", () => {
-  if (taskQueueSet.size === 0) return;
-  batchUpdate(() => taskQueueSet.forEach(task => task()));
+  if (taskQueueMap.size === 0) return;
+  batchUpdate(() => taskQueueMap.forEach(task => task()));
 });
-scheduler.set("isEmpty", () => taskQueueSet.size === 0);
+scheduler.set("isEmpty", () => taskQueueMap.size === 0);
 scheduler.set("clean", () => {
-  taskQueueSet.clear();
+  taskQueueMap.clear();
   taskDataMap.clear();
 });
 scheduler.set("getTaskDataMap", () => taskDataMap);

@@ -4,9 +4,9 @@ import { batchUpdate } from "./static";
 // 更新的任务队列
 const taskQueue: Set<Callback> = new Set();
 
-type TaskDataType<T> = Record<keyof T, T[keyof T]>;
+type TaskDataType<T> = Map<keyof T, T[keyof T]>;
 // 更新的任务数据
-let taskData: TaskDataType<any> = {};
+const taskDataMap: TaskDataType<any> = new Map();
 
 export type SchedulerType<T extends State = {}> = {
   add<T>(task: Callback, key: keyof T, val: T[keyof T]): Promise<void>;
@@ -14,14 +14,14 @@ export type SchedulerType<T extends State = {}> = {
   isEmpty(): boolean;
   // 注意这里的clean最好不要与Map的原型方法clear重名
   clean(): void;
-  getTaskData(): TaskDataType<T>;
+  getTaskDataMap(): TaskDataType<T>;
 };
 
 const scheduler = new Map<keyof SchedulerType, SchedulerType[keyof SchedulerType]>();
 scheduler.set("add", async (task, key, val) => {
-  if (!Object.is(taskData[key], val)) {
+  if (!Object.is(taskDataMap.get(key), val)) {
     taskQueue.add(task);
-    taskData[key] = val;
+    taskDataMap.set(key, val);
   }
 });
 scheduler.set("flush", () => {
@@ -31,8 +31,8 @@ scheduler.set("flush", () => {
 scheduler.set("isEmpty", () => taskQueue.size === 0);
 scheduler.set("clean", () => {
   taskQueue.clear();
-  taskData = {};
+  taskDataMap.clear();
 });
-scheduler.set("getTaskData", () => taskData);
+scheduler.set("getTaskDataMap", () => taskDataMap);
 
 export { scheduler };

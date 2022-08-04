@@ -148,14 +148,9 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
     stateParams: Partial<T> | T | Callback = {},
     callback?: (nextState: T) => void,
   ) {
-    /**
-     * 减少try执行之前的耗时，这样一句变量耗时可以忽略不计，
-     * 而mapToObject的计算耗时较大，会影响批量更新与单次更新的分叉逻辑
-     */
-    let prevState = {} as T;
+    // 必须在更新之前执行，获取更新之前的数据
+    const prevState = new Map(stateMap);
     try {
-      // 必须在更新之前执行，获取更新之前的数据
-      prevState = mapToObject<T>(stateMap);
       if (typeof stateParams === "function") {
         batchUpdate(stateParams as Callback);
       } else {
@@ -169,25 +164,25 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         });
       }
     } finally {
-      const changedData = typeof stateParams === "function" ? mapToObject<T>(stateMap) : stateParams;
+      const changedData = typeof stateParams === "function" ? stateMap : new Map(Object.entries(stateParams));
       batchDispatch(prevState, changedData);
       callback?.(mapToObject<T>(stateMap));
     }
   }
   
   /** 批量触发订阅监听函数 */
-  function batchDispatch(prevState: T, changedData: Partial<T>) {
-    const nextState = mapToObject<T>(stateMap);
+  function batchDispatch(prevState: Map<keyof T, T[keyof T]>, changedData: Map<keyof T, T[keyof T]>) {
     const effectState = {} as Partial<T>;
-    Object.keys(changedData).forEach((key: keyof T) => {
-      if (!Object.is(changedData[key], prevState[key])) {
-        effectState[key] = nextState[key];
+    // @ts-ignore
+    [...changedData.entries()].forEach((key: [keyof T, T[keyof T]]) => {
+      if (!Object.is(key[1], prevState.get(key[0]))) {
+        effectState[key[0]] = stateMap.get(key[0]);
       }
     });
     // 批量触发订阅监听的数据变动
     (
       storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValueType<T>["dispatchStoreEffect"]
-    )(effectState, prevState, nextState);
+    )(effectState, mapToObject(prevState), mapToObject(stateMap));
   }
   
   return new Proxy(state, {
@@ -233,13 +228,12 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
          * 这种写法不再需要借助与React本身具备的批处理实现批量更新
          * 同时可以帮助React v18以下的版本实现React管理不到的地方自动批处理更新
          */
-        let prevState = {} as T;
+        const prevState = new Map(stateMap);
         try {
-          if (!(scheduler.get("isEmpty") as SchedulerType["isEmpty"])()) prevState = mapToObject<T>(stateMap);
           (scheduler.get("flush") as SchedulerType["flush"])();
         } finally {
           if (!(scheduler.get("isEmpty") as SchedulerType["isEmpty"])()) {
-            batchDispatch(prevState, (scheduler.get("getTaskData") as SchedulerType["getTaskData"])());
+            batchDispatch(prevState, (scheduler.get("getTaskDataMap") as SchedulerType["getTaskDataMap"])());
             (scheduler.get("clean") as SchedulerType["clean"])();
           }
         }

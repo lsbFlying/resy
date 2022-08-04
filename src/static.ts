@@ -27,8 +27,5 @@ export const useResyDriveKey = Symbol("useResyDriveKey");
  */
 export const resyUpdateKey = "resyUpdate";
 
-// Map转Object的方法
-export function mapToObject<T>(map: Map<keyof T, T[keyof T]>): T {
-  // @ts-ignore
-  return [...map.entries()].reduce((obj, [key, value]) => (obj[key] = value, obj), {});
-}
+// resyView中获取nextState的整个Map数据的key
+export const resyViewNextStateMapKey = Symbol("resyViewNextStateMapKey");

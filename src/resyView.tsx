@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ResyStateType, State, StoreHeartMapType, StoreHeartMapValueType } from "./model";
-import { storeHeartMapKey } from "./static";
+import { resyViewNextStateMapKey, storeHeartMapKey } from "./static";
 import { resyListener } from "./utils";
 
 export interface ResyStateToProps<T extends ResyStateType> extends State {
@@ -76,7 +76,7 @@ export function resyView<S extends ResyStateType>(store: S, Comp: React.Componen
         if (innerLinkUseFields.some(key => effectStateFields.includes(key as string))) {
           linkStateSet.clear();
           // 保持代理数据的更新从而保持innerLinkUseFields的最新化
-          setState(proxyStateHandle(new Map(Object.entries(nextState)), linkStateSet));
+          setState(proxyStateHandle(nextState[resyViewNextStateMapKey as keyof typeof nextState], linkStateSet));
         }
       }, store);
       return () => {

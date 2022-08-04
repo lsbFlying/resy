@@ -9,7 +9,7 @@
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { scheduler, SchedulerType } from "./scheduler";
 import {
-  useResyDriveKey, storeHeartMapKey, batchUpdate, resyUpdateKey, mapToObject,
+  useResyDriveKey, storeHeartMapKey, batchUpdate, resyUpdateKey, resyViewNextStateMapKey,
 } from "./static";
 import {
   Callback, State, CustomEventInterface, ResyUpdateType, StoreMap,
@@ -162,11 +162,20 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
     } finally {
       const changedData = typeof stateParams === "function" ? stateMap : new Map(Object.entries(stateParams));
       batchDispatch(prevState, changedData);
-      callback?.(mapToObject<T>(stateMap));
+      callback?.(
+        new Proxy(stateMap, {
+          get: (target, p: keyof T) => {
+            return target.get(p);
+          }
+        } as ProxyHandler<Map<keyof T, T[keyof T]>>) as any as T
+      );
     }
   }
   
-  /** 批量触发订阅监听函数 */
+  /**
+   * 批量触发订阅监听的数据变动
+   * 使用proxy比使用map转object效率更块
+   */
   function batchDispatch(prevState: Map<keyof T, T[keyof T]>, changedData: Map<keyof T, T[keyof T]>) {
     const effectState = {} as Partial<T>;
     // @ts-ignore
@@ -175,10 +184,23 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         effectState[key[0]] = stateMap.get(key[0]);
       }
     });
-    // 批量触发订阅监听的数据变动
+    
     (
       storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValueType<T>["dispatchStoreEffect"]
-    )(effectState, mapToObject(prevState), mapToObject(stateMap));
+    )(
+      effectState,
+      new Proxy(prevState, {
+        get: (target, p: keyof T) => {
+          return target.get(p);
+        }
+      } as ProxyHandler<Map<keyof T, T[keyof T]>>) as any as T,
+      new Proxy(stateMap, {
+        get: (target, p: keyof T) => {
+          if (p === resyViewNextStateMapKey) return target;
+          return target.get(p);
+        }
+      } as ProxyHandler<Map<keyof T, T[keyof T]>>) as any as T,
+    );
   }
   
   return new Proxy(state, {

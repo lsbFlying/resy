@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { ResyStateType, State, StoreHeartMapType, StoreHeartMapValueType } from "./model";
+import { State, StoreHeartMapType, StoreHeartMapValueType } from "./model";
 import { resyViewNextStateMapKey, storeHeartMapKey } from "./static";
 import { resyListener } from "./utils";
 
-export interface ResyStateToProps<T extends ResyStateType> extends State {
+export interface ResyStateToProps<T extends State> {
   // 将resy生成的store容器数据挂载到组件的props的state属性上
   state: T;
 }
@@ -12,7 +12,7 @@ export interface ResyStateToProps<T extends ResyStateType> extends State {
  * 给Comp组件的props上挂载的state属性数据做一层引用代理
  * 核心作用是找出SCU或者useMemo所需要的更新依赖的数据属性
  */
-function proxyStateHandle<S extends ResyStateType>(latestState: Map<keyof S, S[keyof S]>, linkStateSet: Set<keyof S>) {
+function proxyStateHandle<S extends State>(latestState: Map<keyof S, S[keyof S]>, linkStateSet: Set<keyof S>) {
   return new Proxy(latestState, {
     get: (target: Map<keyof S, S[keyof S]>, key: keyof S) => {
       linkStateSet.add(key);
@@ -42,7 +42,7 @@ function proxyStateHandle<S extends ResyStateType>(latestState: Map<keyof S, S[k
  * 即如果resyView包裹的Comp组件即使在其父组件更新渲染了
  * 只要内部使用的数据没有更新，那么它本身不会渲染re-render
  */
-export function resyView<S extends ResyStateType>(store: S, Comp: React.ComponentType<ResyStateToProps<S> | any>) {
+export function resyView<S extends State>(store: S, Comp: React.ComponentType<ResyStateToProps<S> | any>) {
   const isFuncComp = !(Comp.prototype && Comp.prototype.isReactComponent);
   
   // 引用数据的代理Set

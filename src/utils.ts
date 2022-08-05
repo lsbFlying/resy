@@ -1,6 +1,6 @@
 import {
-  Callback, ResyStateType, ListenerHandle, CustomEventInterface,
-  StoreHeartMapType, StoreHeartMapValueType, ResyUpdateType,
+  Callback, ListenerHandle, CustomEventInterface, StoreHeartMapType,
+  StoreHeartMapValueType, ResyUpdateType, State,
 } from "./model";
 import { storeHeartMapKey, useResyDriveKey } from "./static";
 import { EventDispatcher } from "./listener";
@@ -9,7 +9,7 @@ import { EventDispatcher } from "./listener";
  * useResy
  * @description 驱动组件更新的hook，以use开头显然是要符合react的hook使用时序规则
  */
-export function useResy<T extends ResyStateType>(store: T): T {
+export function useResy<T extends State>(store: T): T {
   return store[useResyDriveKey as keyof T];
 }
 
@@ -31,7 +31,7 @@ export function useResy<T extends ResyStateType>(store: T): T {
  * 如果为空则默认监听store的任何一个数据的变化
  * @return Callback 返回取消监听的函数
  */
-export function resyListener<T extends ResyStateType>(
+export function resyListener<T extends State>(
   listener: ListenerHandle<T>,
   store: T,
   listenerKeys?: (keyof T)[],

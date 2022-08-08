@@ -178,8 +178,8 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
    * 1、使用map转object效率更块
    * 2、这两者数据实际上使用程度比较少，本身常用的时effectState
    * 之所以effectState采用对象设计：
-   * 1、是常用
-   * 2、是配合resyView的内部数据牵引更新比较时也方便
+   * 1、常用几率较大，如果使用resyListener必然是常规使用业务逻辑
+   * 2、配合resyView的内部数据牵引更新比较时方便，是不二之选
    * 3、是changedData本身是部分变更数据不会很多，不怎么影响效率
    */
   function batchDispatch(prevState: Map<keyof T, T[keyof T]>, changedData: Map<keyof T, T[keyof T]>) {
@@ -249,12 +249,8 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
          * 即在如下赋值更新语句执行完之后：
          * store.x1 = xxx1;
          * store.x2 = xxx2;
-         * 这刚好使得：
-         * store.x1 = xxx1;
-         * store.x2 = xxx2;
-         * 这种形式的更新写法的批量更新得到的巧妙的处理
-         * 它使得这种写法的批量更新得到实现，并且可以在任何地方得到实现
-         * 这种写法不再需要借助与React本身具备的批处理实现批量更新
+         * 这刚好使得直接连续更新这种形式的更新写法的批量更新得到的巧妙的处理
+         * 并且可以在任何地方得到实现，不再需要借助与React本身具备的批处理实现批量更新
          * 同时可以帮助React v18以下的版本实现React管理不到的地方自动批处理更新
          */
         const prevState = new Map(stateMap);

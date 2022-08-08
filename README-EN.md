@@ -169,7 +169,9 @@ function App() {
       // It can be understood that state is this in the callback function of "this.setstate" state
       // At the same time, this also makes up for:
       // In the hook component, the latest data can only be obtained through useeffect after setstate
-      console.log(state);
+      console.log(state.count, state.text);
+      // Or use store. To get the latest data value
+      // console.log(store.count, store.text);
     });
     // B way can directly write circular updates in the callback function,
     // which is more convenient for the update of some complex business logic
@@ -178,7 +180,7 @@ function App() {
     //   store.count++;
     //   store.text = "456asd";
     // }, (state) => {
-    //   console.log(state);
+    //   console.log(state.count, state.text);
     // });
   }
   

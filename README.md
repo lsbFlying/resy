@@ -166,15 +166,17 @@ function App() {
       // 可以理解state即为"this.setState"的回调函数中的this.state
       // 同时这一点也弥补了：
       // hook组件中setState后只能通过useEffect来获取最新数据的方式
-      console.log(state);
+      console.log(state.count, state.text);
+      // 或者使用store.来获取最新数据值
+      // console.log(store.count, store.text);
     });
     // B的方式可以在回调函数中直接写循环更新，更方便某些复杂的业务逻辑的更新
     // @example B
     // store.resyUpdate(() => {
     //   store.count++;
     //   store.text = "456asd";
-    // }, (dStore) => {
-    //   console.log(dStore);
+    // }, (state) => {
+    //   console.log(state.count, state.text);
     // });
   }
   

@@ -75,7 +75,7 @@ const store = resy<ResyStore>(
 function App() {
   /**
    * useResy用于组件的驱动更新，如果不用useResy直接使用store，
-   * 则只能获取最新数据无法驱动组件更新重新渲染，通过store读取的数据永远是最新数据值
+   * 则只能获取纯数据而无法驱动组件更新重新渲染
    */
   const {
     count, text, testObj: { name }, testArr, testFun,
@@ -143,18 +143,17 @@ function App() {
 }
 ```
 
-### resyUpdate 批量更新
+### resyUpdate 更新
 ```tsx
 function App() {
   function btnClick() {
     /**
-     * 1、resy保留了resyUpdate
-     * 之所以说是保留是因为在resy <= v1.9.1版本之前
-     * 如果在React18以下的非批处理领域还是需要使用resyUpdate来进行批处理更新
-     * 但是在resy > v1.9.1版本之后则不需要，可以直接使用单次批量更新
-     *
-     * 保留resyUpdate的原因是出于它本身的使用方式在编码的时候具备很好的读写能力
-     * 对象数据更新的便捷、可以直接写循环更新以及具备的回调能力都让resyUpdate具备更强的生命力，所以仍然保留
+     * 1、resy需要resyUpdate最主要的原因是需要resyUpdate的回调功能
+     * 它的回调函数的参数是最新的数据，或者在回调函数中通过store.来获取最新数据
+     * 因为resy的更新是异步的，于是需要同步获取数据时就需要resyUpdate的回调
+     * 它相当于setState的回调
+     * 其次，resyUpdate本身的使用方式在编码的时候具备很好的读写能力、
+     * 对象数据更新的便捷以及可以直接写循环更新的能力都让resyUpdate具备更强的生命力
      *
      * 2、resyUpdate是挂载在每一个resy生成的store数据上面的方法
      */

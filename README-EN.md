@@ -41,30 +41,6 @@ resy requires react version V >= 16.8; resy has five APIs, which are:
 ```tsx
 import { resy, useResy } from "resy";
 
-/**
- * About resy, the core API:
- *
- * @description 
- * A、When resy is used,
- * It is best to add a customized and accurate template type when writing the initialization state,
- * Although resy has automatic type inference, it is not accurate enough when the data state type may change
- *
- * B、Resy has the second parameter：unmountClear
- * The unmountclear parameter is mainly used to automatically clear data when a module is unloaded,
- * Restore the data to initialize the incoming state data.
- * The reason why there is a parameter design like unmountclear is that resy is for the convenience of minimalism,
- * Generally, it is called in a file to return a store,
- * However, after entering the module, the node will be left JS import cache,
- * That is, the core API method resy is not executed again, resulting in the data state being maintained all the time,
- * That is, under the implementation of "static template", resy, the core API, will not run again,
- * But this is not a bad thing, because as a globally controllable and referential state memory,
- * it is beneficial to have such a capability.
- * For example, the logged in user information data, as a data that can be shared by all global modules, well reflects this,
- * However, this kind of data that is truly shared by the whole world is relatively small,
- * In most cases, there is not so much data to share globally,
- * Therefore, unmountclear parameter is set to true by default, which is in line with normal use,
- * It will be set to false unless it encounters global data such as the login information data above.
- */
 // Data paradigm type interface
 type ResyStore = {
   count: number;
@@ -85,22 +61,29 @@ const store = resy<ResyStore>(
       console.log("testFun");
     },
   },
-  // The second parameter is true by default
+  /**
+   * The default is true
+   * True: the initialization data state is automatically restored when the default component is uninstalled
+   * False: the initialization data is not recovered when the component is uninstalled, and the data state is maintained
+   * General usage scenarios can be set to true
+   * Special use scenarios, such as login information data
+   * Alternatively, the theme data belongs to the global status data and can be set to false
+   */
   // false,
 );
 
 function App() {
   /**
-   * Or: const snapshot = useResy(store);
-   * snapshot.count; ...etc
-   *
-   * useresy is used for driver update of components,
-   * If you use store directly without useresy,
+   * useresy is used for driver update of components, If you use store directly without useresy,
    * Only the latest data can be obtained, and component update and re rendering cannot be driven.
+   * The data read through the store is always the latest data value.
    */
   const {
     count, text, testObj: { name }, testArr, testFun,
   } = useResy(store);
+
+  // Or: const snapshot = useResy(store);
+  // snapshot.count; ...etc
   
   return (
     <>
@@ -125,20 +108,16 @@ function App() {
   
   function btn2() {
     /**
-     * 1、It can be updated by direct assignment (the simplest update method)
-     * 2、Secondly, resy has automatic batch update
-     * That is, if you use the direct update method, there will be automatic batch updates, as follows:
-     * store.count++;
-     * store.text = "456asd";
-     * The above method can have automatic batch update,
+     * It should be noted that resy has automatic batch update
+     * In addition, the batch update of resy can make up for the version below react v18.
+     * In places where react cannot manage, such as promise or setTimeout, batch update also has the effect
      */
+    // It can be updated by direct assignment (the simplest update method)
     store.count++;
     store.text = "456asd";
     /**
-     * Direct attribute chain update is not allowed
-     * Because resy proxy only maps the data attributes of the first layer
-     * For performance reasons, deep recursive proxy is not currently available
-     * The following update methods are invalid
+     * Direct attribute chain update is not allowed, Because resy proxy only maps the data attributes of the first layer
+     * For performance reasons, deep recursive proxy is not currently available, The following update methods are invalid
      */
     // store.testObj.name = "Jack";
     // New value assignment required (valid update)
@@ -152,14 +131,6 @@ function App() {
     // store.testArr[0] = { age: 7 };
     // Also need new value assignment required (valid update)
     store.testArr = [{ age: 7 }];
-    
-    /**
-     * Summary: basic data types can be directly assigned and updated,
-     * and the update method of reference data types requires new reference values.
-     * Then you can directly overwrite the update with the new value.
-     * Or use object assign/... Extension operators etc.
-     * They also generate new reference addresses and new data values.
-     */
   }
   
   return (
@@ -180,18 +151,15 @@ function App() {
 function App() {
   function btnClick() {
     /**
-     * @description
      * 1、resy retains resyUpdate
      * It is reserved because it was before resy <= v1.9.1
      * In non batch fields below react18, resyupdate is still needed for batch update
-     * However, it is not required after resy > v1.9.1. You can directly use the following methods
-     * store.count++;
-     * store.text = "456asd";
-     * Automatically batch updates
+     * However, it is not required after resy > v1.9.1. You can directly use single batch update
      *
-     * The reason why resyupdate is retained is that its own way of use has good reading and writing ability during coding,
-     * as well as the convenience of object data update, direct write cycle update and callback ability,
-     * which make resyupdate have stronger vitality, so it is still retained
+     * The reason why resyupdate is retained is that its own use mode has good reading
+     * and writing ability during coding, the convenience of updating object data,
+     * the ability to write directly, the circular update,
+     * and the callback ability all make resyupdate have stronger vitality, so it is still retained
      *
      * 2、resyupdate is a method of attaching to each store data generated by resy
      */
@@ -310,9 +278,9 @@ function Count() {
 /**
  * No extra rendering to avoid re render does not mean - "the parent component renders the child component and still does not render".
  * Re render refers to:
- * If a and B are at the same level, the data of components at the same level a or sub level a is rendered, it will not lead to the rendering of B components.
- * If the parent component renders the child component, it must render without SCU or useMemo. After all, it only avoids re render.
- * Not like solid-js, where the "real react" changes and "updates".
+ * If a and B are at the same level, the data of components at the same level a or sub level a is rendered,
+ * it will not lead to the rendering of B components.
+ * If the parent component renders the child component, it must render without SCU or useMemo. After all
  */
 function App() {
   const { countAddFun } = useResy(store);
@@ -334,22 +302,6 @@ function App() {
 ```
 
 ### resyView — Better avoid re render
-```tsx
-/**
- * @description resyView was created for:
- * Resy itself is born for hook, but it still needs to support class components
- * After all, class components and hook components are not either one or the other. The existence of class components is still necessary
- * Class components still have good performance and robust code reading and writing ability (in fact, class is higher than hook in terms of performance)
- * Hook can be regarded as be a tiger with wings added or the icing on the cake of react, but the class component cannot be removed as a tiger leg
- * At least for now, it's a more friendly and healthy way to code
- * At the same time, resy itself has the feature of avoiding re-render, which optimizes rendering to a certain extent
- * However, it is not perfect, that is, the update of parent components will still lead to mindless re render of child components
- * resyView is designed to solve this problem and reduce the mental burden of developers
- * Compared with the developers, the usememo of SCU or hook components of class components is determined additionally
- * resyView is too easy for the mental burden of controlling the selected attribute data fields.
- */
-```
-
 ```tsx
 // store single file
 import { resy } from "resy";
@@ -379,8 +331,6 @@ export default store;
 
 ```tsx
 // resyView support for class components
-
-// ClassCom single file
 import React from "react";
 import { resyView, ResyStateToProps } from "resy";
 import store, { StoreType } from "store";
@@ -410,8 +360,6 @@ export default resyView(store, ClassCom);
 
 ```tsx
 // resyView support for hook components
-
-// HookCom single file
 import React from "react";
 import { resyView, ResyStateToProps } from "resy";
 import store, { StoreType } from "store";
@@ -472,15 +420,13 @@ function App() {
   
   /**
    * Summary: compared with resy's own characteristics, re render
-   * resyView handles circumvented re render more perfectly
+   * resyView handles circumvented re-render more perfectly
    *
    * The perfection lies in:
-   * The first thing is clear,
-   * resyView has the feature of avoiding re render of resy itself
-   * Second, the core point of perfection is that even if the parent component is updated
+   * that is even if the parent component is updated
    * As long as resyView wraps the component itself
    * The attribute data of the update reason is not used in the parent component
-   * Then the components wrapped by resyView will not be re rendered
+   * Then the components wrapped by resyView will not be re-render
    */
   return (
     <>

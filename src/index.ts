@@ -12,9 +12,10 @@ import {
   useResyDriveKey, storeHeartMapKey, batchUpdate, resyUpdateKey, resyViewNextStateMapKey,
 } from "./static";
 import {
-  Callback, State, CustomEventInterface, ResyUpdateType, StoreMap,
-  StoreValueMap, StoreValueMapType, StoreHeartMapType, StoreHeartMapValueType,
+  Callback, State, ResyUpdateType, StoreMap, StoreValueMap,
+  StoreValueMapType, StoreHeartMapType, StoreHeartMapValueType,
 } from "./model";
+import { CustomEventInterface } from "./listener";
 
 /**
  * 从use-sync-external-store包的导入方式到下面的引用方式

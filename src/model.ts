@@ -1,3 +1,5 @@
+import { CustomEventInterface } from "./listener";
+
 export type Callback = () => void;
 
 // 初始化数据的继承类型
@@ -17,25 +19,6 @@ export type StoreValueMapType<T extends State> = {
 
 export type StoreValueMap<T extends State> = Map<keyof StoreValueMapType<T>, StoreValueMapType<T>[keyof StoreValueMapType<T>]>;
 export type StoreMap<T extends State> = Map<keyof T, StoreValueMap<T>>;
-
-// 订阅事件的监听回调函数类型
-export type ListenerHandle<T extends State> = (
-  effectState: Partial<Omit<T, keyof ResyUpdateType<T>>>,
-  prevState: Omit<T, keyof ResyUpdateType<T>>,
-  nextState: Omit<T, keyof ResyUpdateType<T>>,
-) => void;
-
-// 自定义订阅监听函数接口类型
-export interface CustomEventInterface<T extends State> {
-  addEventListener<T>(type: string | symbol, handle: ListenerHandle<T>): void,
-  dispatchEvent(
-    type: string | symbol,
-    effectState: Partial<T>,
-    prevState: T,
-    nextState: T,
-  ): void,
-  removeEventListener(type: string | symbol): void,
-}
 
 export type StoreHeartMapValueType<T extends State> = {
   // store内部的state数据对象（使用函数来维持数据获取最新数据值）

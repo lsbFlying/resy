@@ -41,6 +41,31 @@ export type StoreHeartMapType<T extends State> = Map<
 
 // resy生成的store上挂载的更新方法
 export type ResyUpdateType<T extends State> = {
+  /**
+   * resyUpdate
+   * @description 最初是为了批量更新而创建的方法
+   * 后完善来resy的批处理，而resyUpdate依然保留
+   * 它的使用方式以及回调依然具有很好的代码编写能力
+   *
+   * @example A
+   * store.resyUpdate({
+   *   count: 123,
+   *   text: "updateText",
+   * }, (state) => {
+   *   // state：最新的数据值
+   *   // 可以理解为this.setState中的回调中的this.state
+   *   // 同时这一点也弥补了：
+   *   // hook组件中setState后只能通过useEffect来获取最新数据的方式
+   *   console.log(state);
+   * });
+   * @example B
+   * store.resyUpdate(() => {
+   *   store.count = 123;
+   *   store.text = "updateText";
+   * }, (state) => {
+   *   console.log(state);
+   * });
+   */
   resyUpdate(
     state: Partial<T> | T | Callback,
     callback?: (nextState: T) => void,

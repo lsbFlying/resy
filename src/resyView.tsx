@@ -43,8 +43,6 @@ function proxyStateHandle<S extends State>(latestState: Map<keyof S, S[keyof S]>
  * 只要内部使用的数据没有更新，那么它本身不会渲染re-render
  */
 export function resyView<S extends State>(store: S, Comp: React.ComponentType<ResyStateToProps<S> | any>) {
-  const isFuncComp = !(Comp.prototype && Comp.prototype.isReactComponent);
-  
   // 引用数据的代理Set
   const linkStateSet: Set<keyof S> = new Set();
   
@@ -94,8 +92,6 @@ export function resyView<S extends State>(store: S, Comp: React.ComponentType<Re
       };
     }, []);
     
-    return isFuncComp
-      ? useMemo(() => <Comp state={state}/>, [state])
-      : <Comp state={state}/>;
+    return useMemo(() => <Comp state={state}/>, [state]);
   };
 }

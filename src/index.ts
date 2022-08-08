@@ -174,14 +174,25 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   
   /**
    * 批量触发订阅监听的数据变动
-   * 使用proxy比使用map转object效率更块
+   * prevState与nextState使用proxy出于两点考虑：
+   * 1、使用map转object效率更块
+   * 2、这两者数据实际上使用程度比较少，本身常用的时effectState
+   * 之所以effectState采用对象设计：
+   * 1、是常用
+   * 2、是配合resyView的内部数据牵引更新比较时也方便
+   * 3、是changedData本身是部分变更数据不会很多，不怎么影响效率
    */
   function batchDispatch(prevState: Map<keyof T, T[keyof T]>, changedData: Map<keyof T, T[keyof T]>) {
+    /**
+     * effectState：实际真正影响变化的数据
+     * changedData是给予更新变化的数据，但是不是真正会产生变化影响的数据，
+     * 就好比setState中的参数对象可以写与原数据一样数据，但是不产生更新
+     */
     const effectState = {} as Partial<T>;
     // @ts-ignore
-    [...changedData.entries()].forEach((key: [keyof T, T[keyof T]]) => {
-      if (!Object.is(key[1], prevState.get(key[0]))) {
-        effectState[key[0]] = stateMap.get(key[0]);
+    [...changedData.entries()].forEach(([key, value]) => {
+      if (!Object.is(value, prevState.get(key))) {
+        effectState[key as keyof T] = stateMap.get(key);
       }
     });
     

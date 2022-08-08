@@ -26,8 +26,9 @@ scheduler.set("add", async (task, key, val) => {
    * 这里需要注意避免重复添加相同赋值更新的情况
    * 同时需要注意在一个批次里同一个数据属性的更新
    * 只按最后一次赋值更新处理，避免多余添加
+   * undefined比较特殊，需要额外处理
    */
-  if (!Object.is(taskDataMap.get(key), val)) {
+  if (!Object.is(taskDataMap.get(key), val === undefined ? "undefined" : val)) {
     taskQueueMap.set(key, task);
     taskDataMap.set(key, val);
   }

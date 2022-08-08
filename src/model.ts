@@ -17,7 +17,10 @@ export type StoreValueMapType<T extends State> = {
   useString: () => T[keyof T];
 };
 
-export type StoreValueMap<T extends State> = Map<keyof StoreValueMapType<T>, StoreValueMapType<T>[keyof StoreValueMapType<T>]>;
+export type StoreValueMap<T extends State> = Map<
+  keyof StoreValueMapType<T>,
+  StoreValueMapType<T>[keyof StoreValueMapType<T>]
+>;
 export type StoreMap<T extends State> = Map<keyof T, StoreValueMap<T>>;
 
 export type StoreHeartMapValueType<T extends State> = {

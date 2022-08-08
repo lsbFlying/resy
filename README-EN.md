@@ -20,7 +20,7 @@
 ### Features
 - Support hook components and class components 😎
 - Fine grained update, better avoid re-render 😎
-- Easy to master, and the learning cost is almost zero 😎
+- Easy to use, and the learning cost is almost zero 😎
 
 ### Install
 ```sh

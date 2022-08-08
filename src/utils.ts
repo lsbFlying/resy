@@ -30,8 +30,11 @@ export function resyListener<T extends State>(
   store: T,
   listenerKeys?: (keyof T)[],
 ): Callback {
-  const resyListenerEventType = (store[storeHeartMapKey as keyof T] as StoreHeartMapType<T>).get("listenerEventType") as StoreHeartMapValueType<T>["listenerEventType"];
-  const dispatchStoreEffectSetTemp = (store[storeHeartMapKey as keyof T] as StoreHeartMapType<T>).get("dispatchStoreEffectSet") as StoreHeartMapValueType<T>["dispatchStoreEffectSet"];
+  const resyListenerEventType = (store[storeHeartMapKey as keyof T] as StoreHeartMapType<T>)
+  .get("listenerEventType") as StoreHeartMapValueType<T>["listenerEventType"];
+  
+  const dispatchStoreEffectSetTemp = (store[storeHeartMapKey as keyof T] as StoreHeartMapType<T>)
+  .get("dispatchStoreEffectSet") as StoreHeartMapValueType<T>["dispatchStoreEffectSet"];
   
   const listenerOrigin = (
     effectState: Partial<Omit<T, keyof ResyUpdateType<T>>>,

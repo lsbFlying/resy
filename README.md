@@ -67,7 +67,7 @@ const store = resy<ResyStore>(
    * false：组件卸载时也不恢复初始化数据，保持数据状态
    * 常规使用场景设置为true即可
    * 特殊使用场景如login登录信息数据
-   * 或者theme主题数据属于全局状态数据可以设置为false
+   * 或theme主题数据属于全局状态数据可以设置为false
    */
   // false,
 );

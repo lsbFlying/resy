@@ -67,14 +67,14 @@ const store = resy<ResyStore>(
    * False: the initialization data is not recovered when the component is uninstalled, and the data state is maintained
    * General usage scenarios can be set to true
    * Special use scenarios, such as login information data
-   * Alternatively, the theme data belongs to the global status data and can be set to false
+   * or the theme data belongs to the global status data and can be set to false
    */
   // false,
 );
 
 function App() {
   /**
-   * useresy is used for driver update of components, If you use store directly without useresy,
+   * useResy is used for driver update of components, If you use store directly without useResy,
    * Only the pure data can be obtained, and component update and re rendering cannot be driven.
    */
   const {
@@ -124,8 +124,8 @@ function App() {
       name: "Jack",
     };
     /**
-     * Similarly, arrays are not allowed to update data by directly changing the index value
-     * In this way, the security update is used.
+     * Similarly, arrays are not allowed to update data by directly changing the index value,
+     * and the following update method is not valid
      */
     // store.testArr[0] = { age: 7 };
     // Also need new value assignment required (valid update)

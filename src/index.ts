@@ -41,7 +41,7 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * 但这种全局真正公用分享的数据是相对而言少数的，大部分情况下是没那么多要全局分享公用的数据的
  * 所以unmountClear默认设置为true，符合常规使用即可，除非遇到像上述登录信息数据那样的全局数据而言才会设置为false
  */
-export function resy<T extends State>(state: T, unmountClear: boolean = true): T & ResyUpdateType<T> {
+export function resy<T extends State>(state: T, unmountClear = true): T & ResyUpdateType<T> {
   
   /**
    * 不改变传参state，同时resy使用Map与Set提升性能
@@ -58,8 +58,9 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
   storeHeartMap.set("listenerEventType", Symbol("storeListenerSymbol"));
   storeHeartMap.set("dispatchStoreEffectSet", new Set<CustomEventInterface<any>>());
   storeHeartMap.set("dispatchStoreEffect", (effectData: Partial<T>, prevState: T, nextState: T) => {
-    (storeHeartMap.get("dispatchStoreEffectSet") as StoreHeartMapValueType<T>["dispatchStoreEffectSet"])
-    .forEach(item => item.dispatchEvent(
+    (
+      storeHeartMap.get("dispatchStoreEffectSet") as StoreHeartMapValueType<T>["dispatchStoreEffectSet"]
+    ).forEach(item => item.dispatchEvent(
       storeHeartMap.get("listenerEventType") as string | symbol,
       effectData,
       prevState,
@@ -130,8 +131,9 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
         batchUpdate(() => {
           Object.keys(stateParams).forEach(key => {
             (
-              (initialValueLinkStore(key).get(key) as StoreValueMap<T>)
-              .get("setString") as StoreValueMapType<T>["setString"]
+              (
+                initialValueLinkStore(key).get(key) as StoreValueMap<T>
+              ).get("setString") as StoreValueMapType<T>["setString"]
             )((stateParams as Partial<T> | T)[key]);
           });
         });
@@ -200,8 +202,9 @@ export function resy<T extends State>(state: T, unmountClear: boolean = true): T
             if (tempKey === resyUpdateKey) return resyUpdate;
             return (
               (
-                (initialValueLinkStore(tempKey) as StoreMap<T>)
-                .get(tempKey) as StoreValueMap<T>
+                (
+                  initialValueLinkStore(tempKey) as StoreMap<T>
+                ).get(tempKey) as StoreValueMap<T>
               ).get("useString") as StoreValueMapType<T>["useString"]
             )();
           },

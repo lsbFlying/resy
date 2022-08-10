@@ -63,8 +63,8 @@ const store = resy<ResyStore>(
   },
   /**
    * The default is true
-   * True: the initialization data state is automatically restored when the default component is uninstalled
-   * False: the initialization data is not recovered when the component is uninstalled, and the data state is maintained
+   * True: the initialization data state is automatically restored when the default module is uninstalled
+   * False: the initialization data is not recovered when the module is uninstalled, and the data state is maintained
    * General usage scenarios can be set to true
    * Special use scenarios, such as login information data
    * or the theme data belongs to the global status data and can be set to false

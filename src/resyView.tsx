@@ -42,11 +42,10 @@ function proxyStateHandle<S extends State>(latestState: Map<keyof S, S[keyof S]>
  * 即如果resyView包裹的Comp组件即使在其父组件更新渲染了
  * 只要内部使用的数据没有更新，那么它本身不会渲染re-render
  */
-export function resyView<S extends State>(store: S, Comp: React.ComponentType<ResyStateToProps<S> | any>) {
+export function resyView<P extends State, S extends State>(store: S, Comp: React.ComponentType<(ResyStateToProps<S> & P) | any>) {
   // 引用数据的代理Set
   const linkStateSet: Set<keyof S> = new Set();
-  
-  return () => {
+  return React.memo((props: P) => {
     // 需要使用getState获取store内部的即时最新数据值
     const latestState = (
       (
@@ -60,6 +59,12 @@ export function resyView<S extends State>(store: S, Comp: React.ComponentType<Re
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
     const [state, setState] = useState<S>(proxyStateHandle(latestState, linkStateSet));
+    const [propsState, setPropsState] = useState<P>(props);
+    
+    useEffect(() => {
+      setPropsState(props);
+      // 在较少的数据属性状态下，JSON.stringify的比较效率性价比相对而言是最好的
+    }, [JSON.stringify(props)]);
     
     useEffect(() => {
       // Comp组件内部使用到的数据属性字段数组
@@ -92,6 +97,6 @@ export function resyView<S extends State>(store: S, Comp: React.ComponentType<Re
       };
     }, []);
     
-    return useMemo(() => <Comp state={state}/>, [state]);
-  };
+    return useMemo(() => <Comp {...propsState} state={state}/>, [state, propsState]);
+  });
 }

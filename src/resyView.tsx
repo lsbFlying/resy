@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, memo } from "react";
 import { State, StoreHeartMapType, StoreHeartMapValueType } from "./model";
 import { resyViewNextStateMapKey, storeHeartMapKey } from "./static";
 import { resyListener } from "./utils";
@@ -45,7 +45,7 @@ function proxyStateHandle<S extends State>(latestState: Map<keyof S, S[keyof S]>
 export function resyView<P extends State, S extends State>(store: S, Comp: React.ComponentType<(ResyStateToProps<S> & P) | any>) {
   // 引用数据的代理Set
   const linkStateSet: Set<keyof S> = new Set();
-  return React.memo((props: P) => {
+  return memo((props: P) => {
     // 需要使用getState获取store内部的即时最新数据值
     const latestState = (
       (

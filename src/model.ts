@@ -46,9 +46,14 @@ export type StoreHeartMapType<T extends State> = Map<
 export type ResyUpdateType<T extends State> = {
   /**
    * resyUpdate
-   * @description 最初是为了批量更新而创建的方法
-   * 后完善来resy的批处理，而resyUpdate依然保留
-   * 它的使用方式以及回调依然具有很好的代码编写能力
+   * 1、resy需要resyUpdate最主要的原因是需要resyUpdate的回调功能
+   * 它的回调函数的参数是最新的数据，或者在回调函数中通过store.来获取最新数据
+   * 因为resy的更新是异步的，于是需要同步获取数据时就需要resyUpdate的回调
+   * 它相当于setState的回调
+   * 其次，resyUpdate本身的使用方式在编码的时候具备很好的读写能力、
+   * 对象数据更新的便捷以及可以直接写循环更新的能力都让resyUpdate具备更强的生命力
+   *
+   * 2、resyUpdate是挂载在每一个resy生成的store数据上面的方法
    *
    * @example A
    * store.resyUpdate({

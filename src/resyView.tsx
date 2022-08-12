@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, memo } from "react";
+import React, { ComponentType, useEffect, useMemo, useState, memo } from "react";
 import { State, StoreHeartMapType, StoreHeartMapValueType } from "./model";
 import { resyViewNextStateMapKey, storeHeartMapKey } from "./static";
 import { resyListener } from "./utils";
@@ -42,7 +42,7 @@ function proxyStateHandle<S extends State>(latestState: Map<keyof S, S[keyof S]>
  * 即如果resyView包裹的Comp组件即使在其父组件更新渲染了
  * 只要内部使用的数据没有更新，那么它本身不会渲染re-render
  */
-export function resyView<P extends State, S extends State>(store: S, Comp: React.ComponentType<(ResyStateToProps<S> & P) | any>) {
+export function resyView<P extends State, S extends State>(store: S, Comp: ComponentType<(ResyStateToProps<S> & P) | any>) {
   // 引用数据的代理Set
   const linkStateSet: Set<keyof S> = new Set();
   return memo((props: P) => {

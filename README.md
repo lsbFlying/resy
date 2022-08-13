@@ -81,8 +81,8 @@ function App() {
     count, text, testObj: { name }, testArr, testFun,
   } = useState(store);
   
-  // 或者: const snapshot = useState(store);
-  // snapshot.count; ...等等
+  // 或者: const state = useState(store);
+  // state.count; ...等等
   
   return (
     <>
@@ -293,7 +293,6 @@ function App() {
 
 ### pureView 更完善的规避re-render
 ```tsx
-// store 单独文件
 import { createStore } from "resy";
 
 export type Store = {

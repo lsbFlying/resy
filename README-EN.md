@@ -81,8 +81,8 @@ function App() {
     count, text, testObj: { name }, testArr, testFun,
   } = useState(store);
 
-  // Or: const snapshot = useState(store);
-  // snapshot.count; ...etc
+  // Or: const state = useState(store);
+  // state.count; ...etc
   
   return (
     <>
@@ -299,7 +299,6 @@ function App() {
 
 ### pureView — Better avoid re-render
 ```tsx
-// store single file
 import { createStore } from "resy";
 
 export type Store = {

@@ -198,12 +198,11 @@ function App() {
   useEffect(() => {
     /**
      * @param listener 订阅监听的回调函数
-     * @param store 订阅监听具体的某一个store容器的数据状态变化
-     * @param listenerKeys 订阅监听的具体的某一个store容器的某些数据字段的变化
+     * @param stateKeys 订阅监听的具体的某一个store容器的某些数据字段的变化
      * 如果为空则默认监听store的任何一个数据的变化
-     * @return Callback 返回取消订阅监听的函数
+     * @return Unsubscribe 返回取消订阅监听的函数
      */
-    const cancelListener = store.subscribe((
+    const unsubscribe = store.subscribe((
       effectState, prevState, nextState,
     ) => {
       /**
@@ -213,10 +212,10 @@ function App() {
        */
       console.log(effectState, prevState, nextState);
     }, ["count", "text"]);
-  
+    
     // 取消订阅监听
-    // cancelListener();
-    return cancelListener;
+    // unsubscribe();
+    return unsubscribe;
   }, []);
   
   function btnClickA() {
@@ -326,7 +325,7 @@ import React from "react";
 import { pureView, ResyStateToProps } from "resy";
 import store, { Store } from "store";
 
-class ClassCom extends React.PureComponent<ResyStateToProps<StoreType>> {
+class ClassCom extends React.PureComponent<ResyStateToProps<Store>> {
   /**
    * 首先，store中的count与text、hookComTestState数据属性
    * 无法影响ClassCom的re-render
@@ -355,7 +354,7 @@ import React from "react";
 import { pureView, ResyStateToProps } from "resy";
 import store, { Store } from "store";
 
-const HookCom = (props: ResyStateToProps<StoreType>) => {
+const HookCom = (props: ResyStateToProps<Store>) => {
   // pureView会将store数据挂载到props上新增的state属性上
   const { hookComTestState } = props.state;
   /**

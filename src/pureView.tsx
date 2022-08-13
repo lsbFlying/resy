@@ -1,5 +1,5 @@
 import React, { ComponentType, useEffect, useMemo, useState, memo } from "react";
-import {SetState, State, StoreHeartMapType, StoreHeartMapValueType, Subscribe} from "./model";
+import { SetState, State, StoreHeartMapType, StoreHeartMapValueType, Subscribe } from "./model";
 import { pureViewNextStateMapKey, storeHeartMapKey } from "./static";
 
 export interface ResyStateToProps<T extends State> {

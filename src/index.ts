@@ -214,9 +214,9 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     const dispatchStoreEffectSetTemp = storeHeartMap.get("dispatchStoreEffectSet") as StoreHeartMapValueType<T>["dispatchStoreEffectSet"];
     
     const listenerOrigin = (
-      effectState: Partial<Omit<T, keyof SetState<T> & keyof Subscribe<T>>>,
-      prevState: Omit<T, keyof SetState<T> & keyof Subscribe<T>>,
-      nextState: Omit<T, keyof SetState<T> & keyof Subscribe<T>>,
+      effectState: Partial<Omit<T, "setState" | "subscribe">>,
+      prevState: Omit<T, "setState" | "subscribe">,
+      nextState: Omit<T, "setState" | "subscribe">,
     ) => {
       let includesFlag = false;
       const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);

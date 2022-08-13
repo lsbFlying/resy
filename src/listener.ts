@@ -1,10 +1,10 @@
-import { SetState, State, Subscribe } from "./model";
+import { State } from "./model";
 
 // 订阅事件的监听回调函数类型
 export type Listener<T extends State> = (
-  effectState: Partial<Omit<T, keyof SetState<T> & keyof Subscribe<T>>>,
-  prevState: Omit<T, keyof SetState<T> & keyof Subscribe<T>>,
-  nextState: Omit<T, keyof SetState<T> & keyof Subscribe<T>>,
+  effectState: Partial<Omit<T, "setState" | "subscribe">>,
+  prevState: Omit<T, "setState" | "subscribe">,
+  nextState: Omit<T, "setState" | "subscribe">,
 ) => void;
 
 // 自定义订阅监听函数接口类型

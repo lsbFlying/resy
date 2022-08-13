@@ -143,7 +143,7 @@ function App() {
 }
 ```
 
-### setState 更新
+### setState 更新数据
 ```tsx
 function App() {
   function btnClick() {
@@ -245,9 +245,9 @@ function App() {
 
 ### resy自身特性的规避re-render
 ```tsx
-import { resy, useState } from "resy";
+import { createStore, useState } from "resy";
 
-const store = resy({
+const store = createStore({
   count: 123,
   text: "123qwe",
   countAddFun: () => {
@@ -295,9 +295,9 @@ function App() {
 ### pureView 更完善的规避re-render
 ```tsx
 // store 单独文件
-import { resy } from "resy";
+import { createStore } from "resy";
 
-export type StoreType = {
+export type Store = {
   appTestState: string;
   classComTestState: string;
   hookComTestState: string;
@@ -306,7 +306,7 @@ export type StoreType = {
   countAddFun: () => void,
 };
 
-const store = resy({
+const store = createStore({
   appTestState: "appTestState",
   classComTestState: "classComTestState",
   hookComTestState: "classComTestState",
@@ -324,7 +324,7 @@ export default store;
 // pureView对class组件的支持
 import React from "react";
 import { pureView, ResyStateToProps } from "resy";
-import store, { StoreType } from "store";
+import store, { Store } from "store";
 
 class ClassCom extends React.PureComponent<ResyStateToProps<StoreType>> {
   /**
@@ -353,7 +353,7 @@ export default pureView(store, ClassCom);
 // pureView对hook组件的支持
 import React from "react";
 import { pureView, ResyStateToProps } from "resy";
-import store, { StoreType } from "store";
+import store, { Store } from "store";
 
 const HookCom = (props: ResyStateToProps<StoreType>) => {
   // pureView会将store数据挂载到props上新增的state属性上

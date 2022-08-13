@@ -145,7 +145,7 @@ function App() {
 }
 ```
 
-### setState — update
+### setState — update state
 ```tsx
 function App() {
   function btnClick() {
@@ -251,9 +251,9 @@ function App() {
 
 ### Avoidance re-render of resy its own characteristics
 ```tsx
-import { resy, useState } from "resy";
+import { createStore, useState } from "resy";
 
-const store = resy({
+const store = createStore({
   count: 123,
   text: "123qwe",
   countAddFun: () => {
@@ -302,9 +302,9 @@ function App() {
 ### pureView — Better avoid re render
 ```tsx
 // store single file
-import { resy } from "resy";
+import { createStore } from "resy";
 
-export type StoreType = {
+export type Store = {
   appTestState: string;
   classComTestState: string;
   hookComTestState: string;
@@ -313,7 +313,7 @@ export type StoreType = {
   countAddFun: () => void,
 };
 
-const store = resy({
+const store = createStore({
   appTestState: "appTestState",
   classComTestState: "classComTestState",
   hookComTestState: "classComTestState",
@@ -331,7 +331,7 @@ export default store;
 // pureView support for class components
 import React from "react";
 import { pureView, ResyStateToProps } from "resy";
-import store, { StoreType } from "store";
+import store, { Store } from "store";
 
 class ClassCom extends React.PureComponent<ResyStateToProps<StoreType>> {
   /**
@@ -360,7 +360,7 @@ export default pureView(store, ClassCom);
 // pureView support for hook components
 import React from "react";
 import { pureView, ResyStateToProps } from "resy";
-import store, { StoreType } from "store";
+import store, { Store } from "store";
 
 const HookCom = (props: ResyStateToProps<StoreType>) => {
   // pureView will mount the store data to the new state attribute on props

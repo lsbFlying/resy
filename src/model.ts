@@ -10,20 +10,27 @@ export type State = Record<string, any>;
  * 弦理论-物理学理论，弦(string)作为终极微粒之意释意
  * 此处亦理解为每一个状态数据的终极状态数据元（单个独立的微数据元）
  */
-export type StoreValueMapType<T extends State> = {
+export type StoreMapValueType<T extends State> = {
   subscribe: (onStoreChange: Callback) => Callback;
   getString: () => T[keyof T];
   setString: (val: T[keyof T]) => void;
   useString: () => T[keyof T];
 };
 
-export type StoreValueMap<T extends State> = Map<
-  keyof StoreValueMapType<T>,
-  StoreValueMapType<T>[keyof StoreValueMapType<T>]
+export type StoreMapValue<T extends State> = Map<
+  keyof StoreMapValueType<T>,
+  StoreMapValueType<T>[keyof StoreMapValueType<T>]
 >;
-export type StoreMap<T extends State> = Map<keyof T, StoreValueMap<T>>;
+// createStore的storeMap数据类型
+export type StoreMap<T extends State> = Map<keyof T, StoreMapValue<T>>;
 
-export type StoreHeartMapValueType<T extends State> = {
+/**
+ * StoreHeartMap的数据值类型，作为createStore的如同心脏一样的效果
+ * 触发数据变化： 心脏跳动供血
+ *    获取数据： 血液循环流动
+ *    重置数据： 换血清理恢复
+ */
+export interface StoreHeartMapValue<T extends State> {
   // store内部的state数据对象（使用函数来维持数据获取最新数据值）
   getState: () => Map<keyof T, T[keyof T]>,
   // 重置(恢复)初始化数据（供pureView使用）
@@ -38,10 +45,11 @@ export type StoreHeartMapValueType<T extends State> = {
 
 // 每一个resy生成的store的监听订阅对象、内部stateMap数据以及重置初始化数据的方法
 export type StoreHeartMapType<T extends State> = Map<
-  keyof StoreHeartMapValueType<T>,
-  StoreHeartMapValueType<T>[keyof StoreHeartMapValueType<T>]
+  keyof StoreHeartMapValue<T>,
+  StoreHeartMapValue<T>[keyof StoreHeartMapValue<T>]
 >;
 
+// setState的函数更新处理
 export interface StateFunc {
   (): void;
 }
@@ -84,11 +92,12 @@ export interface SetState<T extends State> {
   ): void;
 }
 
-/** resy的订阅监听的取消返回函数 */
+// resy的订阅监听的取消返回函数
 export interface Unsubscribe {
   (): void
 }
 
+// resy的订阅监听
 export interface Subscribe<T extends State> {
   subscribe(
     listener: Listener<T>,

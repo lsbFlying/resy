@@ -7,7 +7,8 @@ const taskQueueMap = new Map<string | number | symbol, Callback>();
 // 更新的任务数据
 const taskDataMap = new Map();
 
-export type SchedulerType<T extends State = {}> = {
+// resy的调度类型
+export interface Scheduler<T extends State = {}> {
   add<T>(task: Callback, key: keyof T, val: T[keyof T]): Promise<void>;
   flush(): void;
   isEmpty(): boolean;
@@ -20,7 +21,7 @@ export type SchedulerType<T extends State = {}> = {
  * 批量处理更新的调度Map
  * 主要是为了完成react18以下的非管理领域的批处理更新的调度协调性
  */
-const scheduler = new Map<keyof SchedulerType, SchedulerType[keyof SchedulerType]>();
+const scheduler = new Map<keyof Scheduler, Scheduler[keyof Scheduler]>();
 scheduler.set("add", async (task, key, val) => {
   /**
    * 这里需要注意避免重复添加相同赋值更新的情况

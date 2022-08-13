@@ -1,9 +1,9 @@
 import React, { ComponentType, useEffect, useMemo, useState, memo } from "react";
-import { SetState, State, StoreHeartMapType, StoreHeartMapValueType, Subscribe } from "./model";
+import { SetState, State, StoreHeartMapType, StoreHeartMapValue, Subscribe } from "./model";
 import { pureViewNextStateMapKey, storeHeartMapKey } from "./static";
 
+// 将resy生成的store容器数据挂载到组件的props的state属性上
 export interface ResyStateToProps<T extends State> {
-  // 将resy生成的store容器数据挂载到组件的props的state属性上
   state: T;
 }
 
@@ -52,7 +52,7 @@ export function pureView<P extends State, S extends State>(
   const latestState = (
     (
       store[storeHeartMapKey as keyof S] as StoreHeartMapType<S>
-    ).get("getState") as StoreHeartMapValueType<S>["getState"]
+    ).get("getState") as StoreHeartMapValue<S>["getState"]
   )();
   
   return memo((props: P) => {
@@ -94,7 +94,7 @@ export function pureView<P extends State, S extends State>(
         (
           (
             store[storeHeartMapKey as keyof S] as StoreHeartMapType<S>
-          ).get("resetState") as StoreHeartMapValueType<S>["resetState"]
+          ).get("resetState") as StoreHeartMapValue<S>["resetState"]
         )();
         unsubscribe();
         linkStateSet.clear();

@@ -7,13 +7,13 @@
  * @name createStore
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import { scheduler, SchedulerType } from "./scheduler";
+import { scheduler, Scheduler } from "./scheduler";
 import {
   useStateKey, storeHeartMapKey, batchUpdate, setStateKey, pureViewNextStateMapKey, subscribeKey,
 } from "./static";
 import {
-  Callback, State, SetState, StoreMap, StoreValueMap, StoreValueMapType, StoreHeartMapType,
-  StoreHeartMapValueType, StateFunc, Unsubscribe, Subscribe,
+  Callback, State, SetState, StoreMap, StoreMapValue, StoreMapValueType, StoreHeartMapType,
+  StoreHeartMapValue, StateFunc, Unsubscribe, Subscribe,
 } from "./model";
 import { CustomEventListener, EventDispatcher, Listener } from "./listener";
 
@@ -59,7 +59,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   storeHeartMap.set("dispatchStoreEffectSet", new Set<CustomEventListener<any>>());
   storeHeartMap.set("dispatchStoreEffect", (effectData: Partial<T>, prevState: T, nextState: T) => {
     (
-      storeHeartMap.get("dispatchStoreEffectSet") as StoreHeartMapValueType<T>["dispatchStoreEffectSet"]
+      storeHeartMap.get("dispatchStoreEffectSet") as StoreHeartMapValue<T>["dispatchStoreEffectSet"]
     ).forEach(item => item.dispatchEvent(
       storeHeartMap.get("listenerEventType") as string | symbol,
       effectData,
@@ -79,16 +79,16 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
      */
     const storeChanges = new Set<Callback>();
     
-    const storeValueMap: StoreValueMap<T> = new Map();
-    storeValueMap.set("subscribe", (storeChange: Callback) => {
+    const StoreMapValue: StoreMapValue<T> = new Map();
+    StoreMapValue.set("subscribe", (storeChange: Callback) => {
       storeChanges.add(storeChange);
       return () => {
         storeChanges.delete(storeChange);
         if (unmountClear) stateMap.set(key, state[key]);
       };
     });
-    storeValueMap.set("getString", () => stateMap.get(key));
-    storeValueMap.set("setString", (val: T[keyof T]) => {
+    StoreMapValue.set("getString", () => stateMap.get(key));
+    StoreMapValue.set("setString", (val: T[keyof T]) => {
       /**
        * 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
        * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
@@ -99,12 +99,12 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
       // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
       storeChanges.forEach(storeChange => storeChange());
     });
-    storeValueMap.set("useString", () => useSyncExternalStore(
-      (storeMap.get(key) as StoreValueMap<T>).get("subscribe") as StoreValueMapType<T>["subscribe"],
-      (storeMap.get(key) as StoreValueMap<T>).get("getString") as StoreValueMapType<T>["getString"],
+    StoreMapValue.set("useString", () => useSyncExternalStore(
+      (storeMap.get(key) as StoreMapValue<T>).get("subscribe") as StoreMapValueType<T>["subscribe"],
+      (storeMap.get(key) as StoreMapValue<T>).get("getString") as StoreMapValueType<T>["getString"],
     ));
     
-    storeMap.set(key, storeValueMap);
+    storeMap.set(key, StoreMapValue);
   }
   
   // 为每一个数据字段储存链接到store容器中，这样渲染并发执行提升渲染流畅度
@@ -132,8 +132,8 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
           Object.keys(stateParams).forEach(key => {
             (
               (
-                initialValueLinkStore(key).get(key) as StoreValueMap<T>
-              ).get("setString") as StoreValueMapType<T>["setString"]
+                initialValueLinkStore(key).get(key) as StoreMapValue<T>
+              ).get("setString") as StoreMapValueType<T>["setString"]
             )((stateParams as Partial<T> | T)[key]);
           });
         });
@@ -176,7 +176,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     });
     
     (
-      storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValueType<T>["dispatchStoreEffect"]
+      storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValue<T>["dispatchStoreEffect"]
     )(
       effectState,
       new Proxy(prevState, {
@@ -209,9 +209,9 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     listener: Listener<T>,
     stateKeys?: (keyof T)[],
   ): Unsubscribe {
-    const subscribeEventType = storeHeartMap.get("listenerEventType") as StoreHeartMapValueType<T>["listenerEventType"];
+    const subscribeEventType = storeHeartMap.get("listenerEventType") as StoreHeartMapValue<T>["listenerEventType"];
     
-    const dispatchStoreEffectSetTemp = storeHeartMap.get("dispatchStoreEffectSet") as StoreHeartMapValueType<T>["dispatchStoreEffectSet"];
+    const dispatchStoreEffectSetTemp = storeHeartMap.get("dispatchStoreEffectSet") as StoreHeartMapValue<T>["dispatchStoreEffectSet"];
     
     const listenerOrigin = (
       effectState: Partial<Omit<T, "setState" | "subscribe">>,
@@ -249,8 +249,8 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
               (
                 (
                   initialValueLinkStore(tempKey) as StoreMap<T>
-                ).get(tempKey) as StoreValueMap<T>
-              ).get("useString") as StoreValueMapType<T>["useString"]
+                ).get(tempKey) as StoreMapValue<T>
+              ).get("useString") as StoreMapValueType<T>["useString"]
             )();
           },
         } as ProxyHandler<StoreMap<T>>);
@@ -261,11 +261,11 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
       return stateMap.get(key);
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
-      (scheduler.get("add") as SchedulerType["add"])(
+      (scheduler.get("add") as Scheduler["add"])(
         () => (
           (
-            initialValueLinkStore(key).get(key) as StoreValueMap<T>
-          ).get("setString") as StoreValueMapType<T>["setString"]
+            initialValueLinkStore(key).get(key) as StoreMapValue<T>
+          ).get("setString") as StoreMapValueType<T>["setString"]
         )(val),
         key,
         val,
@@ -281,11 +281,11 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
          */
         const prevState = new Map(stateMap);
         try {
-          (scheduler.get("flush") as SchedulerType["flush"])();
+          (scheduler.get("flush") as Scheduler["flush"])();
         } finally {
-          if (!(scheduler.get("isEmpty") as SchedulerType["isEmpty"])()) {
-            batchDispatch(prevState, (scheduler.get("getTaskDataMap") as SchedulerType["getTaskDataMap"])());
-            (scheduler.get("clean") as SchedulerType["clean"])();
+          if (!(scheduler.get("isEmpty") as Scheduler["isEmpty"])()) {
+            batchDispatch(prevState, (scheduler.get("getTaskDataMap") as Scheduler["getTaskDataMap"])());
+            (scheduler.get("clean") as Scheduler["clean"])();
           }
         }
       });

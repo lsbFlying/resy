@@ -3,19 +3,19 @@
  * @description 一款简单易用的React数据状态管理器
  * @author liushanbao
  * @date 2022-05-05
- * @function resy
- * @name resy
+ * @function createStore
+ * @name createStore
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { scheduler, SchedulerType } from "./scheduler";
 import {
-  useResyDriveKey, storeHeartMapKey, batchUpdate, resyUpdateKey, resyViewNextStateMapKey,
+  useStateKey, storeHeartMapKey, batchUpdate, setStateKey, pureViewNextStateMapKey, subscribeKey,
 } from "./static";
 import {
-  Callback, State, ResyUpdateType, StoreMap, StoreValueMap,
-  StoreValueMapType, StoreHeartMapType, StoreHeartMapValueType,
+  Callback, State, SetState, StoreMap, StoreValueMap, StoreValueMapType, StoreHeartMapType,
+  StoreHeartMapValueType, StateFunc, Unsubscribe, Subscribe,
 } from "./model";
-import { CustomEventInterface } from "./listener";
+import { CustomEventListener, EventDispatcher, Listener } from "./listener";
 
 /**
  * 从use-sync-external-store包的导入方式到下面的引用方式
@@ -24,7 +24,7 @@ import { CustomEventInterface } from "./listener";
 const { useSyncExternalStore } = useSyncExternalStoreExports;
 
 /**
- * resy: react state easy
+ * createStore
  * created by liushanbao
  * @description 初始化状态编写的时候最好加上一个自定义的准确的泛型类型，
  * 虽然resy会有类型自动推断，但是对于数据状态类型可能变化的情况下还是不够准确的
@@ -41,7 +41,7 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * 但这种全局真正公用分享的数据是相对而言少数的，大部分情况下是没那么多要全局分享公用的数据的
  * 所以unmountClear默认设置为true，符合常规使用即可，除非遇到像上述登录信息数据那样的全局数据而言才会设置为false
  */
-export function resy<T extends State>(state: T, unmountClear = true): T & ResyUpdateType<T> {
+export function createStore<T extends State>(state: T, unmountClear = true): T & SetState<T> & Subscribe<T> {
   
   /**
    * 不改变传参state，同时resy使用Map与Set提升性能
@@ -56,7 +56,7 @@ export function resy<T extends State>(state: T, unmountClear = true): T & ResyUp
     if (unmountClear) stateMap = new Map(Object.entries(state));
   });
   storeHeartMap.set("listenerEventType", Symbol("storeListenerSymbol"));
-  storeHeartMap.set("dispatchStoreEffectSet", new Set<CustomEventInterface<any>>());
+  storeHeartMap.set("dispatchStoreEffectSet", new Set<CustomEventListener<any>>());
   storeHeartMap.set("dispatchStoreEffect", (effectData: Partial<T>, prevState: T, nextState: T) => {
     (
       storeHeartMap.get("dispatchStoreEffectSet") as StoreHeartMapValueType<T>["dispatchStoreEffectSet"]
@@ -117,16 +117,16 @@ export function resy<T extends State>(state: T, unmountClear = true): T & ResyUp
     return storeMap;
   }
   
-  // 详细注释描述见model文件ResyUpdateType接口类型文档描述
-  function resyUpdate(
-    stateParams: Partial<T> | T | Callback = {},
+  // 详细注释描述见model文件SetStateType接口类型文档描述
+  function setState(
+    stateParams: Partial<T> | T | StateFunc = {},
     callback?: (nextState: T) => void,
   ) {
     // 必须在更新之前执行，获取更新之前的数据
     const prevState = new Map(stateMap);
     try {
       if (typeof stateParams === "function") {
-        batchUpdate(stateParams as Callback);
+        batchUpdate(stateParams as StateFunc);
       } else {
         batchUpdate(() => {
           Object.keys(stateParams).forEach(key => {
@@ -157,8 +157,8 @@ export function resy<T extends State>(state: T, unmountClear = true): T & ResyUp
    * 1、使用map转object效率更块
    * 2、这两者数据实际上使用程度比较少，本身常用的时effectState
    * 之所以effectState采用对象设计：
-   * 1、常用几率较大，如果使用resyListener必然是常规使用业务逻辑
-   * 2、配合resyView的内部数据牵引更新比较时方便，是不二之选
+   * 1、常用几率较大，如果使用subscribe必然是常规使用业务逻辑
+   * 2、配合pureView的内部数据牵引更新比较时方便，是不二之选
    * 3、是changedData本身是部分变更数据不会很多，不怎么影响效率
    */
   function batchDispatch(prevState: Map<keyof T, T[keyof T]>, changedData: Map<keyof T, T[keyof T]>) {
@@ -186,20 +186,65 @@ export function resy<T extends State>(state: T, unmountClear = true): T & ResyUp
       } as ProxyHandler<Map<keyof T, T[keyof T]>>) as any as T,
       new Proxy(stateMap, {
         get: (target, p: keyof T) => {
-          if (p === resyViewNextStateMapKey) return target;
+          if (p === pureViewNextStateMapKey) return target;
           return target.get(p);
         }
       } as ProxyHandler<Map<keyof T, T[keyof T]>>) as any as T,
     );
   }
   
+  /**
+   * subscribe
+   * @description 监听订阅，类似subscribe/addEventListener，但是这里对应的数据的变化监听订阅
+   * subscribe的存在是必要的，它的作用并不类比于useEffect，
+   * 而是像subscribe或者addEventListener的效果，监听订阅数据的变化
+   * 具备多数据订阅监听的能力
+   *
+   * @param listener 监听订阅的回调函数
+   * @param stateKeys 监听订阅的具体的某一个store容器的某些数据变化，
+   * 如果为空则默认监听store的任何一个数据的变化
+   * @return unsubscribe 返回取消监听的函数
+   */
+  function subscribe(
+    listener: Listener<T>,
+    stateKeys?: (keyof T)[],
+  ): Unsubscribe {
+    const subscribeEventType = storeHeartMap.get("listenerEventType") as StoreHeartMapValueType<T>["listenerEventType"];
+    
+    const dispatchStoreEffectSetTemp = storeHeartMap.get("dispatchStoreEffectSet") as StoreHeartMapValueType<T>["dispatchStoreEffectSet"];
+    
+    const listenerOrigin = (
+      effectState: Partial<Omit<T, keyof SetState<T> & keyof Subscribe<T>>>,
+      prevState: Omit<T, keyof SetState<T> & keyof Subscribe<T>>,
+      nextState: Omit<T, keyof SetState<T> & keyof Subscribe<T>>,
+    ) => {
+      let includesFlag = false;
+      const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
+      if (!listenerKeysIsEmpty) {
+        const effectStateFields = Object.keys(effectState);
+        if (effectStateFields.some(key => stateKeys.includes(key))) includesFlag = true;
+      }
+      if (listenerKeysIsEmpty || (!listenerKeysIsEmpty && includesFlag)) listener(effectState, prevState, nextState);
+    }
+    
+    const customEventDispatcher: CustomEventListener<T> = new (EventDispatcher as any)();
+    customEventDispatcher.addEventListener(subscribeEventType, listenerOrigin);
+    dispatchStoreEffectSetTemp.add(customEventDispatcher);
+    
+    return () => {
+      dispatchStoreEffectSetTemp.forEach(item => {
+        if (item === customEventDispatcher) item.removeEventListener(subscribeEventType)
+      });
+      dispatchStoreEffectSetTemp.delete(customEventDispatcher);
+    };
+  }
+  
   return new Proxy(state, {
     get: (_, key: keyof T) => {
-      if (key === useResyDriveKey) {
-        // 给useResy的驱动更新代理
+      if (key === useStateKey) {
+        // 给useState的驱动更新代理
         return new Proxy(storeMap, {
           get: (_t, tempKey: keyof T) => {
-            if (tempKey === resyUpdateKey) return resyUpdate;
             return (
               (
                 (
@@ -211,7 +256,8 @@ export function resy<T extends State>(state: T, unmountClear = true): T & ResyUp
         } as ProxyHandler<StoreMap<T>>);
       }
       if (key === storeHeartMapKey) return storeHeartMap;
-      if (key === resyUpdateKey) return resyUpdate;
+      if (key === setStateKey) return setState;
+      if (key === subscribeKey) return subscribe;
       return stateMap.get(key);
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
@@ -245,8 +291,15 @@ export function resy<T extends State>(state: T, unmountClear = true): T & ResyUp
       });
       return true;
     },
-  } as ProxyHandler<T>) as T & ResyUpdateType<T>;
+  } as ProxyHandler<T>) as T & SetState<T> & Subscribe<T>;
 }
 
-export * from "./utils";
-export * from "./resyView";
+/**
+ * useState
+ * @description 驱动组件更新的hook，使用store容器中的数据
+ */
+export function useState<T extends State>(store: T): T {
+  return store[useStateKey as keyof T];
+}
+
+export * from "./pureView";

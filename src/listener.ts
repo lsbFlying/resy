@@ -1,15 +1,15 @@
-import { ResyUpdateType, State } from "./model";
+import { SetState, State, Subscribe } from "./model";
 
 // 订阅事件的监听回调函数类型
-export type ListenerHandle<T extends State> = (
-  effectState: Partial<Omit<T, keyof ResyUpdateType<T>>>,
-  prevState: Omit<T, keyof ResyUpdateType<T>>,
-  nextState: Omit<T, keyof ResyUpdateType<T>>,
+export type Listener<T extends State> = (
+  effectState: Partial<Omit<T, keyof SetState<T> & keyof Subscribe<T>>>,
+  prevState: Omit<T, keyof SetState<T> & keyof Subscribe<T>>,
+  nextState: Omit<T, keyof SetState<T> & keyof Subscribe<T>>,
 ) => void;
 
 // 自定义订阅监听函数接口类型
-export interface CustomEventInterface<T extends State> {
-  addEventListener<T>(type: string | symbol, handle: ListenerHandle<T>): void,
+export interface CustomEventListener<T extends State> {
+  addEventListener<T>(type: string | symbol, handle: Listener<T>): void,
   dispatchEvent(
     type: string | symbol,
     effectState: Partial<T>,
@@ -27,7 +27,7 @@ export interface CustomEventInterface<T extends State> {
 export function EventDispatcher(this: any) {
   this.events = {};
 }
-EventDispatcher.prototype.addEventListener = function<T extends State>(this: any, type: string, handle: ListenerHandle<T>) {
+EventDispatcher.prototype.addEventListener = function<T extends State>(this: any, type: string, handle: Listener<T>) {
   this.events[type] = handle;
 }
 EventDispatcher.prototype.removeEventListener = function(type: string | symbol) {

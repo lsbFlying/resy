@@ -31,18 +31,18 @@ npm i resy
 
 ### 概览
 resy需要react版本 v >= 16.8；resy有五个API，分别是：
-- resy：生成一个全局状态数据的存储容器
-- useResy：驱动组件更新的hook
-- resyUpdate：更新或者批量更新数据
-- resyListener：订阅监听resy生成的store数据的变化
-- resyView：帮助组件具备 "更完善的规避re-render的方式" 的能力
+- createStore：创建一个全局状态数据的存储容器
+- useState：从createStore生成的状态存储容器中使用state数据
+- setState：更新数据
+- subscribe：订阅监听createStore生成的store数据的变化
+- pureView：帮助组件具备 "更完善的规避re-render的方式" 的能力
 
-### resy、useResy
+### createStore、useState
 ```tsx
-import { resy, useResy } from "resy";
+import { createStore, useState } from "resy";
 
 // 数据范型类型接口
-type ResyStore = {
+type Store = {
   count: number;
   text: string;
   testObj: { name: string };
@@ -50,7 +50,7 @@ type ResyStore = {
   testFun: () => void;
 };
 // 生成的这个store可以全局共享，直接引入store即可
-const store = resy<ResyStore>(
+const store = createStore<Store>(
   {
     count: 0,
     text: "123qwe",
@@ -74,14 +74,14 @@ const store = resy<ResyStore>(
 
 function App() {
   /**
-   * useResy用于组件的驱动更新，如果不用useResy直接使用store，
+   * useState用于组件的驱动更新，如果不用useState直接使用store，
    * 则只能获取纯数据而无法驱动组件更新重新渲染
    */
   const {
     count, text, testObj: { name }, testArr, testFun,
-  } = useResy(store);
+  } = useState(store);
   
-  // 或者: const snapshot = useResy(store);
+  // 或者: const snapshot = useState(store);
   // snapshot.count; ...等等
   
   return (
@@ -98,12 +98,12 @@ function App() {
 
 ### 直接更新
 ```tsx
-import { useResy } from "resy";
+import { useState } from "resy";
 
 function App() {
   const {
     count, text, testObj: {name}, testArr, testFun,
-  } = useResy(store);
+  } = useState(store);
   
   function btn2() {
     /**
@@ -143,22 +143,22 @@ function App() {
 }
 ```
 
-### resyUpdate 更新
+### setState 更新
 ```tsx
 function App() {
   function btnClick() {
     /**
-     * 1、resy需要resyUpdate最主要的原因是需要resyUpdate的回调功能
+     * 1、resy需要setState最主要的原因是需要setState的回调功能
      * 它的回调函数的参数是最新的数据，或者在回调函数中通过store.来获取最新数据
-     * 因为resy的更新是异步的，于是需要同步获取数据时就需要resyUpdate的回调
-     * 它相当于setState的回调
-     * 其次，resyUpdate本身的使用方式在编码的时候具备很好的读写能力、
-     * 对象数据更新的便捷以及可以直接写循环更新的能力都让resyUpdate具备更强的生命力
+     * 因为resy的更新是异步的，于是需要同步获取数据时就需要setState的回调
+     * 它相当于class类组件中的this.setState的回调
+     * 其次，setState本身的使用方式在编码的时候具备很好的读写能力、
+     * 对象数据更新的便捷以及可以直接写循环更新的能力都让setState具备更强的生命力
      *
-     * 2、resyUpdate是挂载在每一个resy生成的store数据上面的方法
+     * 2、setState是挂载在每一个resy生成的store数据上面的方法
      */
     // @example A
-    store.resyUpdate({
+    store.setState({
       count: count++,
       text: "456asd",
     }, (state) => {
@@ -172,7 +172,7 @@ function App() {
     });
     // B的方式可以在回调函数中直接写循环更新，更方便某些复杂的业务逻辑的更新
     // @example B
-    // store.resyUpdate(() => {
+    // store.setState(() => {
     //   store.count++;
     //   store.text = "456asd";
     // }, (state) => {
@@ -186,13 +186,13 @@ function App() {
 }
 ```
 
-### resyListener 订阅监听
+### subscribe 订阅监听
 ```tsx
 import { useEffect } from "react";
-import { resyListener, useResy } from "resy";
+import { useState } from "resy";
 
 function App() {
-  const { count } = useResy(store);
+  const { count } = useState(store);
   
   // 这里以函数组件举例，如果是class组件可以在componentDidMount中使用
   useEffect(() => {
@@ -203,7 +203,7 @@ function App() {
      * 如果为空则默认监听store的任何一个数据的变化
      * @return Callback 返回取消订阅监听的函数
      */
-    const cancelListener = resyListener((
+    const cancelListener = store.subscribe((
       effectState, prevState, nextState,
     ) => {
       /**
@@ -212,7 +212,7 @@ function App() {
        *   nextState：变化之后的数据
        */
       console.log(effectState, prevState, nextState);
-    }, store, ["count", "text"]);
+    }, ["count", "text"]);
   
     // 取消订阅监听
     // cancelListener();
@@ -245,7 +245,7 @@ function App() {
 
 ### resy自身特性的规避re-render
 ```tsx
-import { resy, useResy } from "resy";
+import { resy, useState } from "resy";
 
 const store = resy({
   count: 123,
@@ -257,13 +257,13 @@ const store = resy({
 
 // count数据状态的变化不会引起Text的re-render
 function Text() {
-  const { text } = useResy(store);
+  const { text } = useState(store);
   return <p>{text}</p>;
 }
 
 // text数据状态的变化不会引起Count的re-render
 function Count() {
-  const { count } = useResy(store);
+  const { count } = useState(store);
   return <p>{count}</p>;
 }
 
@@ -274,7 +274,7 @@ function Count() {
  * 如果是父组件渲染了子组件在没有SCU或者useMemo的情况下必然渲染
  */
 function App() {
-  const { countAddFun } = useResy(store);
+  const { countAddFun } = useState(store);
   return (
     <>
       <Text/>
@@ -292,7 +292,7 @@ function App() {
 }
 ```
 
-### resyView 更完善的规避re-render
+### pureView 更完善的规避re-render
 ```tsx
 // store 单独文件
 import { resy } from "resy";
@@ -321,9 +321,9 @@ export default store;
 ```
 
 ```tsx
-// resyView对class组件的支持
+// pureView对class组件的支持
 import React from "react";
-import { resyView, ResyStateToProps } from "resy";
+import { pureView, ResyStateToProps } from "resy";
 import store, { StoreType } from "store";
 
 class ClassCom extends React.PureComponent<ResyStateToProps<StoreType>> {
@@ -333,11 +333,11 @@ class ClassCom extends React.PureComponent<ResyStateToProps<StoreType>> {
    * 其次父组件App的appTestState变化也无法影响ClassCom的re-render
    * 只有ClassCom本身引用的classComTestState数据才会影响自身的渲染
    *
-   * 也就是说resyView形成的规避re-render的效果
+   * 也就是说pureView形成的规避re-render的效果
    * 比resy本身自带的规避re-render的效果更完善
    */
   render() {
-    // resyView会将store数据挂载到props上新增的state属性上
+    // pureView会将store数据挂载到props上新增的state属性上
     const { classComTestState } = this.props.state;
     console.log(classComTestState);
     return (
@@ -346,17 +346,17 @@ class ClassCom extends React.PureComponent<ResyStateToProps<StoreType>> {
   }
 }
 
-export default resyView(store, ClassCom);
+export default pureView(store, ClassCom);
 ```
 
 ```tsx
-// resyView对hook组件的支持
+// pureView对hook组件的支持
 import React from "react";
-import { resyView, ResyStateToProps } from "resy";
+import { pureView, ResyStateToProps } from "resy";
 import store, { StoreType } from "store";
 
 const HookCom = (props: ResyStateToProps<StoreType>) => {
-  // resyView会将store数据挂载到props上新增的state属性上
+  // pureView会将store数据挂载到props上新增的state属性上
   const { hookComTestState } = props.state;
   /**
    * 首先，store中的count与text、classComTestState数据属性
@@ -364,7 +364,7 @@ const HookCom = (props: ResyStateToProps<StoreType>) => {
    * 其次父组件App的appTestState变化也无法影响HookCom的re-render
    * 只有HookCom本身引用的hookComTestState数据才会影响自身的渲染
    *
-   * 也就是说resyView形成的规避re-render的效果
+   * 也就是说pureView形成的规避re-render的效果
    * 比resy本身自带的规避re-render的效果更完善
    */
   console.log(hookComTestState);
@@ -373,29 +373,29 @@ const HookCom = (props: ResyStateToProps<StoreType>) => {
   );
 }
 
-export default resyView(store, HookCom);
+export default pureView(store, HookCom);
 ```
 
 ```tsx
 import React from "react";
-import { useResy } from "resy";
+import { useState } from "resy";
 
 // count数据状态的变化不会引起Text的re-render
 function Text() {
-  const { text } = useResy(store);
+  const { text } = useState(store);
   return <p>{text}</p>;
 }
 
 // text数据状态的变化不会引起Count的re-render
 function Count() {
-  const { count } = useResy(store);
+  const { count } = useState(store);
   return <p>{count}</p>;
 }
 
 function App() {
   const {
     appTestState, classComTestState, hookComTestState, countAddFun,
-  } = useResy(store);
+  } = useState(store);
   
   function appTestClick() {
     store.appTestState = `${Math.random()}~appTestState~`;
@@ -411,12 +411,12 @@ function App() {
   
   /**
    * 总结：相较于resy自身特性的re-render
-   * resyView处理规避的re-render更加完善
+   * pureView处理规避的re-render更加完善
    * 
    * 完善的点在于：
-   * 即使父组件更新了，只要resyView包裹的组件本身
+   * 即使父组件更新了，只要pureView包裹的组件本身
    * 没有使用到父组件中更新缘由的属性数据
-   * 那么resyView包裹的组件就不会re-render
+   * 那么pureView包裹的组件就不会re-render
    */
   return (
     <>

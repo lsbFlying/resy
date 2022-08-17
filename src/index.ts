@@ -262,28 +262,27 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
       (scheduler.get("add") as Scheduler["add"])(
-        () => (
+        async () => (
           (
             initialValueLinkStore(key).get(key) as StoreMapValue<T>
           ).get("setString") as StoreMapValueType<T>["setString"]
         )(val),
         key,
         val,
+        () => {
+          const prevState = new Map(stateMap);
+          batchDispatch(prevState, (scheduler.get("getTaskDataMap") as Scheduler["getTaskDataMap"])());
+        },
       ).then(() => {
         /**
-         * 巧妙的地方在于then的执行时机是在所有属性赋值语句执行之后再执行，
-         * 即在如下赋值更新语句执行完之后：
-         * store.x1 = xxx1;
-         * store.x2 = xxx2;
-         * 这刚好使得直接连续更新这种形式的更新写法的批量更新得到的巧妙的处理
-         * 并且可以在任何地方得到实现，不再需要借助与React本身具备的批处理实现批量更新
+         * 借助then的事件循环实现数据与任务更新的执行都统一入栈，然后冲刷更新
          * 同时可以帮助React v18以下的版本实现React管理不到的地方自动批处理更新
          */
         const prevState = new Map(stateMap);
         try {
           (scheduler.get("flush") as Scheduler["flush"])();
         } finally {
-          if (!(scheduler.get("isEmpty") as Scheduler["isEmpty"])()) {
+          if (!((scheduler.get("isEmpty") as Scheduler["isEmpty"])())) {
             batchDispatch(prevState, (scheduler.get("getTaskDataMap") as Scheduler["getTaskDataMap"])());
             (scheduler.get("clean") as Scheduler["clean"])();
           }

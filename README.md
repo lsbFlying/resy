@@ -197,6 +197,8 @@ function App() {
   // 这里以函数组件举例，如果是class组件可以在componentDidMount中使用
   useEffect(() => {
     /**
+     * @description subscribe也是挂载在每一个resy生成的store容器上面的方法
+     * 
      * @param listener 订阅监听的回调函数
      * @param stateKeys 订阅监听的具体的某一个store容器的某些数据字段的变化
      * 如果为空则默认监听store的任何一个数据的变化

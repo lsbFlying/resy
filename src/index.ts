@@ -262,17 +262,13 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
       (scheduler.get("add") as Scheduler["add"])(
-        async () => (
+        () => (
           (
             initialValueLinkStore(key).get(key) as StoreMapValue<T>
           ).get("setString") as StoreMapValueType<T>["setString"]
         )(val),
         key,
         val,
-        () => {
-          const prevState = new Map(stateMap);
-          batchDispatch(prevState, (scheduler.get("getTaskDataMap") as Scheduler["getTaskDataMap"])());
-        },
       ).then(() => {
         /**
          * 借助then的事件循环实现数据与任务更新的执行都统一入栈，然后冲刷更新

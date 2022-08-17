@@ -8,14 +8,14 @@ const taskQueueMap = new Map<string | number | symbol, Callback>();
 const taskDataMap = new Map();
 
 // resy的调度类型
-export interface Scheduler<T extends State = {}> {
+export interface Scheduler<T = State> {
   add<T>(task: Callback, key: keyof T, val: T[keyof T]): Promise<void>;
   flush(): void;
   isEmpty(): boolean;
   // 注意这里的clean最好不要与Map的原型方法clear重名
   clean(): void;
   getTaskDataMap(): Map<keyof T, T[keyof T]>;
-};
+}
 
 /**
  * 批量处理更新的调度Map

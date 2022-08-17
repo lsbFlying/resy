@@ -155,7 +155,7 @@ function App() {
      * 其次，setState本身的使用方式在编码的时候具备很好的读写能力、
      * 对象数据更新的便捷以及可以直接写循环更新的能力都让setState具备更强的生命力
      *
-     * 2、setState是挂载在每一个resy生成的store数据上面的方法
+     * 2、setState是挂载在每一个resy生成的store容器上面的方法
      */
     // @example A
     store.setState({

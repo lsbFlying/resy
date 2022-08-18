@@ -279,6 +279,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
          * 但是异步更新的批量处理也导致无法立即获取最新数据
          * 如果想要立即同步获取最新数据可以使用setState的回调
          * 由此可见为了实现批量更新与同步获取最新数据有点拆东墙补西墙的味道
+         * 但好在setState的回调弥补了同步获取最新数据的问题
          */
         const taskDataMap = (scheduler.get("getTaskDataMap") as Scheduler["getTaskDataMap"])();
         if (taskDataMap.size === 0) return;

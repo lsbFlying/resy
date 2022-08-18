@@ -162,6 +162,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
    * 3、是changedData本身是部分变更数据不会很多，不怎么影响效率
    */
   function batchDispatch(prevState: Map<keyof T, T[keyof T]>, changedData: Map<keyof T, T[keyof T]>) {
+    if (changedData.size === 0) return;
     /**
      * effectState：实际真正影响变化的数据
      * changedData是给予更新变化的数据，但是不是真正会产生变化影响的数据，
@@ -174,6 +175,8 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
         effectState[key as keyof T] = stateMap.get(key);
       }
     });
+    
+    if (Object.keys(effectState).length === 0) return;
     
     (
       storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValue<T>["dispatchStoreEffect"]
@@ -274,14 +277,13 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
          * 借助then的事件循环实现数据与任务更新的执行都统一入栈，然后冲刷更新
          * 同时可以帮助React v18以下的版本实现React管理不到的地方自动批处理更新
          */
+        const taskDataMap = (scheduler.get("getTaskDataMap") as Scheduler["getTaskDataMap"])();
+        if (taskDataMap.size === 0) return;
         const prevState = new Map(stateMap);
         try {
           (scheduler.get("flush") as Scheduler["flush"])();
         } finally {
-          if (!((scheduler.get("isEmpty") as Scheduler["isEmpty"])())) {
-            batchDispatch(prevState, (scheduler.get("getTaskDataMap") as Scheduler["getTaskDataMap"])());
-            (scheduler.get("clean") as Scheduler["clean"])();
-          }
+          batchDispatch(prevState, taskDataMap);
         }
       });
       return true;

@@ -7,13 +7,10 @@ const taskQueueMap = new Map<string | number | symbol, Callback>();
 // 更新的任务数据
 const taskDataMap = new Map();
 
-// resy的调度类型
+// resy的调度类型接口
 export interface Scheduler<T = State> {
   add<T>(task: Callback, key: keyof T, val: T[keyof T]): Promise<void>;
   flush(): void;
-  isEmpty(): boolean;
-  // 注意这里的clean最好不要与Map的原型方法clear重名
-  clean(): void;
   getTaskDataMap(): Map<keyof T, T[keyof T]>;
 }
 
@@ -35,14 +32,10 @@ scheduler.set("add", async (task, key, val) => {
   }
 });
 scheduler.set("flush", () => {
-  if (taskQueueMap.size === 0) return;
   batchUpdate(() => taskQueueMap.forEach(task => task()));
-});
-scheduler.set("isEmpty", () => taskQueueMap.size === 0);
-scheduler.set("clean", () => {
   taskQueueMap.clear();
   taskDataMap.clear();
 });
-scheduler.set("getTaskDataMap", () => taskDataMap);
+scheduler.set("getTaskDataMap", () => (new Map(taskDataMap)));
 
 export { scheduler };

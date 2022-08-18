@@ -88,7 +88,8 @@ export function pureView<P extends State, S extends State>(
       });
       return () => {
         /**
-         * pureView会使得组件销毁时不执行subscribe，因为它本身是订阅监听执行的，不属于组件的生命周期发生
+         * pureView会使得组件销毁时不执行StoreMap里的subscribe，就无法恢复重置数据
+         * 因为它本身是订阅监听执行的，不属于组件的生命周期发生
          * 所以这里需要特定的数据恢复，同时resetState内部注意关联到unmountClear的逻辑处理
          */
         (

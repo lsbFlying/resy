@@ -76,6 +76,7 @@ function App() {
   /**
    * useState is used for driver update of components, If you use store directly without useState,
    * Only the pure data can be obtained, and component update and re-rendering cannot be driven.
+   * resy's useState effect is equivalent to react's native useState
    */
   const {
     count, text, testObj: { name }, testArr, testFun,

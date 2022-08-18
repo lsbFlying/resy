@@ -76,6 +76,7 @@ function App() {
   /**
    * useState用于组件的驱动更新，如果不用useState直接使用store，
    * 则只能获取纯数据而无法驱动组件更新重新渲染
+   * resy的useState效果等价于react原生的useState
    */
   const {
     count, text, testObj: { name }, testArr, testFun,

@@ -154,6 +154,7 @@ function App() {
      * 它相当于class类组件中的this.setState的回调
      * 其次，setState本身的使用方式在编码的时候具备很好的读写能力、
      * 对象数据更新的便捷以及可以直接写循环更新的能力都让setState具备更强的生命力
+     * 同时也弥补了hook数据状态异步更新后无法立即获取最新数据的缺憾
      *
      * 2、setState是挂载在每一个resy生成的store容器上面的方法
      */

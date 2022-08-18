@@ -276,6 +276,9 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
         /**
          * 借助then的事件循环实现数据与任务更新的执行都统一入栈，然后冲刷更新
          * 同时可以帮助React v18以下的版本实现React管理不到的地方自动批处理更新
+         * 但是异步更新的批量处理也导致无法立即获取最新数据
+         * 如果想要立即同步获取最新数据可以使用setState的回调
+         * 由此可见为了实现批量更新与同步获取最新数据有点拆东墙补西墙的味道
          */
         const taskDataMap = (scheduler.get("getTaskDataMap") as Scheduler["getTaskDataMap"])();
         if (taskDataMap.size === 0) return;

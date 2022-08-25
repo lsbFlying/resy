@@ -152,7 +152,7 @@ function App() {
      * 1、resy需要setState最主要的原因是需要setState的回调功能
      * 它的回调函数的参数是最新的数据，或者在回调函数中通过store.来获取最新数据
      * 因为resy的更新是异步的，于是需要同步获取数据时就需要setState的回调
-     * 它相当于class类组件中的this.setState的回调
+     * 它相当于class组件中的this.setState的回调
      * 其次，setState本身的使用方式在编码的时候具备很好的读写能力、
      * 对象数据更新的便捷以及可以直接写循环更新的能力都让setState具备更强的生命力
      * 同时也弥补了hook数据状态异步更新后无法立即获取最新数据的缺憾

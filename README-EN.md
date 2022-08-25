@@ -154,7 +154,7 @@ function App() {
      * 1、 The main reason why resy needs setState is that it needs the callback function of setState
      * The parameters of its callback function are the latest data, or the latest data can be obtained through store. In the callback function
      * Because the update of resy is asynchronous, the callback of setState is required when the data needs to be obtained synchronously
-     * It is equivalent to the callback of this.setState in the class class component
+     * It is equivalent to the callback of this.setState in the class component
      * Second, the use of setState itself has good reading and writing ability during coding
      * The convenience of updating object data and the ability to directly write cyclic updates make setState have stronger vitality
      * At the same time, it also makes up for the defect that the latest data cannot be obtained immediately after the hook data status is asynchronously updated

@@ -19,7 +19,7 @@
 
 ### Features
 - Support hook components and class components 😎
-- Fine grained update, better avoid re-render 😎
+- Fine grained update, Better avoid redundant re-render 😎
 - Easy to use, and the learning cost is almost zero 😎
 
 ### Install

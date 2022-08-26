@@ -122,6 +122,15 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     stateParams: Partial<T> | T | StateFunc = {},
     callback?: (nextState: T) => void,
   ) {
+    /**
+     * 由于createStore生成的数据容器store在类型上为了方便使用定义为了对象接口类型
+     * 所以如果编码错误的将store直接传入更新参数中可能不起作用，此时需要做一个错误拦截提醒开发人员
+     */
+    // @ts-ignore
+    if (stateParams.setState) {
+      console.error("The update parameter may be a proxy, please modify it to object.");
+      return;
+    }
     // 必须在更新之前执行，获取更新之前的数据
     const prevState = new Map(stateMap);
     try {
@@ -248,6 +257,8 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
         // 给useState的驱动更新代理
         return new Proxy(storeMap, {
           get: (_t, tempKey: keyof T) => {
+            if (tempKey === setStateKey) return setState;
+            if (tempKey === subscribeKey) return subscribe;
             return (
               (
                 (

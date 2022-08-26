@@ -1,5 +1,7 @@
 // @ts-ignore
-import { unstable_batchedUpdates } from "react-platform";
+// import { unstable_batchedUpdates } from "react-platform";
+// todo test
+import { unstable_batchedUpdates } from "react-dom";
 import { Callback } from "./model";
 
 /**

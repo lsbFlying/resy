@@ -55,7 +55,7 @@ export interface StateFunc {
 }
 
 // resy生成的store上挂载的更新方法
-export interface SetState<T extends State> {
+export type SetState<T extends State> = Readonly<{
   /**
    * setState
    * 1、resy需要setState最主要的原因是需要setState的回调功能
@@ -90,7 +90,7 @@ export interface SetState<T extends State> {
     state: Partial<T> | T | StateFunc,
     callback?: (nextState: T) => void,
   ): void;
-}
+}>;
 
 // resy的订阅监听的取消返回函数
 export interface Unsubscribe {
@@ -98,9 +98,9 @@ export interface Unsubscribe {
 }
 
 // resy的订阅监听
-export interface Subscribe<T extends State> {
+export type Subscribe<T extends State> = Readonly<{
   subscribe(
     listener: Listener<T>,
     stateKeys?: (keyof T)[],
   ): Unsubscribe;
-}
+}>;

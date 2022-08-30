@@ -128,7 +128,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
      */
     // @ts-ignore
     if (stateParams.setState) {
-      console.error("The update parameter may be a proxy, please modify it to object.");
+      console.error("The update parameter may be the store itself, please modify it to a normal parameter object.");
       return;
     }
     // 必须在更新之前执行，获取更新之前的数据

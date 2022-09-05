@@ -9,7 +9,7 @@ export type Listener<T extends State> = (
 
 // 自定义订阅监听函数接口类型
 export interface CustomEventListener<T extends State> {
-  addEventListener<T>(type: string | symbol, handle: Listener<T>): void,
+  addEventListener(type: string | symbol, handle: Listener<T>): void,
   dispatchEvent(
     type: string | symbol,
     effectState: Partial<T>,

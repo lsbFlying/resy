@@ -125,7 +125,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     /**
      * 由于createStore生成的数据容器store在类型上为了方便使用定义为了对象接口类型
      * 所以如果编码错误的将store直接传入更新参数中可能不起作用，此时需要做一个错误拦截提醒开发人员
-     * 本身理论上而言store.setState(store)是不会报错的，但是本身逻辑上也不会产生更新，没必要
+     * 本身理论上而言store.setState(store)是不会报错的，但是逻辑上也不会产生更新，所以没必要
      */
     // @ts-ignore
     if (stateParams.setState) {

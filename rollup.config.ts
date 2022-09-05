@@ -13,7 +13,7 @@ const external = ["use-sync-external-store/shim", "react", "./react-platform"];
 const plugins = [
   replacePlugin({ "react-platform": "./react-platform", preventAssignment: true }),
   resolvePlugin(),
-  babel({ exclude: 'node_modules/**', babelHelpers: "bundled" }),
+  babel({ exclude: "node_modules/**", babelHelpers: "bundled" }),
   typescript(),
   terser(),
 ];

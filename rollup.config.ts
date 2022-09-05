@@ -11,9 +11,9 @@ const input = "src/index.ts";
 // const external = (id: string) => deps.some((dep) => id.startsWith(dep));
 const external = ["use-sync-external-store/shim", "react", "./react-platform"];
 const plugins = [
-  replacePlugin({ "react-platform": "./react-platform" }),
+  replacePlugin({ "react-platform": "./react-platform", preventAssignment: true }),
   resolvePlugin(),
-  babel({ exclude: 'node_modules/**' }),
+  babel({ exclude: 'node_modules/**', babelHelpers: "bundled" }),
   typescript(),
   terser(),
 ];

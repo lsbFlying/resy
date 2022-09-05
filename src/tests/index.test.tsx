@@ -1,37 +1,10 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { test, expect } from "vitest";
 import { render, fireEvent } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 import { createStore, useState } from "../index";
 
-test("resy-simple", async () => {
-  const store = createStore({ count: 0 });
-  const App = () => {
-    const state = useState(store);
-    return (
-      <>
-        <p>{state.count}</p>
-        <button onClick={() => store.count++}>inc-btn</button>
-      </>
-    );
-  };
-  
-  // @ts-ignore
-  expect(() => createStore()).toThrowError();
-  
-  const { getByText } = render(<App />);
-  
-  await act(() => {
-    fireEvent.click(getByText("inc-btn"));
-  });
-  /**
-   * 由于resy的更新是异步的
-   * 所以这里需要等待后才能获取到页面的最新渲染
-   */
-  expect(getByText("1")).toBeInTheDocument();
-});
-
-test("resy-upgrade", async () => {
+test("resy-basic", async () => {
   // 数据范型类型接口
   type Store = {
     count: number;
@@ -39,7 +12,7 @@ test("resy-upgrade", async () => {
     testObj: { name: string };
     testArr: { age: number; name: string }[];
     testFun: () => void;
-    sex?: "man" | "woman";
+    sex?: "man" | "woman" | string;
   };
 
   // 生成的这个store可以全局共享，直接引入store即可
@@ -67,13 +40,27 @@ test("resy-upgrade", async () => {
 
   const App = () => {
     const { count, text, testFun, testObj, testArr, sex } = useState(store);
+    
+    useEffect(() => {
+      const unsubscribe = store.subscribe((effectState, prevState, nextState) => {
+        if (effectState.sex === "no-sex-subscribe") {
+          console.log(prevState.sex, nextState.sex);
+          store.count = 999;
+        }
+        if (effectState.text === "text-upgrade") {
+          store.count = 999666;
+        }
+      }, ["sex", "text"]);
+      return unsubscribe
+    }, []);
+    
     return (
       <>
         <p>{count}</p>
         <p>{text}</p>
         <p>{sex || "no-sex"}</p>
-        <p>{testObj.name}</p>
-        <p>{testArr[0].name}：{testArr[0].age}</p>
+        <p>{testObj?.name || "batch-forEach"}</p>
+        <p>{testArr[0]?.name}：{testArr[0]?.age}</p>
         <p>{testArr.map(item => `${item.name}：${item.age}`)}</p>
         <button onClick={testFun}>btn1</button>
         <button onClick={() => {
@@ -94,12 +81,48 @@ test("resy-upgrade", async () => {
           });
         }}>btn4</button>
         <button onClick={() => {
+          // 无效更新
           store.testObj.name = "Forrest Gump";
+          // 无效更新
           store.testArr[0] = {age: 7, name: "Forrest Gump"};
         }}>btn5</button>
         <button onClick={() => {
           store.sex = undefined;
         }}>btn6</button>
+        <button onClick={() => {
+          store.setState(() => {
+            const updateArr = ["count", "text", "testObj", "testArr"];
+            updateArr.forEach(key => {
+              // @ts-ignore
+              store[key] = typeof store[key] === "number"
+                ? 0
+                // @ts-ignore
+                : typeof store[key] === "string"
+                  ? "qweasdzxc"
+                  // @ts-ignore
+                  : typeof store[key] === "boolean"
+                    ? false
+                    // @ts-ignore
+                    : Object.prototype.toString.call(store[key]) === "[object Array]" ? [] : {};
+            });
+          });
+        }}>btn7</button>
+        <button onClick={() => {
+          store.setState({
+            count: 123,
+          }, (nextState) => {
+            store.count = nextState.count + 1;
+          });
+        }}>btn8</button>
+        <button onClick={() => {
+          store.sex = "no-sex-subscribe";
+        }}>btn9</button>
+        <button onClick={() => {
+          store.text = "text-upgrade";
+        }}>btn10</button>
+        <button onClick={() => {
+          store.setState(store);
+        }}>btn11</button>
       </>
     );
   };
@@ -141,4 +164,28 @@ test("resy-upgrade", async () => {
   });
   expect(queryByText("man")).toBeNull();
   expect(getByText("no-sex")).toBeInTheDocument();
+  
+  await act(() => {
+    fireEvent.click(getByText("btn7"));;
+  });
+  expect(getByText("batch-forEach")).toBeInTheDocument();
+  
+  await act(() => {
+    fireEvent.click(getByText("btn8"));
+  });
+  expect(getByText("124")).toBeInTheDocument();
+  
+  await act(() => {
+    fireEvent.click(getByText("btn9"));;
+  });
+  expect(getByText("999")).toBeInTheDocument();
+  
+  await act(() => {
+    fireEvent.click(getByText("btn10"));;
+  });
+  expect(getByText("999666")).toBeInTheDocument();
+  
+  await act(() => {
+    fireEvent.click(getByText("btn11"));;
+  });
 });

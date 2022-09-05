@@ -4,10 +4,11 @@ export default defineConfig({
   test: {
     globals: true,
     setupFiles: 'setupTests.ts',
-    deps: {
-      inline: [
-        "react-native"
-      ]
+  },
+  resolve: {
+    alias: {
+      // todo test
+      "react-platform": "react-dom",
     }
   },
 });

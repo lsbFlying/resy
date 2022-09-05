@@ -317,7 +317,7 @@ export type Store = {
 const store = createStore({
   appTestState: "appTestState",
   classComTestState: "classComTestState",
-  hookComTestState: "classComTestState",
+  hookComTestState: "hookComTestState",
   count: 123,
   text: "123qwe",
   countAddFun: () => {
@@ -414,7 +414,7 @@ function App() {
   }
   
   function hookComTestStateClick() {
-    store.classComTestState = `!${Math.random()}hookComTestState!`;
+    store.hookComTestState = `!${Math.random()}hookComTestState!`;
   }
   
   /**

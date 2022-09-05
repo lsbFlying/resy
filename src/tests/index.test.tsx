@@ -26,12 +26,14 @@ test("resy", () => {
   // @ts-ignore
   expect(() => createStore()).toThrow();
   
-  fireEvent.click(getByText("btn1"));
-  // expect(getByText("1")).toBeInTheDocument();
+  setTimeout(() => {
+    fireEvent.click(getByText("btn1"));
+    expect(getByText("1")).toBeInTheDocument();
   
-  fireEvent.click(getByText("btn2"));
-  // expect(getByText("2")).toBeInTheDocument();
+    fireEvent.click(getByText("btn2"));
+    expect(getByText("2")).toBeInTheDocument();
   
-  fireEvent.click(getByText("btn3"));
-  // expect(getByText("2")).toBeInTheDocument();
+    fireEvent.click(getByText("btn3"));
+    expect(getByText("2")).toBeInTheDocument();
+  }, 1000);
 });

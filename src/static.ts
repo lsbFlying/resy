@@ -1,8 +1,7 @@
 // @ts-ignore
-// import { unstable_batchedUpdates } from "react-platform";
-// todo test
-import { unstable_batchedUpdates } from "react-dom";
+import { unstable_batchedUpdates } from "react-platform";
 import { Callback } from "./model";
+// import { unstable_batchedUpdates } from "react-dom"; // todo test
 
 /**
  * batchUpdateShimRun

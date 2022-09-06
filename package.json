@@ -13,7 +13,7 @@
     "dist"
   ],
   "scripts": {
-    "test": "vitest --ui --coverage --environment jsdom",
+    "test": "vitest run --coverage --environment jsdom",
     "build": "rm -rf dist coverage && rollup -c --configPlugin @rollup/plugin-typescript",
     "okPublish": "npm run build && npm publish --registry=https://registry.npmjs.org/"
   },
@@ -38,7 +38,6 @@
     "@types/use-sync-external-store": "0.0.3",
     "@typescript-eslint/eslint-plugin": "^5.35.1",
     "@typescript-eslint/parser": "^5.35.1",
-    "@vitest/ui": "^0.23.0",
     "c8": "^7.12.0",
     "codecov": "^3.8.2",
     "eslint": "^8.22.0",

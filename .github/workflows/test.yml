@@ -20,9 +20,9 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # download git response source code
+      # 下载仓库源码
       - name: Checkout
-      - uses: actions/checkout@master
+        uses: actions/checkout@master
       # 安装依赖 & 运行测试生成测试覆盖率报告
       - name: Install and test and build
         run: |

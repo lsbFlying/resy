@@ -134,6 +134,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     }
     // 必须在更新之前执行，获取更新之前的数据
     const prevState = new Map(stateMap);
+    // todo 判断batchUpdate是否与batchUpdateShimRun完全相等，如果是则需要做额外的批次更新处理
     try {
       if (typeof stateParams === "function") {
         batchUpdate(stateParams as StateFunc);

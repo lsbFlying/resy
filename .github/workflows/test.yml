@@ -30,7 +30,11 @@ jobs:
           npm run test
       # 上传测试覆盖率报告到 codecov
       - name: codecov
-        # 使用codecov官方提供的action
-        uses: codecov/codecov-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+        run: |
+          curl -Os https://uploader.codecov.io/latest/macos/codecov
+          chmod +x codecov
+          ./codecov -t ${CODECOV_TOKEN}
+#        # 使用codecov官方提供的action
+#        uses: codecov/codecov-action@v1
+#        with:
+#          token: ${{ secrets.CODECOV_TOKEN }}

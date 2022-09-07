@@ -7,7 +7,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // todo test
+      // for test
       "react-platform": "react-dom",
     }
   },

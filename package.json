@@ -13,8 +13,8 @@
     "dist"
   ],
   "scripts": {
-    "test": "vitest --ui --coverage --environment jsdom",
-    "coverage": "vitest run --coverage --environment jsdom",
+    "test": "vitest run --coverage --environment jsdom",
+    "test:dev": "vitest --ui --coverage --environment jsdom",
     "build": "rm -rf dist && rollup -c --configPlugin @rollup/plugin-typescript",
     "okPublish": "npm run build && npm publish --registry=https://registry.npmjs.org/"
   },

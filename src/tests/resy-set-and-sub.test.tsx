@@ -114,8 +114,8 @@ test("resy-set-and-sub3", async () => {
   });
   expect(getByText("removeTestListener")).toBeInTheDocument();
   
-  
   await act(() => {
     fireEvent.click(getByText("btn3"));
   });
-  expect(getByText("batchUpdateShimRunTestListener")).toBeInTheDocument();});
+  expect(getByText("batchUpdateShimRunTestListener")).toBeInTheDocument();
+});

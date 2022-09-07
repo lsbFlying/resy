@@ -27,7 +27,7 @@ jobs:
       - name: Install and test and build
         run: |
           npm install
-          npm run test
+          npm run coverage
       # 上传测试覆盖率报告到 codecov
       - name: codecov
         # 使用codecov官方提供的action

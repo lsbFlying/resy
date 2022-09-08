@@ -16,7 +16,7 @@ on:
 jobs:
   build-and-deploy:
     # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -35,5 +35,5 @@ jobs:
         # 使用codecov官方提供的action
         uses: codecov/codecov-action@v3
         with:
-          token: 1b758ecd-31a8-4f94-9000-e6afced04a83
+          token: ${{ secrets.CODECOV_TOKEN }}
           directory: ./coverage/tmp

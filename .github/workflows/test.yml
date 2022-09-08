@@ -16,19 +16,10 @@ on:
 jobs:
   build-and-deploy:
     # The type of runner that the job will run on
-    runs-on: macos-latest
-
-    strategy:
-      matrix:
-        node-version: [ 14.18.3 ]
+    runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v1
-        with:
-          node-version: ${{ matrix.node-version }}
-
       # 下载仓库源码
       - name: Checkout
         uses: actions/checkout@master
@@ -42,6 +33,6 @@ jobs:
       # 上传测试覆盖率报告到 codecov
       - name: Upload coverage to Codecov
         # 使用codecov官方提供的action
-        uses: codecov/codecov-action@v3.1.0
+        uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

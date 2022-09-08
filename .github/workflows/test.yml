@@ -16,10 +16,19 @@ on:
 jobs:
   build-and-deploy:
     # The type of runner that the job will run on
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [ 16.x ]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
       # 下载仓库源码
       - name: Checkout
         uses: actions/checkout@master

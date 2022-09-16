@@ -128,7 +128,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
      * 本身理论上而言store.setState(store)是不会报错的，但是逻辑上也不会产生更新，所以没必要
      */
     // @ts-ignore
-    if (stateParams.setState) {
+    if (stateParams.setState && stateParams.subscribe) {
       console.error("The update parameter may be the store itself, please modify it to a normal parameter object.");
       return;
     }

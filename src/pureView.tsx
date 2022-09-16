@@ -1,4 +1,4 @@
-import React, { ComponentType, useEffect, useMemo, useState, memo } from "react";
+import React, { ComponentType, useEffect, useMemo, useState } from "react";
 import { SetState, State, StoreHeartMapType, StoreHeartMapValue, Subscribe } from "./model";
 import { pureViewNextStateMapKey, storeHeartMapKey } from "./static";
 
@@ -45,7 +45,7 @@ export function pureView<P extends State, S extends State>(
   store: S & SetState<S> & Subscribe<S>,
   Comp: ComponentType<(ResyStateToProps<S> & P) | any>,
 ) {
-  return memo((props: P) => {
+  return (props: P) => {
     // 引用数据的代理Set
     const linkStateSet: Set<keyof S> = new Set();
     
@@ -63,12 +63,6 @@ export function pureView<P extends State, S extends State>(
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
     const [state, setState] = useState<S>(proxyStateHandle(latestState, linkStateSet));
-    const [propsState, setPropsState] = useState<P>(props);
-    
-    useEffect(() => {
-      setPropsState(props);
-      // 在较少的数据属性状态下，JSON.stringify的比较效率性价比相对而言是最好的
-    }, [JSON.stringify(props)]);
     
     useEffect(() => {
       // Comp组件内部使用到的数据属性字段数组
@@ -102,6 +96,10 @@ export function pureView<P extends State, S extends State>(
       };
     }, []);
     
-    return useMemo(() => <Comp {...propsState} state={state}/>, [state, propsState]);
-  });
+    return useMemo(() => <Comp {...props} state={state}/>, [
+      state,
+      // 在较少的数据属性状态下，JSON.stringify的比较效率性价比相对而言是最好的
+      JSON.stringify(props),
+    ]);
+  };
 }

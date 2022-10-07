@@ -93,11 +93,12 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
        * 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
        * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
        */
-      if (Object.is(val, stateMap.get(key))) return;
-      // 这一步是为了配合getString，使得getString可以获得最新值
-      stateMap.set(key, val);
-      // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
-      storeChanges.forEach(storeChange => storeChange());
+      if (!Object.is(val, stateMap.get(key))) {
+        // 这一步是为了配合getString，使得getString可以获得最新值
+        stateMap.set(key, val);
+        // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
+        storeChanges.forEach(storeChange => storeChange());
+      }
     });
     StoreMapValue.set("useString", () => useSyncExternalStore(
       (storeMap.get(key) as StoreMapValue<T>).get("subscribe") as StoreMapValueType<T>["subscribe"],

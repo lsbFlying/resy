@@ -54,39 +54,39 @@ export interface StateFunc {
   (): void;
 }
 
-// resy生成的store上挂载的更新方法
+/**
+ * @description setState —————— resy生成的store上挂载的更新方法
+ *
+ * 1、resy需要setState最主要的原因是需要setState的回调功能
+ * 它的回调函数的参数是最新的数据，或者在回调函数中通过store.来获取最新数据
+ * 因为resy的更新是异步的，于是需要同步获取数据时就需要setState的回调
+ * 它相当于class组件的setState的回调
+ *
+ * 2、setState本身的使用方式在编码的时候具备很好的读写能力，
+ * 扩展运算符的对象数据更新的便捷、函数入参的循环更新的宽泛，都让setState具备更强的生命力
+ *
+ * 3、setState是挂载在每一个resy生成的store数据上面的方法
+ *
+ * @example A
+ * store.setState({
+ *   count: 123,
+ *   text: "updateText",
+ * }, (state) => {
+ *   // state：最新的数据值
+ *   // 可以理解为this.setState中的回调中的this.state
+ *   // 同时这一点也弥补了：
+ *   // hook组件中setState后只能通过useEffect来获取最新数据的方式
+ *   console.log(state);
+ * });
+ * @example B
+ * store.setState(() => {
+ *   store.count = 123;
+ *   store.text = "updateText";
+ * }, (state) => {
+ *   console.log(state);
+ * });
+ */
 export type SetState<T extends State> = Readonly<{
-  /**
-   * setState
-   * 1、resy需要setState最主要的原因是需要setState的回调功能
-   * 它的回调函数的参数是最新的数据，或者在回调函数中通过store.来获取最新数据
-   * 因为resy的更新是异步的，于是需要同步获取数据时就需要setState的回调
-   * 它相当于class组件的setState的回调
-   *
-   * 2、setState本身的使用方式在编码的时候具备很好的读写能力，
-   * 扩展运算符的对象数据更新的便捷让setState具备更强的生命力
-   *
-   * 3、setState是挂载在每一个resy生成的store数据上面的方法
-   *
-   * @example A
-   * store.setState({
-   *   count: 123,
-   *   text: "updateText",
-   * }, (state) => {
-   *   // state：最新的数据值
-   *   // 可以理解为this.setState中的回调中的this.state
-   *   // 同时这一点也弥补了：
-   *   // hook组件中setState后只能通过useEffect来获取最新数据的方式
-   *   console.log(state);
-   * });
-   * @example B
-   * store.setState(() => {
-   *   store.count = 123;
-   *   store.text = "updateText";
-   * }, (state) => {
-   *   console.log(state);
-   * });
-   */
   setState(
     state: Partial<T> | T | StateFunc,
     callback?: (nextState: T) => void,

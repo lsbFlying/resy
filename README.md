@@ -108,7 +108,7 @@ function App() {
   /**
    * 下面的使用方式，使得resy的useStore在效果上等价于react原生的useState
    */
-  // store数据储存容器私有化
+  // 将store数据储存容器私有化
   const store = useMemo(() => createStore(initialState), []);
   
   const { count } = useStore(store);

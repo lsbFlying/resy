@@ -108,7 +108,7 @@ function App() {
   /**
    * The following usage methods make the useStore of resy equivalent to the native useState of react in effect
    */
-  // store data storage container privatization
+  // privatize the store data storage container
   const store = useMemo(() => createStore(initialState), []);
   
   const { count } = useStore(store);

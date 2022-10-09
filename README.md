@@ -32,14 +32,14 @@ npm i resy
 ### 概览
 resy需要react版本 v >= 16.8；resy有五个API，分别是：
 - createStore：创建一个全局状态数据的存储容器
-- useState：从createStore生成的状态存储容器中使用state数据
+- useStore：从createStore生成的状态存储容器中使用state数据
 - setState：更新数据
 - subscribe：订阅监听createStore生成的store数据的变化
 - pureView：帮助组件具备 "更完善的规避re-render的方式" 的能力
 
-### createStore、useState
+### createStore、useStore
 ```tsx
-import { createStore, useState } from "resy";
+import { createStore, useStore } from "resy";
 
 // 数据范型类型接口
 type Store = {
@@ -74,15 +74,15 @@ const store = createStore<Store>(
 
 function App() {
   /**
-   * useState用于组件的驱动更新，如果不用useState直接使用store，
+   * useStore用于组件的驱动更新，如果不用useStore直接使用store，
    * 则只能获取纯数据而无法驱动组件更新重新渲染
-   * resy的useState效果等价于react原生的useState
+   * resy的useStore效果等价于react原生的useState
    */
   const {
     count, text, testObj: { name }, testArr, testFun,
-  } = useState(store);
+  } = useStore(store);
   
-  // 或者: const state = useState(store);
+  // 或者: const state = useStore(store);
   // state.count; ...等等
   
   return (
@@ -99,12 +99,12 @@ function App() {
 
 ### 直接更新
 ```tsx
-import { useState } from "resy";
+import { useStore } from "resy";
 
 function App() {
   const {
     count, text, testObj: {name}, testArr, testFun,
-  } = useState(store);
+  } = useStore(store);
   
   function btn2() {
     /**
@@ -191,10 +191,10 @@ function App() {
 ### subscribe 订阅监听
 ```tsx
 import { useEffect } from "react";
-import { useState } from "resy";
+import { useStore } from "resy";
 
 function App() {
-  const { count } = useState(store);
+  const { count } = useStore(store);
   
   // 这里以函数组件举例，如果是class组件可以在componentDidMount中使用
   useEffect(() => {
@@ -248,7 +248,7 @@ function App() {
 
 ### resy自身特性的规避re-render
 ```tsx
-import { createStore, useState } from "resy";
+import { createStore, useStore } from "resy";
 
 const store = createStore({
   count: 123,
@@ -260,13 +260,13 @@ const store = createStore({
 
 // count数据状态的变化不会引起Text的re-render
 function Text() {
-  const { text } = useState(store);
+  const { text } = useStore(store);
   return <p>{text}</p>;
 }
 
 // text数据状态的变化不会引起Count的re-render
 function Count() {
-  const { count } = useState(store);
+  const { count } = useStore(store);
   return <p>{count}</p>;
 }
 
@@ -277,7 +277,7 @@ function Count() {
  * 如果是父组件渲染了子组件在没有SCU或者useMemo的情况下必然渲染
  */
 function App() {
-  const { countAddFun } = useState(store);
+  const { countAddFun } = useStore(store);
   return (
     <>
       <Text/>
@@ -380,24 +380,24 @@ export default pureView(store, HookCom);
 
 ```tsx
 import React from "react";
-import { useState } from "resy";
+import { useStore } from "resy";
 
 // count数据状态的变化不会引起Text的re-render
 function Text() {
-  const { text } = useState(store);
+  const { text } = useStore(store);
   return <p>{text}</p>;
 }
 
 // text数据状态的变化不会引起Count的re-render
 function Count() {
-  const { count } = useState(store);
+  const { count } = useStore(store);
   return <p>{count}</p>;
 }
 
 function App() {
   const {
     appTestState, classComTestState, hookComTestState, countAddFun,
-  } = useState(store);
+  } = useStore(store);
   
   function appTestClick() {
     store.appTestState = `${Math.random()}~appTestState~`;

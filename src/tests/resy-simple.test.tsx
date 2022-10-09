@@ -1,13 +1,13 @@
 import React from "react";
 import { expect, test } from "vitest";
-import { createStore, useState } from "../index";
+import { createStore, useStore } from "../index";
 import { fireEvent, render } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 
 test("resy-simple", async () => {
   const store = createStore({ count: 0 });
   const App = () => {
-    const state = useState(store);
+    const state = useStore(store);
     return (
       <>
         <p>{state.count}</p>

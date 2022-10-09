@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { expect, test } from "vitest";
-import { createStore, useState } from "../index";
+import { createStore, useStore } from "../index";
 import { fireEvent, render } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 import {CustomEventListener, EventDispatcher} from "../listener";
@@ -9,7 +9,7 @@ import {batchUpdateShimRun} from "../static";
 test("resy-set-and-sub1", async () => {
   const store = createStore({ count: 0, text: "poiu" });
   const App = () => {
-    const { count, text, setState, subscribe } = useState(store);
+    const { count, text, setState, subscribe } = useStore(store);
     useEffect(() => {
       return subscribe((effectState) => {
         console.log(effectState.count);
@@ -39,7 +39,7 @@ test("resy-set-and-sub2", async () => {
   const store = createStore({ count: 0, text: "poiu" });
   const App = () => {
     const { setState, subscribe } = store;
-    const { count, text } = useState(store);
+    const { count, text } = useStore(store);
     useEffect(() => {
       return subscribe((effectState) => {
         console.log(effectState.count);
@@ -70,7 +70,7 @@ test("resy-set-and-sub3", async () => {
   let eventListener: CustomEventListener<any> | null = null;
   
   const App = () => {
-    const { text } = useState(store);
+    const { text } = useStore(store);
     useEffect(() => {
       eventListener = new (EventDispatcher as any)();
       eventListener?.addEventListener("testListener", (effectState) => {

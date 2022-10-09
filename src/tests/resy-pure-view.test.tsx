@@ -1,6 +1,6 @@
 import React, {useEffect} from "react";
 import { expect, test } from "vitest";
-import { createStore, useState, ResyStateToProps, pureView } from "../index";
+import { createStore, useStore, ResyStateToProps, pureView } from "../index";
 import { fireEvent, render } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 
@@ -68,7 +68,7 @@ const PureHookCom = pureView(store, HookCom);
 
 // count数据状态的变化不会引起Text的re-render
 function Text() {
-  const { text } = useState(store);
+  const { text } = useStore(store);
   useEffect(() => {
     return store.subscribe((effectState) => {
       store.text = `Text：${effectState.appTestState}`;
@@ -79,7 +79,7 @@ function Text() {
 
 // text数据状态的变化不会引起Count的re-render
 function Count() {
-  const { count } = useState(store);
+  const { count } = useStore(store);
   useEffect(() => {
     return store.subscribe(() => {
       store.count = 1099;
@@ -93,7 +93,7 @@ test("resy-pure-view", async () => {
   const App = () => {
     const {
       appTestState, classComTestState, hookComTestState, countAddFun,
-    } = useState(store);
+    } = useStore(store);
     
     useEffect(() => {
       return store.subscribe((effectState) => {

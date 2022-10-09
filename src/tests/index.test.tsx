@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { test, expect } from "vitest";
 import { render, fireEvent } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
-import { createStore, useState } from "../index";
+import { createStore, useStore } from "../index";
 
 test("resy-basic", async () => {
   // 数据范型类型接口
@@ -39,7 +39,7 @@ test("resy-basic", async () => {
   );
 
   const App = () => {
-    const { count, text, testFun, testObj, testArr, sex } = useState(store);
+    const { count, text, testFun, testObj, testArr, sex } = useStore(store);
     
     useEffect(() => {
       const unsubscribe = store.subscribe((effectState, prevState, nextState) => {

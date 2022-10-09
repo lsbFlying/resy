@@ -76,7 +76,6 @@ function App() {
   /**
    * useStore用于组件的驱动更新，如果不用useStore直接使用store，
    * 则只能获取纯数据而无法驱动组件更新重新渲染
-   * resy的useStore效果等价于react原生的useState
    */
   const {
     count, text, testObj: { name }, testArr, testFun,
@@ -92,6 +91,36 @@ function App() {
       <p>{name}</p>
       <button onClick={testFun}>测试按钮</button><br/>
       {testArr.map(item => `年龄：${item}`)}
+    </>
+  );
+}
+```
+
+```tsx
+import { useMemo } from "react";
+import { createStore, useStore } from "resy";
+
+const initialState = {
+  count: 123,
+};
+
+function App() {
+  /**
+   * 下面的使用方式，使得resy的useStore在效果上等价于react原生的useState
+   */
+  // store数据储存容器私有化
+  const store = useMemo(() => createStore(initialState), []);
+  
+  const { count } = useStore(store);
+  
+  function addClick() {
+    store.count++;
+  }
+  
+  return (
+    <>
+      <p>{count}</p>
+      <button onClick={}>测试按钮</button><br/>
     </>
   );
 }

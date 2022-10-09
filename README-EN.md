@@ -76,7 +76,6 @@ function App() {
   /**
    * useStore is used for driver update of components, If you use store directly without useStore,
    * Only the pure data can be obtained, and component update and re-rendering cannot be driven.
-   * resy's useStore effect is equivalent to react's native useState
    */
   const {
     count, text, testObj: { name }, testArr, testFun,
@@ -92,6 +91,36 @@ function App() {
       <p>{name}</p>
       <button onClick={testFun}>Test Button</button><br/>
       {testArr.map(item => `Age：${item}`)}
+    </>
+  );
+}
+```
+
+```tsx
+import { useMemo } from "react";
+import { createStore, useStore } from "resy";
+
+const initialState = {
+  count: 123,
+};
+
+function App() {
+  /**
+   * The following usage methods make the useStore of resy equivalent to the native useState of react in effect
+   */
+  // store data storage container privatization
+  const store = useMemo(() => createStore(initialState), []);
+  
+  const { count } = useStore(store);
+  
+  function addClick() {
+    store.count++;
+  }
+  
+  return (
+    <>
+      <p>{count}</p>
+      <button onClick={}>test button</button><br/>
     </>
   );
 }

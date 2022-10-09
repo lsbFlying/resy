@@ -17,13 +17,13 @@ export const batchUpdate = unstable_batchedUpdates || batchUpdateShimRun;
 // 每一个resy生成store的监听订阅对象、内部state数据的唯一标识key值
 export const storeHeartMapKey = Symbol("resyStoreListenerSymbolKey");
 
-// useState驱动更新的key
-export const useStateKey = Symbol("useStateKey");
+// useStore驱动更新的key
+export const useStoreKey = Symbol("useStoreKey");
 
 /**
  * setState的更新函数key
  * 不能是symbol类型，因为这个key访问的时候是外部使用访问，就是这个固定的key->setState
- * 不像storeHeartMapKey或者useStateKey这样是内部使用的key
+ * 不像storeHeartMapKey或者useStoreKey这样是内部使用的key
  */
 export const setStateKey = "setState";
 

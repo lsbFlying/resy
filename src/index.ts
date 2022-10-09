@@ -9,7 +9,7 @@
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { scheduler, Scheduler } from "./scheduler";
 import {
-  useStateKey, storeHeartMapKey, batchUpdate, setStateKey, pureViewNextStateMapKey, subscribeKey,
+  useStoreKey, storeHeartMapKey, batchUpdate, setStateKey, pureViewNextStateMapKey, subscribeKey,
 } from "./static";
 import {
   Callback, State, SetState, StoreMap, StoreMapValue, StoreMapValueType, StoreHeartMapType,
@@ -255,7 +255,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   
   return new Proxy(state, {
     get: (_, key: keyof T) => {
-      if (key === useStateKey) {
+      if (key === useStoreKey) {
         // 给useState的驱动更新代理
         return new Proxy(storeMap, {
           get: (_t, tempKey: keyof T) => {
@@ -309,11 +309,11 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
 }
 
 /**
- * useState
+ * useStore
  * @description 驱动组件更新的hook，使用store容器中的数据
  */
-export function useState<T extends State>(store: T): T {
-  return store[useStateKey as keyof T];
+export function useStore<T extends State>(store: T): T {
+  return store[useStoreKey as keyof T];
 }
 
 export * from "./pureView";

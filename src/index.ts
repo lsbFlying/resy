@@ -173,38 +173,37 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
    * 3、是changedData本身是部分变更数据不会很多，不怎么影响效率
    */
   function batchDispatch(prevState: Map<keyof T, T[keyof T]>, changedData: Map<keyof T, T[keyof T]>) {
-    if (changedData.size === 0) return;
-    /**
-     * effectState：实际真正影响变化的数据
-     * changedData是给予更新变化的数据，但是不是真正会产生变化影响的数据，
-     * 就好比setState中的参数对象可以写与原数据一样数据，但是不产生更新
-     */
-    const effectState = {} as Partial<T>;
-    // @ts-ignore
-    [...changedData.entries()].forEach(([key, value]) => {
-      if (!Object.is(value, prevState.get(key))) {
-        effectState[key as keyof T] = stateMap.get(key);
-      }
-    });
-    
-    if (Object.keys(effectState).length === 0) return;
-    
-    (
-      storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValue<T>["dispatchStoreEffect"]
-    )(
-      effectState,
-      new Proxy(prevState, {
-        get: (target, p: keyof T) => {
-          return target.get(p);
+    if (changedData.size > 0) {
+      /**
+       * effectState：实际真正影响变化的数据
+       * changedData是给予更新变化的数据，但是不是真正会产生变化影响的数据，
+       * 就好比setState中的参数对象可以写与原数据一样数据，但是不产生更新
+       */
+      const effectState = {} as Partial<T>;
+      // @ts-ignore
+      [...changedData.entries()].forEach(([key, value]) => {
+        if (!Object.is(value, prevState.get(key))) {
+          effectState[key as keyof T] = stateMap.get(key);
         }
-      } as ProxyHandler<Map<keyof T, T[keyof T]>>) as any as T,
-      new Proxy(stateMap, {
-        get: (target, p: keyof T) => {
-          if (p === pureViewNextStateMapKey) return target;
-          return target.get(p);
-        }
-      } as ProxyHandler<Map<keyof T, T[keyof T]>>) as any as T,
-    );
+      });
+  
+      (
+        storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValue<T>["dispatchStoreEffect"]
+      )(
+        effectState,
+        new Proxy(prevState, {
+          get: (target, p: keyof T) => {
+            return target.get(p);
+          }
+        } as ProxyHandler<Map<keyof T, T[keyof T]>>) as any as T,
+        new Proxy(stateMap, {
+          get: (target, p: keyof T) => {
+            if (p === pureViewNextStateMapKey) return target;
+            return target.get(p);
+          }
+        } as ProxyHandler<Map<keyof T, T[keyof T]>>) as any as T,
+      );
+    }
   }
   
   /**

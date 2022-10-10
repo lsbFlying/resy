@@ -1,6 +1,6 @@
 import React, { ComponentType, useEffect, useMemo, useState } from "react";
-import { SetState, State, StoreHeartMapType, StoreHeartMapValue, Subscribe } from "./model";
-import { pureViewNextStateMapKey, storeHeartMapKey } from "./static";
+import { SetState, State, StoreCoreMapType, StoreCoreMapValue, Subscribe } from "./model";
+import { pureViewNextStateMapKey, storeCoreMapKey } from "./static";
 
 // 将resy生成的store容器数据挂载到组件的props的state属性上
 export interface ResyStateToProps<T extends State> {
@@ -52,8 +52,8 @@ export function pureView<P extends State, S extends State>(
     // 需要使用getState获取store内部的即时最新数据值
     const latestState = (
       (
-        store[storeHeartMapKey as keyof S] as StoreHeartMapType<S>
-      ).get("getState") as StoreHeartMapValue<S>["getState"]
+        store[storeCoreMapKey as keyof S] as StoreCoreMapType<S>
+      ).get("getState") as StoreCoreMapValue<S>["getState"]
     )();
     
     /**
@@ -88,8 +88,8 @@ export function pureView<P extends State, S extends State>(
          */
         (
           (
-            store[storeHeartMapKey as keyof S] as StoreHeartMapType<S>
-          ).get("resetState") as StoreHeartMapValue<S>["resetState"]
+            store[storeCoreMapKey as keyof S] as StoreCoreMapType<S>
+          ).get("resetState") as StoreCoreMapValue<S>["resetState"]
         )();
         unsubscribe();
         linkStateSet.clear();

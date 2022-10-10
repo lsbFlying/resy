@@ -9,11 +9,11 @@
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { scheduler, Scheduler } from "./scheduler";
 import {
-  useStoreKey, storeHeartMapKey, batchUpdate, setStateKey, pureViewNextStateMapKey, subscribeKey,
+  useStoreKey, storeCoreMapKey, batchUpdate, setStateKey, pureViewNextStateMapKey, subscribeKey,
 } from "./static";
 import {
-  Callback, State, SetState, StoreMap, StoreMapValue, StoreMapValueType, StoreHeartMapType,
-  StoreHeartMapValue, StateFunc, Unsubscribe, Subscribe,
+  Callback, State, SetState, StoreMap, StoreMapValue, StoreMapValueType, StoreCoreMapType,
+  StoreCoreMapValue, StateFunc, Unsubscribe, Subscribe,
 } from "./model";
 import { CustomEventListener, EventDispatcher, Listener } from "./listener";
 
@@ -50,18 +50,18 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   let stateMap: Map<keyof T, T[keyof T]> = new Map(Object.entries(state));
   
   // 每一个resy生成的store具有的监听订阅处理，并且可以获取最新state数据，像心脏一样核心重要
-  const storeHeartMap: StoreHeartMapType<T> = new Map();
-  storeHeartMap.set("getState", () => stateMap);
-  storeHeartMap.set("resetState", () => {
+  const storeCoreMap: StoreCoreMapType<T> = new Map();
+  storeCoreMap.set("getState", () => stateMap);
+  storeCoreMap.set("resetState", () => {
     if (unmountClear) stateMap = new Map(Object.entries(state));
   });
-  storeHeartMap.set("listenerEventType", Symbol("storeListenerSymbol"));
-  storeHeartMap.set("dispatchStoreEffectSet", new Set<CustomEventListener<any>>());
-  storeHeartMap.set("dispatchStoreEffect", (effectData: Partial<T>, prevState: T, nextState: T) => {
+  storeCoreMap.set("listenerEventType", Symbol("storeListenerSymbol"));
+  storeCoreMap.set("dispatchStoreEffectSet", new Set<CustomEventListener<any>>());
+  storeCoreMap.set("dispatchStoreEffect", (effectData: Partial<T>, prevState: T, nextState: T) => {
     (
-      storeHeartMap.get("dispatchStoreEffectSet") as StoreHeartMapValue<T>["dispatchStoreEffectSet"]
+      storeCoreMap.get("dispatchStoreEffectSet") as StoreCoreMapValue<T>["dispatchStoreEffectSet"]
     ).forEach(item => item.dispatchEvent(
-      storeHeartMap.get("listenerEventType") as string | symbol,
+      storeCoreMap.get("listenerEventType") as string | symbol,
       effectData,
       prevState,
       nextState,
@@ -184,7 +184,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
       });
   
       (
-        storeHeartMap.get("dispatchStoreEffect") as StoreHeartMapValue<T>["dispatchStoreEffect"]
+        storeCoreMap.get("dispatchStoreEffect") as StoreCoreMapValue<T>["dispatchStoreEffect"]
       )(
         effectState,
         new Proxy(prevState, {
@@ -218,9 +218,9 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     listener: Listener<T>,
     stateKeys?: (keyof T)[],
   ): Unsubscribe {
-    const subscribeEventType = storeHeartMap.get("listenerEventType") as StoreHeartMapValue<T>["listenerEventType"];
+    const subscribeEventType = storeCoreMap.get("listenerEventType") as StoreCoreMapValue<T>["listenerEventType"];
     
-    const dispatchStoreEffectSetTemp = storeHeartMap.get("dispatchStoreEffectSet") as StoreHeartMapValue<T>["dispatchStoreEffectSet"];
+    const dispatchStoreEffectSetTemp = storeCoreMap.get("dispatchStoreEffectSet") as StoreCoreMapValue<T>["dispatchStoreEffectSet"];
     
     const listenerOrigin = (
       effectState: Partial<Omit<T, "setState" | "subscribe">>,
@@ -266,7 +266,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
           },
         } as ProxyHandler<StoreMap<T>>);
       }
-      if (key === storeHeartMapKey) return storeHeartMap;
+      if (key === storeCoreMapKey) return storeCoreMap;
       if (key === setStateKey) return setState;
       if (key === subscribeKey) return subscribe;
       return stateMap.get(key);

@@ -23,12 +23,10 @@ export type StoreMapValue<T extends State> = Map<
 export type StoreMap<T extends State> = Map<keyof T, StoreMapValue<T>>;
 
 /**
- * StoreHeartMap的数据值类型，作为createStore的如同心脏一样的效果
- * 触发数据变化： 心脏跳动供血
- *    获取数据： 血液循环流动
- *    重置数据： 换血清理恢复
+ * StoreCoreMap的数据值类型，作为createStore的核心Map接口类型
+ * 具备获取内部state数据对象、重置数据、订阅监听等功能
  */
-export interface StoreHeartMapValue<T extends State> {
+export interface StoreCoreMapValue<T extends State> {
   // store内部的state数据对象（使用函数来维持数据获取最新数据值）
   getState: () => Map<keyof T, T[keyof T]>,
   // 重置(恢复)初始化数据（供pureView使用）
@@ -42,9 +40,9 @@ export interface StoreHeartMapValue<T extends State> {
 }
 
 // 每一个resy生成的store的监听订阅对象、内部stateMap数据以及重置初始化数据的方法
-export type StoreHeartMapType<T extends State> = Map<
-  keyof StoreHeartMapValue<T>,
-  StoreHeartMapValue<T>[keyof StoreHeartMapValue<T>]
+export type StoreCoreMapType<T extends State> = Map<
+  keyof StoreCoreMapValue<T>,
+  StoreCoreMapValue<T>[keyof StoreCoreMapValue<T>]
 >;
 
 // setState的函数更新处理

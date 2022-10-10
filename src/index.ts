@@ -111,10 +111,8 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   // 为每一个数据字段储存链接到store容器中，这样渲染并发执行提升渲染流畅度
   function initialValueLinkStore(key: keyof T) {
     // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
-    if (storeMap.get(key) === undefined) {
-      genStoreMapKeyValue(key);
-      return storeMap;
-    }
+    if (storeMap.get(key) !== undefined) return storeMap;
+    genStoreMapKeyValue(key);
     return storeMap;
   }
   
@@ -129,36 +127,34 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
      * 本身理论上而言store.setState(store)是不会报错的，但是逻辑上也不会产生更新，所以没必要
      */
     // @ts-ignore
-    if (stateParams.setState && stateParams.subscribe) {
-      console.error("The update parameter may be the store itself, please modify it to a normal parameter object.");
-      return;
-    }
-    // 必须在更新之前执行，获取更新之前的数据
-    const prevState = new Map(stateMap);
-    try {
-      if (typeof stateParams === "function") {
-        batchUpdate(stateParams as StateFunc);
-      } else {
-        batchUpdate(() => {
-          Object.keys(stateParams).forEach(key => {
-            (
+    if (!(stateParams.setState && stateParams.subscribe)) {
+      // 必须在更新之前执行，获取更新之前的数据
+      const prevState = new Map(stateMap);
+      try {
+        if (typeof stateParams === "function") {
+          batchUpdate(stateParams as StateFunc);
+        } else {
+          batchUpdate(() => {
+            Object.keys(stateParams).forEach(key => {
               (
-                initialValueLinkStore(key).get(key) as StoreMapValue<T>
-              ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
-            )((stateParams as Partial<T> | T)[key]);
+                (
+                  initialValueLinkStore(key).get(key) as StoreMapValue<T>
+                ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
+              )((stateParams as Partial<T> | T)[key]);
+            });
           });
-        });
+        }
+      } finally {
+        const changedData = typeof stateParams === "function" ? stateMap : new Map(Object.entries(stateParams));
+        batchDispatch(prevState, changedData);
+        callback?.(
+          new Proxy(stateMap, {
+            get: (target, p: keyof T) => {
+              return target.get(p);
+            }
+          } as ProxyHandler<Map<keyof T, T[keyof T]>>) as any as T
+        );
       }
-    } finally {
-      const changedData = typeof stateParams === "function" ? stateMap : new Map(Object.entries(stateParams));
-      batchDispatch(prevState, changedData);
-      callback?.(
-        new Proxy(stateMap, {
-          get: (target, p: keyof T) => {
-            return target.get(p);
-          }
-        } as ProxyHandler<Map<keyof T, T[keyof T]>>) as any as T
-      );
     }
   }
   

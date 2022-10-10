@@ -6,15 +6,13 @@ export type Callback = () => void;
 export type State = Record<string, any>;
 
 /**
- * @description 使用String作为hook取名后缀，是取于string theory
- * 弦理论-物理学理论，弦(string)作为终极微粒之意释意
- * 此处亦理解为每一个状态数据的终极状态数据元（单个独立的微数据元）
+ * @description resy的store接口类型
  */
 export type StoreMapValueType<T extends State> = {
   subscribe: (onStoreChange: Callback) => Callback;
-  getString: () => T[keyof T];
-  setString: (val: T[keyof T]) => void;
-  useString: () => T[keyof T];
+  getSnapshot: () => T[keyof T];
+  setSnapshot: (val: T[keyof T]) => void;
+  useSnapshot: () => T[keyof T];
 };
 
 export type StoreMapValue<T extends State> = Map<

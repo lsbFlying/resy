@@ -307,18 +307,18 @@ function genStoreMapKeyValue<T extends State>(
  */
 export function useStore<T extends State>(store: T): Omit<T, keyof SetState<T> | keyof Subscribe<T>> {
   return useMemo(() => (
-    // 给useState的驱动更新代理
-    new Proxy(store[storeMapKey], {
+    // 给useState的驱动更新代理  store[storeMapKey]
+    new Proxy(Reflect.get(store, storeMapKey), {
       get: (_t, tempKey: keyof T) => {
         return (
           (
             (
               initialValueLinkStore(
                 tempKey,
-                store[stateMapKey],
-                store[storeMapKey],
-                store[stateKey],
-                store[unmountClearKey],
+                Reflect.get(store, stateMapKey),
+                Reflect.get(store, storeMapKey),
+                Reflect.get(store, stateKey),
+                Reflect.get(store, unmountClearKey),
               ) as StoreMap<T>
             ).get(tempKey) as StoreMapValue<T>
           ).get("useSnapshot") as StoreMapValueType<T>["useSnapshot"]

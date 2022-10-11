@@ -305,7 +305,7 @@ function genStoreMapKeyValue<T extends State>(
  * useStore
  * @description 驱动组件更新的hook，使用store容器中的数据
  */
-export function useStore<T extends State>(store: T): Omit<T, "setState" | "subscribe"> {
+export function useStore<T extends State>(store: T): Omit<T, keyof SetState<T> | keyof Subscribe<T>> {
   return useMemo(() => (
     // 给useState的驱动更新代理
     new Proxy(store[storeMapKey], {

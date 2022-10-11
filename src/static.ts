@@ -6,7 +6,7 @@ import { Callback } from "./model";
  * batchUpdateShimRun
  * @description 一个unstable_batchedUpdates的shim垫片
  */
-function batchUpdateShimRun(fn: Callback) { fn() }
+export function batchUpdateShimRun(fn: Callback) { fn() }
 
 /**
  * React-v18中所有的更新以及是自动化批处理的了，但是unstable_batchedUpdates这个API它目前还仍然在18的版本中可以使用，

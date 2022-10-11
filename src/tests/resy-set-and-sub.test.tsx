@@ -9,9 +9,9 @@ import {batchUpdateShimRun} from "../static";
 test("resy-set-and-sub1", async () => {
   const store = createStore({ count: 0, text: "poiu" });
   const App = () => {
-    const { count, text, setState, subscribe } = useStore(store);
+    const { count, text } = useStore(store);
     useEffect(() => {
-      return subscribe((effectState) => {
+      return store.subscribe((effectState) => {
         console.log(effectState.count);
         store.text = "Arosy";
       }, ["count"]);
@@ -21,7 +21,7 @@ test("resy-set-and-sub1", async () => {
       <>
         <p>{count}</p>
         <p>{text}</p>
-        <button onClick={() => setState({ count: count + 1 })}>inc-btn</button>
+        <button onClick={() => store.setState({ count: count + 1 })}>inc-btn</button>
       </>
     );
   };

@@ -7,13 +7,15 @@
  * @name createStore
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
+import { useMemo } from "react";
 import { scheduler, Scheduler } from "./scheduler";
 import {
-  useStoreKey, storeCoreMapKey, batchUpdate, setStateKey, pureViewNextStateMapKey, subscribeKey,
+  batchUpdate, pureViewNextStateMapKey, storeCoreMapKey,
+  storeMapKey, stateMapKey, stateKey, unmountClearKey,
 } from "./static";
 import {
   Callback, State, SetState, StoreMap, StoreMapValue, StoreMapValueType, StoreCoreMapType,
-  StoreCoreMapValue, StateFunc, Unsubscribe, Subscribe,
+  StoreCoreMapValue, StateFunc, Unsubscribe, Subscribe, ExternalMapType, ExternalMapValue,
 } from "./model";
 import { CustomEventListener, EventDispatcher, Listener } from "./listener";
 
@@ -42,10 +44,9 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * 所以unmountClear默认设置为true，符合常规使用即可，除非遇到像上述登录信息数据那样的全局数据而言才会设置为false
  */
 export function createStore<T extends State>(state: T, unmountClear = true): T & SetState<T> & Subscribe<T> {
-  
   /**
    * 不改变传参state，同时resy使用Map与Set提升性能
-   * 如stateMap、storeMap、storeHeartMap、storeChanges等
+   * 如stateMap、storeMap、storeCoreMap、storeChanges等
    */
   let stateMap: Map<keyof T, T[keyof T]> = new Map(Object.entries(state));
   
@@ -71,56 +72,8 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   // 数据存储容器storeMap
   const storeMap: StoreMap<T> = new Map();
   
-  // 生成storeMap键值对
-  function genStoreMapKeyValue(key: keyof T) {
-    /**
-     * 这里使用set不使用纯对象或者数组的原因很简单：
-     * 就是Set或者Map类型在频繁添加和删除元素的情况下有明显的性能优势
-     */
-    const storeChanges = new Set<Callback>();
-    
-    const StoreMapValue: StoreMapValue<T> = new Map();
-    StoreMapValue.set("subscribe", (storeChange: Callback) => {
-      storeChanges.add(storeChange);
-      return () => {
-        storeChanges.delete(storeChange);
-        if (unmountClear) stateMap.set(key, state[key]);
-      };
-    });
-    StoreMapValue.set("getSnapshot", () => stateMap.get(key));
-    StoreMapValue.set("setSnapshot", (val: T[keyof T]) => {
-      /**
-       * 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
-       * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
-       */
-      if (!Object.is(val, stateMap.get(key))) {
-        // 这一步是为了配合getSnapshot，使得getSnapshot可以获得最新值
-        stateMap.set(key, val);
-        // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
-        storeChanges.forEach(storeChange => storeChange());
-      }
-    });
-    StoreMapValue.set("useSnapshot", () => useSyncExternalStore(
-      (storeMap.get(key) as StoreMapValue<T>).get("subscribe") as StoreMapValueType<T>["subscribe"],
-      (storeMap.get(key) as StoreMapValue<T>).get("getSnapshot") as StoreMapValueType<T>["getSnapshot"],
-    ));
-    
-    storeMap.set(key, StoreMapValue);
-  }
-  
-  // 为每一个数据字段储存链接到store容器中，这样渲染并发执行提升渲染流畅度
-  function initialValueLinkStore(key: keyof T) {
-    // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
-    if (storeMap.get(key) !== undefined) return storeMap;
-    genStoreMapKeyValue(key);
-    return storeMap;
-  }
-  
-  // 详细注释描述见model文件SetStateType接口类型文档描述
-  function setState(
-    stateParams: Partial<T> | T | StateFunc = {},
-    callback?: (nextState: T) => void,
-  ) {
+  // 详细注释描述见model文件SetState接口类型文档描述
+  function setState(stateParams: Partial<T> | T | StateFunc = {}, callback?: (nextState: T) => void) {
     /**
      * 由于createStore生成的数据容器store在类型上为了方便使用定义为了对象接口类型
      * 所以如果编码错误的将store直接传入更新参数中可能不起作用，此时需要做一个错误拦截提醒开发人员
@@ -138,7 +91,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
             Object.keys(stateParams).forEach(key => {
               (
                 (
-                  initialValueLinkStore(key).get(key) as StoreMapValue<T>
+                  initialValueLinkStore(key, stateMap, storeMap, state, unmountClear).get(key) as StoreMapValue<T>
                 ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
               )((stateParams as Partial<T> | T)[key]);
             });
@@ -214,10 +167,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
    * 如果为空则默认监听store的任何一个数据的变化
    * @return unsubscribe 返回取消监听的函数
    */
-  function subscribe(
-    listener: Listener<T>,
-    stateKeys?: (keyof T)[],
-  ): Unsubscribe {
+  function subscribe(listener: Listener<T>, stateKeys?: (keyof T)[]): Unsubscribe {
     const subscribeEventType = storeCoreMap.get("listenerEventType") as StoreCoreMapValue<T>["listenerEventType"];
     
     const dispatchStoreEffectSetTemp = storeCoreMap.get("dispatchStoreEffectSet") as StoreCoreMapValue<T>["dispatchStoreEffectSet"];
@@ -248,34 +198,25 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     };
   }
   
+  // setState与subscribe以及store内部数据Map的合集
+  const externalMap: ExternalMapType<T> = new Map();
+  externalMap.set("setState", setState);
+  externalMap.set("subscribe", subscribe);
+  externalMap.set(storeCoreMapKey, storeCoreMap);
+  externalMap.set(stateMapKey, stateMap);
+  externalMap.set(storeMapKey, storeMap);
+  externalMap.set(stateKey, state);
+  externalMap.set(unmountClearKey, unmountClear);
+  
   return new Proxy(state, {
     get: (_, key: keyof T) => {
-      if (key === useStoreKey) {
-        // 给useState的驱动更新代理
-        return new Proxy(storeMap, {
-          get: (_t, tempKey: keyof T) => {
-            if (tempKey === setStateKey) return setState;
-            if (tempKey === subscribeKey) return subscribe;
-            return (
-              (
-                (
-                  initialValueLinkStore(tempKey) as StoreMap<T>
-                ).get(tempKey) as StoreMapValue<T>
-              ).get("useSnapshot") as StoreMapValueType<T>["useSnapshot"]
-            )();
-          },
-        } as ProxyHandler<StoreMap<T>>);
-      }
-      if (key === storeCoreMapKey) return storeCoreMap;
-      if (key === setStateKey) return setState;
-      if (key === subscribeKey) return subscribe;
-      return stateMap.get(key);
+      return externalMap.get(key as keyof ExternalMapValue<T>) || stateMap.get(key);
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
       (scheduler.get("add") as Scheduler["add"])(
         () => (
           (
-            initialValueLinkStore(key).get(key) as StoreMapValue<T>
+            initialValueLinkStore(key, stateMap, storeMap, state, unmountClear).get(key) as StoreMapValue<T>
           ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
         )(val),
         key,
@@ -303,12 +244,88 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   } as ProxyHandler<T>) as T & SetState<T> & Subscribe<T>;
 }
 
+// 为每一个数据字段储存链接到store容器中
+function initialValueLinkStore<T extends State>(
+  key: keyof T,
+  stateMap: Map<keyof T, T[keyof T]>,
+  storeMap: StoreMap<T>,
+  state: T,
+  unmountClear = true,
+) {
+  // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
+  if (storeMap.get(key) !== undefined) return storeMap;
+  genStoreMapKeyValue(key, stateMap, storeMap, state, unmountClear);
+  return storeMap;
+}
+
+// 生成storeMap键值对
+function genStoreMapKeyValue<T extends State>(
+  key: keyof T,
+  stateMap: Map<keyof T, T[keyof T]>,
+  storeMap: StoreMap<T>,
+  state: T,
+  unmountClear = true,
+) {
+  /**
+   * 这里使用set不使用纯对象或者数组的原因很简单：
+   * 就是Set或者Map类型在频繁添加和删除元素的情况下有明显的性能优势
+   */
+  const storeChanges = new Set<Callback>();
+  
+  const StoreMapValue: StoreMapValue<T> = new Map();
+  StoreMapValue.set("subscribe", (storeChange: Callback) => {
+    storeChanges.add(storeChange);
+    return () => {
+      storeChanges.delete(storeChange);
+      if (unmountClear) stateMap.set(key, state[key]);
+    };
+  });
+  StoreMapValue.set("getSnapshot", () => stateMap.get(key));
+  StoreMapValue.set("setSnapshot", (val: T[keyof T]) => {
+    /**
+     * 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
+     * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
+     */
+    if (!Object.is(val, stateMap.get(key))) {
+      // 这一步是为了配合getSnapshot，使得getSnapshot可以获得最新值
+      stateMap.set(key, val);
+      // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
+      storeChanges.forEach(storeChange => storeChange());
+    }
+  });
+  StoreMapValue.set("useSnapshot", () => useSyncExternalStore(
+    (storeMap.get(key) as StoreMapValue<T>).get("subscribe") as StoreMapValueType<T>["subscribe"],
+    (storeMap.get(key) as StoreMapValue<T>).get("getSnapshot") as StoreMapValueType<T>["getSnapshot"],
+  ));
+  
+  storeMap.set(key, StoreMapValue);
+}
+
 /**
  * useStore
  * @description 驱动组件更新的hook，使用store容器中的数据
  */
 export function useStore<T extends State>(store: T): T {
-  return store[useStoreKey as keyof T];
+  return useMemo(() => (
+    // 给useState的驱动更新代理
+    new Proxy(store[storeMapKey], {
+      get: (_t, tempKey: keyof T) => {
+        return (
+          (
+            (
+              initialValueLinkStore(
+                tempKey,
+                store[stateMapKey],
+                store[storeMapKey],
+                store[stateKey],
+                store[unmountClearKey],
+              ) as StoreMap<T>
+            ).get(tempKey) as StoreMapValue<T>
+          ).get("useSnapshot") as StoreMapValueType<T>["useSnapshot"]
+        )();
+      },
+    } as ProxyHandler<T>)
+  ), []);
 }
 
 export * from "./pureView";

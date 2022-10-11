@@ -1,4 +1,5 @@
 import { CustomEventListener, Listener } from "./listener";
+import { storeCoreMapKey, storeMapKey, stateMapKey, stateKey, unmountClearKey } from "./static";
 
 export type Callback = () => void;
 
@@ -49,6 +50,19 @@ export type StoreCoreMapType<T extends State> = Map<
 export interface StateFunc {
   (): void;
 }
+
+export type ExternalMapValue<T extends State> = SetState<T> & Subscribe<T> & {
+  [storeCoreMapKey]: StoreCoreMapType<T>;
+  [stateMapKey]: Map<keyof T, T[keyof T]>,
+  [storeMapKey]: StoreMap<T>,
+  [stateKey]: T,
+  [unmountClearKey]: true | false,
+}
+
+export type ExternalMapType<T extends State> = Map<
+  keyof ExternalMapValue<T>,
+  ExternalMapValue<T>[keyof ExternalMapValue<T>]
+>;
 
 /**
  * @description setState —————— resy生成的store上挂载的更新方法

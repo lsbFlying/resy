@@ -299,7 +299,7 @@ function genStoreMapKeyValue<T extends State>(
  */
 export function useStore<T extends State>(store: T): Omit<T, keyof SetState<T> | keyof Subscribe<T>> {
   return useMemo(() => (
-    // 给useState的驱动更新代理  store[storeMapKey]
+    // 给useState的驱动更新代理
     new Proxy(store[storeMapKey], {
       get: (_, key: keyof T) => {
         return (

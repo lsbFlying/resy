@@ -332,6 +332,16 @@ function App() {
 ```
 
 ### pureView — Better avoid re-render
+```markdown
+    Summary: compared with resy's own characteristics, re-render
+        pureView handles circumvented re-render more perfectly
+        The perfection lies in:
+        that is even if the parent component is updated
+        As long as pureView wraps the component itself
+        The attribute data of the update reason is not used in the parent component
+        Then the components wrapped by pureView will not be re-render
+```
+
 ```tsx
 import { createStore } from "resy";
 
@@ -447,16 +457,6 @@ function App() {
     store.hookComTestState = `!${Math.random()}hookComTestState!`;
   }
   
-  /**
-   * Summary: compared with resy's own characteristics, re-render
-   * pureView handles circumvented re-render more perfectly
-   *
-   * The perfection lies in:
-   * that is even if the parent component is updated
-   * As long as pureView wraps the component itself
-   * The attribute data of the update reason is not used in the parent component
-   * Then the components wrapped by pureView will not be re-render
-   */
   return (
     <>
       <div onClick={appTestClick}>{appTestState}</div>

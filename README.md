@@ -326,6 +326,15 @@ function App() {
 ```
 
 ### pureView 更完善的规避re-render
+```markdown
+    总结：相较于resy自身特性的re-render
+        pureView处理规避的re-render更加完善
+        完善的点在于：
+        即使父组件更新了，只要pureView包裹的组件本身
+        没有使用到父组件中更新缘由的属性数据
+        那么pureView包裹的组件就不会re-render
+```
+
 ```tsx
 import { createStore } from "resy";
 
@@ -441,15 +450,6 @@ function App() {
     store.hookComTestState = `!${Math.random()}hookComTestState!`;
   }
   
-  /**
-   * 总结：相较于resy自身特性的re-render
-   * pureView处理规避的re-render更加完善
-   * 
-   * 完善的点在于：
-   * 即使父组件更新了，只要pureView包裹的组件本身
-   * 没有使用到父组件中更新缘由的属性数据
-   * 那么pureView包裹的组件就不会re-render
-   */
   return (
     <>
       <div onClick={appTestClick}>{appTestState}</div>

@@ -301,18 +301,18 @@ export function useStore<T extends State>(store: T): Omit<T, keyof SetState<T> |
   return useMemo(() => (
     // 给useState的驱动更新代理  store[storeMapKey]
     new Proxy(store[storeMapKey], {
-      get: (_t, tempKey: keyof T) => {
+      get: (_, key: keyof T) => {
         return (
           (
             (
               initialValueLinkStore(
-                tempKey,
+                key,
                 store[stateMapKey],
                 store[storeMapKey],
                 store[stateKey],
                 store[unmountClearKey],
               ) as StoreMap<T>
-            ).get(tempKey) as StoreMapValue<T>
+            ).get(key) as StoreMapValue<T>
           ).get("useSnapshot") as StoreMapValueType<T>["useSnapshot"]
         )();
       },

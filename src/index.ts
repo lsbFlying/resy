@@ -165,9 +165,9 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     const dispatchStoreEffectSetTemp = storeCoreMap.get("dispatchStoreEffectSet") as StoreCoreMapValue<T>["dispatchStoreEffectSet"];
     
     const listenerOrigin = (
-      effectState: Partial<Omit<T, "setState" | "subscribe">>,
-      prevState: Omit<T, "setState" | "subscribe">,
-      nextState: Omit<T, "setState" | "subscribe">,
+      effectState: Partial<Omit<T, keyof SetState<T> | keyof Subscribe<T>>>,
+      prevState: Omit<T, keyof SetState<T> | keyof Subscribe<T>>,
+      nextState: Omit<T, keyof SetState<T> | keyof Subscribe<T>>,
     ) => {
       let includesFlag = false;
       const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);

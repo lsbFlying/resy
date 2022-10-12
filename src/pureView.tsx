@@ -98,7 +98,6 @@ export function pureView<P extends State, S extends State>(
     
     return useMemo(() => <Comp {...props} state={state}/>, [
       state,
-      // 在较少的数据属性状态下，JSON.stringify的比较效率性价比相对而言是最好的
       JSON.stringify(props),
     ]);
   };

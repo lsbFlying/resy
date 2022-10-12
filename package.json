@@ -15,8 +15,8 @@
   "scripts": {
     "test": "vitest run --coverage --environment jsdom",
     "test:dev": "vitest --ui --coverage --environment jsdom",
-    "build": "rm -rf dist && rollup -c --configPlugin @rollup/plugin-typescript",
-    "okPublish": "npm run build && npm publish --registry=https://registry.npmjs.org/"
+    "build": "rollup -c --configPlugin @rollup/plugin-typescript",
+    "prepublishOnly": "rm -rf dist coverage && npm test && npm run build"
   },
   "dependencies": {
     "use-sync-external-store": "^1.2.0"

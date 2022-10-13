@@ -114,7 +114,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
    * 3、是changedData本身是部分变更数据不会很多，不怎么影响效率
    */
   function batchDispatch(prevState: Map<keyof T, T[keyof T]>, changedData: Map<keyof T, T[keyof T]>) {
-    if (changedData.size > 0) {
+    if (changedData.size > 0 && (storeCoreMap.get("dispatchStoreEffectSet") as StoreCoreMapValue<T>["dispatchStoreEffectSet"]).size > 0) {
       /**
        * effectState：实际真正影响变化的数据
        * changedData是给予更新变化的数据，但是不是真正会产生变化影响的数据，

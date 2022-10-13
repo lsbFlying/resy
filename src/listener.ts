@@ -16,6 +16,10 @@ export interface CustomEventListener<T extends State> {
     prevState: T,
     nextState: T,
   ): void,
+  /**
+   * 本身EventDispatcher可以单独使用，在结合resy时销毁监听订阅的时候实际上是移除了监听Set中的监听实例
+   * 所以subscribe这里可以不用多余使用removeEventListener，直接移除实例即可
+   */
   removeEventListener(type: string | symbol): void,
 }
 

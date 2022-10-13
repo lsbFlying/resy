@@ -183,9 +183,6 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     dispatchStoreEffectSetTemp.add(customEventDispatcher);
     
     return () => {
-      dispatchStoreEffectSetTemp.forEach(item => {
-        if (item === customEventDispatcher) item.removeEventListener(subscribeEventType)
-      });
       dispatchStoreEffectSetTemp.delete(customEventDispatcher);
     };
   }

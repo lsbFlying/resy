@@ -7,15 +7,11 @@
  * @name createStore
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import { useMemo } from "react";
 import { scheduler, Scheduler } from "./scheduler";
+import { batchUpdate, pureViewNextStateMapKey, storeCoreMapKey, useStoreKey } from "./static";
 import {
-  batchUpdate, pureViewNextStateMapKey, storeCoreMapKey,
-  storeMapKey, stateMapKey, stateKey, unmountClearKey,
-} from "./static";
-import {
-  Callback, State, SetState, StoreMap, StoreMapValue, StoreMapValueType, StoreCoreMapType,
-  StoreCoreMapValue, StateFunc, Unsubscribe, Subscribe, ExternalMapType, ExternalMapValue,
+  Callback, ExternalMapType, ExternalMapValue, SetState, State, StateFunc, StoreCoreMapType,
+  StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Subscribe, Unsubscribe,
 } from "./model";
 import { CustomEventListener, EventDispatcher, Listener } from "./listener";
 
@@ -50,7 +46,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
    */
   let stateMap: Map<keyof T, T[keyof T]> = new Map(Object.entries(state));
   
-  // 每一个resy生成的store具有的监听订阅处理，并且可以获取最新state数据，像心脏一样核心重要
+  // 每一个resy生成的store具有的监听订阅处理，并且可以获取最新state数据
   const storeCoreMap: StoreCoreMapType<T> = new Map();
   storeCoreMap.set("getState", () => stateMap);
   storeCoreMap.set("resetState", () => {
@@ -72,6 +68,43 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   // 数据存储容器storeMap
   const storeMap: StoreMap<T> = new Map();
   
+  // 生成storeMap键值对
+  function genStoreMapKeyValue(key: keyof T) {
+    /**
+     * 这里使用set不使用纯对象或者数组的原因很简单：
+     * 就是Set或者Map类型在频繁添加和删除元素的情况下有明显的性能优势
+     */
+    const storeChanges = new Set<Callback>();
+    
+    const StoreMapValue: StoreMapValue<T> = new Map();
+    StoreMapValue.set("subscribe", (storeChange: Callback) => {
+      storeChanges.add(storeChange);
+      return () => {
+        storeChanges.delete(storeChange);
+        if (unmountClear) stateMap.set(key, state[key]);
+      };
+    });
+    StoreMapValue.set("getSnapshot", () => stateMap.get(key));
+    StoreMapValue.set("setSnapshot", (val: T[keyof T]) => {
+      /**
+       * 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
+       * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
+       */
+      if (!Object.is(val, stateMap.get(key))) {
+        // 这一步是为了配合getSnapshot，使得getSnapshot可以获得最新值
+        stateMap.set(key, val);
+        // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
+        storeChanges.forEach(storeChange => storeChange());
+      }
+    });
+    StoreMapValue.set("useSnapshot", () => useSyncExternalStore(
+      (storeMap.get(key) as StoreMapValue<T>).get("subscribe") as StoreMapValueType<T>["subscribe"],
+      (storeMap.get(key) as StoreMapValue<T>).get("getSnapshot") as StoreMapValueType<T>["getSnapshot"],
+    ));
+    
+    storeMap.set(key, StoreMapValue);
+  }
+  
   // 详细注释描述见model文件SetState接口类型文档描述
   function setState(stateParams: Partial<T> | T | StateFunc = {}, callback?: (nextState: T) => void) {
     // 必须在更新之前执行，获取更新之前的数据
@@ -84,7 +117,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
           Object.keys(stateParams).forEach(key => {
             (
               (
-                initialValueLinkStore(key, stateMap, storeMap, state, unmountClear).get(key) as StoreMapValue<T>
+                initialValueLinkStore(key).get(key) as StoreMapValue<T>
               ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
             )((stateParams as Partial<T> | T)[key]);
           });
@@ -187,15 +220,33 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     };
   }
   
-  // setState与subscribe以及store内部数据Map的合集
+  // 为每一个数据字段储存链接到store容器中
+  function initialValueLinkStore(key: keyof T) {
+    // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
+    if (storeMap.get(key) !== undefined) return storeMap;
+    genStoreMapKeyValue(key);
+    return storeMap;
+  }
+  
+  // 给useStore的驱动更新代理
+  const storeMapProxy = new Proxy(storeMap, {
+    get: (_, key: keyof T) => {
+      return externalMap.get(key as keyof ExternalMapValue<T>) || (
+        (
+          (
+            initialValueLinkStore(key) as StoreMap<T>
+          ).get(key) as StoreMapValue<T>
+        ).get("useSnapshot") as StoreMapValueType<T>["useSnapshot"]
+      )();
+    },
+  } as ProxyHandler<StoreMap<T>>);
+  
+  // setState与subscribe以及store代理内部数据Map的合集
   const externalMap: ExternalMapType<T> = new Map();
   externalMap.set("setState", setState);
   externalMap.set("subscribe", subscribe);
   externalMap.set(storeCoreMapKey, storeCoreMap);
-  externalMap.set(stateMapKey, stateMap);
-  externalMap.set(storeMapKey, storeMap);
-  externalMap.set(stateKey, state);
-  externalMap.set(unmountClearKey, unmountClear);
+  externalMap.set(useStoreKey, storeMapProxy);
   
   return new Proxy(state, {
     get: (_, key: keyof T) => {
@@ -205,7 +256,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
       (scheduler.get("add") as Scheduler["add"])(
         () => (
           (
-            initialValueLinkStore(key, stateMap, storeMap, state, unmountClear).get(key) as StoreMapValue<T>
+            initialValueLinkStore(key).get(key) as StoreMapValue<T>
           ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
         )(val),
         key,
@@ -233,88 +284,14 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   } as ProxyHandler<T>) as T & SetState<T> & Subscribe<T>;
 }
 
-// 为每一个数据字段储存链接到store容器中
-function initialValueLinkStore<T extends State>(
-  key: keyof T,
-  stateMap: Map<keyof T, T[keyof T]>,
-  storeMap: StoreMap<T>,
-  state: T,
-  unmountClear = true,
-) {
-  // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
-  if (storeMap.get(key) !== undefined) return storeMap;
-  genStoreMapKeyValue(key, stateMap, storeMap, state, unmountClear);
-  return storeMap;
-}
-
-// 生成storeMap键值对
-function genStoreMapKeyValue<T extends State>(
-  key: keyof T,
-  stateMap: Map<keyof T, T[keyof T]>,
-  storeMap: StoreMap<T>,
-  state: T,
-  unmountClear = true,
-) {
-  /**
-   * 这里使用set不使用纯对象或者数组的原因很简单：
-   * 就是Set或者Map类型在频繁添加和删除元素的情况下有明显的性能优势
-   */
-  const storeChanges = new Set<Callback>();
-  
-  const StoreMapValue: StoreMapValue<T> = new Map();
-  StoreMapValue.set("subscribe", (storeChange: Callback) => {
-    storeChanges.add(storeChange);
-    return () => {
-      storeChanges.delete(storeChange);
-      if (unmountClear) stateMap.set(key, state[key]);
-    };
-  });
-  StoreMapValue.set("getSnapshot", () => stateMap.get(key));
-  StoreMapValue.set("setSnapshot", (val: T[keyof T]) => {
-    /**
-     * 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
-     * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
-     */
-    if (!Object.is(val, stateMap.get(key))) {
-      // 这一步是为了配合getSnapshot，使得getSnapshot可以获得最新值
-      stateMap.set(key, val);
-      // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
-      storeChanges.forEach(storeChange => storeChange());
-    }
-  });
-  StoreMapValue.set("useSnapshot", () => useSyncExternalStore(
-    (storeMap.get(key) as StoreMapValue<T>).get("subscribe") as StoreMapValueType<T>["subscribe"],
-    (storeMap.get(key) as StoreMapValue<T>).get("getSnapshot") as StoreMapValueType<T>["getSnapshot"],
-  ));
-  
-  storeMap.set(key, StoreMapValue);
-}
-
 /**
  * useStore
  * @description 驱动组件更新的hook，使用store容器中的数据
+ * 特意分离直接从store获取hook调用是为了数据的安全使用
+ * 本身产生的数据就是hook数据，所以会多一层代理
  */
-export function useStore<T extends State>(store: T): Omit<T, keyof SetState<T> | keyof Subscribe<T>> {
-  return useMemo(() => (
-    // 给useState的驱动更新代理
-    new Proxy(store[storeMapKey], {
-      get: (_, key: keyof T) => {
-        return (
-          (
-            (
-              initialValueLinkStore(
-                key,
-                store[stateMapKey],
-                store[storeMapKey],
-                store[stateKey],
-                store[unmountClearKey],
-              ) as StoreMap<T>
-            ).get(key) as StoreMapValue<T>
-          ).get("useSnapshot") as StoreMapValueType<T>["useSnapshot"]
-        )();
-      },
-    } as ProxyHandler<T>)
-  ), []);
+export function useStore<T extends State>(store: T): T {
+  return store[useStoreKey as keyof T];
 }
 
 export * from "./pureView";

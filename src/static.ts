@@ -14,15 +14,11 @@ export function batchUpdateShimRun(fn: Callback) { fn() }
  */
 export const batchUpdate = unstable_batchedUpdates || batchUpdateShimRun;
 
-/**
- * 每一个resy生成store的监听订阅对象、内部state数据的唯一标识key值
- * 以及resy的store内部一些相关数据的获取key值
- */
-export const storeCoreMapKey = "react-state-easy-store-core-map-key";
-export const stateMapKey = "react-state-easy-state-map-key";
-export const storeMapKey = "react-state-easy-store-map-key";
-export const stateKey = "react-state-easy-state-key";
-export const unmountClearKey = "react-state-easy-unmount-clear-key";
+// 每一个resy生成的store具有的监听订阅处理的唯一标识key值
+export const storeCoreMapKey = Symbol("storeCoreMapKey");
+
+// useStore的key值，获取storeMap的代理key值
+export const useStoreKey = Symbol("useStoreKey");
 
 // pureView中获取nextState的整个Map数据的key
 export const pureViewNextStateMapKey = Symbol("resyPureViewNextStateMapKey");

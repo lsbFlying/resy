@@ -1,5 +1,5 @@
 import { CustomEventListener, Listener } from "./listener";
-import { storeCoreMapKey, storeMapKey, stateMapKey, stateKey, unmountClearKey } from "./static";
+import { storeCoreMapKey, useStoreKey } from "./static";
 
 export type Callback = () => void;
 
@@ -53,10 +53,7 @@ export interface StateFunc {
 
 export type ExternalMapValue<T extends State> = SetState<T> & Subscribe<T> & {
   [storeCoreMapKey]: StoreCoreMapType<T>;
-  [stateMapKey]: Map<keyof T, T[keyof T]>,
-  [storeMapKey]: StoreMap<T>,
-  [stateKey]: T,
-  [unmountClearKey]: true | false,
+  [useStoreKey]: object;
 }
 
 export type ExternalMapType<T extends State> = Map<

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, {useEffect, useState} from "react";
 import { expect, test } from "vitest";
 import { createStore, useStore } from "../index";
 import { fireEvent, render } from "@testing-library/react";
@@ -67,13 +67,12 @@ test("resy-set-and-sub2", async () => {
 
 test("resy-set-and-sub3", async () => {
   const store = createStore({ text: "poiu" });
-  let eventListener: CustomEventListener<any> | null = null;
   
   const App = () => {
     const { text } = useStore(store);
+    const [eventListener] = useState<CustomEventListener<any>>(new (EventDispatcher as any)());
     useEffect(() => {
-      eventListener = new (EventDispatcher as any)();
-      eventListener?.addEventListener("testListener", (effectState) => {
+      eventListener.addEventListener("testListener", (effectState) => {
         store.setState({ text: effectState.testListenerData });
       });
     }, []);
@@ -82,17 +81,13 @@ test("resy-set-and-sub3", async () => {
       <>
         <p>{text}</p>
         <button onClick={() => {
-          eventListener?.dispatchEvent("testListener", {testListenerData: "testListenerData"}, {}, {});
+          eventListener.dispatchEvent("testListener", {testListenerData: "testListenerData"}, {}, {});
         }}>btn1</button>
-        <button onClick={() => {
-          eventListener?.removeEventListener("testListener");
-          store.setState({ text: "removeTestListener" })
-        }}>btn2</button>
         <button onClick={() => {
           batchUpdateShimRun(() => {
             store.setState({ text: "batchUpdateShimRunTestListener" })
           });
-        }}>btn3</button>
+        }}>btn2</button>
       </>
     );
   };
@@ -106,16 +101,6 @@ test("resy-set-and-sub3", async () => {
   
   await act(() => {
     fireEvent.click(getByText("btn2"));
-  });
-  expect(getByText("removeTestListener")).toBeInTheDocument();
-  
-  await act(() => {
-    fireEvent.click(getByText("btn1"));
-  });
-  expect(getByText("removeTestListener")).toBeInTheDocument();
-  
-  await act(() => {
-    fireEvent.click(getByText("btn3"));
   });
   expect(getByText("batchUpdateShimRunTestListener")).toBeInTheDocument();
 });

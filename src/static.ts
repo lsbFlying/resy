@@ -1,6 +1,6 @@
 // @ts-ignore
 import { unstable_batchedUpdates } from "react-platform";
-import { Callback } from "./model";
+import { Callback, State } from "./model";
 
 /**
  * batchUpdateShimRun
@@ -22,3 +22,10 @@ export const useStoreKey = Symbol("useStoreKey");
 
 // pureView中获取nextState的整个Map数据的key
 export const pureViewNextStateMapKey = Symbol("resyPureViewNextStateMapKey");
+
+/**
+ * 解决回调参数如果是map的proxy代理的话无法做扩展运算的问题
+ */
+export function mapToObject<T extends State>(map: Map<keyof T, T[keyof T]>) {
+  return [...map.entries()].reduce((obj, [key, value]) => ((obj as T)[key] = value, obj), {});
+}

@@ -5,6 +5,7 @@
     "module": "esnext",
     "moduleResolution": "node",
     "outDir": "./dist",
+    "downlevelIteration": true,
 
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,

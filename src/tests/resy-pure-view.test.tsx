@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React, {useEffect, useState} from "react";
 import { expect, test } from "vitest";
 import { createStore, useStore, ResyStateToProps, pureView } from "../index";
 import { fireEvent, render } from "@testing-library/react";
@@ -10,10 +10,15 @@ export type Store = {
   hookComTestState: string;
   count: number;
   text: string;
-  countAddFun: () => void,
+  countAddFun: () => void;
+  testComTestState: {
+    name: string;
+    age: number;
+  };
+  testObj: { name: string };
 };
 
-const store = createStore({
+const store = createStore<Store>({
   appTestState: "appTestState",
   classComTestState: "classComTestState",
   hookComTestState: "hookComTestState",
@@ -22,6 +27,11 @@ const store = createStore({
   countAddFun: () => {
     store.count++;
   },
+  testComTestState: {
+    name: "liushanbao",
+    age: 18,
+  },
+  testObj: { name: "testObjName" },
 });
 
 class ClassCom extends React.PureComponent<ResyStateToProps<Store>> {
@@ -66,6 +76,33 @@ const HookCom = (props: ResyStateToProps<Store>) => {
 
 const PureHookCom = pureView(store, HookCom);
 
+const TestCom = (props: ResyStateToProps<Store> & { testObj: { name: string } }) => {
+  // pureView会将store数据挂载到props上新增的state属性上
+  const { testComTestState } = props.state;
+  const { testObj } = props;
+  
+  const [count, setCount] = useState(0);
+  
+  useEffect(() => {
+    setCount(count + 1);
+    console.log("useEffect", testComTestState)
+  }, [testComTestState]);
+  
+  /**
+   * 该组件测试pureView的深度对比功能
+   */
+  console.log("PureTestCom", testComTestState);
+  return (
+    <div>
+      <span>数量：{count}</span>
+      <span>testObj：{testObj.name}</span>
+      名字：{testComTestState.name}-年龄：{testComTestState.age}
+    </div>
+  );
+}
+
+const PureTestCom = pureView(store, TestCom, true);
+
 // count数据状态的变化不会引起Text的re-render
 function Text() {
   const { text } = useStore(store);
@@ -92,7 +129,7 @@ test("resy-pure-view", async () => {
   
   const App = () => {
     const {
-      appTestState, classComTestState, hookComTestState, countAddFun,
+      appTestState, classComTestState, hookComTestState, countAddFun, testObj,
     } = useStore(store);
     
     useEffect(() => {
@@ -140,8 +177,21 @@ test("resy-pure-view", async () => {
         <button onClick={countAddFun}>btn+</button>
         <button onClick={() => { store.count--; }}>btn-</button>
         <button onClick={() => { store.setState({}); }}>btn empty</button>
+        <button onClick={() => {
+          store.setState({ testComTestState: { name: "liushanbao", age: 18 } });
+        }}>pureViewDeepEqual</button>
+        <button onClick={() => {
+          store.setState({ testComTestState: { name: "liushanbao", age: 19 } });
+        }}>pureViewDeepEqual2</button>
+        <button onClick={() => {
+          store.setState({ testObj: { name: "testObjName" } });
+        }}>pureViewDeepEqual3</button>
+        <button onClick={() => {
+          store.setState({ testObj: { name: "qweiop" } });
+        }}>pureViewDeepEqual4</button>
         <PureClassCom/>
         <PureHookCom/>
+        <PureTestCom testObj={testObj}/>
       </>
     );
   };
@@ -170,4 +220,24 @@ test("resy-pure-view", async () => {
     fireEvent.click(getByText("btn empty"));
   });
   expect(getByText("567")).toBeInTheDocument();
+  
+  await act(() => {
+    fireEvent.click(getByText("pureViewDeepEqual"));
+  });
+  expect(getByText("数量：1")).toBeInTheDocument();
+  
+  await act(() => {
+    fireEvent.click(getByText("pureViewDeepEqual2"));
+  });
+  expect(getByText("数量：2")).toBeInTheDocument();
+  
+  await act(() => {
+    fireEvent.click(getByText("pureViewDeepEqual3"));
+  });
+  expect(getByText("testObj：testObjName")).toBeInTheDocument();
+  
+  await act(() => {
+    fireEvent.click(getByText("pureViewDeepEqual4"));
+  });
+  expect(getByText("testObj：qweiop")).toBeInTheDocument();
 });

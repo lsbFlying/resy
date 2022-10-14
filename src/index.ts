@@ -162,8 +162,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
    * 具备多数据订阅监听的能力
    *
    * @param listener 监听订阅的回调函数
-   * @param stateKeys 监听订阅的具体的某一个store容器的某些数据变化，
-   * 如果为空则默认监听store的任何一个数据的变化
+   * @param stateKeys 监听订阅的具体的某一个store容器的某些数据变化，如果为空则默认监听store的任何一个数据的变化
    * @return unsubscribe 返回取消监听的函数
    */
   function subscribe(listener: Listener<T>, stateKeys?: (keyof T)[]): Unsubscribe {

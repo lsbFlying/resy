@@ -75,9 +75,7 @@ export function pureView<P extends State, S extends State>(
     const [stateProps, setStateProps] = useState(props);
     
     useEffect(() => {
-      if (!deepEqual) {
-        setStateProps(props);
-      } else if (!isEqual(props, stateProps)) {
+      if (!deepEqual || !isEqual(props, stateProps)) {
         setStateProps(props);
       }
     }, [props]);
@@ -92,14 +90,13 @@ export function pureView<P extends State, S extends State>(
         nextState,
       ) => {
         const effectStateFields = Object.keys(effectState);
-        if (innerLinkUseFields.some(key => effectStateFields.includes(key as string))) {
+        if (
+          innerLinkUseFields.some(key => effectStateFields.includes(key as string))
+          && (!deepEqual || !isEqual(prevState, nextState))
+        ) {
           linkStateSet.clear();
           // 保持代理数据的更新从而保持innerLinkUseFields的最新化
-          if (!deepEqual) {
-            setState(proxyStateHandle(new Map(Object.entries(nextState)), linkStateSet));
-          } else if (!isEqual(prevState, nextState)) {
-            setState(proxyStateHandle(new Map(Object.entries(nextState)), linkStateSet));
-          }
+          setState(proxyStateHandle(new Map(Object.entries(nextState)), linkStateSet));
         }
       });
       return () => {

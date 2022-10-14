@@ -336,6 +336,16 @@ function App() {
 ```
 
 ```tsx
+/**
+ * pureView
+ *
+ * @param store resy生成的store数据状态储存容器
+ * @param Comp 被包裹的组件
+ * @param deepEqual 深度对比
+ * 关于deepEqual参数，因为props属于pureView转换后的组件外界传入的props属性
+ * 所以它本身脱离了pureView的内部数据状态更新控制，更多的是依赖于外界的掌控
+ * 是否开启需要开发者自己衡量所能带来的性能收益
+ */
 import { createStore } from "resy";
 
 export type Store = {

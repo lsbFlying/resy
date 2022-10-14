@@ -9,7 +9,7 @@ import { terser } from "rollup-plugin-terser"; // 压缩打包文件
 const input = "src/index.ts";
 // const deps = Object.keys({ ...pkg.dependencies, ...pkg.peerDependencies });
 // const external = (id: string) => deps.some((dep) => id.startsWith(dep));
-const external = ["use-sync-external-store/shim", "react", "./react-platform"];
+const external = ["react-fast-compare", "use-sync-external-store/shim", "react", "./react-platform"];
 const plugins = [
   replacePlugin({ "react-platform": "./react-platform", preventAssignment: true }),
   resolvePlugin(),

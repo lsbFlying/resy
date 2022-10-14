@@ -1,6 +1,6 @@
 import React, { ComponentType, useEffect, useMemo, useState } from "react";
 import { SetState, State, StoreCoreMapType, StoreCoreMapValue, Subscribe } from "./model";
-import { pureViewNextStateMapKey, storeCoreMapKey } from "./static";
+import { storeCoreMapKey } from "./static";
 
 // 将resy生成的store容器数据挂载到组件的props的state属性上
 export interface ResyStateToProps<T extends State> {
@@ -77,7 +77,7 @@ export function pureView<P extends State, S extends State>(
         if (innerLinkUseFields.some(key => effectStateFields.includes(key as string))) {
           linkStateSet.clear();
           // 保持代理数据的更新从而保持innerLinkUseFields的最新化
-          setState(proxyStateHandle(nextState[pureViewNextStateMapKey as keyof typeof nextState], linkStateSet));
+          setState(proxyStateHandle(new Map(Object.entries(nextState)), linkStateSet));
         }
       });
       return () => {

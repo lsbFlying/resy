@@ -8,7 +8,7 @@
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { scheduler, Scheduler } from "./scheduler";
-import { batchUpdate, pureViewNextStateMapKey, storeCoreMapKey, useStoreKey } from "./static";
+import { batchUpdate, storeCoreMapKey, useStoreKey, mapToObject } from "./static";
 import {
   Callback, ExternalMapType, ExternalMapValue, SetState, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Subscribe, Unsubscribe,
@@ -126,26 +126,11 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     } finally {
       const changedData = typeof stateParams === "function" ? stateMap : new Map(Object.entries(stateParams));
       batchDispatch(prevState, changedData);
-      callback?.(
-        new Proxy(stateMap, {
-          get: (target, p: keyof T) => {
-            return target.get(p);
-          }
-        } as ProxyHandler<Map<keyof T, T[keyof T]>>) as any as T
-      );
+      callback?.(mapToObject(stateMap));
     }
   }
   
-  /**
-   * 批量触发订阅监听的数据变动
-   * prevState与nextState使用proxy出于两点考虑：
-   * 1、使用map转object效率更块
-   * 2、这两者数据实际上使用程度比较少，本身常用的时effectState
-   * 之所以effectState采用对象设计：
-   * 1、常用几率较大，如果使用subscribe必然是常规使用业务逻辑
-   * 2、配合pureView的内部数据牵引更新比较时方便，是不二之选
-   * 3、是changedData本身是部分变更数据不会很多，不怎么影响效率
-   */
+  // 批量触发订阅监听的数据变动
   function batchDispatch(prevState: Map<keyof T, T[keyof T]>, changedData: Map<keyof T, T[keyof T]>) {
     if (changedData.size > 0 && (storeCoreMap.get("dispatchStoreEffectSet") as StoreCoreMapValue<T>["dispatchStoreEffectSet"]).size > 0) {
       /**
@@ -154,29 +139,18 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
        * 就好比setState中的参数对象可以写与原数据一样数据，但是不产生更新
        */
       const effectState = {} as Partial<T>;
-      // @ts-ignore
+      
       [...changedData.entries()].forEach(([key, value]) => {
         if (!Object.is(value, prevState.get(key))) {
           effectState[key as keyof T] = stateMap.get(key);
         }
       });
-  
-      (
-        storeCoreMap.get("dispatchStoreEffect") as StoreCoreMapValue<T>["dispatchStoreEffect"]
-      )(
-        effectState,
-        new Proxy(prevState, {
-          get: (target, p: keyof T) => {
-            return target.get(p);
-          }
-        } as ProxyHandler<Map<keyof T, T[keyof T]>>) as any as T,
-        new Proxy(stateMap, {
-          get: (target, p: keyof T) => {
-            if (p === pureViewNextStateMapKey) return target;
-            return target.get(p);
-          }
-        } as ProxyHandler<Map<keyof T, T[keyof T]>>) as any as T,
-      );
+      
+      if (Object.keys(effectState).length !== 0) {
+        (
+          storeCoreMap.get("dispatchStoreEffect") as StoreCoreMapValue<T>["dispatchStoreEffect"]
+        )(effectState, mapToObject(prevState), mapToObject(stateMap));
+      }
     }
   }
   

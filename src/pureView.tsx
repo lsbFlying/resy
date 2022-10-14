@@ -1,7 +1,7 @@
+import isEqual from "react-fast-compare";
 import React, { ComponentType, useEffect, useMemo, useState } from "react";
 import { SetState, State, StoreCoreMapType, StoreCoreMapValue, Subscribe } from "./model";
 import { storeCoreMapKey } from "./static";
-import isEqual from "react-fast-compare";
 
 // 将resy生成的store容器数据挂载到组件的props的state属性上
 export interface ResyStateToProps<T extends State> {

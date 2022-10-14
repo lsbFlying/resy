@@ -1,6 +1,7 @@
 import React, { ComponentType, useEffect, useMemo, useState } from "react";
 import { SetState, State, StoreCoreMapType, StoreCoreMapValue, Subscribe } from "./model";
 import { storeCoreMapKey } from "./static";
+import isEqual from "react-fast-compare";
 
 // 将resy生成的store容器数据挂载到组件的props的state属性上
 export interface ResyStateToProps<T extends State> {
@@ -40,10 +41,18 @@ function proxyStateHandle<S extends State>(latestState: Map<keyof S, S[keyof S]>
  * 它比resy本身自带的规避rerender的效果更完善
  * 即如果pureView包裹的Comp组件即使在其父组件更新渲染了
  * 只要内部使用的数据没有更新，那么它本身不会渲染re-render
+ *
+ * @param store resy生成的store数据状态储存容器
+ * @param Comp 被包裹的组件
+ * @param deepEqual 深度对比
+ * 关于deepEqual参数，因为props属于pureView转换后的组件外界传入的props属性
+ * 所以它本身脱离了pureView的内部数据状态更新控制，更多的是依赖于外界的掌控
+ * 是否开启需要开发者自己衡量所能带来的性能收益
  */
 export function pureView<P extends State, S extends State>(
   store: S & SetState<S> & Subscribe<S>,
   Comp: ComponentType<(ResyStateToProps<S> & P) | any>,
+  deepEqual?: boolean,
 ) {
   return (props: P) => {
     // 引用数据的代理Set
@@ -63,6 +72,13 @@ export function pureView<P extends State, S extends State>(
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
     const [state, setState] = useState<S>(proxyStateHandle(latestState, linkStateSet));
+    const [stateProps, setStateProps] = useState(props);
+    
+    useEffect(() => {
+      if (!deepEqual || !isEqual(props, stateProps)) {
+        setStateProps(props);
+      }
+    }, [props]);
     
     useEffect(() => {
       // Comp组件内部使用到的数据属性字段数组
@@ -70,14 +86,16 @@ export function pureView<P extends State, S extends State>(
       // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
       const unsubscribe = store.subscribe((
         effectState,
-        _,
+        prevState,
         nextState,
       ) => {
         const effectStateFields = Object.keys(effectState);
         if (innerLinkUseFields.some(key => effectStateFields.includes(key as string))) {
           linkStateSet.clear();
           // 保持代理数据的更新从而保持innerLinkUseFields的最新化
-          setState(proxyStateHandle(new Map(Object.entries(nextState)), linkStateSet));
+          if (!deepEqual || !isEqual(prevState, nextState)) {
+            setState(proxyStateHandle(new Map(Object.entries(nextState)), linkStateSet));
+          }
         }
       });
       return () => {
@@ -96,9 +114,6 @@ export function pureView<P extends State, S extends State>(
       };
     }, []);
     
-    return useMemo(() => <Comp {...props} state={state}/>, [
-      state,
-      JSON.stringify(props),
-    ]);
+    return useMemo(() => <Comp {...props} state={state}/>, [state, stateProps]);
   };
 }

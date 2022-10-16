@@ -78,19 +78,19 @@ export type ExternalMapType<T extends State> = Map<
  * store.setState({
  *   count: 123,
  *   text: "updateText",
- * }, (state) => {
- *   // state：最新的数据值
+ * }, (nextState) => {
+ *   // nextState：最新的数据值
  *   // 可以理解为this.setState中的回调中的this.state
  *   // 同时这一点也弥补了：
  *   // hook组件中setState后只能通过useEffect来获取最新数据的方式
- *   console.log(state);
+ *   console.log(nextState);
  * });
  * @example B
  * store.setState(() => {
  *   store.count = 123;
  *   store.text = "updateText";
- * }, (state) => {
- *   console.log(state);
+ * }, (nextState) => {
+ *   console.log(nextState);
  * });
  */
 export type SetState<T extends State> = Readonly<{

@@ -32,7 +32,7 @@ function proxyStateHandle<S extends State>(latestState: Map<keyof S, S[keyof S]>
  * B：pureView创建初衷：
  * resy本身是为hook而生的，但是还是需要对class组件进行支持
  * 毕竟class组件与hook组件不是非此即彼，class组件的存在还是很有必要的
- * class组件依然具有很好的性能与代码健壮读写能力(其实就性能而言class是高于hook)
+ * class组件依然具有很好的性能与代码健壮读写能力
  * hook可以认为是react如虎添翼/锦上添花，但是不能把class组件作为虎腿而卸掉
  * 至少目前来看二者两分天下才是对代码更友好健康的方式
  *

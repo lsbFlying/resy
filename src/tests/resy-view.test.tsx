@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import { expect, test } from "vitest";
-import { createStore, useStore, ResyStateToProps, pureView } from "../index";
+import { createStore, useStore, ResyStateToProps, view } from "../index";
 import { fireEvent, render } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 
@@ -41,23 +41,23 @@ class ClassCom extends React.PureComponent<ResyStateToProps<Store>> {
    * 其次父组件App的appTestState变化也无法影响ClassCom的re-render
    * 只有ClassCom本身引用的classComTestState数据才会影响自身的渲染
    *
-   * 也就是说pureView形成的规避re-render的效果
+   * 也就是说view形成的规避re-render的效果
    * 比resy本身自带的规避re-render的效果更完善
    */
   render() {
-    // pureView会将store数据挂载到props上新增的state属性上
+    // view会将store数据挂载到props上新增的state属性上
     const { classComTestState } = this.props.state;
     console.log(classComTestState);
     return (
-      <div>PureView ClassCom{classComTestState}</div>
+      <div>View ClassCom{classComTestState}</div>
     );
   }
 }
 
-const PureClassCom = pureView(store, ClassCom);
+const PureClassCom = view(store, ClassCom);
 
 const HookCom = (props: ResyStateToProps<Store>) => {
-  // pureView会将store数据挂载到props上新增的state属性上
+  // view会将store数据挂载到props上新增的state属性上
   const { hookComTestState } = props.state;
   /**
    * 首先，store中的count与text、classComTestState数据属性
@@ -65,19 +65,19 @@ const HookCom = (props: ResyStateToProps<Store>) => {
    * 其次父组件App的appTestState变化也无法影响HookCom的re-render
    * 只有HookCom本身引用的hookComTestState数据才会影响自身的渲染
    *
-   * 也就是说pureView形成的规避re-render的效果
+   * 也就是说view形成的规避re-render的效果
    * 比resy本身自带的规避re-render的效果更完善
    */
   console.log(hookComTestState);
   return (
-    <div>PureView HookCom{hookComTestState}</div>
+    <div>View HookCom{hookComTestState}</div>
   );
 }
 
-const PureHookCom = pureView(store, HookCom);
+const PureHookCom = view(store, HookCom);
 
 const TestCom = (props: ResyStateToProps<Store> & { testObj: { name: string } }) => {
-  // pureView会将store数据挂载到props上新增的state属性上
+  // view会将store数据挂载到props上新增的state属性上
   const { testComTestState } = props.state;
   const { testObj } = props;
   
@@ -89,7 +89,7 @@ const TestCom = (props: ResyStateToProps<Store> & { testObj: { name: string } })
   }, [testComTestState]);
   
   /**
-   * 该组件测试pureView的深度对比功能
+   * 该组件测试view的深度对比功能
    */
   console.log("PureTestCom", testComTestState);
   return (
@@ -101,7 +101,7 @@ const TestCom = (props: ResyStateToProps<Store> & { testObj: { name: string } })
   );
 }
 
-const PureTestCom = pureView(store, TestCom, true);
+const PureTestCom = view(store, TestCom, true);
 
 // count数据状态的变化不会引起Text的re-render
 function Text() {
@@ -157,12 +157,12 @@ test("resy-pure-view", async () => {
   
     /**
      * 总结：相较于resy自身特性的re-render
-     * pureView处理规避的re-render更加完善
+     * view处理规避的re-render更加完善
      *
      * 完善的点在于：
-     * 即使父组件更新了，只要pureView包裹的组件本身
+     * 即使父组件更新了，只要view包裹的组件本身
      * 没有使用到父组件中更新缘由的属性数据
-     * 那么pureView包裹的组件就不会re-render
+     * 那么view包裹的组件就不会re-render
      */
     return (
       <>
@@ -179,16 +179,16 @@ test("resy-pure-view", async () => {
         <button onClick={() => { store.setState({}); }}>btn empty</button>
         <button onClick={() => {
           store.setState({ testComTestState: { name: "liushanbao", age: 18 } });
-        }}>pureViewDeepEqual</button>
+        }}>viewDeepEqual</button>
         <button onClick={() => {
           store.setState({ testComTestState: { name: "liushanbao", age: 19 } });
-        }}>pureViewDeepEqual2</button>
+        }}>viewDeepEqual2</button>
         <button onClick={() => {
           store.setState({ testObj: { name: "testObjName" } });
-        }}>pureViewDeepEqual3</button>
+        }}>viewDeepEqual3</button>
         <button onClick={() => {
           store.setState({ testObj: { name: "qweiop" } });
-        }}>pureViewDeepEqual4</button>
+        }}>viewDeepEqual4</button>
         <PureClassCom/>
         <PureHookCom/>
         <PureTestCom testObj={testObj}/>
@@ -222,22 +222,22 @@ test("resy-pure-view", async () => {
   expect(getByText("567")).toBeInTheDocument();
   
   await act(() => {
-    fireEvent.click(getByText("pureViewDeepEqual"));
+    fireEvent.click(getByText("viewDeepEqual"));
   });
   expect(getByText("数量：1")).toBeInTheDocument();
   
   await act(() => {
-    fireEvent.click(getByText("pureViewDeepEqual2"));
+    fireEvent.click(getByText("viewDeepEqual2"));
   });
   expect(getByText("数量：2")).toBeInTheDocument();
   
   await act(() => {
-    fireEvent.click(getByText("pureViewDeepEqual3"));
+    fireEvent.click(getByText("viewDeepEqual3"));
   });
   expect(getByText("testObj：testObjName")).toBeInTheDocument();
   
   await act(() => {
-    fireEvent.click(getByText("pureViewDeepEqual4"));
+    fireEvent.click(getByText("viewDeepEqual4"));
   });
   expect(getByText("testObj：qweiop")).toBeInTheDocument();
 });

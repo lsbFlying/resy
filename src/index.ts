@@ -267,4 +267,4 @@ export function useStore<T extends State>(store: T): T {
   return store[useStoreKey as keyof T];
 }
 
-export * from "./pureView";
+export * from "./view";

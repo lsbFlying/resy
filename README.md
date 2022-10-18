@@ -36,7 +36,7 @@ resy需要react版本 v >= 16.8；resy有五个API，分别是：
 - useStore：从createStore生成的状态存储容器中使用state数据
 - setState：更新数据
 - subscribe：订阅监听createStore生成的store数据的变化
-- pureView：帮助组件具备 "更完善的规避re-render的方式" 的能力
+- view：帮助组件具备 "更完善的规避re-render的方式" 的能力
 
 ### createStore、useStore
 ```tsx
@@ -325,25 +325,25 @@ function App() {
 }
 ```
 
-### pureView 更完善的规避re-render
+### view 更完善的规避re-render
 ```markdown
 总结：相较于resy自身特性的re-render
-    pureView处理规避的re-render更加完善
+    view处理规避的re-render更加完善
     完善的点在于：
-    即使父组件更新了，只要pureView包裹的组件本身
+    即使父组件更新了，只要view包裹的组件本身
     没有使用到父组件中更新缘由的属性数据
-    那么pureView包裹的组件就不会re-render
+    那么view包裹的组件就不会re-render
 ```
 
 ```tsx
 /**
- * pureView
+ * view
  *
  * @param store resy生成的store数据状态储存容器
  * @param Comp 被包裹的组件
  * @param deepEqual 深度对比
- * 关于deepEqual参数，因为props属于pureView转换后的组件外界传入的props属性
- * 所以它本身脱离了pureView的内部数据状态更新控制，更多的是依赖于外界的掌控
+ * 关于deepEqual参数，因为props属于view转换后的组件外界传入的props属性
+ * 所以它本身脱离了view的内部数据状态更新控制，更多的是依赖于外界的掌控
  * 是否开启需要开发者自己衡量所能带来的性能收益
  */
 import { createStore } from "resy";
@@ -372,23 +372,23 @@ export default store;
 ```
 
 ```tsx
-// pureView对class组件的支持
+// view对class组件的支持
 import React from "react";
-import { pureView, ResyStateToProps } from "resy";
+import { view, MapStateToProps } from "resy";
 import store, { Store } from "store";
 
-class ClassCom extends React.PureComponent<ResyStateToProps<Store>> {
+class ClassCom extends React.PureComponent<MapStateToProps<Store>> {
   /**
    * 首先，store中的count与text、hookComTestState数据属性
    * 无法影响ClassCom的re-render
    * 其次父组件App的appTestState变化也无法影响ClassCom的re-render
    * 只有ClassCom本身引用的classComTestState数据才会影响自身的渲染
    *
-   * 也就是说pureView形成的规避re-render的效果
+   * 也就是说view形成的规避re-render的效果
    * 比resy本身自带的规避re-render的效果更完善
    */
   render() {
-    // pureView会将store数据挂载到props上新增的state属性上
+    // view会将store数据挂载到props上新增的state属性上
     const { classComTestState } = this.props.state;
     console.log(classComTestState);
     return (
@@ -397,17 +397,17 @@ class ClassCom extends React.PureComponent<ResyStateToProps<Store>> {
   }
 }
 
-export default pureView(store, ClassCom);
+export default view(store, ClassCom);
 ```
 
 ```tsx
-// pureView对hook组件的支持
+// view对hook组件的支持
 import React from "react";
-import { pureView, ResyStateToProps } from "resy";
+import { view, MapStateToProps } from "resy";
 import store, { Store } from "store";
 
-const HookCom = (props: ResyStateToProps<Store>) => {
-  // pureView会将store数据挂载到props上新增的state属性上
+const HookCom = (props: MapStateToProps<Store>) => {
+  // view会将store数据挂载到props上新增的state属性上
   const { hookComTestState } = props.state;
   /**
    * 首先，store中的count与text、classComTestState数据属性
@@ -415,7 +415,7 @@ const HookCom = (props: ResyStateToProps<Store>) => {
    * 其次父组件App的appTestState变化也无法影响HookCom的re-render
    * 只有HookCom本身引用的hookComTestState数据才会影响自身的渲染
    *
-   * 也就是说pureView形成的规避re-render的效果
+   * 也就是说view形成的规避re-render的效果
    * 比resy本身自带的规避re-render的效果更完善
    */
   console.log(hookComTestState);
@@ -424,7 +424,7 @@ const HookCom = (props: ResyStateToProps<Store>) => {
   );
 }
 
-export default pureView(store, HookCom);
+export default view(store, HookCom);
 ```
 
 ```tsx

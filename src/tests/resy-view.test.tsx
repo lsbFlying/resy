@@ -76,7 +76,8 @@ const HookCom = (props: MapStateToProps<Store>) => {
 
 const PureHookCom = view(store, HookCom);
 
-const TestCom = (props: MapStateToProps<Store> & { testObj: { name: string } }) => {
+interface TestComProps { testObj: { name: string } }
+const TestCom = (props: MapStateToProps<Store, TestComProps>) => {
   // view会将store数据挂载到props上新增的state属性上
   const { testComTestState } = props.state;
   const { testObj } = props;
@@ -101,7 +102,7 @@ const TestCom = (props: MapStateToProps<Store> & { testObj: { name: string } }) 
   );
 }
 
-const PureTestCom = view(store, TestCom, true);
+const PureTestCom = view<TestComProps>(store, TestCom, true);
 
 // count数据状态的变化不会引起Text的re-render
 function Text() {

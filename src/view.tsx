@@ -51,7 +51,7 @@ function proxyStateHandle<S extends State>(latestState: Map<keyof S, S[keyof S]>
  */
 export function view<P extends State = {}, S extends State = {}>(
   store: S & SetState<S> & Subscribe<S>,
-  Comp: ComponentType<(MapStateToProps<S, P>) | any>,
+  Comp: ComponentType<MapStateToProps<S, P> | any>,
   deepEqual?: boolean,
 ) {
   return (props: P) => {

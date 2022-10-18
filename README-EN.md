@@ -18,6 +18,15 @@
 
 ---
 
+##### notes
+```markdown
+resy has been in stable development since v4.0.0
+The API has been named and will not be changed easily.
+At the same time,
+the code tends to be stable and strengthened after 57 versions of the code.
+You are welcome to use it freely 🌟🌟🌟🌟
+```
+
 ### Features
 - Support hook components and class components 😎
 - Fine grained update, Better avoid redundant re-render 😎

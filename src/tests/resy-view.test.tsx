@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import { expect, test } from "vitest";
-import { createStore, useStore, ResyStateToProps, view } from "../index";
+import { createStore, useStore, MapStateToProps, view } from "../index";
 import { fireEvent, render } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 
@@ -34,7 +34,7 @@ const store = createStore<Store>({
   testObj: { name: "testObjName" },
 });
 
-class ClassCom extends React.PureComponent<ResyStateToProps<Store>> {
+class ClassCom extends React.PureComponent<MapStateToProps<Store>> {
   /**
    * 首先，store中的count与text、hookComTestState数据属性
    * 无法影响ClassCom的re-render
@@ -56,7 +56,7 @@ class ClassCom extends React.PureComponent<ResyStateToProps<Store>> {
 
 const PureClassCom = view(store, ClassCom);
 
-const HookCom = (props: ResyStateToProps<Store>) => {
+const HookCom = (props: MapStateToProps<Store>) => {
   // view会将store数据挂载到props上新增的state属性上
   const { hookComTestState } = props.state;
   /**
@@ -76,7 +76,7 @@ const HookCom = (props: ResyStateToProps<Store>) => {
 
 const PureHookCom = view(store, HookCom);
 
-const TestCom = (props: ResyStateToProps<Store> & { testObj: { name: string } }) => {
+const TestCom = (props: MapStateToProps<Store> & { testObj: { name: string } }) => {
   // view会将store数据挂载到props上新增的state属性上
   const { testComTestState } = props.state;
   const { testObj } = props;

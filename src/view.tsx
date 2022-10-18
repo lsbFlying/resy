@@ -3,8 +3,8 @@ import React, { ComponentType, useEffect, useMemo, useState } from "react";
 import { SetState, State, StoreCoreMapType, StoreCoreMapValue, Subscribe } from "./model";
 import { storeCoreMapKey } from "./static";
 
-// 将resy生成的store容器数据挂载到组件的props的state属性上
-export interface ResyStateToProps<T extends State> {
+// 将resy生成的store容器数据映射挂载到组件props的state属性上
+export type MapStateToProps<T extends State, P extends State = {}> = P & {
   state: T;
 }
 
@@ -49,9 +49,9 @@ function proxyStateHandle<S extends State>(latestState: Map<keyof S, S[keyof S]>
  * 所以它本身脱离了view的内部数据状态更新控制，更多的是依赖于外界的掌控
  * 是否开启需要开发者自己衡量所能带来的性能收益
  */
-export function view<P extends State, S extends State>(
+export function view<S extends State, P extends State>(
   store: S & SetState<S> & Subscribe<S>,
-  Comp: ComponentType<(ResyStateToProps<S> & P) | any>,
+  Comp: ComponentType<(MapStateToProps<S> & P) | any>,
   deepEqual?: boolean,
 ) {
   return (props: P) => {

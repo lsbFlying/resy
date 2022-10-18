@@ -25,7 +25,7 @@ function proxyStateHandle<S extends State>(latestState: Map<keyof S, S[keyof S]>
 /**
  * pureView
  *
- * @description
+ * @description 自动化规避组件re-render的HOC
  * A：通过将Comp组件包裹一层hook，转变成hook组件，从而实现对class组件的支持
  * 本身也自然是支持hook，Comp也可以是hook组件
  *

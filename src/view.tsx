@@ -51,6 +51,7 @@ function proxyStateHandle<S extends State>(latestState: Map<keyof S, S[keyof S]>
  */
 export function view<P extends State = {}, S extends State = {}>(
   store: S & SetState<S> & Subscribe<S>,
+  // any用于防范某些HOC导致的类型不合一问题，比如withRouter
   Comp: ComponentType<MapStateToProps<S, P> | any>,
   deepEqual?: boolean,
 ) {

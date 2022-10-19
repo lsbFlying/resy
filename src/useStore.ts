@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { State } from "./model";
 import { storeCoreMapKey, useStoreKey } from "./static";
+import { isEmptyObj } from "./utils";
 
 /**
  * useStore
@@ -9,15 +10,13 @@ import { storeCoreMapKey, useStoreKey } from "./static";
  * 本身产生的数据就是hook数据，所以会多一层代理
  */
 export function useStore<S extends State>(store: S, initialState?: Partial<S>): S {
-  
   const storeProxy = store[useStoreKey as keyof S];
-  if (initialState === undefined) {
-    return storeProxy;
-  }
   
   useMemo(() => {
-    const storeCoreMap = store[storeCoreMapKey as keyof S];
-    storeCoreMap.get("setFieldsValue")(initialState);
+    if (initialState && !isEmptyObj(initialState)) {
+      const storeCoreMap = store[storeCoreMapKey as keyof S];
+      storeCoreMap.get("setFieldsValue")(initialState);
+    }
   }, []);
   
   return storeProxy;

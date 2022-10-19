@@ -1,3 +1,5 @@
+import useStore from "./useStore";
+
+export { useStore };
 export * from "./createStore";
-export * from "./useStore";
 export * from "./view";

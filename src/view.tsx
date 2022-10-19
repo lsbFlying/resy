@@ -22,6 +22,13 @@ function proxyStateHandle<S extends State>(latestState: Map<keyof S, S[keyof S]>
   } as ProxyHandler<Map<keyof S, S[keyof S]>>) as any as S;
 }
 
+function isEmptyObj(obj: object) {
+  for (const _key in obj) {
+    return false;
+  }
+  return true;
+}
+
 /**
  * view
  *
@@ -76,7 +83,7 @@ export function view<P extends State = {}, S extends State = {}>(
     const [stateProps, setStateProps] = useState(props);
     
     useEffect(() => {
-      if (Object.keys(props).length !== 0 && (!deepEqual || !isEqual(props, stateProps))) {
+      if (!isEmptyObj(props) && (!deepEqual || !isEqual(props, stateProps))) {
         setStateProps(props);
       }
     }, [props]);

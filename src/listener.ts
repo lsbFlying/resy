@@ -5,7 +5,7 @@ import { State, Listener } from "./model";
  * @description 自定义监听事件
  * @author liushanbao
  */
-export function EventDispatcher(this: any) {
+export default function EventDispatcher(this: any) {
   this.events = {};
 }
 EventDispatcher.prototype.addEventListener = function<T extends State>(this: any, type: string, handle: Listener<T>) {

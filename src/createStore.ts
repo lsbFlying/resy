@@ -8,13 +8,13 @@
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
+import EventDispatcher from "./listener";
 import { batchUpdate, storeCoreMapKey, useStoreKey } from "./static";
 import {
   Callback, ExternalMapType, ExternalMapValue, SetState, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Subscribe, Unsubscribe,
   Scheduler, CustomEventListener, Listener,
 } from "./model";
-import { EventDispatcher } from "./listener";
 import { mapToObject } from "./utils";
 
 /**

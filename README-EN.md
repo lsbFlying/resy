@@ -112,13 +112,12 @@ import { createStore, useStore } from "resy";
 
 const initialState = {
   count: 123,
-  text: "test text",
-  obj: {
-    name: "QWE",
-  }
 };
 
-const store = createStore(initialState);
+const store = createStore<{
+  count: number;
+  form?: FormInstance<{ sortNumber: number }>;
+}>(initialState);
 
 function App() {
   /**
@@ -127,20 +126,24 @@ function App() {
    */
   // const store = useMemo(() => createStore(initialState), []);
   // const { count } = useStore(store);
-  
   /**
-   * Or use the initialization data parameters of useStore
-   * It can also achieve the effect of the above writing method, and the effect is more
+   * The useStore also has parameters for initializing data
+   * Although createStore already has default data when it passes in initialization default data
+   * However, if the default data is initialized, some hooks need to be generated
+   * In this case, you need to use the second parameter of useStore ———— initialization data parameter
    */
-  const { count, obj } = useStore(store, { count: 0, obj: { name: "ASD" } });
+  const { count, form } = useStore(store, { count: 0, form: Form.useForm<{ sortNumber: number }>()[0] });
   
   function addClick() {
     store.count++;
+    form?.setFieldsValue({
+      sortNumber: 9999,
+    });
   }
   
   return (
     <>
-      <p>{count}，object name：{obj.name}</p>
+      <p>{count}</p>
       <button onClick={}>test button</button><br/>
     </>
   );

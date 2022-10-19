@@ -106,16 +106,17 @@ function App() {
 ```tsx
 import { useMemo } from "react";
 import { createStore, useStore } from "resy";
+import { Form } from "antd";
+import { FormInstance } from "antd/es/form";
 
 const initialState = {
   count: 123,
-  text: "测试文本",
-  obj: {
-    name: "QWE",
-  }
 };
 
-const store = createStore(initialState);
+const store = createStore<{
+  count: number;
+  form?: FormInstance<{ sortNumber: number }>;
+}>(initialState);
 
 function App() {
   /**
@@ -125,18 +126,23 @@ function App() {
   // const privateStore = useMemo(() => createStore(initialState), []);
   // const { count } = useStore(privateStore);
   /**
-   * 或者使用useStore的初始化数据参数
-   * 也能达到上面写法的效果，且效果更加
+   * useStore同时还具有初始化数据的参数
+   * 尽管createStore在传入初始化默认数据时已经有过默认数据
+   * 但是如果初始化默认数据是需要某些hooks产生
+   * 此时则需要使用useStore的第二个参数 ———— 初始化数据参数
    */
-  const { count, obj } = useStore(store, { count: 0, obj: { name: "ASD" } });
+  const { count, form } = useStore(store, { count: 0, form: Form.useForm<{ sortNumber: number }>()[0] });
   
   function addClick() {
     store.count++;
+    form?.setFieldsValue({
+      sortNumber: 9999,
+    });
   }
   
   return (
     <>
-      <p>{count}，对象名字：{obj.name}</p>
+      <p>{count}</p>
       <button onClick={}>测试按钮</button><br/>
     </>
   );

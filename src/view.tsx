@@ -4,8 +4,8 @@ import { SetState, State, StoreCoreMapType, StoreCoreMapValue, Subscribe } from 
 import { storeCoreMapKey } from "./static";
 
 // 将resy生成的store容器数据映射挂载到组件props的state属性上
-export type MapStateToProps<T extends State, P extends State = {}> = P & {
-  state: T;
+export type MapStateToProps<S extends State, P extends State = {}> = P & {
+  state: S;
 }
 
 /**

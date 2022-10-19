@@ -112,16 +112,27 @@ import { createStore, useStore } from "resy";
 
 const initialState = {
   count: 123,
+  text: "test text",
+  obj: {
+    name: "QWE",
+  }
 };
+
+const store = createStore(initialState);
 
 function App() {
   /**
+   * privatize the store data storage container
    * The following usage methods make the useStore of resy equivalent to the native useState of react in effect
    */
-  // privatize the store data storage container
-  const store = useMemo(() => createStore(initialState), []);
+  // const store = useMemo(() => createStore(initialState), []);
+  // const { count } = useStore(store);
   
-  const { count } = useStore(store);
+  /**
+   * Or use the initialization data parameters of useStore
+   * It can also achieve the effect of the above writing method, and the effect is more
+   */
+  const { count, obj } = useStore(store, { count: 0, obj: { name: "ASD" } });
   
   function addClick() {
     store.count++;
@@ -129,7 +140,7 @@ function App() {
   
   return (
     <>
-      <p>{count}</p>
+      <p>{count}，object name：{obj.name}</p>
       <button onClick={}>test button</button><br/>
     </>
   );

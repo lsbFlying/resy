@@ -109,16 +109,26 @@ import { createStore, useStore } from "resy";
 
 const initialState = {
   count: 123,
+  text: "测试文本",
+  obj: {
+    name: "QWE",
+  }
 };
+
+const store = createStore(initialState);
 
 function App() {
   /**
+   * 将store数据储存容器私有化
    * 下面的使用方式，使得resy的useStore在效果上等价于react原生的useState
    */
-  // 将store数据储存容器私有化
-  const store = useMemo(() => createStore(initialState), []);
-  
-  const { count } = useStore(store);
+  // const privateStore = useMemo(() => createStore(initialState), []);
+  // const { count } = useStore(privateStore);
+  /**
+   * 或者使用useStore的初始化数据参数
+   * 也能达到上面写法的效果，且效果更加
+   */
+  const { count, obj } = useStore(store, { count: 0, obj: { name: "ASD" } });
   
   function addClick() {
     store.count++;
@@ -126,7 +136,7 @@ function App() {
   
   return (
     <>
-      <p>{count}</p>
+      <p>{count}，对象名字：{obj.name}</p>
       <button onClick={}>测试按钮</button><br/>
     </>
   );

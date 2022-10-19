@@ -3,8 +3,9 @@ import { expect, test } from "vitest";
 import { createStore, useStore } from "../index";
 import { fireEvent, render } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
-import { CustomEventListener, EventDispatcher } from "../listener";
+import { EventDispatcher } from "../listener";
 import { batchUpdateShimRun } from "../static";
+import { CustomEventListener } from "../model";
 
 test("resy-set-and-sub1", async () => {
   const store = createStore({ count: 0, text: "poiu" });

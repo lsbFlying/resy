@@ -1,4 +1,3 @@
-import { CustomEventListener, Listener } from "./listener";
 import { storeCoreMapKey, useStoreKey } from "./static";
 
 export type Callback = () => void;
@@ -23,6 +22,30 @@ export type StoreMapValue<T extends State> = Map<
 // createStore的storeMap数据类型
 export type StoreMap<T extends State> = Map<keyof T, StoreMapValue<T>>;
 
+// 订阅事件的监听回调函数类型
+export type Listener<T extends State> = (
+  effectState: Partial<Omit<T, keyof SetState<T> | keyof Subscribe<T>>>,
+  prevState: Omit<T, keyof SetState<T> | keyof Subscribe<T>>,
+  nextState: Omit<T, keyof SetState<T> | keyof Subscribe<T>>,
+) => void;
+
+// 自定义订阅监听函数接口类型
+export interface CustomEventListener<T extends State> {
+  addEventListener(type: string | symbol, handle: Listener<T>): void,
+  dispatchEvent(
+    type: string | symbol,
+    effectState: Partial<T>,
+    prevState: T,
+    nextState: T,
+  ): void,
+  /**
+   * 本身EventDispatcher可以单独使用，在结合resy是销毁监听订阅的时候实际上是移除了监听Set中的监听实例
+   * 所以subscribe这里可以不用多余使用removeEventListener，直接移除实例即可
+   * 所以这里也是直接简化去除removeEventListener
+   */
+  // removeEventListener(type: string | symbol): void,
+}
+
 /**
  * StoreCoreMap的数据值类型，作为createStore的核心Map接口类型
  * 具备获取内部state数据对象、重置数据、订阅监听等功能
@@ -46,11 +69,6 @@ export type StoreCoreMapType<T extends State> = Map<
   StoreCoreMapValue<T>[keyof StoreCoreMapValue<T>]
 >;
 
-// setState的函数更新处理
-export interface StateFunc {
-  (): void;
-}
-
 export type ExternalMapValue<T extends State> = SetState<T> & Subscribe<T> & {
   [storeCoreMapKey]: StoreCoreMapType<T>;
   [useStoreKey]: object;
@@ -60,6 +78,11 @@ export type ExternalMapType<T extends State> = Map<
   keyof ExternalMapValue<T>,
   ExternalMapValue<T>[keyof ExternalMapValue<T>]
 >;
+
+// setState的函数更新处理
+export interface StateFunc {
+  (): void;
+}
 
 /**
  * @description setState —————— resy生成的store上挂载的更新方法
@@ -116,4 +139,11 @@ export type Subscribe<T extends State> = Readonly<{
 // 将resy生成的store容器数据映射挂载到组件props的state属性上
 export type MapStateToProps<S extends State, P extends State = {}> = P & {
   state: S;
+}
+
+// resy的调度类型接口
+export interface Scheduler<T = State> {
+  add<T>(task: Callback, key: keyof T, val: T[keyof T]): Promise<void>;
+  flush(): void;
+  getTaskDataMap(): Map<keyof T, T[keyof T]>;
 }

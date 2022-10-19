@@ -1,28 +1,4 @@
-import { State, SetState, Subscribe } from "./model";
-
-// 订阅事件的监听回调函数类型
-export type Listener<T extends State> = (
-  effectState: Partial<Omit<T, keyof SetState<T> | keyof Subscribe<T>>>,
-  prevState: Omit<T, keyof SetState<T> | keyof Subscribe<T>>,
-  nextState: Omit<T, keyof SetState<T> | keyof Subscribe<T>>,
-) => void;
-
-// 自定义订阅监听函数接口类型
-export interface CustomEventListener<T extends State> {
-  addEventListener(type: string | symbol, handle: Listener<T>): void,
-  dispatchEvent(
-    type: string | symbol,
-    effectState: Partial<T>,
-    prevState: T,
-    nextState: T,
-  ): void,
-  /**
-   * 本身EventDispatcher可以单独使用，在结合resy是销毁监听订阅的时候实际上是移除了监听Set中的监听实例
-   * 所以subscribe这里可以不用多余使用removeEventListener，直接移除实例即可
-   * 所以这里也是直接简化去除removeEventListener
-   */
-  // removeEventListener(type: string | symbol): void,
-}
+import { State, Listener } from "./model";
 
 /**
  * created by liushanbao

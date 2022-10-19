@@ -1,4 +1,4 @@
-import { Callback, State } from "./model";
+import { Callback, Scheduler } from "./model";
 import { batchUpdate } from "./static";
 
 // 更新的任务队列
@@ -6,13 +6,6 @@ const taskQueueMap = new Map<string | number | symbol, Callback>();
 
 // 更新的任务数据
 const taskDataMap = new Map();
-
-// resy的调度类型接口
-export interface Scheduler<T = State> {
-  add<T>(task: Callback, key: keyof T, val: T[keyof T]): Promise<void>;
-  flush(): void;
-  getTaskDataMap(): Map<keyof T, T[keyof T]>;
-}
 
 /**
  * 批量处理更新的调度Map
@@ -38,4 +31,4 @@ scheduler.set("flush", () => {
 });
 scheduler.set("getTaskDataMap", () => (new Map(taskDataMap)));
 
-export { scheduler };
+export default scheduler;

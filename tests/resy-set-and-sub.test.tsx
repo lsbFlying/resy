@@ -1,11 +1,11 @@
 import React, {useEffect, useState} from "react";
 import { expect, test } from "vitest";
-import { createStore, useStore } from "../index";
+import { createStore, useStore } from "../src";
 import { fireEvent, render } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
-import { EventDispatcher } from "../listener";
-import { batchUpdateShimRun } from "../static";
-import { CustomEventListener } from "../model";
+import { EventDispatcher } from "../src/listener";
+import { batchUpdateShimRun } from "../src/static";
+import { CustomEventListener } from "../src/model";
 
 test("resy-set-and-sub1", async () => {
   const store = createStore({ count: 0, text: "poiu" });

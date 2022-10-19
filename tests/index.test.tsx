@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { test, expect } from "vitest";
 import { render, fireEvent } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
-import { createStore, useStore } from "../index";
+import { createStore, useStore } from "../src";
 
 test("resy-basic", async () => {
   // 数据范型类型接口

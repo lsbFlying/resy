@@ -1,6 +1,6 @@
 import React from "react";
 import { expect, test } from "vitest";
-import { createStore, useStore } from "../index";
+import { createStore, useStore } from "../src";
 import { fireEvent, render } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 

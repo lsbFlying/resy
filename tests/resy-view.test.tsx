@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import { expect, test } from "vitest";
-import { createStore, useStore, MapStateToProps, view } from "../index";
+import { createStore, useStore, MapStateToProps, view } from "../src";
 import { fireEvent, render } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
 

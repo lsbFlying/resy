@@ -10,8 +10,6 @@ import { isEmptyObj } from "./utils";
  * 本身产生的数据就是hook数据，所以会多一层代理
  */
 export function useStore<S extends State>(store: S, initialState?: Partial<S>): S {
-  const storeProxy = store[useStoreKey as keyof S];
-  
   useMemo(() => {
     if (initialState && !isEmptyObj(initialState)) {
       const storeCoreMap = store[storeCoreMapKey as keyof S];
@@ -19,5 +17,5 @@ export function useStore<S extends State>(store: S, initialState?: Partial<S>): 
     }
   }, []);
   
-  return storeProxy;
+  return store[useStoreKey as keyof S];
 }

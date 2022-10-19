@@ -1,6 +1,6 @@
 // @ts-ignore
 import { unstable_batchedUpdates } from "react-platform";
-import { Callback, State } from "./model";
+import { Callback } from "./model";
 
 /**
  * batchUpdateShimRun
@@ -19,10 +19,3 @@ export const storeCoreMapKey = Symbol("storeCoreMapKey");
 
 // useStore的key值，获取storeMap的代理key值
 export const useStoreKey = Symbol("useStoreKey");
-
-/**
- * 解决回调参数如果是map的proxy代理的话无法做扩展运算的问题
- */
-export function mapToObject<T extends State>(map: Map<keyof T, T[keyof T]>): T {
-  return [...map.entries()].reduce((obj, [key, value]) => ((obj as any as T)[key] = value, obj), {}) as T;
-}

@@ -1,33 +1,10 @@
 import isEqual from "react-fast-compare";
 import React, { ComponentType, useEffect, useMemo, useState } from "react";
-import { SetState, State, StoreCoreMapType, StoreCoreMapValue, Subscribe } from "./model";
+import { SetState, State, StoreCoreMapType, StoreCoreMapValue, Subscribe, MapStateToProps } from "./model";
 import { storeCoreMapKey } from "./static";
+import { proxyStateHandle, isEmptyObj } from "./utils";
 
-// 将resy生成的store容器数据映射挂载到组件props的state属性上
-export type MapStateToProps<S extends State, P extends State = {}> = P & {
-  state: S;
-}
-
-/**
- * 给Comp组件的props上挂载的state属性数据做一层引用代理
- * 核心作用是找出SCU或者useMemo所需要的更新依赖的数据属性
- */
-function proxyStateHandle<S extends State>(latestState: Map<keyof S, S[keyof S]>, linkStateSet: Set<keyof S>) {
-  return new Proxy(latestState, {
-    get: (target: Map<keyof S, S[keyof S]>, key: keyof S) => {
-      linkStateSet.add(key);
-      // latestState给出了resy生成的store内部数据的引用，这里始终能获取到最新数据
-      return target.get(key);
-    },
-  } as ProxyHandler<Map<keyof S, S[keyof S]>>) as any as S;
-}
-
-function isEmptyObj(obj: object) {
-  for (const _key in obj) {
-    return false;
-  }
-  return true;
-}
+export type { MapStateToProps };
 
 /**
  * view

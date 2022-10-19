@@ -112,3 +112,8 @@ export type Subscribe<T extends State> = Readonly<{
     stateKeys?: (keyof T)[],
   ): Unsubscribe;
 }>;
+
+// 将resy生成的store容器数据映射挂载到组件props的state属性上
+export type MapStateToProps<S extends State, P extends State = {}> = P & {
+  state: S;
+}

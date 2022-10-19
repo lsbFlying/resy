@@ -76,7 +76,7 @@ export function view<P extends State = {}, S extends State = {}>(
     const [stateProps, setStateProps] = useState(props);
     
     useEffect(() => {
-      if (!deepEqual || !isEqual(props, stateProps)) {
+      if (Object.keys(props).length !== 0 && (!deepEqual || !isEqual(props, stateProps))) {
         setStateProps(props);
       }
     }, [props]);
@@ -116,6 +116,6 @@ export function view<P extends State = {}, S extends State = {}>(
       };
     }, []);
     
-    return useMemo(() => <Comp {...props} state={state}/>, [state, stateProps]);
+    return useMemo(() => <Comp {...stateProps} state={state}/>, [state, stateProps]);
   };
 }

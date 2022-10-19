@@ -51,6 +51,13 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   // 每一个resy生成的store具有的监听订阅处理，并且可以获取最新state数据
   const storeCoreMap: StoreCoreMapType<T> = new Map();
   storeCoreMap.set("getState", () => stateMap);
+  storeCoreMap.set("setFieldsValue", (initialState: Partial<T>) => {
+    for (const key in initialState) {
+      if (Object.prototype.hasOwnProperty.call(initialState, key)) {
+        stateMap.set(key, initialState[key] as T[keyof T]);
+      }
+    }
+  });
   storeCoreMap.set("resetState", () => {
     if (unmountClear) stateMap = new Map(Object.entries(state));
   });

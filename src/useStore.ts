@@ -1,5 +1,6 @@
+import { useMemo } from "react";
 import { State } from "./model";
-import { useStoreKey } from "./static";
+import { storeCoreMapKey, useStoreKey } from "./static";
 
 /**
  * useStore
@@ -7,6 +8,17 @@ import { useStoreKey } from "./static";
  * 特意分离直接从store获取hook调用是为了数据的安全使用
  * 本身产生的数据就是hook数据，所以会多一层代理
  */
-export function useStore<T extends State>(store: T): T {
-  return store[useStoreKey as keyof T];
+export function useStore<S extends State>(store: S, initialState?: Partial<S>): S {
+  
+  const storeProxy = store[useStoreKey as keyof S];
+  if (initialState === undefined) {
+    return storeProxy;
+  }
+  
+  useMemo(() => {
+    const storeCoreMap = store[storeCoreMapKey as keyof S];
+    storeCoreMap.get("setFieldsValue")(initialState);
+  }, []);
+  
+  return storeProxy;
 }

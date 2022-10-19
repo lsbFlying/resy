@@ -31,19 +31,19 @@ export type Listener<T extends State> = (
 
 // 自定义订阅监听函数接口类型
 export interface CustomEventListener<T extends State> {
-  addEventListener(type: string | symbol, handle: Listener<T>): void,
+  addEventListener(type: string | symbol, handle: Listener<T>): void;
   dispatchEvent(
     type: string | symbol,
     effectState: Partial<T>,
     prevState: T,
     nextState: T,
-  ): void,
+  ): void;
   /**
    * 本身EventDispatcher可以单独使用，在结合resy是销毁监听订阅的时候实际上是移除了监听Set中的监听实例
    * 所以subscribe这里可以不用多余使用removeEventListener，直接移除实例即可
    * 所以这里也是直接简化去除removeEventListener
    */
-  // removeEventListener(type: string | symbol): void,
+  // removeEventListener(type: string | symbol): void;
 }
 
 /**
@@ -52,7 +52,9 @@ export interface CustomEventListener<T extends State> {
  */
 export interface StoreCoreMapValue<T extends State> {
   // store内部的state数据对象（使用函数来维持数据获取最新数据值）
-  getState: () => Map<keyof T, T[keyof T]>,
+  getState: () => Map<keyof T, T[keyof T]>;
+  // 设置stateMap部分字段数据值（主要是给useStore的初始化值赋值使用的）
+  setFieldsValue: (initialState: { [key in keyof T]: T[keyof T] }) => void;
   // 重置(恢复)初始化数据（供view使用）
   resetState: Callback;
   // 订阅监听的事件类型
@@ -60,7 +62,7 @@ export interface StoreCoreMapValue<T extends State> {
   // 触发订阅监听的影响Set容器
   dispatchStoreEffectSet: Set<CustomEventListener<T>>;
   // 触发订阅监听的变动影响
-  dispatchStoreEffect: (effectState: Partial<T>, prevState: T, nextState: T) => void,
+  dispatchStoreEffect: (effectState: Partial<T>, prevState: T, nextState: T) => void;
 }
 
 // 每一个resy生成的store的监听订阅对象、内部stateMap数据以及重置初始化数据的方法

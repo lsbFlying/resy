@@ -1,9 +1,9 @@
-import React, {useEffect, useState} from "react";
+import React, { useEffect, useState } from "react";
+import EventDispatcher from "../src/listener";
 import { expect, test } from "vitest";
 import { createStore, useStore } from "../src";
 import { fireEvent, render } from "@testing-library/react";
 import { act } from "react-dom/test-utils";
-import EventDispatcher from "../src/listener";
 import { batchUpdateShimRun } from "../src/static";
 import { CustomEventListener } from "../src/model";
 

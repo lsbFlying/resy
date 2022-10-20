@@ -14,7 +14,8 @@ test("resy-simple", async () => {
   const AppTest = () => {
     const { count2, formRef } = useStore(store, { formRef: React.useRef<any>() });
     
-    function formBtnClick() {
+    function formBtnClick(event: any) {
+      event.preventDefault();
       formRef.current.value = "QWE";
     }
     
@@ -24,9 +25,9 @@ test("resy-simple", async () => {
     
     return (
       <form>
-        name: <input id="testInput" ref={formRef} type="text" name="Name"/><br/>
-        <button onClick={formBtnClick}>form-button</button>
         <span>{count2}</span>
+        name: <input id="testInput" ref={formRef} type="text" name="Name"/><br/>
+        <button onClick={formBtnClick} type="submit">form-button</button>
       </form>
     );
   }

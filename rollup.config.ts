@@ -1,12 +1,18 @@
 import typescript from "@rollup/plugin-typescript";
 import dts from "rollup-plugin-dts";
 import replace from "@rollup/plugin-replace";
+import autoExternal from "rollup-plugin-auto-external";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import { babel } from "@rollup/plugin-babel";
 // import { terser } from "rollup-plugin-terser"; // 压缩打包文件
 
 const input = "src/index.ts";
-const external = ["react-fast-compare", "use-sync-external-store/shim", "react", "./react-platform"];
+/**
+ * 由于use-sync-external-store该包只导出了CJS模块
+ * 所以这里需要做一个外部扩展单独的特殊识别
+ * 否则代码里的特殊导出处理则无效了
+ */
+const external = ["use-sync-external-store/shim", "./react-platform"];
 const plugins = [
   replace({
     "react-platform": "./react-platform",
@@ -18,6 +24,10 @@ const plugins = [
     babelHelpers: "bundled",
   }),
   typescript(),
+  autoExternal({
+    dependencies: true,
+    peerDependencies: true,
+  }),
   // terser(),
 ];
 

@@ -117,6 +117,11 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   
   // 详细注释描述见model文件SetState接口类型文档描述
   function setState(stateParams: Partial<T> | T | StateFunc = {}, callback?: (nextState: T) => void) {
+    const taskDataMap = (scheduler.get("getTaskDataMap") as Scheduler["getTaskDataMap"])();
+    // 防止直接更新与setState混用导致直接更新滞后产生的数据未及时得到更新的问题
+    if (taskDataMap.size !== 0) {
+      (scheduler.get("flush") as Scheduler["flush"])();
+    }
     // 必须在更新之前执行，获取更新之前的数据
     const prevState = new Map(stateMap);
     try {

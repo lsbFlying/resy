@@ -77,6 +77,7 @@ const HookCom = (props: MapStateToProps<Store>) => {
 const PureHookCom = view(store, HookCom);
 
 interface TestComProps { testObj: { name: string } }
+// 该组件测试view的深度对比功能
 const TestCom = (props: MapStateToProps<Store, TestComProps>) => {
   // view会将store数据挂载到props上新增的state属性上
   const { testComTestState } = props.state;
@@ -89,9 +90,6 @@ const TestCom = (props: MapStateToProps<Store, TestComProps>) => {
     console.log("useEffect", testComTestState)
   }, [testComTestState]);
   
-  /**
-   * 该组件测试view的深度对比功能
-   */
   console.log("PureTestCom", testComTestState);
   return (
     <div>
@@ -168,16 +166,16 @@ test("resy-view", async () => {
     return (
       <>
         <p>{appTestState}</p>
-        <div onClick={appTestClick}>app btn</div>
+        <div onClick={appTestClick}>app-btn</div>
         <p>{classComTestState}</p>
-        <div onClick={classComTestStateClick}>class btn</div>
+        <div onClick={classComTestStateClick}>class-btn</div>
         <p>{hookComTestState}</p>
-        <div onClick={hookComTestStateClick}>hook btn</div>
+        <div onClick={hookComTestStateClick}>hook-btn</div>
         <Text/>
         <Count/>
         <button onClick={countAddFun}>btn+</button>
         <button onClick={() => { store.count--; }}>btn-</button>
-        <button onClick={() => { store.setState({}); }}>btn empty</button>
+        <button onClick={() => { store.setState({}); }}>btn-empty</button>
         <button onClick={() => {
           store.setState({ testComTestState: { name: "liushanbao", age: 18 } });
         }}>viewDeepEqual</button>
@@ -200,25 +198,25 @@ test("resy-view", async () => {
   const { getByText } = render(<App />);
   
   await act(() => {
-    fireEvent.click(getByText("app btn"));
+    fireEvent.click(getByText("app-btn"));
   });
   expect(getByText(`Text：${store.appTestState}`)).toBeInTheDocument();
   expect(getByText("1099")).toBeInTheDocument();
   expect(getByText("classComTestState")).toBeInTheDocument();
   expect(getByText("hookComTestState")).toBeInTheDocument();
-  
+
   await act(() => {
-    fireEvent.click(getByText("class btn"));
+    fireEvent.click(getByText("class-btn"));
   });
   expect(getByText("18756")).toBeInTheDocument();
   
   await act(() => {
-    fireEvent.click(getByText("hook btn"));
+    fireEvent.click(getByText("hook-btn"));
   });
   expect(getByText("567")).toBeInTheDocument();
   
   await act(() => {
-    fireEvent.click(getByText("btn empty"));
+    fireEvent.click(getByText("btn-empty"));
   });
   expect(getByText("567")).toBeInTheDocument();
   

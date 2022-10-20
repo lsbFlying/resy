@@ -1,14 +1,11 @@
 import typescript from "@rollup/plugin-typescript";
 import dts from "rollup-plugin-dts";
-import pkg from "./package.json";
 import replace from "@rollup/plugin-replace";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import { babel } from "@rollup/plugin-babel";
 // import { terser } from "rollup-plugin-terser"; // 压缩打包文件
 
 const input = "src/index.ts";
-// const deps = Object.keys({ ...pkg.dependencies, ...pkg.peerDependencies });
-// const external = (id: string) => deps.some((dep) => id.startsWith(dep));
 const external = ["react-fast-compare", "use-sync-external-store/shim", "react", "./react-platform"];
 const plugins = [
   replace({
@@ -27,16 +24,16 @@ const plugins = [
 // 打包文件的头部声明
 const banner =
   "/**\n" +
-  ` * ${pkg.name} v${pkg.version}\n` +
+  ` * resy\n` +
   ` * 一款简单易用的React数据状态管理器\n` +
-  ` * created by ${pkg.author}\n` +
-  ` * (c) 2020-${new Date().getFullYear()} ${pkg.author}\n` +
-  ` * Released under the ${pkg.license} License.\n` +
+  ` * created by liushanbao <1262300490@qq.com>\n` +
+  ` * (c) 2020-${new Date().getFullYear()}\n` +
+  ` * Released under the MIT License.\n` +
   " */";
 
-const cjsOutput = { file: pkg.main, format: "cjs", exports: "auto" };
-const esmOutput = { file: pkg.module, format: "es" };
-const dtsOutput = { file: pkg.types, format: "es", banner };
+const cjsOutput = { file: "dist/resy.cjs.js", format: "cjs", exports: "auto" };
+const esmOutput = { file: "dist/resy.esm.js", format: "es" };
+const dtsOutput = { file: "dist/resy.d.ts", format: "es", banner };
 
 const platformBuild = [
   {

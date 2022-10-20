@@ -12,12 +12,8 @@ const input = "src/index.ts";
  * 所以这里需要做一个外部扩展单独的特殊识别
  * 否则代码里的特殊导出处理则无效了
  */
-const external = ["use-sync-external-store/shim", "./react-platform"];
+const external = ["use-sync-external-store/shim"];
 const plugins = [
-  replace({
-    "react-platform": "./react-platform",
-    preventAssignment: true,
-  }),
   nodeResolve(),
   babel({
     exclude: "node_modules/**",
@@ -30,20 +26,6 @@ const plugins = [
   }),
   // terser(),
 ];
-
-// 打包文件的头部声明
-const banner =
-  "/**\n" +
-  ` * resy\n` +
-  ` * 一款简单易用的React数据状态管理器\n` +
-  ` * created by liushanbao <1262300490@qq.com>\n` +
-  ` * (c) 2020-${new Date().getFullYear()}\n` +
-  ` * Released under the MIT License.\n` +
-  " */";
-
-const cjsOutput = { file: "dist/resy.cjs.js", format: "cjs", exports: "auto" };
-const esmOutput = { file: "dist/resy.esm.js", format: "es" };
-const dtsOutput = { file: "dist/resy.d.ts", format: "es", banner };
 
 const platformBuild = [
   {
@@ -80,9 +62,59 @@ const platformBuild = [
   },
 ];
 
+// 打包文件的头部声明
+const banner =
+  "/**\n" +
+  ` * resy\n` +
+  ` * 一款简单易用的React数据状态管理器\n` +
+  ` * created by liushanbao <1262300490@qq.com>\n` +
+  ` * (c) 2020-05-05-${new Date().getFullYear()}${new Date().getMonth()}${new Date().getDate()}\n` +
+  ` * Released under the MIT License.\n` +
+  " */";
+
 export default [
   ...platformBuild,
-  { input, output: cjsOutput, external, plugins },
-  { input, output: esmOutput, external, plugins },
-  { input, output: dtsOutput, plugins: [dts()] },
+  // CJS
+  {
+    input,
+    output: {
+      file: "dist/resy.cjs.js",
+      format: "cjs",
+      exports: "auto",
+    },
+    external: [...external, "./react-platform.cjs"],
+    plugins: [
+      ...plugins,
+      replace({
+        "react-platform": "./react-platform.cjs",
+        preventAssignment: true,
+      }),
+    ]
+  },
+  // ESM
+  {
+    input,
+    output: {
+      file: "dist/resy.esm.js",
+      format: "es",
+      exports: "auto",
+    },
+    external: [...external, "./react-platform"],
+    plugins: [
+      ...plugins,
+      replace({
+        "react-platform": "./react-platform",
+        preventAssignment: true,
+      }),
+    ],
+  },
+  {
+    input,
+    output: {
+      file: "dist/resy.d.ts",
+      format: "es",
+      banner,
+    },
+    plugins: [dts()],
+  },
 ];

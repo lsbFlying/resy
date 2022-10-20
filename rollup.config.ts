@@ -1,8 +1,8 @@
 import typescript from "@rollup/plugin-typescript";
 import dts from "rollup-plugin-dts";
 import pkg from "./package.json";
-import replacePlugin from "@rollup/plugin-replace";
-import resolvePlugin from "@rollup/plugin-node-resolve";
+import replace from "@rollup/plugin-replace";
+import { nodeResolve } from "@rollup/plugin-node-resolve";
 import { babel } from "@rollup/plugin-babel";
 // import { terser } from "rollup-plugin-terser"; // 压缩打包文件
 
@@ -11,9 +11,15 @@ const input = "src/index.ts";
 // const external = (id: string) => deps.some((dep) => id.startsWith(dep));
 const external = ["react-fast-compare", "use-sync-external-store/shim", "react", "./react-platform"];
 const plugins = [
-  replacePlugin({ "react-platform": "./react-platform", preventAssignment: true }),
-  resolvePlugin(),
-  babel({ exclude: "node_modules/**", babelHelpers: "bundled" }),
+  replace({
+    "react-platform": "./react-platform",
+    preventAssignment: true,
+  }),
+  nodeResolve(),
+  babel({
+    exclude: "node_modules/**",
+    babelHelpers: "bundled",
+  }),
   typescript(),
   // terser(),
 ];

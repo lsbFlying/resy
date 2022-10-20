@@ -19,7 +19,8 @@ import { mapToObject } from "./utils";
 
 /**
  * 从use-sync-external-store包的导入方式到下面的引用方式
- * 是为了解决该包在ESM中的有效执行，至少目前该包不这样是解决不了ESM执行的问题
+ * 是为了解决该包在ESM中的有效执行，因为use-sync-external-store这个包最终打包只导出了CJS
+ * 等use-sync-external-store什么时候更新版本导出ESM模块的时候再更新吧
  */
 const { useSyncExternalStore } = useSyncExternalStoreExports;
 

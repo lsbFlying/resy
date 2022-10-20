@@ -1,6 +1,11 @@
 import typescript from "@rollup/plugin-typescript";
 import dts from "rollup-plugin-dts";
-import replace from "@rollup/plugin-replace";
+/**
+ * 当前版本有嵌套替换的bug，暂时使用rollup-plugin-replace
+ * 后续@rollup/plugin-replace该bug修复后再恢复使用
+ */
+// import replace from "@rollup/plugin-replace";
+import replace from "rollup-plugin-replace";
 import autoExternal from "rollup-plugin-auto-external";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import { babel } from "@rollup/plugin-babel";
@@ -20,10 +25,7 @@ const plugins = [
     babelHelpers: "bundled",
   }),
   typescript(),
-  autoExternal({
-    dependencies: true,
-    peerDependencies: true,
-  }),
+  autoExternal(),
   // terser(),
 ];
 
@@ -83,7 +85,7 @@ export default [
       ...plugins,
       replace({
         "react-platform": "./react-platform.cjs",
-        preventAssignment: true,
+        // preventAssignment: true,
       }),
     ]
   },
@@ -99,7 +101,7 @@ export default [
       ...plugins,
       replace({
         "react-platform": "./react-platform",
-        preventAssignment: true,
+        // preventAssignment: true,
       }),
     ],
   },

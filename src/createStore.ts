@@ -261,11 +261,8 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
         const taskDataMap = (scheduler.get("getTaskDataMap") as Scheduler["getTaskDataMap"])();
         if (taskDataMap.size !== 0) {
           const prevState = new Map(stateMap);
-          try {
-            (scheduler.get("flush") as Scheduler["flush"])();
-          } finally {
-            batchDispatch(prevState, taskDataMap);
-          }
+          (scheduler.get("flush") as Scheduler["flush"])();
+          batchDispatch(prevState, taskDataMap);
         }
       });
       return true;

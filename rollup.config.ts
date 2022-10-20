@@ -27,7 +27,17 @@ const plugins = [
   // terser(),
 ];
 
-const platformBuild = [
+// 打包文件的头部声明
+const banner =
+  "/**\n" +
+  ` * resy\n` +
+  ` * 一款简单易用的React数据状态管理器\n` +
+  ` * created by liushanbao <1262300490@qq.com>\n` +
+  ` * (c) 2020-05-05-${new Date().getFullYear()}${new Date().getMonth()}${new Date().getDate()}\n` +
+  ` * Released under the MIT License.\n` +
+  " */";
+
+export default [
   {
     input: "src/platforms/dom.ts",
     external: ["react-dom"],
@@ -60,20 +70,6 @@ const platformBuild = [
       },
     ],
   },
-];
-
-// 打包文件的头部声明
-const banner =
-  "/**\n" +
-  ` * resy\n` +
-  ` * 一款简单易用的React数据状态管理器\n` +
-  ` * created by liushanbao <1262300490@qq.com>\n` +
-  ` * (c) 2020-05-05-${new Date().getFullYear()}${new Date().getMonth()}${new Date().getDate()}\n` +
-  ` * Released under the MIT License.\n` +
-  " */";
-
-export default [
-  ...platformBuild,
   // CJS
   {
     input,
@@ -97,7 +93,6 @@ export default [
     output: {
       file: "dist/resy.esm.js",
       format: "es",
-      exports: "auto",
     },
     external: [...external, "./react-platform"],
     plugins: [

@@ -29,6 +29,6 @@ scheduler.set("flush", () => {
   taskQueueMap.clear();
   taskDataMap.clear();
 });
-scheduler.set("getTaskDataMap", () => taskDataMap);
+scheduler.set("getTaskDataMap", () => (new Map(taskDataMap)));
 
 export default scheduler;

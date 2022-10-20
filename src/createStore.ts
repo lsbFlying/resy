@@ -259,12 +259,13 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
          * 但好在setState的回调弥补了同步获取最新数据的问题
          */
         const taskDataMap = (scheduler.get("getTaskDataMap") as Scheduler["getTaskDataMap"])();
-        if (taskDataMap.size === 0) return;
-        const prevState = new Map(stateMap);
-        try {
-          (scheduler.get("flush") as Scheduler["flush"])();
-        } finally {
-          batchDispatch(prevState, taskDataMap);
+        if (taskDataMap.size !== 0) {
+          const prevState = new Map(stateMap);
+          try {
+            (scheduler.get("flush") as Scheduler["flush"])();
+          } finally {
+            batchDispatch(prevState, taskDataMap);
+          }
         }
       });
       return true;

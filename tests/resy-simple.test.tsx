@@ -8,6 +8,7 @@ test("resy-simple", async () => {
   const store = createStore<{
     count: number;
     count2: number;
+    text?: string;
     formRef?: any;
   }>({ count: 0, count2: 123, });
   
@@ -37,7 +38,13 @@ test("resy-simple", async () => {
     return (
       <>
         <p>{state.count}</p>
-        <button onClick={() => store.count++}>inc-btn</button>
+        <span>{state.text || ""}</span>
+        <button onClick={() => {
+          store.count++;
+          store.setState({
+            text: "test text",
+          });
+        }}>inc-btn</button>
         <AppTest/>
       </>
     );

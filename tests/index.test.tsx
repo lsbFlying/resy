@@ -149,7 +149,7 @@ test("resy-basic", async () => {
   await act(() => {
     fireEvent.click(getByText("btn4"));
   });
-  expect(getByText("1")).toBeInTheDocument();
+  expect(getByText("2")).toBeInTheDocument();
   expect(getByText("Alen：11")).toBeInTheDocument();
   expect(getByText("man")).toBeInTheDocument();
 

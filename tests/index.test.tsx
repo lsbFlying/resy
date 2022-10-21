@@ -9,7 +9,7 @@ test("resy-basic", async () => {
   type Store = {
     count: number;
     text: string;
-    testObj: { name: string };
+    testObj: { name?: string; age?: number };
     testArr: { age: number; name: string }[];
     testFun: () => void;
     sex?: "man" | "woman" | string;
@@ -50,6 +50,9 @@ test("resy-basic", async () => {
         if (effectState.text === "text-upgrade") {
           store.count = 999666;
         }
+        if (effectState.text === "qweasdzxc") {
+          store.testObj = { age: 12 };
+        }
       }, ["sex", "text"]);
       return unsubscribe
     }, []);
@@ -59,6 +62,7 @@ test("resy-basic", async () => {
         <p>{count}</p>
         <p>{text}</p>
         <p>{sex || "no-sex"}</p>
+        <p>testObj-age:{testObj?.age}</p>
         <p>{testObj?.name || "batch-forEach"}</p>
         <p>{testArr[0]?.name}：{testArr[0]?.age}</p>
         <p>{testArr.map(item => `${item.name}：${item.age}`)}</p>
@@ -169,6 +173,7 @@ test("resy-basic", async () => {
     fireEvent.click(getByText("btn7"));;
   });
   expect(getByText("batch-forEach")).toBeInTheDocument();
+  expect(getByText("testObj-age:12")).toBeInTheDocument();
   
   await act(() => {
     fireEvent.click(getByText("btn8"));

@@ -124,25 +124,22 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     }
     // 必须在更新之前执行，获取更新之前的数据
     const prevState = new Map(stateMap);
-    try {
-      if (typeof stateParams === "function") {
-        batchUpdate(stateParams as StateFunc);
-      } else {
-        batchUpdate(() => {
-          Object.keys(stateParams).forEach(key => {
+    if (typeof stateParams === "function") {
+      batchUpdate(stateParams as StateFunc);
+    } else {
+      batchUpdate(() => {
+        Object.keys(stateParams).forEach(key => {
+          (
             (
-              (
-                initialValueLinkStore(key).get(key) as StoreMapValue<T>
-              ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
-            )((stateParams as Partial<T> | T)[key]);
-          });
+              initialValueLinkStore(key).get(key) as StoreMapValue<T>
+            ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
+          )((stateParams as Partial<T> | T)[key]);
         });
-      }
-    } finally {
-      const changedData = typeof stateParams === "function" ? stateMap : new Map(Object.entries(stateParams));
-      batchDispatch(prevState, changedData);
-      callback?.(mapToObject(stateMap));
+      });
     }
+    const changedData = typeof stateParams === "function" ? stateMap : new Map(Object.entries(stateParams));
+    batchDispatch(prevState, changedData);
+    callback?.(mapToObject(stateMap));
   }
   
   // 批量触发订阅监听的数据变动

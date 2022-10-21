@@ -11,18 +11,20 @@
 [![Codecov](https://img.shields.io/codecov/c/github/lsbFlying/resy?style=flat-square)](https://codecov.io/gh/lsbFlying/resy)
 [![npm type definitions](https://img.shields.io/npm/types/typescript?color=orange&style=flat-square)](https://github.com/lsbFlying/resy/blob/master/src/index.ts)
 [![npm](https://img.shields.io/npm/v/resy?color=blue&style=flat-square)](https://www.npmjs.com/package/resy)
-[![npm bundle size](https://img.shields.io/bundlephobia/minzip/resy?color=brightgreen&style=flat-square)](https://bundlephobia.com/result?p=resy)
 
 简体中文 · [English](./README-EN.md)
 </div>
 
 ---
 
-##### 说明
-```markdown
-resy自v4.0.0版本开始，正式进入稳定发展的开始，api已完成命名不会轻易变更
+##### 版本说明
+<details>
+<summary>changed logs</summary>
+
+🌟`v4.0.0`：resy自v4.0.0版本开始，正式进入稳定发展的开始，api已完成命名不会轻易变更，
 同时代码也趋于稳定与强化，欢迎大家使用🌟🌟🌟🌟🌟
-```
+
+</details>
 
 ### 特点
 - 支持hook组件与class组件 😎

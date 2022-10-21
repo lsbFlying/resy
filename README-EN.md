@@ -11,20 +11,22 @@
 [![Codecov](https://img.shields.io/codecov/c/github/lsbFlying/resy?style=flat-square)](https://codecov.io/gh/lsbFlying/resy)
 [![npm type definitions](https://img.shields.io/npm/types/typescript?color=orange&style=flat-square)](https://github.com/lsbFlying/resy/blob/master/src/index.ts)
 [![npm](https://img.shields.io/npm/v/resy?color=blue&style=flat-square)](https://www.npmjs.com/package/resy)
-[![npm bundle size](https://img.shields.io/bundlephobia/minzip/resy?color=brightgreen&style=flat-square)](https://bundlephobia.com/result?p=resy)
 
 [简体中文](./README.md) · English
 </div>
 
 ---
 
-##### notes
-```markdown
-resy has been in stable development since v4.0.0
-The API has been named and will not be changed easily.
+##### version notes
+<details>
+<summary>changed logs</summary>
+
+🌟`v4.0.0`：resy has been in stable development since v4.0.0,
+the API has been named and will not be changed easily.
 At the same time, the code tends to be stable and strengthened.
 Welcome to use 🌟🌟🌟🌟
-```
+
+</details>
 
 ### Features
 - Support hook components and class components 😎

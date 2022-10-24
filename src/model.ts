@@ -53,8 +53,8 @@ export interface CustomEventListener<T extends State> {
 export interface StoreCoreMapValue<T extends State> {
   // store内部的state数据对象（使用函数来维持数据获取最新数据值）
   getState: () => Map<keyof T, T[keyof T]>;
-  // 设置stateMap部分字段数据值（主要是给useStore的初始化值赋值使用的）
-  setFieldsValue: (initialState: { [key in keyof T]: T[keyof T] }) => void;
+  // 设置stateMap部分字段数据值（主要是给useStore的初始化值是某些hooks返回值赋值使用的）
+  setHookFieldsValue: (hookInitialState: { [key in keyof T]: T[keyof T] }) => void;
   // 重置(恢复)初始化数据（供view使用）
   resetState: Callback;
   // 订阅监听的事件类型

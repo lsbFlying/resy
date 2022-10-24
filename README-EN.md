@@ -133,7 +133,13 @@ function App() {
    * However, if the default data is initialized, some hooks need to be generated
    * In this case, you need to use the second parameter of useStore ———— initialization data parameter
    */
-  const { count, form } = useStore(store, { count: 0, form: Form.useForm<{ sortNumber: number }>()[0] });
+  const { count, form } = useStore(
+    store,
+    {
+      count: 0,
+      form: Form.useForm<{ sortNumber: number }>()[0],
+    },
+  );
   
   function addClick() {
     store.count++;

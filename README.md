@@ -133,7 +133,13 @@ function App() {
    * 但是如果初始化默认数据是需要某些hooks产生
    * 此时则需要使用useStore的第二个参数 ———— 初始化数据参数
    */
-  const { count, form } = useStore(store, { count: 0, form: Form.useForm<{ sortNumber: number }>()[0] });
+  const { count, form } = useStore(
+    store,
+    {
+      count: 0,
+      form: Form.useForm<{ sortNumber: number }>()[0],
+    },
+  );
   
   function addClick() {
     store.count++;

@@ -139,7 +139,6 @@ function App() {
   const { count, form } = useStore(
     store,
     {
-      count: 0,
       form: Form.useForm<{ sortNumber: number }>()[0],
     },
   );

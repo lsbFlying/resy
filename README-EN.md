@@ -21,6 +21,9 @@
 <details>
 <summary>changed logs</summary>
 
+🌟`v4.0.1`：Fixed the use of the hookInitialState initialization hook parameter of useStore
+possible problem of setting the corresponding key value multiple times
+
 🌟`v4.0.0`：resy has been in stable development since v4.0.0,
 the API has been named and will not be changed easily.
 At the same time, the code tends to be stable and strengthened.

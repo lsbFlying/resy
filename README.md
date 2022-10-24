@@ -21,7 +21,7 @@
 <details>
 <summary>changed logs</summary>
 
-🌟`v4.0.1`：修复了useStore的hookInitialState初始化hook参数的使用
+🌟`v4.0.1`：修复了useStore的hookInitialState初始化hook参数的使用时，
 可能存在的多次设置对应的key值的问题
 
 🌟`v4.0.0`：resy自v4.0.0版本开始，正式进入稳定发展的开始，api已完成命名不会轻易变更，

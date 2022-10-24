@@ -54,7 +54,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   storeCoreMap.set("getState", () => stateMap);
   storeCoreMap.set("setFieldsValue", (initialState: Partial<T>) => {
     for (const key in initialState) {
-      if (Object.prototype.hasOwnProperty.call(initialState, key) && stateMap.get(key) === undefined) {
+      if (stateMap.get(key) === undefined && Object.prototype.hasOwnProperty.call(initialState, key)) {
         stateMap.set(key, initialState[key] as T[keyof T]);
       }
     }

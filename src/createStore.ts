@@ -86,16 +86,16 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
      */
     const storeChanges = new Set<Callback>();
     
-    const StoreMapValue: StoreMapValue<T> = new Map();
-    StoreMapValue.set("subscribe", (storeChange: Callback) => {
+    const storeMapValue: StoreMapValue<T> = new Map();
+    storeMapValue.set("subscribe", (storeChange: Callback) => {
       storeChanges.add(storeChange);
       return () => {
         storeChanges.delete(storeChange);
         if (unmountClear) stateMap.set(key, state[key]);
       };
     });
-    StoreMapValue.set("getSnapshot", () => stateMap.get(key));
-    StoreMapValue.set("setSnapshot", (val: T[keyof T]) => {
+    storeMapValue.set("getSnapshot", () => stateMap.get(key));
+    storeMapValue.set("setSnapshot", (val: T[keyof T]) => {
       /**
        * 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
        * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
@@ -107,12 +107,12 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
         storeChanges.forEach(storeChange => storeChange());
       }
     });
-    StoreMapValue.set("useSnapshot", () => useSyncExternalStore(
+    storeMapValue.set("useSnapshot", () => useSyncExternalStore(
       (storeMap.get(key) as StoreMapValue<T>).get("subscribe") as StoreMapValueType<T>["subscribe"],
       (storeMap.get(key) as StoreMapValue<T>).get("getSnapshot") as StoreMapValueType<T>["getSnapshot"],
     ));
     
-    storeMap.set(key, StoreMapValue);
+    storeMap.set(key, storeMapValue);
   }
   
   // 详细注释描述见model文件SetState接口类型文档描述

@@ -6,7 +6,7 @@ module.exports = {
     project: "./tsconfig.json",
     createDefaultProgram: true, // https://github.com/typescript-eslint/typescript-eslint/issues/967
   },
-  plugins: ["@typescript-eslint"],
+  plugins: ["@typescript-eslint", "react-hooks", "import"],
   extends: [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
@@ -24,6 +24,8 @@ module.exports = {
   rules: {
     "@typescript-eslint/ban-ts-comment": "off",
     "@typescript-eslint/no-explicit-any": "off",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
     "@typescript-eslint/no-use-before-define": [
       "off",
       {

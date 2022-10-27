@@ -59,11 +59,10 @@ export function view<P extends State = {}, S extends State = {}>(
     const [state, setState] = useState<S>(proxyStateHandle(latestState, linkStateSet));
     const [stateProps, setStateProps] = useState(props);
     
-    useEffect(() => {
-      if (!isEmptyObj(props) && (!deepEqual || !isEqual(props, stateProps))) {
-        setStateProps(props);
-      }
-    }, [props]);
+    // 渲染期间的一次更新恰恰就是 getDerivedStateFromProps 一直以来的概念
+    if (!isEmptyObj(props) && (!deepEqual || !isEqual(props, stateProps))) {
+      setStateProps(props);
+    }
     
     useEffect(() => {
       // Comp组件内部使用到的数据属性字段数组

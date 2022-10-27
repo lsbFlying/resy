@@ -1,15 +1,16 @@
-import type { State, Listener } from "./model";
+import type { State, Listener, CustomEventListener, CustomEventListenerConstructor } from "./model";
 
 /**
  * created by liushanbao
- * @description 自定义监听事件
+ * @description 自定义监听事件的构造函数
  * @author liushanbao
  */
-export default function EventDispatcher(this: any) {
-  this.events = {};
-}
-EventDispatcher.prototype.addEventListener = function<T extends State>(this: any, type: string, handle: Listener<T>) {
-  this.events[type] = handle;
+const EventDispatcher = (function <T extends State>(this: CustomEventListener<T>) {
+  this.events = {} as T;
+} as unknown) as CustomEventListenerConstructor<any>;
+
+EventDispatcher.prototype.addEventListener = function<T extends State>(this: CustomEventListener<T>, type: string, handle: Listener<T>) {
+  this.events[type as keyof T] = handle as T[keyof T];
 }
 /**
  * 刚好也正是由于resy是销毁监听订阅的时候实际上是移除了监听Set中的监听实例
@@ -19,7 +20,7 @@ EventDispatcher.prototype.addEventListener = function<T extends State>(this: any
 //   this.events[type] = undefined;
 // }
 EventDispatcher.prototype.dispatchEvent = function<T extends State>(
-  this: any,
+  this: CustomEventListener<T>,
   type: string,
   effectState: Partial<T>,
   prevState: T,
@@ -35,3 +36,5 @@ EventDispatcher.prototype.dispatchEvent = function<T extends State>(
    */
   this.events[type](effectState, prevState, nextState);
 }
+
+export default EventDispatcher;

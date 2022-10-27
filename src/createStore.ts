@@ -196,7 +196,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
       if (listenerKeysIsEmpty || (!listenerKeysIsEmpty && includesFlag)) listener(effectState, prevState, nextState);
     }
     
-    const customEventDispatcher: CustomEventListener<T> = new (EventDispatcher as any)();
+    const customEventDispatcher: CustomEventListener<T> = new EventDispatcher();
     customEventDispatcher.addEventListener(subscribeEventType, listenerOrigin);
     dispatchStoreEffectSetTemp.add(customEventDispatcher);
     

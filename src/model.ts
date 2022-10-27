@@ -31,6 +31,8 @@ export type Listener<T extends State> = (
 
 // 自定义订阅监听函数接口类型
 export interface CustomEventListener<T extends State> {
+  // 监听事件的合集对象
+  events: T;
   addEventListener(type: string | symbol, handle: Listener<T>): void;
   dispatchEvent(
     type: string | symbol,
@@ -44,6 +46,14 @@ export interface CustomEventListener<T extends State> {
    * 所以这里也是直接简化去除removeEventListener
    */
   // removeEventListener(type: string | symbol): void;
+}
+
+// 自定义监听事件的构造函数接口类型
+export interface CustomEventListenerConstructor<T extends State> {
+  // 声明可以作为构造函数调用
+  new (): CustomEventListener<T>;
+  // 声明prototype，支持后续修改prototype（这里主要是构造函数时定义了原型链上面的方法，后续不需要更改）
+  prototype: CustomEventListener<T>;
 }
 
 /**

@@ -11,7 +11,7 @@ export function proxyStateHandle<S extends State>(latestState: Map<keyof S, S[ke
       // latestState给出了resy生成的store内部数据的引用，这里始终能获取到最新数据
       return target.get(key);
     },
-  } as ProxyHandler<Map<keyof S, S[keyof S]>>) as any as S;
+  } as ProxyHandler<Map<keyof S, S[keyof S]>>) as object as S;
 }
 
 // 判断空对象
@@ -24,5 +24,5 @@ export function isEmptyObj(obj: object) {
 
 // 解决回调参数如果是map的proxy代理的话无法做扩展运算的问题
 export function mapToObject<T extends State>(map: Map<keyof T, T[keyof T]>): T {
-  return [...map.entries()].reduce((obj, [key, value]) => ((obj as any as T)[key] = value, obj), {}) as T;
+  return [...map.entries()].reduce((obj, [key, value]) => ((obj as T)[key] = value, obj), {}) as T;
 }

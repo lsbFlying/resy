@@ -63,7 +63,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     if (unmountClear) stateMap = new Map(Object.entries(state));
   });
   storeCoreMap.set("listenerEventType", Symbol("storeListenerSymbol"));
-  storeCoreMap.set("dispatchStoreEffectSet", new Set<CustomEventListener<any>>());
+  storeCoreMap.set("dispatchStoreEffectSet", new Set<CustomEventListener<T>>());
   storeCoreMap.set("dispatchStoreEffect", (effectData: Partial<T>, prevState: T, nextState: T) => {
     (
       storeCoreMap.get("dispatchStoreEffectSet") as StoreCoreMapValue<T>["dispatchStoreEffectSet"]

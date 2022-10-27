@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { State } from "./model";
+import type { State } from "./model";
 import { storeCoreMapKey, useStoreKey } from "./static";
 import { isEmptyObj } from "./utils";
 

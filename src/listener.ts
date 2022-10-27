@@ -1,4 +1,4 @@
-import { State, Listener } from "./model";
+import type { State, Listener } from "./model";
 
 /**
  * created by liushanbao

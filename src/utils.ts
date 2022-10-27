@@ -1,4 +1,4 @@
-import { State } from "./model";
+import type { State } from "./model";
 
 /**
  * 给Comp组件的props上挂载的state属性数据做一层引用代理

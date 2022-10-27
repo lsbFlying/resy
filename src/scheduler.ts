@@ -1,4 +1,4 @@
-import { Callback, Scheduler } from "./model";
+import type { Callback, Scheduler } from "./model";
 import { batchUpdate } from "./static";
 
 // 更新的任务队列

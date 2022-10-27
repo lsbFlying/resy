@@ -1,6 +1,6 @@
 // @ts-ignore
 import { unstable_batchedUpdates } from "react-platform";
-import { Callback } from "./model";
+import type { Callback } from "./model";
 
 /**
  * batchUpdateShimRun

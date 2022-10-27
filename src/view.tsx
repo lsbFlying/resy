@@ -1,5 +1,5 @@
 import isEqual from "react-fast-compare";
-import React, { ComponentType, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, type ComponentType } from "react";
 import type { SetState, State, StoreCoreMapType, StoreCoreMapValue, Subscribe, MapStateToProps } from "./model";
 import { storeCoreMapKey } from "./static";
 import { proxyStateHandle, isEmptyObj } from "./utils";

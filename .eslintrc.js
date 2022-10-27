@@ -21,4 +21,23 @@ module.exports = {
   settings: {
     "import/resolver": { node: { extensions: [".js", ".ts"] } },
   },
+  rules: {
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-use-before-define": [
+      "off",
+      {
+        ignoreTypeReferences: true
+      }
+    ],
+    "@typescript-eslint/ban-types": [
+      "error",
+      {
+        extendDefaults: true,
+        types: {
+          "{}": false
+        }
+      }
+    ]
+  },
 };

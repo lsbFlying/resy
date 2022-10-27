@@ -21,6 +21,8 @@
 <details>
 <summary>changed logs</summary>
 
+🌟`v4.0.2`：修复了view的getDerivedStateFromProps的逻辑数据为空的处理bug
+
 🌟`v4.0.1`：修复了useStore的hookInitialState初始化hook参数的使用时，
 可能存在的多次设置对应的key值问题
 

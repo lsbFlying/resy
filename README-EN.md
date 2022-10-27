@@ -21,6 +21,8 @@
 <details>
 <summary>changed logs</summary>
 
+🌟`v4.0.2`：Fixed the processing bug that the logic data of getDerivedStateFromProps of view is empty
+
 🌟`v4.0.1`：Fixed the problem of setting the corresponding key value multiple times
 when using the hookInitialState initialization hook parameter of useStore
 

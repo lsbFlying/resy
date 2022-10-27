@@ -189,10 +189,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     ) => {
       let includesFlag = false;
       const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
-      if (!listenerKeysIsEmpty) {
-        const effectStateFields = Object.keys(effectState);
-        if (effectStateFields.some(key => stateKeys.includes(key))) includesFlag = true;
-      }
+      if (!listenerKeysIsEmpty && Object.keys(effectState).some(key => stateKeys.includes(key))) includesFlag = true;
       if (listenerKeysIsEmpty || (!listenerKeysIsEmpty && includesFlag)) listener(effectState, prevState, nextState);
     }
     

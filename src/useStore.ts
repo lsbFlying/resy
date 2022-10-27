@@ -24,7 +24,7 @@ export function useStore<S extends State>(store: S, hookInitialState?: Partial<S
       const storeCoreMap = store[storeCoreMapKey as keyof S];
       storeCoreMap.get("setHookFieldsValue")(hookInitialState);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
   return store[useStoreKey as keyof S];

@@ -1,5 +1,5 @@
 import isEqual from "react-fast-compare";
-import React, { useEffect, useMemo, useState, type ComponentType } from "react";
+import React, { useEffect, useMemo, useState, ComponentType } from "react";
 import type { SetState, State, StoreCoreMapType, StoreCoreMapValue, Subscribe, MapStateToProps } from "./model";
 import { storeCoreMapKey } from "./static";
 import { proxyStateHandle } from "./utils";
@@ -65,15 +65,17 @@ export function view<P extends State = {}, S extends State = {}>(
     }
     
     useEffect(() => {
-      // Comp组件内部使用到的数据属性字段数组
-      const innerLinkUseFields = Array.from(linkStateSet);
       // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
       const unsubscribe = store.subscribe((
         effectState,
         prevState,
         nextState,
       ) => {
+        // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
+        const innerLinkUseFields = Array.from(linkStateSet);
+        
         const effectStateFields = Object.keys(effectState);
+        
         if (
           innerLinkUseFields.some(key => effectStateFields.includes(key as string))
           && (!deepEqual || !isEqual(prevState, nextState))
@@ -97,6 +99,7 @@ export function view<P extends State = {}, S extends State = {}>(
         unsubscribe();
         linkStateSet.clear();
       };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     
     return useMemo(() => <Comp {...stateProps} state={state}/>, [state, stateProps]);

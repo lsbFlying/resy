@@ -16,6 +16,7 @@ export type Store = {
     age: number;
   };
   testObj: { name: string };
+  hookBooleanTest: boolean;
 };
 
 const store = createStore<Store>({
@@ -32,6 +33,7 @@ const store = createStore<Store>({
     age: 18,
   },
   testObj: { name: "testObjName" },
+  hookBooleanTest: false,
 });
 
 class ClassCom extends React.PureComponent<MapStateToProps<Store>> {
@@ -58,7 +60,7 @@ const PureClassCom = view(store, ClassCom);
 
 const HookCom = (props: MapStateToProps<Store>) => {
   // view会将store数据挂载到props上新增的state属性上
-  const { hookComTestState } = props.state;
+  const { hookComTestState, hookBooleanTest } = props.state;
   /**
    * 首先，store中的count与text、classComTestState数据属性
    * 无法影响HookCom的re-render
@@ -70,7 +72,14 @@ const HookCom = (props: MapStateToProps<Store>) => {
    */
   console.log(hookComTestState);
   return (
-    <div>View HookCom{hookComTestState}</div>
+    <div>
+      View HookCom{hookComTestState}<br/>
+      {
+        hookBooleanTest && props.state.count !== 0
+          ? <span>hook123</span>
+          : <span>hook456</span>
+      }
+    </div>
   );
 }
 
@@ -141,19 +150,20 @@ test("resy-view", async () => {
         }
       });
     }, []);
-  
+    
     function appTestClick() {
       store.appTestState = `${Math.random()}~appTestState~`;
     }
-  
+    
     function classComTestStateClick() {
       store.classComTestState = `*${Math.random()}classComTestState*`;
     }
-  
+    
     function hookComTestStateClick() {
       store.hookComTestState = `!${Math.random()}hookComTestState!`;
+      store.hookBooleanTest = true;
     }
-  
+    
     /**
      * 总结：相较于resy自身特性的re-render
      * view处理规避的re-render更加完善
@@ -175,6 +185,7 @@ test("resy-view", async () => {
         <Count/>
         <button onClick={countAddFun}>btn+</button>
         <button onClick={() => { store.count--; }}>btn-</button>
+        <button onClick={() => { store.count = 0; }}>btn-zero</button>
         <button onClick={() => { store.setState({}); }}>btn-empty</button>
         <button onClick={() => {
           store.setState({ testComTestState: { name: "liushanbao", age: 18 } });
@@ -204,7 +215,7 @@ test("resy-view", async () => {
   expect(getByText("1099")).toBeInTheDocument();
   expect(getByText("classComTestState")).toBeInTheDocument();
   expect(getByText("hookComTestState")).toBeInTheDocument();
-
+  
   await act(() => {
     fireEvent.click(getByText("class-btn"));
   });
@@ -214,6 +225,12 @@ test("resy-view", async () => {
     fireEvent.click(getByText("hook-btn"));
   });
   expect(getByText("567")).toBeInTheDocument();
+  expect(getByText("hook123")).toBeInTheDocument();
+  
+  await act(() => {
+    fireEvent.click(getByText("btn-zero"));
+  });
+  expect(getByText("hook456")).toBeInTheDocument();
   
   await act(() => {
     fireEvent.click(getByText("btn-empty"));

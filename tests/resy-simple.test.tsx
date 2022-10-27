@@ -10,10 +10,13 @@ test("resy-simple", async () => {
     count2: number;
     text?: string;
     formRef?: any;
+    hookValueTestEmpty?: any;
   }>({ count: 0, count2: 123, });
   
   const AppTest = () => {
     const { count2, formRef } = useStore(store, { formRef: React.useRef<any>() });
+  
+    const { hookValueTestEmpty } = useStore(store, {});
     
     function formBtnClick(event: any) {
       event.preventDefault();
@@ -27,6 +30,7 @@ test("resy-simple", async () => {
     return (
       <form>
         <span>{count2}</span>
+        <span>{hookValueTestEmpty === undefined ? "hookValueTestEmpty" : ""}</span>
         name: <input id="testInput" ref={formRef} type="text" name="Name"/><br/>
         <button onClick={formBtnClick} type="submit">form-button</button>
       </form>
@@ -54,6 +58,8 @@ test("resy-simple", async () => {
   expect(() => createStore()).toThrowError();
   
   const { getByText } = render(<App />);
+  
+  expect(getByText("hookValueTestEmpty")).toBeInTheDocument();
   
   await act(() => {
     fireEvent.click(getByText("inc-btn"));

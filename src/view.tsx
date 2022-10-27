@@ -60,7 +60,7 @@ export function view<P extends State = {}, S extends State = {}>(
     const [stateProps, setStateProps] = useState(props);
     
     // 渲染期间的一次更新恰恰就是 getDerivedStateFromProps 一直以来的概念
-    if (!isEmptyObj(props) && (!deepEqual || !isEqual(props, stateProps))) {
+    if ((!deepEqual && props !== stateProps) || (deepEqual && !isEqual(props, stateProps))) {
       setStateProps(props);
     }
     

@@ -21,10 +21,12 @@
 <details>
 <summary>changed logs</summary>
 
-🌟`v4.0.2`：Fixed the processing bug that the logic data of getDerivedStateFromProps of view is empty
+🌟`v4.0.2`：<br/>
+1. Fixed the processing bug that the logic data of getDerivedStateFromProps of view is empty;<br/>
+2. Fixed the bug of update invalidation caused by missing data reference fields
+due to possible complex reference logic in the components wrapped in the view;
 
-🌟`v4.0.1`：Fixed the problem of setting the corresponding key value multiple times
-when using the hookInitialState initialization hook parameter of useStore
+🌟`v4.0.1`：Fixed the problem of setting the corresponding key value multiple times when using the hookInitialState initialization hook parameter of useStore
 
 🌟`v4.0.0`：resy has been in stable development since v4.0.0,
 the API has been named and will not be changed easily.

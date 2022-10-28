@@ -1,5 +1,5 @@
 import isEqual from "react-fast-compare";
-import React, { useEffect, useMemo, useState, ComponentType } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { SetState, State, StoreCoreMapType, StoreCoreMapValue, Subscribe, MapStateToProps } from "./model";
 import { storeCoreMapKey } from "./static";
 import { proxyStateHandle } from "./utils";
@@ -36,7 +36,7 @@ export type { MapStateToProps };
 export function view<P extends State = {}, S extends State = {}>(
   store: S & SetState<S> & Subscribe<S>,
   // any用于防范某些HOC导致的类型不合一问题，比如withRouter
-  Comp: ComponentType<MapStateToProps<S, P> | any>,
+  Comp: React.ComponentType<MapStateToProps<S, P> | any>,
   deepEqual?: boolean,
 ) {
   return (props: P) => {

@@ -180,17 +180,6 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   function subscribe(listener: Listener<T>, stateKeys?: (keyof T)[]): Unsubscribe {
     const dispatchStoreSetTemp = storeCoreMap.get("dispatchStoreSet") as StoreCoreMapValue<T>["dispatchStoreSet"];
     
-    const listenerOrigin = (
-      effectState: Partial<Omit<T, keyof SetState<T> | keyof Subscribe<T>>>,
-      prevState: Omit<T, keyof SetState<T> | keyof Subscribe<T>>,
-      nextState: Omit<T, keyof SetState<T> | keyof Subscribe<T>>,
-    ) => {
-      let includesFlag = false;
-      const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
-      if (!listenerKeysIsEmpty && Object.keys(effectState).some(key => stateKeys.includes(key))) includesFlag = true;
-      if (listenerKeysIsEmpty || (!listenerKeysIsEmpty && includesFlag)) listener(effectState, prevState, nextState);
-    }
-    
     const customEventDispatcher: CustomEventListener<T> = new EventDispatcher();
     customEventDispatcher.addEventListener(
       /**
@@ -198,7 +187,16 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
        * 这里取一个实例类型常量反而方便节省内存、增加代码执行效率
        */
       storeCoreMap.get("listenerEventType") as StoreCoreMapValue<T>["listenerEventType"],
-      listenerOrigin,
+      (
+        effectState: Partial<Omit<T, keyof SetState<T> | keyof Subscribe<T>>>,
+        prevState: Omit<T, keyof SetState<T> | keyof Subscribe<T>>,
+        nextState: Omit<T, keyof SetState<T> | keyof Subscribe<T>>,
+      ) => {
+        let includesFlag = false;
+        const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
+        if (!listenerKeysIsEmpty && Object.keys(effectState).some(key => stateKeys.includes(key))) includesFlag = true;
+        if (listenerKeysIsEmpty || (!listenerKeysIsEmpty && includesFlag)) listener(effectState, prevState, nextState);
+      },
     );
     dispatchStoreSetTemp.add(customEventDispatcher);
     

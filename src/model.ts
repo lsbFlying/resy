@@ -70,7 +70,7 @@ export interface StoreCoreMapValue<T extends State> {
   // 订阅监听的事件类型
   listenerEventType: string | symbol;
   // 触发订阅监听的影响Set容器
-  dispatchStoreEffectSet: Set<CustomEventListener<T>>;
+  dispatchStoreSet: Set<CustomEventListener<T>>;
   // 触发订阅监听的变动影响
   dispatchStoreEffect: (effectState: Partial<T>, prevState: T, nextState: T) => void;
 }

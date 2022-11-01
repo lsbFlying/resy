@@ -23,7 +23,7 @@
 
 🌟`v4.0.3`：<br/>
 1、修复了view的deepEqual的对比props的逻辑，避免了组件因为props的引用地址的不同产生额外更新渲染的问题；<br/>
-2、同时完善优化了数据订阅监听subscribe代码的执行性能。
+2、完善优化了数据订阅监听"subscribe"代码的执行性能。
 
 🌟`v4.0.2`：<br/>
 1、修复了view的getDerivedStateFromProps的逻辑数据为空的处理bug；<br/>

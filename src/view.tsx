@@ -1,8 +1,8 @@
 import isEqual from "react-fast-compare";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { memo, useEffect, useMemo, useState } from "react";
 import type { SetState, State, StoreCoreMapType, StoreCoreMapValue, Subscribe, MapStateToProps } from "./model";
 import { storeCoreMapKey } from "./static";
-import { proxyStateHandle } from "./utils";
+import { proxyStateHandle, objectOneLevelEqual } from "./utils";
 
 export type { MapStateToProps };
 
@@ -28,10 +28,10 @@ export type { MapStateToProps };
  *
  * @param store resy生成的store数据状态储存容器
  * @param Comp 被包裹的组件
- * @param deepEqual 深度对比
- * 关于deepEqual参数，因为props属于view转换后的组件外界传入的props属性
- * 所以它本身脱离了view的内部数据状态更新控制，更多的是依赖于外界的掌控
- * 是否开启需要开发者自己衡量所能带来的性能收益
+ * @param deepEqual props深度对比
+ * 关于deepEqual参数，它会深对比props与state和之前的props、state状态进行对比
+ * 是否开启需要开发者自己衡量所能带来的性能收益，常规情况下不需要开启此功能
+ * 除非遇到很重量级的组件渲染很耗费性能则开启可以通过JS的计算减轻页面更新渲染的负担
  */
 export function view<P extends State = {}, S extends State = {}>(
   store: S & SetState<S> & Subscribe<S>,
@@ -39,7 +39,7 @@ export function view<P extends State = {}, S extends State = {}>(
   Comp: React.ComponentType<MapStateToProps<S, P> | any>,
   deepEqual?: boolean,
 ) {
-  return (props: P) => {
+  return memo((props: P) => {
     // 引用数据的代理Set
     const linkStateSet: Set<keyof S> = new Set();
     
@@ -56,13 +56,7 @@ export function view<P extends State = {}, S extends State = {}>(
      * 扩展运算符...会读取所有的属性数据，导致内部关联使用数据属性失去准确性
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
-    const [state, setState] = useState<S>(proxyStateHandle(latestState, linkStateSet));
-    const [stateProps, setStateProps] = useState(props);
-    
-    // 渲染期间的一次更新恰恰就是 getDerivedStateFromProps 一直以来的概念
-    if ((!deepEqual && props !== stateProps) || (deepEqual && !isEqual(props, stateProps))) {
-      setStateProps(props);
-    }
+    const [state, setState] = useState<S>(() => proxyStateHandle(latestState, linkStateSet));
     
     useEffect(() => {
       // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
@@ -102,6 +96,9 @@ export function view<P extends State = {}, S extends State = {}>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     
-    return useMemo(() => <Comp {...stateProps} state={state}/>, [state, stateProps]);
-  };
+    return useMemo(() => <Comp {...props} state={state}/>, [state, props]);
+  }, (prevProps: P, nextProps: P) => {
+    if (deepEqual) return isEqual(prevProps, nextProps);
+    return objectOneLevelEqual(prevProps, nextProps);
+  });
 }

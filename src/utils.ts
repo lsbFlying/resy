@@ -26,21 +26,3 @@ export function isEmptyObj(obj: object) {
 export function mapToObject<T extends State>(map: Map<keyof T, T[keyof T]>): T {
   return [...map.entries()].reduce((obj, [key, value]) => ((obj as T)[key] = value, obj), {}) as T;
 }
-
-// 对象一级数据层次的对比
-export function objectOneLevelEqual(object1: object, object2: object) {
-  let compareFlag = true;
-  const objectTemp = Object.keys(object1) > Object.keys(object2) ? object1 : object2;
-  
-  for (const key in objectTemp) {
-    if (
-      Object.prototype.hasOwnProperty.call(objectTemp, key)
-      && object1[key as keyof typeof object1] !== object2[key as keyof typeof object2]
-    ) {
-      compareFlag = false;
-      break;
-    }
-  }
-  
-  return compareFlag;
-}

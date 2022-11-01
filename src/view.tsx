@@ -2,7 +2,7 @@ import isEqual from "react-fast-compare";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import type { SetState, State, StoreCoreMapType, StoreCoreMapValue, Subscribe, MapStateToProps } from "./model";
 import { storeCoreMapKey } from "./static";
-import { proxyStateHandle, objectOneLevelEqual } from "./utils";
+import { proxyStateHandle } from "./utils";
 
 export type { MapStateToProps };
 
@@ -28,8 +28,8 @@ export type { MapStateToProps };
  *
  * @param store resy生成的store数据状态储存容器
  * @param Comp 被包裹的组件
- * @param deepEqual props深度对比
- * 关于deepEqual参数，它会深对比props与state和之前的props、state状态进行对比
+ * @param deepEqual props、state深度对比
+ * 它会深对比props与state和之前的props、state状态进行对比
  * 是否开启需要开发者自己衡量所能带来的性能收益，常规情况下不需要开启此功能
  * 除非遇到很重量级的组件渲染很耗费性能则开启可以通过JS的计算减轻页面更新渲染的负担
  */
@@ -97,8 +97,7 @@ export function view<P extends State = {}, S extends State = {}>(
     }, []);
     
     return useMemo(() => <Comp {...props} state={state}/>, [state, props]);
-  }, (prevProps: P, nextProps: P) => {
-    if (deepEqual) return isEqual(prevProps, nextProps);
-    return objectOneLevelEqual(prevProps, nextProps);
-  });
+  }, deepEqual ? (prevProps: P, nextProps: P) => {
+    return isEqual(prevProps, nextProps);
+  } : undefined);
 }

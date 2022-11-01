@@ -1,11 +1,6 @@
 import typescript from "@rollup/plugin-typescript";
 import dts from "rollup-plugin-dts";
-/**
- * 当前版本有嵌套替换的bug，暂时使用rollup-plugin-replace
- * 后续@rollup/plugin-replace该bug修复后再恢复使用
- */
-// import replace from "@rollup/plugin-replace";
-import replace from "rollup-plugin-replace";
+import replace from "@rollup/plugin-replace";
 import autoExternal from "rollup-plugin-auto-external";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import { babel } from "@rollup/plugin-babel";
@@ -47,12 +42,12 @@ export default [
       {
         format: "es",
         dir: "dist",
-        entryFileNames: "react-platform.js",
+        entryFileNames: "platform.js",
       },
       {
         format: "cjs",
         dir: "dist",
-        entryFileNames: "react-platform.cjs.js",
+        entryFileNames: "platform.cjs.js",
       },
     ],
   },
@@ -63,12 +58,12 @@ export default [
       {
         format: "es",
         dir: "dist",
-        entryFileNames: "react-platform.native.js",
+        entryFileNames: "platform.native.js",
       },
       {
         format: "cjs",
         dir: "dist",
-        entryFileNames: "react-platform.cjs.native.js",
+        entryFileNames: "platform.cjs.native.js",
       },
     ],
   },
@@ -80,12 +75,12 @@ export default [
       format: "cjs",
       exports: "auto",
     },
-    external: [...external, "./react-platform.cjs"],
+    external: [...external, "./platform.cjs"],
     plugins: [
       ...plugins,
       replace({
-        "react-platform": "./react-platform.cjs",
-        // preventAssignment: true,
+        "react-platform": "./platform.cjs",
+        preventAssignment: true,
       }),
     ]
   },
@@ -96,12 +91,12 @@ export default [
       file: "dist/resy.esm.js",
       format: "es",
     },
-    external: [...external, "./react-platform"],
+    external: [...external, "./platform"],
     plugins: [
       ...plugins,
       replace({
-        "react-platform": "./react-platform",
-        // preventAssignment: true,
+        "react-platform": "./platform",
+        preventAssignment: true,
       }),
     ],
   },

@@ -21,6 +21,12 @@
 <details>
 <summary>changed logs</summary>
 
+🌟`v4.0.3`：<br/>
+1、Fixed the logic of comparing props in view's deepEqual, avoiding the problem of additional update
+and rendering due to different reference addresses of props;<br/>
+2、At the same time, it improves and optimizes the execution performance
+of the data subscription listener subscriber code.
+
 🌟`v4.0.2`：<br/>
 1. Fixed the processing bug that the logic data of getDerivedStateFromProps of view is empty;<br/>
 2. Fixed the bug of update invalidation caused by missing data reference fields

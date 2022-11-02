@@ -373,19 +373,21 @@ function App() {
     即使父组件更新了，只要view包裹的组件本身
     没有使用到父组件中更新缘由的属性数据
     那么view包裹的组件就不会re-render
-```
 
-```tsx
 /**
  * view
  *
  * @param store resy生成的store数据状态储存容器
  * @param Comp 被包裹的组件
- * @param deepEqual 深度对比
- * 关于deepEqual参数，因为props属于view转换后的组件外界传入的props属性
- * 所以它本身脱离了view的内部数据状态更新控制，更多的是依赖于外界的掌控
- * 是否开启需要开发者自己衡量所能带来的性能收益
+ * @param deepEqual props、state深度对比
+ * 它会深对比props与state和之前的props、state状态进行对比
+ * 是否开启需要开发者自己衡量所能带来的性能收益，常规情况下不需要开启此功能
+ * 除非遇到很重量级的组件渲染很耗费性能则开启可以通过JS的计算减轻页面更新渲染的负担
  */
+
+```
+
+```tsx
 import { createStore } from "resy";
 
 export type Store = {

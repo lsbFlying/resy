@@ -21,6 +21,11 @@
 <details>
 <summary>changed logs</summary>
 
+🌟`v4.0.4`：<br/>
+1. Fixed the bug that the direct update could not be updated in the next round of update batches similar to the useEffect<br/>
+2. Optimize the execution of add function in direct update mode<br/>
+3. Optimized merge update in the scenario where direct update and setState batch update are mixed
+
 🌟`v4.0.3`：<br/>
 1、Fixed the logic of comparing props in view's deepEqual, avoiding the problem of additional update
 and rendering due to different reference addresses of props;<br/>

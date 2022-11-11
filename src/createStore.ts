@@ -119,7 +119,13 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   function setState(stateParams: Partial<T> | T | StateFunc = {}, callback?: (nextState: T) => void) {
     const { taskDataMap } = (scheduler.get("getTask") as Scheduler<T>["getTask"])();
     
-    // 防止直接更新与setState混用导致直接更新滞后产生的数据未及时得到更新的问题
+    /**
+     * 防止直接更新与setState混用导致直接更新滞后产生的数据未及时得到更新的问题
+     * 因为本身直接更新的方式是异步的，而批量更新setState的方式是同步的，
+     * 所以如果在同一个事件循环的批次之中setState批量更新的前面写了直接更新的方式
+     * 那么直观上在前直接更新会滞后与在后的批量更新setState，这不符合直觉感受
+     * 所以将前面的直接更新与setState的批量更新在同一个事件循环中合并作为一个批次更新处理
+     */
     if (taskDataMap.size !== 0) {
       // setState前面代码中的直接更新的这一轮更新先冲刷掉，放在后面batchUpdate中做一个批次更新
       (scheduler.get("flush") as Scheduler<T>["flush"])();

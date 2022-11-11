@@ -166,7 +166,10 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     }
     const changedData = typeof stateParams === "function" ? stateMap : new Map(Object.entries(stateParams));
     batchDispatch(prevState, changedData);
-    callback?.(mapToObject(stateMap));
+    const timeId = callback && setTimeout(() => {
+      callback(mapToObject(stateMap));
+      clearTimeout(timeId as any);
+    }, 0);
   }
   
   /** 批量触发订阅监听的数据变动 */

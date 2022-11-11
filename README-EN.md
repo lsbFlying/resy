@@ -120,10 +120,11 @@ function App() {
 ```
 
 ```tsx
-import { useMemo } from "react";
-import { createStore, useStore } from "resy";
-import { Form } from "antd";
-import { FormInstance } from "antd/es/form";
+import {useMemo} from "react";
+import {createStore, useStore} from "resy";
+import {Form} from "antd";
+import {FormInstance} from "antd/es/form";
+import {Input} from "postcss";
 
 const initialState = {
   count: 123,
@@ -147,7 +148,7 @@ function App() {
    * However, if the default data is initialized, some hooks need to be generated
    * In this case, you need to use the second parameter of useStore ———— initialization data parameter
    */
-  const { count, form } = useStore(
+  const {count, form} = useStore(
     store,
     {
       form: Form.useForm<{ sortNumber: number }>()[0],
@@ -162,10 +163,14 @@ function App() {
   }
   
   return (
-    <>
+    <Form form={form} components={false}>
       <p>{count}</p>
-      <button onClick={}>test button</button><br/>
-    </>
+      <button onClick={}>test button</button>
+      <br/>
+      <Form.Item name="sortNumber">
+        <InputNumber/>
+      </Form.Item>
+    </Form>
   );
 }
 ```

@@ -159,10 +159,13 @@ function App() {
   }
   
   return (
-    <>
+    <Form form={form} components={false}>
       <p>{count}</p>
       <button onClick={}>测试按钮</button><br/>
-    </>
+      <Form.Item name="sortNumber">
+        <InputNumber/>
+      </Form.Item>
+    </Form>
   );
 }
 ```

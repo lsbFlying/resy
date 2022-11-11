@@ -80,7 +80,7 @@ test("resy-basic", async () => {
         <button onClick={() => {
           store.setState({
             sex: "man",
-            count: store.count--,
+            count: store.count - 1,
             testArr: store.testArr.map(item => ({ ...item, age: --item.age }))
           });
         }}>btn4</button>
@@ -153,7 +153,7 @@ test("resy-basic", async () => {
   await act(() => {
     fireEvent.click(getByText("btn4"));
   });
-  expect(getByText("2")).toBeInTheDocument();
+  expect(getByText("1")).toBeInTheDocument();
   expect(getByText("Alen：11")).toBeInTheDocument();
   expect(getByText("man")).toBeInTheDocument();
 

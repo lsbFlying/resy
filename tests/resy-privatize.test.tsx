@@ -25,7 +25,7 @@ test("resy-simple", async () => {
     );
   };
   
-  const { getByText } = render(<App />);
+  const { getByText } = render(<App/>);
   
   await act(() => {
     fireEvent.click(getByText("inc-btn"));

@@ -57,7 +57,7 @@ test("resy-simple", async () => {
   // @ts-ignore
   expect(() => createStore()).toThrowError();
   
-  const { getByText } = render(<App />);
+  const { getByText } = render(<App/>);
   
   expect(getByText("hookValueTestEmpty")).toBeInTheDocument();
   

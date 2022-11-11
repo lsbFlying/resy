@@ -97,35 +97,26 @@ export interface StateFunc {
 }
 
 /**
- * @description setState —————— resy生成的store上挂载的更新方法
+ * @description setState —————— 更新数据的函数，主要是为了批量更新
  *
- * 1、resy需要setState最主要的原因是需要setState的回调功能
- * 它的回调函数的参数是最新的数据，或者在回调函数中通过store.来获取最新数据
- * 因为resy的更新是异步的，于是需要同步获取数据时就需要setState的回调
- * 它相当于class组件的setState的回调
+ * 1、resy需要setState最主要的原因是setState本身的使用方式在编码的时候具备很好的读写能力，
+ * 支持扩展运算符的对象数据更新的便捷、函数入参的循环更新的宽泛，都让setState具备更强的生命力
  *
- * 2、setState本身的使用方式在编码的时候具备很好的读写能力，
- * 扩展运算符的对象数据更新的便捷、函数入参的循环更新的宽泛，都让setState具备更强的生命力
- *
- * 3、setState是挂载在每一个resy生成的store数据上面的方法
+ * 2、从V4.0.4开始setState移除了回调函数的功能，因为setState本身是同步更新数据的，
+ * setState执行完成之后直接通过store可以读取获取到最新数据值
+ * 所以在考虑再三之后决定简化使用移除了callback
  *
  * @example A
  * store.setState({
  *   count: 123,
  *   text: "updateText",
- * }, (nextState) => {
- *   // nextState：最新的数据值
- *   // 可以理解为this.setState中的回调中的this.state
- *   // 同时这一点也弥补了：
- *   // hook组件中setState后只能通过useEffect来获取最新数据的方式
- *   console.log(nextState);
  * });
+ *
+ * @description 函数入参方式主要是为了某些复杂的更新逻辑，比如在循环中更新的批量化
  * @example B
  * store.setState(() => {
  *   store.count = 123;
  *   store.text = "updateText";
- * }, (nextState) => {
- *   console.log(nextState);
  * });
  */
 export type SetState<T extends State> = Readonly<{
@@ -154,8 +145,14 @@ export type MapStateToProps<S extends State, P extends State = {}> = P & {
 }
 
 // resy的调度类型接口
-export interface Scheduler<T = State> {
-  add<T>(task: Callback, key: keyof T, val: T[keyof T]): Promise<void>;
+export interface Scheduler<T extends State = {}> {
+  /** 新增直接更新数据的key/value以及相应的任务函数 */
+  add(task: Callback, key: keyof T, val: T[keyof T]): Promise<void>;
+  /** 冲刷任务数据与任务队列 */
   flush(): void;
-  getTaskDataMap(): Map<keyof T, T[keyof T]>;
+  /** 获取任务数据与任务队列 */
+  getTask(): {
+    taskDataMap: Map<keyof T, T[keyof T]>,
+    taskQueueMap: Map<string | number | symbol, Callback>,
+  };
 }

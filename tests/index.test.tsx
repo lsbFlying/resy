@@ -54,7 +54,7 @@ test("resy-basic", async () => {
           store.testObj = { age: 12 };
         }
       }, ["sex", "text"]);
-      return unsubscribe
+      return unsubscribe;
     }, []);
     
     return (
@@ -131,7 +131,7 @@ test("resy-basic", async () => {
     );
   };
 
-  const { getByText, queryByText } = render(<App />);
+  const { getByText, queryByText } = render(<App/>);
 
   await act(() => {
     fireEvent.click(getByText("btn1"));

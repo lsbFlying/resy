@@ -206,7 +206,7 @@ test("resy-view", async () => {
     );
   };
   
-  const { getByText } = render(<App />);
+  const { getByText } = render(<App/>);
   
   await act(() => {
     fireEvent.click(getByText("app-btn"));

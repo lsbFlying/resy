@@ -34,7 +34,7 @@ test("resy-set-and-sub3", async () => {
     );
   };
   
-  const { getByText } = render(<App />);
+  const { getByText } = render(<App/>);
   
   await act(() => {
     fireEvent.click(getByText("btn1"));

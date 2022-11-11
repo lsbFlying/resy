@@ -21,6 +21,11 @@
 <details>
 <summary>changed logs</summary>
 
+🌟`vx.x.x`：<br/>
+1、修复了直接更新在相近的下一轮的更新批次中无法得到更新的bug
+2、优化直接更新方式的add函数的执行
+3、优化了直接更新与setState批量更新混用的场景中的合并更新
+
 🌟`v4.0.3`：<br/>
 1、修复了view的deepEqual的对比props的逻辑，避免了组件因为props的引用地址的不同产生额外更新渲染的问题；<br/>
 2、完善优化了数据订阅监听"subscribe"代码的执行性能。

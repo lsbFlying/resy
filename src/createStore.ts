@@ -78,7 +78,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   // 数据存储容器storeMap
   const storeMap: StoreMap<T> = new Map();
   
-  // 生成storeMap键值对
+  /** 生成storeMap键值对 */
   function genStoreMapKeyValue(key: keyof T) {
     /**
      * 这里使用set不使用纯对象或者数组的原因很简单：
@@ -115,17 +115,38 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     storeMap.set(key, storeMapValue);
   }
   
-  // 详细注释描述见model文件SetState接口类型文档描述
+  /** 详细注释描述见model文件SetState接口类型文档描述 */
   function setState(stateParams: Partial<T> | T | StateFunc = {}, callback?: (nextState: T) => void) {
-    const taskDataMap = (scheduler.get("getTaskDataMap") as Scheduler["getTaskDataMap"])();
+    const { taskDataMap } = (scheduler.get("getTask") as Scheduler<T>["getTask"])();
+    
     // 防止直接更新与setState混用导致直接更新滞后产生的数据未及时得到更新的问题
     if (taskDataMap.size !== 0) {
-      (scheduler.get("flush") as Scheduler["flush"])();
+      // setState前面代码中的直接更新的这一轮更新先冲刷掉，放在后面batchUpdate中做一个批次更新
+      (scheduler.get("flush") as Scheduler<T>["flush"])();
+      stateParams = typeof stateParams !== "function"
+        ? { ...stateParams, ...mapToObject(taskDataMap) }
+        : stateParams;
     }
+    
     // 必须在更新之前执行，获取更新之前的数据
     const prevState = new Map(stateMap);
     if (typeof stateParams === "function") {
-      batchUpdate(stateParams as StateFunc);
+      batchUpdate(() => {
+        /**
+         * 1、如果stateParams是函数的情况并且在函数中使用了直接更新的方式更新数据
+         * 那么这里需要先调用stateParams函数，产生一个直接更新的新一轮的批次更新
+         * 然后再直接检查产生的直接更新中这一轮的批次中的最新任务数据与任务队列，然后进行冲刷与更新
+         *
+         * 2、如果stateParams函数中不是使用直接更新的方式，
+         * 而是又使用了setState，那么会走到else分支仍然批量更新
+         */
+        (stateParams as StateFunc)();
+        const { taskDataMap: taskDataMapLatest, taskQueueMap: taskQueueMapLatest } = (scheduler.get("getTask") as Scheduler<T>["getTask"])();
+        if (taskDataMapLatest.size !== 0) {
+          (scheduler.get("flush") as Scheduler<T>["flush"])();
+          taskQueueMapLatest.forEach(task => task());
+        }
+      });
     } else {
       batchUpdate(() => {
         Object.keys(stateParams).forEach(key => {
@@ -142,7 +163,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     callback?.(mapToObject(stateMap));
   }
   
-  // 批量触发订阅监听的数据变动
+  /** 批量触发订阅监听的数据变动 */
   function batchDispatch(prevState: Map<keyof T, T[keyof T]>, changedData: Map<keyof T, T[keyof T]>) {
     if (changedData.size > 0 && (storeCoreMap.get("dispatchStoreSet") as StoreCoreMapValue<T>["dispatchStoreSet"]).size > 0) {
       /**
@@ -238,7 +259,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
       return externalMap.get(key as keyof ExternalMapValue<T>) || stateMap.get(key);
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
-      (scheduler.get("add") as Scheduler["add"])(
+      (scheduler.get("add") as Scheduler<T>["add"])(
         () => (
           (
             initialValueLinkStore(key).get(key) as StoreMapValue<T>
@@ -255,10 +276,14 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
          * 由此可见为了实现批量更新与同步获取最新数据有点拆东墙补西墙的味道
          * 但好在setState的回调弥补了同步获取最新数据的问题
          */
-        const taskDataMap = (scheduler.get("getTaskDataMap") as Scheduler["getTaskDataMap"])();
+        const { taskDataMap, taskQueueMap } = (scheduler.get("getTask") as Scheduler<T>["getTask"])();
+        
+        // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
+        (scheduler.get("flush") as Scheduler<T>["flush"])();
+        
         if (taskDataMap.size !== 0) {
           const prevState = new Map(stateMap);
-          (scheduler.get("flush") as Scheduler["flush"])();
+          batchUpdate(() => taskQueueMap.forEach(task => task()));
           batchDispatch(prevState, taskDataMap);
         }
       });

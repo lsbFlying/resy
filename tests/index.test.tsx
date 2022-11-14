@@ -14,7 +14,7 @@ test("resy-basic", async () => {
     testFun: () => void;
     sex?: "man" | "woman" | string;
   };
-
+  
   // 生成的这个store可以全局共享，直接引入store即可
   const store = createStore<Store>(
     {
@@ -39,7 +39,7 @@ test("resy-basic", async () => {
   );
   
   let index = 0;
-
+  
   const App = () => {
     const { count, text, testFun, testObj, testArr, sex } = useStore(store);
     index++;
@@ -140,33 +140,33 @@ test("resy-basic", async () => {
       </>
     );
   };
-
+  
   const { getByText, queryByText } = render(<App/>);
-
+  
   await act(() => {
     fireEvent.click(getByText("btn1"));
   });
   expect(getByText("1")).toBeInTheDocument();
-
+  
   await act(() => {
     fireEvent.click(getByText("btn2"));
   });
   expect(getByText("2")).toBeInTheDocument();
   expect(getByText("456asd")).toBeInTheDocument();
-
+  
   await act(() => {
     fireEvent.click(getByText("btn3"));
   });
   expect(getByText("2")).toBeInTheDocument();
   expect(getByText("Jack")).toBeInTheDocument();
-
+  
   await act(() => {
     fireEvent.click(getByText("btn4"));
   });
   expect(getByText("1")).toBeInTheDocument();
   expect(getByText("Alen：11")).toBeInTheDocument();
   expect(getByText("man")).toBeInTheDocument();
-
+  
   await act(() => {
     fireEvent.click(getByText("btn5"));
   });

@@ -15,7 +15,7 @@ test("resy-simple", async () => {
   
   const AppTest = () => {
     const { count2, formRef } = useStore(store, { formRef: React.useRef<any>() });
-  
+    
     const { hookValueTestEmpty } = useStore(store, {});
     
     function formBtnClick(event: any) {

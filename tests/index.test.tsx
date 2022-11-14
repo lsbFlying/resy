@@ -200,7 +200,7 @@ test("resy-basic", async () => {
     console.log("btn9", index); // btn9, 12
   });
   
-  // btn10可以看出，waitFor无法等待setTimeout，setTimeout甚至根本无法写在测试文件中生效
+  // btn10可以看出，waitFor无法等待setTimeout
   fireEvent.click(getByText("btn10"));
   await waitFor(async () => {
     console.log("btn10", index); // btn10, 12

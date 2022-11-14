@@ -40,6 +40,9 @@ test("resy-simple", async () => {
         <span>{state.text || ""}</span>
         <button onClick={() => {
           store.count++;
+        }}>btn-1</button>
+        <button onClick={() => {
+          store.count++;
           store.setState({
             text: "test text",
           });
@@ -56,10 +59,15 @@ test("resy-simple", async () => {
   
   expect(getByText("hookValueTestEmpty")).toBeInTheDocument();
   
-  fireEvent.click(getByText("inc-btn"));
+  fireEvent.click(getByText("btn-1"));
   await waitFor(() => {
     getByText("1");
-  })
+  });
+  
+  fireEvent.click(getByText("inc-btn"));
+  await waitFor(() => {
+    getByText("2");
+  });
   
   fireEvent.click(getByText("form-button"));
   getAllByDisplayValue("QWE");

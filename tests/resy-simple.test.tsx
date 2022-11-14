@@ -1,8 +1,7 @@
-import React, {useEffect} from "react";
+import React from "react";
 import { expect, test } from "vitest";
 import { createStore, useStore } from "../src";
 import { fireEvent, render } from "@testing-library/react";
-import { act } from "react-dom/test-utils";
 
 test("resy-simple", async () => {
   const store = createStore<{
@@ -22,10 +21,6 @@ test("resy-simple", async () => {
       event.preventDefault();
       formRef.current.value = "QWE";
     }
-    
-    useEffect(() => {
-      store.count2 = 999;
-    }, [formRef.current]);
     
     return (
       <form>
@@ -57,21 +52,13 @@ test("resy-simple", async () => {
   // @ts-ignore
   expect(() => createStore()).toThrowError();
   
-  const { getByText } = render(<App/>);
+  const { getByText, getAllByDisplayValue } = render(<App/>);
   
   expect(getByText("hookValueTestEmpty")).toBeInTheDocument();
   
-  await act(() => {
-    fireEvent.click(getByText("inc-btn"));
-  });
-  /**
-   * 由于resy的更新是异步的
-   * 所以这里需要等待后才能获取到页面的最新渲染
-   */
-  expect(getByText("1")).toBeInTheDocument();
+  fireEvent.click(getByText("inc-btn"));
+  getByText("1");
   
-  await act(() => {
-    fireEvent.click(getByText("form-button"));
-  });
-  expect(getByText("999")).toBeInTheDocument();
+  fireEvent.click(getByText("form-button"));
+  getAllByDisplayValue("QWE");
 });

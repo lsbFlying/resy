@@ -1,8 +1,7 @@
 import React, { useMemo } from "react";
-import { expect, test } from "vitest";
+import { test } from "vitest";
 import { createStore, useStore } from "../src";
-import { fireEvent, render } from "@testing-library/react";
-import { act } from "react-dom/test-utils";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 
 test("resy-simple", async () => {
   const initialState = {
@@ -27,9 +26,8 @@ test("resy-simple", async () => {
   
   const { getByText } = render(<App/>);
   
-  await act(() => {
-    fireEvent.click(getByText("inc-btn"));
+  fireEvent.click(getByText("inc-btn"));
+  await waitFor(() => {
+    getByText("124");
   });
-  
-  expect(getByText("124")).toBeInTheDocument();
 });

@@ -1,8 +1,7 @@
 import React from "react";
 import { expect, test } from "vitest";
 import { createStore, useStore } from "../src";
-import { fireEvent, render } from "@testing-library/react";
-import { act } from "react-dom/test-utils";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 
 let gCount = 0;
 
@@ -19,13 +18,13 @@ test("resy-set-and-sub4", async () => {
         <button onClick={() => {
           store.text2 = "iop";
           store.setState({ text: "jkl" });
-        }}>按钮1</button>
+        }}>btn-1</button>
         <button onClick={() => {
           store.text2 = "zxc";
           store.setState(() => {
             store.text = "bnm";
           });
-        }}>按钮2</button>
+        }}>btn-2</button>
         <button onClick={() => {
           store.text2 = "fgh";
           store.setState(() => {
@@ -33,7 +32,7 @@ test("resy-set-and-sub4", async () => {
               text: "dfg",
             });
           });
-        }}>按钮3</button>
+        }}>btn-3</button>
         <button onClick={() => {
           store.setState({
             text2: "<>",
@@ -41,39 +40,33 @@ test("resy-set-and-sub4", async () => {
           store.setState({
             text: "{}",
           });
-        }}>按钮4</button>
+        }}>btn-4</button>
         <button onClick={() => {
           store.text2 = "~!@";
           store.text = ")_+";
-        }}>按钮5</button>
+        }}>btn-5</button>
       </>
     );
   };
   
   const { getByText } = render(<App/>);
   
-  await act(() => {
-    fireEvent.click(getByText("按钮1"));
-  });
+  fireEvent.click(getByText("btn-1"));
   expect(gCount === 2).toBeTruthy();
   
-  await act(() => {
-    fireEvent.click(getByText("按钮2"));
-  });
+  fireEvent.click(getByText("btn-2"));
   expect(gCount === 3).toBeTruthy();
   
-  await act(() => {
-    fireEvent.click(getByText("按钮3"));
-  });
+  fireEvent.click(getByText("btn-3"));
   expect(gCount === 4).toBeTruthy();
   
-  await act(() => {
-    fireEvent.click(getByText("按钮4"));
-  });
+  fireEvent.click(getByText("btn-4"));
   expect(gCount === 5).toBeTruthy();
   
-  await act(() => {
-    fireEvent.click(getByText("按钮5"));
+  fireEvent.click(getByText("btn-5"));
+  console.log(gCount);
+  await waitFor(() => {
+    console.log("waitFor", gCount, gCount === 6);
+    expect(gCount === 6).toBeTruthy();
   });
-  expect(gCount === 6).toBeTruthy();
 });

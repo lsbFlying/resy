@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import EventDispatcher from "../src/listener";
-import { expect, test } from "vitest";
+import { test } from "vitest";
 import { createStore, useStore } from "../src";
 import { fireEvent, render } from "@testing-library/react";
-import { act } from "react-dom/test-utils";
 import { batchUpdateShimRun } from "../src/static";
 import { CustomEventListener } from "../src/model";
 
@@ -12,7 +11,7 @@ test("resy-set-and-sub3", async () => {
   
   const App = () => {
     const { text } = useStore(store);
-    const [eventListener] = useState<CustomEventListener<any>>(new (EventDispatcher as any)());
+    const [eventListener] = useState<CustomEventListener<any>>(new EventDispatcher());
     useEffect(() => {
       eventListener.addEventListener("testListener", (effectState) => {
         store.setState({ text: effectState.testListenerData });
@@ -36,13 +35,9 @@ test("resy-set-and-sub3", async () => {
   
   const { getByText } = render(<App/>);
   
-  await act(() => {
-    fireEvent.click(getByText("btn1"));
-  });
-  expect(getByText("testListenerData")).toBeInTheDocument();
+  fireEvent.click(getByText("btn1"));
+  getByText("testListenerData");
   
-  await act(() => {
-    fireEvent.click(getByText("btn2"));
-  });
-  expect(getByText("batchUpdateShimRunTestListener")).toBeInTheDocument();
+  fireEvent.click(getByText("btn2"));
+  getByText("batchUpdateShimRunTestListener");
 });

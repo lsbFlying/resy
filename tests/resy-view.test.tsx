@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { expect, test } from "vitest";
 import { createStore, useStore, MapStateToProps, view } from "../src";
-import { fireEvent, render } from "@testing-library/react";
-import { act } from "react-dom/test-utils";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 
 export type Store = {
   appTestState: string;
@@ -208,52 +207,42 @@ test("resy-view", async () => {
   
   const { getByText } = render(<App/>);
   
-  await act(() => {
-    fireEvent.click(getByText("app-btn"));
+  fireEvent.click(getByText("app-btn"));
+  await waitFor(() => {
+    getByText(`Text：${store.appTestState}`)
   });
-  expect(getByText(`Text：${store.appTestState}`)).toBeInTheDocument();
   expect(getByText("1099")).toBeInTheDocument();
   expect(getByText("classComTestState")).toBeInTheDocument();
   expect(getByText("hookComTestState")).toBeInTheDocument();
   
-  await act(() => {
-    fireEvent.click(getByText("class-btn"));
+  fireEvent.click(getByText("class-btn"));
+  await waitFor(() => {
+    getByText("18756");
   });
-  expect(getByText("18756")).toBeInTheDocument();
   
-  await act(() => {
-    fireEvent.click(getByText("hook-btn"));
+  fireEvent.click(getByText("hook-btn"));
+  await waitFor(() => {
+    getByText("567");
+    getByText("hook123");
   });
-  expect(getByText("567")).toBeInTheDocument();
-  expect(getByText("hook123")).toBeInTheDocument();
   
-  await act(() => {
-    fireEvent.click(getByText("btn-zero"));
+  fireEvent.click(getByText("btn-zero"));
+  await waitFor(() => {
+    getByText("hook456");
   });
-  expect(getByText("hook456")).toBeInTheDocument();
   
-  await act(() => {
-    fireEvent.click(getByText("btn-empty"));
-  });
-  expect(getByText("567")).toBeInTheDocument();
+  fireEvent.click(getByText("btn-empty"));
+  getByText("567");
   
-  await act(() => {
-    fireEvent.click(getByText("viewDeepEqual"));
-  });
-  expect(getByText("数量：1")).toBeInTheDocument();
+  fireEvent.click(getByText("viewDeepEqual"));
+  getByText("数量：1");
   
-  await act(() => {
-    fireEvent.click(getByText("viewDeepEqual2"));
-  });
-  expect(getByText("数量：2")).toBeInTheDocument();
+  fireEvent.click(getByText("viewDeepEqual2"));
+  getByText("数量：2");
   
-  await act(() => {
-    fireEvent.click(getByText("viewDeepEqual3"));
-  });
-  expect(getByText("testObj：testObjName")).toBeInTheDocument();
+  fireEvent.click(getByText("viewDeepEqual3"));
+  getByText("testObj：testObjName");
   
-  await act(() => {
-    fireEvent.click(getByText("viewDeepEqual4"));
-  });
-  expect(getByText("testObj：qweiop")).toBeInTheDocument();
+  fireEvent.click(getByText("viewDeepEqual4"));
+  getByText("testObj：qweiop");
 });

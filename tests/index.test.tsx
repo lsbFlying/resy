@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { test, expect } from "vitest";
-import { render, fireEvent } from "@testing-library/react";
-import { act } from "react-dom/test-utils";
+import { render, fireEvent, waitFor } from "@testing-library/react";
 import { createStore, useStore } from "../src";
 
 test("resy-basic", async () => {
@@ -124,14 +123,22 @@ test("resy-basic", async () => {
         }}>btn9</button>
         <button onClick={() => {
           store.setState(() => {
-            setTimeout(() => {
+            setTimeout(async () => {
               store.count = 123;
+              await waitFor(() => {
+                console.log(index === 13, index);
+                expect(index === 13).toBeTruthy();
+              });
             }, 0);
-          }, (nextState) => {
+          }, async (nextState) => {
             store.setState({
               count: nextState.count + 1,
             });
             expect(store.count === 124).toBeTruthy();
+            await waitFor(() => {
+              console.log(index === 14, index);
+              expect(index === 14).toBeTruthy();
+            });
           });
         }}>btn10</button>
         <button onClick={() => {
@@ -143,65 +150,64 @@ test("resy-basic", async () => {
   
   const { getByText, queryByText } = render(<App/>);
   
-  await act(() => {
-    fireEvent.click(getByText("btn1"));
-  });
-  expect(getByText("1")).toBeInTheDocument();
-  
-  await act(() => {
-    fireEvent.click(getByText("btn2"));
-  });
-  expect(getByText("2")).toBeInTheDocument();
-  expect(getByText("456asd")).toBeInTheDocument();
-  
-  await act(() => {
-    fireEvent.click(getByText("btn3"));
-  });
-  expect(getByText("2")).toBeInTheDocument();
-  expect(getByText("Jack")).toBeInTheDocument();
-  
-  await act(() => {
-    fireEvent.click(getByText("btn4"));
-  });
-  expect(getByText("1")).toBeInTheDocument();
-  expect(getByText("Alen：11")).toBeInTheDocument();
-  expect(getByText("man")).toBeInTheDocument();
-  
-  await act(() => {
-    fireEvent.click(getByText("btn5"));
-  });
-  expect(queryByText("Forrest Gump")).toBeNull();
-  expect(queryByText("Forrest Gump：7")).toBeNull();
-  
-  await act(() => {
-    fireEvent.click(getByText("btn6"));
-  });
-  expect(queryByText("man")).toBeNull();
-  expect(getByText("no-sex")).toBeInTheDocument();
-  
-  await act(() => {
-    fireEvent.click(getByText("btn7"));
-  });
-  expect(getByText("batch-forEach")).toBeInTheDocument();
-  expect(getByText("testObj-age:12")).toBeInTheDocument();
-  
-  await act(() => {
-    fireEvent.click(getByText("btn8"));;
-  });
-  expect(getByText("999")).toBeInTheDocument();
-  
-  await act(() => {
-    fireEvent.click(getByText("btn9"));
-  });
-  expect(getByText("999666")).toBeInTheDocument();
-  
-  await act(() => {
-    fireEvent.click(getByText("btn10"));
+  fireEvent.click(getByText("btn1"));
+  await waitFor(() => {
+    getByText("1");
   });
   
-  await act(() => {
-    fireEvent.click(getByText("btn11"));;
+  fireEvent.click(getByText("btn2"));
+  await waitFor(() => {
+    getByText("2");
   });
-  // 因为btn10中回调是setTimeOut，在事件循环中最后还没有来得及执行，到这里是12次更新，加上原始的一次渲染于是是13
-  expect(index === 13).toBeTruthy();
+  getByText("456asd");
+  
+  fireEvent.click(getByText("btn3"));
+  getByText("2");
+  await waitFor(() => {
+    getByText("Jack");
+  });
+  
+  fireEvent.click(getByText("btn4"));
+  getByText("1");
+  getByText("Alen：11");
+  getByText("man");
+  
+  fireEvent.click(getByText("btn5"));
+  queryByText("Forrest Gump");
+  queryByText("Forrest Gump：7");
+  
+  fireEvent.click(getByText("btn6"));
+  queryByText("man");
+  await waitFor(() => {
+    getByText("no-sex");
+  });
+  
+  fireEvent.click(getByText("btn7"));
+  getByText("batch-forEach");
+  await waitFor(() => {
+    getByText("testObj-age:12");
+  });
+  
+  fireEvent.click(getByText("btn8"));
+  await waitFor(() => {
+    getByText("999");
+    console.log("btn8", index); // btn8, 10
+  });
+  
+  fireEvent.click(getByText("btn9"));
+  await waitFor(() => {
+    getByText("999666");
+    console.log("btn9", index); // btn9, 12
+  });
+  
+  // btn10可以看出，waitFor无法等待setTimeout，setTimeout甚至根本无法写在测试文件中生效
+  fireEvent.click(getByText("btn10"));
+  await waitFor(async () => {
+    console.log("btn10", index); // btn10, 12
+    await expect(index === 12).toBeTruthy();
+  });
+  fireEvent.click(getByText("btn11"));
+  await waitFor(() => {
+    console.log("btn11", index); // btn11, 12
+  });
 });

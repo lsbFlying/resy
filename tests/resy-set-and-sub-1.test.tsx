@@ -1,8 +1,7 @@
 import React, { useEffect } from "react";
-import { expect, test } from "vitest";
+import { test } from "vitest";
 import { createStore, useStore } from "../src";
-import { fireEvent, render } from "@testing-library/react";
-import { act } from "react-dom/test-utils";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 
 test("resy-set-and-sub1", async () => {
   const store = createStore({ count: 0, text: "poiu" });
@@ -26,9 +25,9 @@ test("resy-set-and-sub1", async () => {
   
   const { getByText } = render(<App/>);
   
-  await act(() => {
-    fireEvent.click(getByText("inc-btn"));
+  fireEvent.click(getByText("inc-btn"));
+  getByText("1");
+  await waitFor(() => {
+    getByText("Arosy");
   });
-  expect(getByText("1")).toBeInTheDocument();
-  expect(getByText("Arosy")).toBeInTheDocument();
 });

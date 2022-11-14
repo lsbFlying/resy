@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import EventDispatcher from "../src/listener";
 import { test } from "vitest";
 import { createStore, useStore } from "../src";
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 import { batchUpdateShimRun } from "../src/static";
 import { CustomEventListener } from "../src/model";
 
@@ -36,8 +36,12 @@ test("resy-set-and-sub3", async () => {
   const { getByText } = render(<App/>);
   
   fireEvent.click(getByText("btn1"));
-  getByText("testListenerData");
+  await waitFor(() => {
+    getByText("testListenerData");
+  });
   
   fireEvent.click(getByText("btn2"));
-  getByText("batchUpdateShimRunTestListener");
+  await waitFor(() => {
+    getByText("batchUpdateShimRunTestListener");
+  });
 });

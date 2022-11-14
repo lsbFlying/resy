@@ -27,8 +27,8 @@ test("resy-set-and-sub2", async () => {
   const { getByText } = render(<App/>);
   
   fireEvent.click(getByText("inc-btn"));
-  getByText("1");
   await waitFor(() => {
+    getByText("1");
     getByText("Arosy");
   });
 });

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { expect, test } from "vitest";
+import { test } from "vitest";
 import { createStore, useStore, MapStateToProps, view } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 
@@ -9,7 +9,6 @@ export type Store = {
   hookComTestState: string;
   count: number;
   text: string;
-  countAddFun: () => void;
   testComTestState: {
     name: string;
     age: number;
@@ -24,9 +23,6 @@ const store = createStore<Store>({
   hookComTestState: "hookComTestState",
   count: 123,
   text: "123qwe",
-  countAddFun: () => {
-    store.count++;
-  },
   testComTestState: {
     name: "liushanbao",
     age: 18,
@@ -136,7 +132,7 @@ test("resy-view", async () => {
   
   const App = () => {
     const {
-      appTestState, classComTestState, hookComTestState, countAddFun, testObj,
+      appTestState, classComTestState, hookComTestState, testObj,
     } = useStore(store);
     
     useEffect(() => {
@@ -182,22 +178,14 @@ test("resy-view", async () => {
         <div onClick={hookComTestStateClick}>hook-btn</div>
         <Text/>
         <Count/>
-        <button onClick={countAddFun}>btn+</button>
-        <button onClick={() => { store.count--; }}>btn-</button>
         <button onClick={() => { store.count = 0; }}>btn-zero</button>
         <button onClick={() => { store.setState({}); }}>btn-empty</button>
         <button onClick={() => {
-          store.setState({ testComTestState: { name: "liushanbao", age: 18 } });
-        }}>viewDeepEqual</button>
-        <button onClick={() => {
           store.setState({ testComTestState: { name: "liushanbao", age: 19 } });
-        }}>viewDeepEqual2</button>
+        }}>viewDeepEqual-1</button>
         <button onClick={() => {
           store.setState({ testObj: { name: "testObjName" } });
-        }}>viewDeepEqual3</button>
-        <button onClick={() => {
-          store.setState({ testObj: { name: "qweiop" } });
-        }}>viewDeepEqual4</button>
+        }}>viewDeepEqual-2</button>
         <PureClassCom/>
         <PureHookCom/>
         <PureTestCom testObj={testObj}/>
@@ -210,10 +198,10 @@ test("resy-view", async () => {
   fireEvent.click(getByText("app-btn"));
   await waitFor(() => {
     getByText(`Text：${store.appTestState}`)
+    getByText("1099");
+    getByText("classComTestState");
+    getByText("hookComTestState");
   });
-  expect(getByText("1099")).toBeInTheDocument();
-  expect(getByText("classComTestState")).toBeInTheDocument();
-  expect(getByText("hookComTestState")).toBeInTheDocument();
   
   fireEvent.click(getByText("class-btn"));
   await waitFor(() => {
@@ -232,17 +220,17 @@ test("resy-view", async () => {
   });
   
   fireEvent.click(getByText("btn-empty"));
-  getByText("567");
+  await waitFor(() => {
+    getByText("567");
+  });
   
-  fireEvent.click(getByText("viewDeepEqual"));
-  getByText("数量：1");
+  fireEvent.click(getByText("viewDeepEqual-1"));
+  await waitFor(() => {
+    getByText("数量：2");
+  });
   
-  fireEvent.click(getByText("viewDeepEqual2"));
-  getByText("数量：2");
-  
-  fireEvent.click(getByText("viewDeepEqual3"));
-  getByText("testObj：testObjName");
-  
-  fireEvent.click(getByText("viewDeepEqual4"));
-  getByText("testObj：qweiop");
+  fireEvent.click(getByText("viewDeepEqual-2"));
+  await waitFor(() => {
+    getByText("testObj：testObjName");
+  });
 });

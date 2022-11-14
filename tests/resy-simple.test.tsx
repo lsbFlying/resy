@@ -1,7 +1,7 @@
 import React from "react";
 import { expect, test } from "vitest";
 import { createStore, useStore } from "../src";
-import { fireEvent, render } from "@testing-library/react";
+import {fireEvent, render, waitFor} from "@testing-library/react";
 
 test("resy-simple", async () => {
   const store = createStore<{
@@ -57,7 +57,9 @@ test("resy-simple", async () => {
   expect(getByText("hookValueTestEmpty")).toBeInTheDocument();
   
   fireEvent.click(getByText("inc-btn"));
-  getByText("1");
+  await waitFor(() => {
+    getByText("1");
+  })
   
   fireEvent.click(getByText("form-button"));
   getAllByDisplayValue("QWE");

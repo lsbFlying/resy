@@ -72,7 +72,7 @@ test("resy-basic", async () => {
         <p>{testArr.map(item => `${item.name}：${item.age}`)}</p>
         <button onClick={testFun}>btn1</button>
         <button onClick={() => {
-          store.count++;
+          // store.count++;
           store.text = "456asd";
         }}>btn2</button>
         <button onClick={() => {
@@ -122,28 +122,29 @@ test("resy-basic", async () => {
           store.text = "text-upgrade";
         }}>btn9</button>
         <button onClick={() => {
-          store.setState(() => {
-            setTimeout(async () => {
-              store.count = 123;
-              await waitFor(() => {
-                console.log(index === 13, index);
-                expect(index === 13).toBeTruthy();
-              });
-            }, 0);
-          }, async (nextState) => {
-            store.setState({
-              count: nextState.count + 1,
-            });
-            expect(store.count === 124).toBeTruthy();
-            await waitFor(() => {
-              console.log(index === 14, index);
-              expect(index === 14).toBeTruthy();
-            });
-          });
-        }}>btn10</button>
-        <button onClick={() => {
+          // 不产生更新
           store.setState(store);
-        }}>btn11</button>
+        }}>btn10</button>
+        {/*<button onClick={() => {*/}
+        {/*  store.setState(() => {*/}
+        {/*    setTimeout(async () => {*/}
+        {/*      store.count = 123;*/}
+        {/*      await waitFor(() => {*/}
+        {/*        console.log(index === 13, index);*/}
+        {/*        expect(index === 13).toBeTruthy();*/}
+        {/*      });*/}
+        {/*    }, 0);*/}
+        {/*  }, async (nextState) => {*/}
+        {/*    store.setState({*/}
+        {/*      count: nextState.count + 1,*/}
+        {/*    });*/}
+        {/*    expect(store.count === 124).toBeTruthy();*/}
+        {/*    await waitFor(() => {*/}
+        {/*      console.log(index === 14, index);*/}
+        {/*      expect(index === 14).toBeTruthy();*/}
+        {/*    });*/}
+        {/*  });*/}
+        {/*}}>btn11</button>*/}
       </>
     );
   };
@@ -151,63 +152,61 @@ test("resy-basic", async () => {
   const { getByText, queryByText } = render(<App/>);
   
   fireEvent.click(getByText("btn1"));
-  await waitFor(() => {
+  await waitFor(async () => {
     getByText("1");
   });
   
   fireEvent.click(getByText("btn2"));
-  await waitFor(() => {
-    getByText("2");
+  await waitFor(async () => {
+    getByText("456asd");
   });
-  getByText("456asd");
-  
+
   fireEvent.click(getByText("btn3"));
-  getByText("2");
   await waitFor(() => {
+    getByText("1");
     getByText("Jack");
   });
-  
+
   fireEvent.click(getByText("btn4"));
-  getByText("1");
-  getByText("Alen：11");
-  getByText("man");
-  
+  await waitFor(() => {
+    getByText("0");
+    getByText("Alen：11");
+    getByText("man");
+  });
+
   fireEvent.click(getByText("btn5"));
-  queryByText("Forrest Gump");
-  queryByText("Forrest Gump：7");
-  
+  await waitFor(() => {
+    console.log(queryByText("Forrest Gump"), queryByText("Forrest Gump：7"));
+    expect(queryByText("Forrest Gump")).toBeNull();
+    expect(queryByText("Forrest Gump：7")).toBeNull();
+  });
+
   fireEvent.click(getByText("btn6"));
-  queryByText("man");
   await waitFor(() => {
     getByText("no-sex");
   });
-  
+
   fireEvent.click(getByText("btn7"));
-  getByText("batch-forEach");
   await waitFor(() => {
+    getByText("batch-forEach");
     getByText("testObj-age:12");
   });
-  
+
   fireEvent.click(getByText("btn8"));
   await waitFor(() => {
     getByText("999");
-    console.log("btn8", index); // btn8, 10
+    console.log("btn8", index); // btn8, 9
   });
-  
+
   fireEvent.click(getByText("btn9"));
   await waitFor(() => {
     getByText("999666");
-    console.log("btn9", index); // btn9, 12
+    console.log("btn9", index); // btn9, 11
   });
   
-  // btn10可以看出，waitFor无法等待setTimeout
   fireEvent.click(getByText("btn10"));
-  await waitFor(async () => {
-    console.log("btn10", index); // btn10, 12
-    await expect(index === 12).toBeTruthy();
-  });
-  fireEvent.click(getByText("btn11"));
   await waitFor(() => {
-    console.log("btn11", index); // btn11, 12
+    console.log("btn10", index); // btn10, 11
+    expect(index === 11).toBeTruthy();
   });
 });

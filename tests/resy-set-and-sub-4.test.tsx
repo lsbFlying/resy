@@ -52,16 +52,24 @@ test("resy-set-and-sub4", async () => {
   const { getByText } = render(<App/>);
   
   fireEvent.click(getByText("btn-1"));
-  expect(gCount === 2).toBeTruthy();
+  await waitFor(() => {
+    expect(gCount === 2).toBeTruthy();
+  });
   
   fireEvent.click(getByText("btn-2"));
-  expect(gCount === 3).toBeTruthy();
+  await waitFor(() => {
+    expect(gCount === 3).toBeTruthy();
+  });
   
   fireEvent.click(getByText("btn-3"));
-  expect(gCount === 4).toBeTruthy();
+  await waitFor(() => {
+    expect(gCount === 4).toBeTruthy();
+  });
   
   fireEvent.click(getByText("btn-4"));
-  expect(gCount === 5).toBeTruthy();
+  await waitFor(() => {
+    expect(gCount === 5).toBeTruthy();
+  });
   
   fireEvent.click(getByText("btn-5"));
   console.log(gCount);

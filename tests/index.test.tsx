@@ -202,6 +202,6 @@ test("resy-basic", async () => {
   await act(() => {
     fireEvent.click(getByText("btn11"));;
   });
-  // 因为btn10中回调是setTimeOut所以最后还没有来得及执行，到这里是12次更新，加上原始的一次渲染于是是13
+  // 因为btn10中回调是setTimeOut，在事件循环中最后还没有来得及执行，到这里是12次更新，加上原始的一次渲染于是是13
   expect(index === 13).toBeTruthy();
 });

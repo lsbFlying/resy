@@ -37,10 +37,12 @@ test("resy-basic", async () => {
      */
     // false,
   );
+  
+  let index = 0;
 
   const App = () => {
     const { count, text, testFun, testObj, testArr, sex } = useStore(store);
-    
+    index++;
     useEffect(() => {
       const unsubscribe = store.subscribe((effectState, prevState, nextState) => {
         if (effectState.sex === "no-sex-subscribe") {
@@ -54,7 +56,10 @@ test("resy-basic", async () => {
           store.testObj = { age: 12 };
         }
       }, ["sex", "text"]);
-      return unsubscribe;
+      return () => {
+        unsubscribe();
+        // 同时可以做一些其他的解除或者释放的操作
+      };
     }, []);
     
     return (
@@ -112,17 +117,22 @@ test("resy-basic", async () => {
           });
         }}>btn7</button>
         <button onClick={() => {
-          store.setState({
-            count: 123,
-          }, (nextState) => {
-            store.count = nextState.count + 1;
-          });
+          store.sex = "no-sex-subscribe";
         }}>btn8</button>
         <button onClick={() => {
-          store.sex = "no-sex-subscribe";
+          store.text = "text-upgrade";
         }}>btn9</button>
         <button onClick={() => {
-          store.text = "text-upgrade";
+          store.setState(() => {
+            setTimeout(() => {
+              store.count = 123;
+            }, 0);
+          }, (nextState) => {
+            store.setState({
+              count: nextState.count + 1,
+            });
+            expect(store.count === 124).toBeTruthy();
+          });
         }}>btn10</button>
         <button onClick={() => {
           store.setState(store);
@@ -170,27 +180,28 @@ test("resy-basic", async () => {
   expect(getByText("no-sex")).toBeInTheDocument();
   
   await act(() => {
-    fireEvent.click(getByText("btn7"));;
+    fireEvent.click(getByText("btn7"));
   });
   expect(getByText("batch-forEach")).toBeInTheDocument();
   expect(getByText("testObj-age:12")).toBeInTheDocument();
   
   await act(() => {
-    fireEvent.click(getByText("btn8"));
-  });
-  expect(getByText("124")).toBeInTheDocument();
-  
-  await act(() => {
-    fireEvent.click(getByText("btn9"));;
+    fireEvent.click(getByText("btn8"));;
   });
   expect(getByText("999")).toBeInTheDocument();
   
   await act(() => {
-    fireEvent.click(getByText("btn10"));;
+    fireEvent.click(getByText("btn9"));
   });
   expect(getByText("999666")).toBeInTheDocument();
   
   await act(() => {
+    fireEvent.click(getByText("btn10"));
+  });
+  
+  await act(() => {
     fireEvent.click(getByText("btn11"));;
   });
+  // 因为btn10中回调是setTimeOut所以最后还没有来得及执行，到这里是12次更新，加上原始的一次渲染于是是13
+  expect(index === 13).toBeTruthy();
 });

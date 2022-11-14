@@ -8,7 +8,8 @@ const taskDataMap = new Map();
 
 /**
  * 批量处理更新的调度Map
- * 主要是为了完成react18以下的非管理领域的批处理更新的调度协调性
+ * 主要是为了resy的直接单次更新的批量合并
+ * 同时完成react18以下的非管理领域的批处理更新的调度协调性
  */
 const scheduler = new Map<keyof Scheduler, Scheduler[keyof Scheduler]>();
 

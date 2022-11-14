@@ -115,63 +115,6 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     storeMap.set(key, storeMapValue);
   }
   
-  /** 详细注释描述见model文件SetState接口类型文档描述 */
-  function setState(stateParams: Partial<T> | T | StateFunc = {}, callback?: (nextState: T) => void) {
-    const { taskDataMap } = (scheduler.get("getTask") as Scheduler<T>["getTask"])();
-    
-    /**
-     * 防止直接更新与setState混用导致直接更新滞后产生的数据未及时得到更新的问题
-     * 因为本身直接更新的方式是异步的，而批量更新setState的方式是同步的，
-     * 所以如果在同一个事件循环的批次之中setState批量更新的前面写了直接更新的方式
-     * 那么直观上在前直接更新会滞后与在后的批量更新setState，这不符合直觉感受
-     * 所以将前面的直接更新与setState的批量更新在同一个事件循环中合并作为一个批次更新处理
-     */
-    if (taskDataMap.size !== 0) {
-      // setState前面代码中的直接更新的这一轮更新先冲刷掉，放在后面batchUpdate中做一个批次更新
-      (scheduler.get("flush") as Scheduler<T>["flush"])();
-      stateParams = typeof stateParams !== "function"
-        ? { ...stateParams, ...mapToObject(taskDataMap) }
-        : stateParams;
-    }
-    
-    // 必须在更新之前执行，获取更新之前的数据
-    const prevState = new Map(stateMap);
-    if (typeof stateParams === "function") {
-      batchUpdate(() => {
-        /**
-         * 1、如果stateParams是函数的情况并且在函数中使用了直接更新的方式更新数据
-         * 那么这里需要先调用stateParams函数，产生一个直接更新的新一轮的批次更新
-         * 然后再直接检查产生的直接更新中这一轮的批次中的最新任务数据与任务队列，然后进行冲刷与更新
-         *
-         * 2、如果stateParams函数中不是使用直接更新的方式，
-         * 而是又使用了setState，那么会走到else分支仍然批量更新
-         */
-        (stateParams as StateFunc)();
-        const { taskDataMap: taskDataMapLatest, taskQueueMap: taskQueueMapLatest } = (scheduler.get("getTask") as Scheduler<T>["getTask"])();
-        if (taskDataMapLatest.size !== 0) {
-          (scheduler.get("flush") as Scheduler<T>["flush"])();
-          taskQueueMapLatest.forEach(task => task());
-        }
-      });
-    } else {
-      batchUpdate(() => {
-        Object.keys(stateParams).forEach(key => {
-          (
-            (
-              initialValueLinkStore(key).get(key) as StoreMapValue<T>
-            ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
-          )((stateParams as Partial<T> | T)[key]);
-        });
-      });
-    }
-    const changedData = typeof stateParams === "function" ? stateMap : new Map(Object.entries(stateParams));
-    batchDispatch(prevState, changedData);
-    const timeId = callback && setTimeout(() => {
-      callback(mapToObject(stateMap));
-      clearTimeout(timeId as any);
-    }, 0);
-  }
-  
   /** 批量触发订阅监听的数据变动 */
   function batchDispatch(prevState: Map<keyof T, T[keyof T]>, changedData: Map<keyof T, T[keyof T]>) {
     if (changedData.size > 0 && (storeCoreMap.get("dispatchStoreSet") as StoreCoreMapValue<T>["dispatchStoreSet"]).size > 0) {
@@ -196,17 +139,66 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     }
   }
   
+  /** 批量异步更新函数 */
+  async function updater(stateParams: Partial<T> | T | StateFunc = {}) {
+    if (typeof stateParams === "function") {
+      /**
+       * 1、如果stateParams是函数的情况并且在函数中使用了直接更新的方式更新数据
+       * 那么这里需要先调用stateParams函数，产生一个直接更新的新一轮的批次更新
+       * 然后再直接检查产生的直接更新中这一轮的批次中的最新任务数据与任务队列，然后进行冲刷与更新
+       *
+       * 2、如果stateParams函数中不是使用直接更新的方式，
+       * 而是又使用了setState，那么会走到else分支仍然批量更新
+       * 因为如果是函数入参里面更新肯定会有单次直接更新，
+       * 不管它当前更新层是否使用，它最终总归会使用到这一步
+       */
+      (stateParams as StateFunc)();
+    } else {
+      Object.keys(stateParams).forEach(key => {
+        (scheduler.get("add") as Scheduler<T>["add"])(
+          () => (
+            (
+              initialValueLinkStore(key).get(key) as StoreMapValue<T>
+            ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
+          )((stateParams as Partial<T> | T)[key]),
+          key,
+          (stateParams as Partial<T> | T)[key],
+        );
+      });
+    }
+  }
+  
   /**
-   * subscribe
-   * @description 监听订阅，类似subscribe/addEventListener，但是这里对应的数据的变化监听订阅
-   * subscribe的存在是必要的，它的作用并不类比于useEffect，
-   * 而是像subscribe或者addEventListener的效果，监听订阅数据的变化
-   * 具备多数据订阅监听的能力
-   *
-   * @param listener 监听订阅的回调函数
-   * @param stateKeys 监听订阅的具体的某一个store容器的某些数据变化，如果为空则默认监听store的任何一个数据的变化
-   * @return unsubscribe 返回取消监听的函数
+   * @description setState批量更新函数
+   * 为了解决"如果在同一个事件循环的批次之中setState批量更新与直接更新的方式混用了"这样的场景
+   * 决定将setState的更新与直接更新的方式共用一个scheduler调用，这样可以从根本上解决"混用合并"的问题
+   * 也不仅仅是混用的场景，还包含setState连续多次调用的场景，至于这种场景的出现有些其实是合理的
+   * 比如需要条件更新:
+   * if (condition) {
+   *   setState(???);
+   * }
+   * setState(???);
+   * 类似这种场景；我们当然可以使用一个对象容器然后再一次性更新对象容器，
+   * 但有时候我就不想多此一步操作就想这样简单的写法，所以自身多次调用的场景合并也是很有必要的
    */
+  function setState(stateParams: Partial<T> | T | StateFunc = {}, callback?: (nextState: T) => void) {
+    updater(stateParams).then(() => {
+      const { taskDataMap: taskDataMapLatest, taskQueueMap: taskQueueMapLatest } = (scheduler.get("getTask") as Scheduler<T>["getTask"])();
+      (scheduler.get("flush") as Scheduler<T>["flush"])();
+      if (taskDataMapLatest.size !== 0) {
+        // 更新之前的数据
+        const prevState = new Map(stateMap);
+        
+        batchUpdate(() => taskQueueMapLatest.forEach(task => task()));
+        
+        const changedData = typeof stateParams === "function" ? stateMap : new Map(Object.entries(stateParams));
+        batchDispatch(prevState, changedData);
+      }
+      callback?.(mapToObject(stateMap));
+    });
+  }
+  
+  /** 订阅函数 */
   function subscribe(listener: Listener<T>, stateKeys?: (keyof T)[]): Unsubscribe {
     const dispatchStoreSetTemp = storeCoreMap.get("dispatchStoreSet") as StoreCoreMapValue<T>["dispatchStoreSet"];
     
@@ -289,7 +281,6 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
         
         // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
         (scheduler.get("flush") as Scheduler<T>["flush"])();
-        
         if (taskDataMap.size !== 0) {
           const prevState = new Map(stateMap);
           batchUpdate(() => taskQueueMap.forEach(task => task()));

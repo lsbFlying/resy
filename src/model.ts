@@ -6,7 +6,15 @@ export type Callback = () => void;
 export type State = Record<string, any>;
 
 /**
- * @description resy的store接口类型
+ * @description resy的storeMap接口类型
+ * subscribe与getSnapshot是useSyncExternalStore参数接口
+ *
+ * 其中subscribe的onStoreChange参数回调包含数据更新操作
+ * 将这些数据更新操作的函数储存在某个Set中
+ * 然后在setSnapshot中去进行forEach循环更新，结合setState可以批量更新处理
+ *
+ * getSnapshot单纯是获取内部静态数据值的函数
+ * 刚好与useSnapshot以及subscribe组件一个两参一方的三角挂钩
  */
 export type StoreMapValueType<T extends State> = {
   subscribe: (onStoreChange: Callback) => Callback;
@@ -106,11 +114,16 @@ export interface StateFunc {
  * 常规而言我们不需要回调函数callback就可以通过直接读取store即可获取最新数据
  * 但是有特殊情况下我们是需要通过回调函数获取最新数据的，入下所述 3👇 的情况
  *
- * 3、由于setState的批量更新本身是同步的，所以我们似乎不需要回调函数的功能，
- * 但实际上业务逻辑复杂度可能很难在我们的把控范围之内，
- * 比如批量更新setState的入参如果是函数，并在函数中写一个setTimeout或者Promise等的延时/异步操作更新代码
- * 那么在setState下一句代码中读取store的数据是无法获取更新后的最新数据的
- * 所以此时就需要回调函数的功能，setState的回调callback的入参就是更新后的最新数据
+ * 3、setState的批量更新的同步与异步的抉择设置是有考量的
+ * 我们假设如果要设置为同步更新方式，那么我们似乎不需要回调函数的功能，
+ * 就能直接在下一行代码通过读取store就可以获取更新后的最新数据，但是我们考虑到复杂的业务逻辑场景
+ * 如果批量更新setState的入参如果是函数，并在函数中写一个setTimeout或者Promise等的延时/异步操作更新代码的情况
+ * 此时即使批量更新setState的入参如果是函数，并在函数中写一个setTimeout或者Promise等的延时/异步操作更新代码
+ * 那么即使setState的回调callback是再次通过setTimeout延时0ms执行也无法解决其回调的入参立即就是更新后的最新数据
+ * 所以setState还是决定设置为异步更新，这样我们一不阻塞代码，可以加速代码的执行效率，二可以是的callback回调很适当的作为第二入参
+ * 与此同时，改为异步后可以更完善直接更新与setState更新混用场景下的进一步完善合并批量更新
+ * 并且直接更新本身是异步，这样在与setState更新混用即使因为某些复杂的场景而没有完成合并，那么也不会影响更新的顺序
+ * 逻辑感知上是正常代码执行的更新顺序，是符合逻辑直觉的
  *
  * @example A
  * store.setState({
@@ -144,6 +157,17 @@ export interface Unsubscribe {
 
 // resy的订阅监听
 export type Subscribe<T extends State> = Readonly<{
+  /**
+   * subscribe
+   * @description 监听订阅，类似subscribe/addEventListener，但是这里对应的数据的变化监听订阅
+   * subscribe的存在是必要的，它的作用并不类比于useEffect，
+   * 而是像subscribe或者addEventListener的效果，监听订阅数据的变化
+   * 具备多数据订阅监听的能力
+   *
+   * @param listener 监听订阅的回调函数
+   * @param stateKeys 监听订阅的具体的某一个store容器的某些数据变化，如果为空则默认监听store的任何一个数据的变化
+   * @return unsubscribe 返回取消监听的函数
+   */
   subscribe(
     listener: Listener<T>,
     stateKeys?: (keyof T)[],

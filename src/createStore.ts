@@ -53,11 +53,11 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   const storeCoreMap: StoreCoreMapType<T> = new Map();
   storeCoreMap.set("getState", () => stateMap);
   storeCoreMap.set("setHookFieldsValue", (hookInitialState: Partial<T>) => {
-    for (const key in hookInitialState) {
-      if (stateMap.get(key) === undefined && Object.prototype.hasOwnProperty.call(hookInitialState, key)) {
+    Object.keys(hookInitialState).forEach(key => {
+      if (stateMap.get(key) === undefined) {
         stateMap.set(key, hookInitialState[key] as T[keyof T]);
       }
-    }
+    });
   });
   storeCoreMap.set("resetState", () => {
     if (unmountClear) stateMap = new Map(Object.entries(state));

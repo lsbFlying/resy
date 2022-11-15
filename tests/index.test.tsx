@@ -76,6 +76,8 @@ test("resy-basic", async () => {
           store.text = "456asd";
         }}>btn2</button>
         <button onClick={() => {
+          store.count = count;
+          console.log("count", count);
           store.testObj = {
             name: "Jack",
           };
@@ -124,28 +126,6 @@ test("resy-basic", async () => {
           // 不产生更新
           store.setState(store);
         }}>btn10</button>
-        <button onClick={() => {
-          store.setState(async () => {
-            setTimeout(async () => {
-              store.count = 123;
-              console.log("qweasd")
-              await waitFor(() => {
-                console.log(1, index === 13, index);
-                expect(index === 128).toBeTruthy();
-              });
-            }, 0);
-          }, async (nextState) => {
-            // store.setState({
-            //   count: nextState.count + 1,
-            // });
-            store.count = nextState.count + 1;
-            expect(store.count === 124).toBeTruthy();
-            await waitFor(() => {
-              console.log(2, index === 14, index);
-              expect(index === 14).toBeTruthy();
-            });
-          });
-        }}>btn11</button>
       </>
     );
   };
@@ -159,16 +139,19 @@ test("resy-basic", async () => {
   
   fireEvent.click(getByText("btn2"));
   await waitFor(async () => {
+    getByText("2");
     getByText("456asd");
   });
 
   fireEvent.click(getByText("btn3"));
   await waitFor(() => {
+    getByText("2");
     getByText("Jack");
   });
 
   fireEvent.click(getByText("btn4"));
   await waitFor(() => {
+    getByText("1");
     getByText("Alen：11");
     getByText("man");
   });
@@ -206,12 +189,6 @@ test("resy-basic", async () => {
   fireEvent.click(getByText("btn10"));
   await waitFor(() => {
     console.log("btn10", index); // btn10, 11
-    expect(index === 11).toBeTruthy();
-  });
-  
-  fireEvent.click(getByText("btn11"));
-  await waitFor(() => {
-    console.log("btn11", index); // btn11, 11
     expect(index === 11).toBeTruthy();
   });
 });

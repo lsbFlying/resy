@@ -45,7 +45,7 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
 export function createStore<T extends State>(state: T, unmountClear = true): T & SetState<T> & Subscribe<T> {
   /**
    * 不改变传参state，同时resy使用Map与Set提升性能
-   * 如stateMap、storeMap、storeCoreMap、storeChanges等
+   * 如stateMap、storeMap、storeCoreMap、storeChangesSet等
    */
   let stateMap: Map<keyof T, T[keyof T]> = new Map(Object.entries(state));
   
@@ -81,16 +81,18 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   /** 生成storeMap键值对 */
   function genStoreMapKeyValue(key: keyof T) {
     /**
-     * 这里使用set不使用纯对象或者数组的原因很简单：
-     * 就是Set或者Map类型在频繁添加和删除元素的情况下有明显的性能优势
+     * 为每一个数据的change更新回调做一个闭包MSet储存
+     * 之所以用Set不用Map是因为每一个使用数据字段
+     * 都需要一个subscribe的强更新绑定回调
+     * 而每一个绑定回调函数是针对组件对于数据使用的更新开关
      */
-    const storeChanges = new Set<Callback>();
+    const storeChangesSet = new Set<Callback>();
     
     const storeMapValue: StoreMapValue<T> = new Map();
     storeMapValue.set("subscribe", (storeChange: Callback) => {
-      storeChanges.add(storeChange);
+      storeChangesSet.add(storeChange);
       return () => {
-        storeChanges.delete(storeChange);
+        storeChangesSet.delete(storeChange);
         if (unmountClear) stateMap.set(key, state[key]);
       };
     });
@@ -104,7 +106,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
         // 这一步是为了配合getSnapshot，使得getSnapshot可以获得最新值
         stateMap.set(key, val);
         // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
-        storeChanges.forEach(storeChange => storeChange());
+        storeChangesSet.forEach(storeChange => storeChange());
       }
     });
     storeMapValue.set("useSnapshot", () => useSyncExternalStore(

@@ -43,6 +43,62 @@ test("resy-set-and-sub4", async () => {
           store.text2 = "~!@";
           store.text = ")_+";
         }}>btn-5</button>
+        <button onClick={() => {
+          // 回调并不会再次合并，要符合回调的使用逻辑
+          store.setState({
+            count: 123,
+          }, () => {
+            store.text = "Hello";
+          });
+        }}>btn-6</button>
+        <button onClick={() => {
+          store.setState(() => {
+            store.count = 234;
+            store.text2 = "yuiop";
+          }, () => {
+            store.setState({
+              text: "Hello",
+            });
+          });
+        }}>btn-7</button>
+        <button onClick={() => {
+          store.setState({
+            count: 567,
+            text2: "poiewq",
+          }, () => {
+            setTimeout(() => {
+              store.setState({
+                text: "ASD-Hello",
+              });
+            }, 0);
+          });
+        }}>btn-8</button>
+        <button onClick={() => {
+          store.setState(() => {
+            store.count = store.count + 1;
+            store.text2 = "阿克苏结合地方";
+          }, () => {
+            setTimeout(() => {
+              store.setState({
+                text: "ASD-Hello",
+              });
+              store.text2 = "QWELKJ";
+            }, 0);
+          });
+        }}>btn-9</button>
+        <button onClick={() => {
+          store.setState(() => {
+            setTimeout(() => {
+              store.count = store.count + 1;
+              store.text2 = "离开是大概率事件";
+            }, 0);
+          }, () => {
+            store.setState({
+              text: "哦器物俄欧哦啊就是来打卡的数据连接",
+            });
+            store.text2 = "快快发货快递恢复";
+          });
+        }}>btn-10</button>
       </>
     );
   };
@@ -74,5 +130,40 @@ test("resy-set-and-sub4", async () => {
   await waitFor(() => {
     console.log("btn-5", gCount, gCount === 6);
     expect(gCount === 6).toBeTruthy();
+  });
+  
+  fireEvent.click(getByText("btn-6"));
+  await waitFor(() => {
+    console.log("btn-6", gCount);
+    expect(gCount === 8).toBeTruthy();
+  });
+  
+  fireEvent.click(getByText("btn-7"));
+  await waitFor(() => {
+    console.log("btn-7", gCount);
+    expect(gCount === 9).toBeTruthy();
+  });
+  
+  fireEvent.click(getByText("btn-8"));
+  await waitFor(() => {
+    console.log("btn-8", gCount);
+    expect(gCount === 11).toBeTruthy();
+  });
+  
+  fireEvent.click(getByText("btn-9"));
+  await waitFor(() => {
+    console.log("btn-9", gCount);
+    expect(gCount === 13).toBeTruthy();
+  });
+  
+  fireEvent.click(getByText("btn-10"));
+  await waitFor(() => {
+    console.log("btn-10-gCount", gCount, "btn-10-count", store.count);
+    // btn-10-gCount 13 btn-10-count 568
+    // btn-10-gCount 14 btn-10-count 568
+    // btn-10-gCount 15 btn-10-count 569
+    
+    expect(gCount === 15).toBeTruthy();
+    expect(store.count === 569).toBeTruthy();
   });
 });

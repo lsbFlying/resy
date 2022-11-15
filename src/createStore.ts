@@ -183,13 +183,13 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
    */
   function setState(stateParams: Partial<T> | T | StateFunc = {}, callback?: (nextState: T) => void) {
     updater(stateParams).then(() => {
-      const { taskDataMap: taskDataMapLatest, taskQueueMap: taskQueueMapLatest } = (scheduler.get("getTask") as Scheduler<T>["getTask"])();
+      const { taskDataMap, taskQueueMap } = (scheduler.get("getTask") as Scheduler<T>["getTask"])();
       (scheduler.get("flush") as Scheduler<T>["flush"])();
-      if (taskDataMapLatest.size !== 0) {
+      if (taskDataMap.size !== 0) {
         // 更新之前的数据
         const prevState = new Map(stateMap);
         
-        batchUpdate(() => taskQueueMapLatest.forEach(task => task()));
+        batchUpdate(() => taskQueueMap.forEach(task => task()));
         
         const changedData = typeof stateParams === "function" ? stateMap : new Map(Object.entries(stateParams));
         batchDispatch(prevState, changedData);

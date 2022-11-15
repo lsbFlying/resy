@@ -17,10 +17,8 @@ test("resy-set-and-sub4", async () => {
         <p>{text2}</p>
         <button onClick={() => {
           store.text2 = "iop";
-          store.setState({ text: "jkl" });
         }}>btn-1</button>
         <button onClick={() => {
-          store.text2 = "zxc";
           store.setState(() => {
             store.text = "bnm";
           });
@@ -74,7 +72,7 @@ test("resy-set-and-sub4", async () => {
   fireEvent.click(getByText("btn-5"));
   console.log(gCount);
   await waitFor(() => {
-    console.log("waitFor", gCount, gCount === 6);
+    console.log("btn-5", gCount, gCount === 6);
     expect(gCount === 6).toBeTruthy();
   });
 });

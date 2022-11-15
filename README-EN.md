@@ -21,6 +21,9 @@
 <details>
 <summary>changed logs</summary>
 
+🌟`v4.0.5`：<br/>
+Improved the merging and updating of setState and direct updating of all mixed scenarios
+
 🌟`v4.0.4`：<br/>
 1. Fixed the bug that the direct update could not be updated in the next round of update batches similar to the useEffect<br/>
 2. Optimize the execution of add function in direct update mode<br/>

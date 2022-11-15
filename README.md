@@ -21,6 +21,9 @@
 <details>
 <summary>changed logs</summary>
 
+🌟`v4.0.5`：<br/>
+完善了setState与直接更新的所有混用场景的合并更新
+
 🌟`v4.0.4`：<br/>
 1、修复了直接更新在useEffect中相近的下一轮的更新批次中无法得到更新的bug<br/>
 2、优化直接更新方式的add函数的执行<br/>

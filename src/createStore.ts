@@ -149,11 +149,12 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
        *
        * 2、如果stateParams函数中不是使用直接更新的方式，
        * 而是又使用了setState，那么会走到else分支仍然批量更新
-       * 因为如果是函数入参里面更新肯定会有单次直接更新，
-       * 不管它当前更新层是否使用，它最终总归会使用到这一步
+       * 因为如果是函数入参里面更新肯定通过scheduler调度统一共用到单次直接更新的逻辑，
+       * 不管它当前更新层是否使用，它最终总归会使用到单次直接更新的批量合并这一步
        */
       (stateParams as StateFunc)();
     } else {
+      // 对象方式更新直接走单次直接更新的add入栈，后续统一批次合并更新
       Object.keys(stateParams).forEach(key => {
         (scheduler.get("add") as Scheduler<T>["add"])(
           () => (

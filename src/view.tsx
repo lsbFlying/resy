@@ -35,7 +35,7 @@ export type { MapStateToProps };
  */
 export function view<P extends State = {}, S extends State = {}>(
   store: S & SetState<S> & Subscribe<S>,
-  // any用于防范某些HOC导致的类型不合一问题，比如withRouter
+  // any用于防范某些HOC导致的类型不合一问题，比如withRouter(低版本的react-router还是存在该HOC)
   Comp: React.ComponentType<MapStateToProps<S, P> | any>,
   deepEqual?: boolean,
 ) {

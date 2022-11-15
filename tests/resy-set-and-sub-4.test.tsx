@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useEffect} from "react";
 import { expect, test } from "vitest";
 import { createStore, useStore } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
@@ -9,6 +9,13 @@ test("resy-set-and-sub4", async () => {
   const store = createStore({ count: 0, text: "poiu", text2: "qwe" });
   const App = () => {
     const { count, text, text2 } = useStore(store);
+    
+    useEffect(() => {
+      if (count === 570) {
+        store.text = "destroy";
+      }
+    }, [count]);
+    
     gCount++;
     return (
       <>
@@ -99,6 +106,13 @@ test("resy-set-and-sub4", async () => {
             store.text2 = "快快发货快递恢复";
           });
         }}>btn-10</button>
+        <button onClick={() => {
+          store.setState(() => {
+            store.count++;
+          }, () => {
+            store.text2 = "科瑞围殴";
+          });
+        }}>btn-11</button>
       </>
     );
   };
@@ -165,5 +179,12 @@ test("resy-set-and-sub4", async () => {
     
     expect(gCount === 15).toBeTruthy();
     expect(store.count === 569).toBeTruthy();
+  });
+  
+  // 按钮10可以看出，resy甚至可以合并处理useEffect中的更新
+  fireEvent.click(getByText("btn-11"));
+  await waitFor(() => {
+    expect(gCount === 17).toBeTruthy();
+    getByText("destroy");
   });
 });

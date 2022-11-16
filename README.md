@@ -230,18 +230,12 @@ function App() {
 function App() {
   function btnClick() {
     /**
-     * 1、resy需要setState最主要的原因是setState本身的使用方式在编码的时候具备很好的读写能力，
+     * 1、resy需要setState最主要的原因是需要回调callback获取更新后的最新数据
+     * 以及setState本身的使用方式在编码的时候具备很好的读写能力，
      * 支持扩展运算符的对象数据更新的便捷、函数入参的循环更新的宽泛，都让setState具备更强的生命力
      *
-     * 2、setState的批量更新是同步的，执行完之后通过store读取数据可立即获取到更新后的最新数据
-     * 常规而言我们不需要回调函数callback就可以通过直接读取store即可获取最新数据
-     * 但是有特殊情况下我们是需要通过回调函数获取最新数据的，入下所述 3👇 的情况
-     *
-     * 3、由于setState的批量更新本身是同步的，所以我们似乎不需要回调函数的功能，
-     * 但实际上业务逻辑复杂度可能很难在我们的把控范围之内，
-     * 比如批量更新setState的入参如果是函数，并在函数中写一个setTimeout或者Promise等的延时/异步操作更新代码
-     * 那么在setState下一句代码中读取store的数据是无法获取更新后的最新数据的
-     * 所以此时就需要回调函数的功能，setState的回调callback的入参就是更新后的最新数据
+     * 2、setState的批量更新跟直接更新一样也是异步的，
+     * 所以需要回调函数callback的入参nextState来获取取最新数据，或者在回调内部直接通过读取store获取最新数据
      */
     // @example A
     store.setState({

@@ -237,18 +237,12 @@ function App() {
 function App() {
   function btnClick() {
     /**
-     * 1、The main reason why resy needs setState is that the setState itself has good read-write ability when encoding,
+     * 1. The main reason why resy needs setState is that it needs to call back the callback to get the latest updated data
+     * As well as the use of setState itself, it has good read-write ability when encoding,
      * The convenience of object data update that supports extension operators and the extensiveness of circular update of function input parameters make setState more robust
      *
-     * 2、The batch update of setState is synchronous. After the execution, the latest data can be obtained immediately by reading the data in the store
-     * Generally speaking, we do not need the callback function to obtain the latest data by directly reading the store
-     * However, under special circumstances, we need to obtain the latest data through the callback function, as described in the following 3 👇 Situation of
-     *
-     * 3、Because the batch update of setState itself is synchronous, it seems that we do not need the function of callback function,
-     * However, the complexity of business logic may be difficult to control,
-     * For example, if the input parameter of the setState is a function, write a delay/asynchronous operation update code for setTimeout or Promise in the function
-     * Then reading the store data in the next sentence of setState cannot obtain the updated latest data
-     * Therefore, the function of callback function is required at this time. The input parameter of callback callback of setState is the updated latest data
+     * 2. The batch update of setState is asynchronous just like the direct update,
+     * Therefore, the incoming parameter nextState of the callback function is required to obtain the latest data, or the latest data is directly obtained by reading the store inside the callback
      */
     // @example A
     store.setState({

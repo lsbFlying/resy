@@ -232,10 +232,12 @@ function App() {
     /**
      * 1、resy需要setState最主要的原因是需要回调callback获取更新后的最新数据
      * 以及setState本身的使用方式在编码的时候具备很好的读写能力，
-     * 支持扩展运算符的对象数据更新的便捷、函数入参的循环更新的宽泛，都让setState具备更强的生命力
+     * 支持扩展运算符的对象数据更新的便捷、函数入参的循环更新的宽泛，
+     * 都让setState具备更强的生命力
      *
      * 2、setState的批量更新跟直接更新一样也是异步的，
-     * 所以需要回调函数callback的入参nextState来获取取最新数据，或者在回调内部直接通过读取store获取最新数据
+     * 所以需要回调函数callback的入参nextState来获取取最新数据，
+     * 或者在回调内部直接通过读取store获取最新数据
      */
     // @example A
     store.setState({

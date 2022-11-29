@@ -374,13 +374,14 @@ function App() {
 
 ### view 更完善的规避re-render
 ```markdown
-总结：相较于resy自身特性的re-render
-    view处理规避的re-render更加完善
-    完善的点在于：
+总结：相较于resy自身规避额外re-render的特性
+    view处理规避额外的re-render更加完善
+完善的点在于：
     即使父组件更新了，只要view包裹的组件本身
     没有使用到父组件中更新缘由的属性数据
     那么view包裹的组件就不会re-render
-
+```
+```tsx
 /**
  * view
  *
@@ -391,7 +392,6 @@ function App() {
  * 是否开启需要开发者自己衡量所能带来的性能收益，常规情况下不需要开启此功能
  * 除非遇到很重量级的组件渲染很耗费性能则开启可以通过JS的计算减轻页面更新渲染的负担
  */
-
 ```
 
 ```tsx

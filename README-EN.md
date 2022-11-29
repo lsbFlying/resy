@@ -383,14 +383,17 @@ function App() {
 
 ### view — Better avoid re-render
 ```markdown
-Summary: compared with resy's own characteristics, re-render
-    view handles circumvented re-render more perfectly
-    The perfection lies in:
+Summary: 
+    Compared with resy itself that avoids the feature of additional re-renders
+    view processing is more perfect to avoid additional re render.
+    
+The perfection lies in:
     that is even if the parent component is updated
     As long as view wraps the component itself
     The attribute data of the update reason is not used in the parent component
     Then the components wrapped by view will not be re-render
-
+```
+```tsx
 /**
  * view
  *
@@ -403,7 +406,6 @@ Summary: compared with resy's own characteristics, re-render
  * Unless the rendering of heavy components is very performance consuming,
  * you can enable JS to reduce the burden of page update rendering
  */
-
 ```
 
 ```tsx

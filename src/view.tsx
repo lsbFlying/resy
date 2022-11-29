@@ -9,7 +9,7 @@ export type { MapStateToProps };
 /**
  * view
  *
- * @description 自动化规避组件re-render的HOC
+ * @description 自动化规避组件额外re-render的HOC
  * A：通过将Comp组件包裹一层hook，转变成hook组件，从而实现对class组件的支持
  * 本身也自然是支持hook，Comp也可以是hook组件
  *
@@ -21,10 +21,10 @@ export type { MapStateToProps };
  * 至少目前来看二者两分天下才是对代码更友好健康的方式
  *
  * C：view连接了resy生成的store数据，使得Comp组件可以共享store
- * 同时完善了Comp组件自动避免rerender，并且特殊的是
- * 它比resy本身自带的规避rerender的效果更完善
+ * 同时完善了Comp组件自动避免额外re-render，并且特殊的是
+ * 它比resy本身自带的规避额外re-render的效果更完善
  * 即如果view包裹的Comp组件即使在其父组件更新渲染了
- * 只要内部使用的数据没有更新，那么它本身不会渲染re-render
+ * 只要内部使用的数据没有更新，那么它本身不会渲染而产生额外re-render
  *
  * @param store resy生成的store数据状态储存容器
  * @param Comp 被包裹的组件

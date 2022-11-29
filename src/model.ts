@@ -41,7 +41,7 @@ export type Listener<T extends State> = (
 export interface CustomEventListener<T extends State> {
   // 监听事件的合集对象
   events: T;
-  addEventListener(type: string | symbol, handle: Listener<T>): void;
+  addEventListener(type: string | symbol, listener: Listener<T>): void;
   dispatchEvent(
     type: string | symbol,
     effectState: Partial<T>,

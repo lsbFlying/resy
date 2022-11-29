@@ -9,8 +9,12 @@ const EventDispatcher = (function <T extends State>(this: CustomEventListener<T>
   this.events = {} as T;
 } as unknown) as CustomEventListenerConstructor<any>;
 
-EventDispatcher.prototype.addEventListener = function<T extends State>(this: CustomEventListener<T>, type: string, handle: Listener<T>) {
-  this.events[type as keyof T] = handle as T[keyof T];
+EventDispatcher.prototype.addEventListener = function<T extends State>(
+  this: CustomEventListener<T>,
+  type: string,
+  listener: Listener<T>,
+) {
+  this.events[type as keyof T] = listener as T[keyof T];
 }
 /**
  * 刚好也正是由于resy是销毁监听订阅的时候实际上是移除了监听Set中的监听实例

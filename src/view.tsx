@@ -2,7 +2,7 @@ import isEqual from "react-fast-compare";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import type { SetState, State, StoreCoreMapType, StoreCoreMapValue, Subscribe, MapStateToProps } from "./model";
 import { storeCoreMapKey } from "./static";
-import { proxyStateHandle } from "./utils";
+import { proxyStateHandler } from "./utils";
 
 export type { MapStateToProps };
 
@@ -56,7 +56,7 @@ export function view<P extends State = {}, S extends State = {}>(
      * 扩展运算符...会读取所有的属性数据，导致内部关联使用数据属性失去准确性
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
-    const [state, setState] = useState<S>(() => proxyStateHandle(latestState, linkStateSet));
+    const [state, setState] = useState<S>(() => proxyStateHandler(latestState, linkStateSet));
     
     useEffect(() => {
       // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
@@ -76,7 +76,7 @@ export function view<P extends State = {}, S extends State = {}>(
         ) {
           linkStateSet.clear();
           // 保持代理数据的更新从而保持innerLinkUseFields的最新化
-          setState(proxyStateHandle(new Map(Object.entries(nextState)), linkStateSet));
+          setState(proxyStateHandler(new Map(Object.entries(nextState)), linkStateSet));
         }
       });
       return () => {

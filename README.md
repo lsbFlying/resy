@@ -426,6 +426,12 @@ import React from "react";
 import { view, MapStateToProps } from "resy";
 import store, { Store } from "store";
 
+/**
+ * view对class组件的支持方式需要通过props
+ * 可在组件的继承组件PureComponent/ComponentMap的范型中
+ * 写StateToProps<Store>即可通过this.props.state使用
+ * props上挂在的store中的state数据
+ */
 class ClassCom extends React.PureComponent<MapStateToProps<Store>> {
   /**
    * 首先，store中的count与text、hookComTestState数据属性
@@ -452,12 +458,22 @@ export default view(store, ClassCom);
 ```tsx
 // view对hook组件的支持
 import React from "react";
-import { view, MapStateToProps } from "resy";
+import { view, MapStateToProps, useStore } from "resy";
 import store, { Store } from "store";
 
+/**
+ * view对Hook组件的支持方式可以像class组件那样通过props
+ * 也可以不用props直接在Hook组件中使用const { ... } = useStore(store);
+ * 两者的效果是一样的，也是最简单方便的，这里举例一个props的例子
+ * 实际开发中我们可以简化使用直接在Hook组件中使用const { ... } = useStore(store);
+ */
 const HookCom = (props: MapStateToProps<Store>) => {
   // view会将store数据挂载到props上新增的state属性上
   const { hookComTestState } = props.state;
+  
+  // 在Hook组件中可以直接使用，与props效果一样
+  // const { hookComTestState } = useStore(store);
+  
   /**
    * 首先，store中的count与text、classComTestState数据属性
    * 无法影响HookCom的re-render

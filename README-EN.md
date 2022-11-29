@@ -438,6 +438,12 @@ import React from "react";
 import { view, MapStateToProps } from "resy";
 import store, { Store } from "store";
 
+/**
+ * The support mode of view for class components needs to be through props
+ * It can be used in the inherited component PureComponent/ComponentMap paradigm of the component
+ * Write StateToProps<Store>to use through this.props.state
+ * The state data in the store of props
+ */
 class ClassCom extends React.PureComponent<MapStateToProps<Store>> {
   /**
    * First of all, count and text, hookcomteststate data attributes in the store
@@ -464,12 +470,21 @@ export default view(store, ClassCom);
 ```tsx
 // view support for hook components
 import React from "react";
-import { view, MapStateToProps } from "resy";
+import { view, MapStateToProps, useStore } from "resy";
 import store, { Store } from "store";
 
+/**
+ * View supports Hook components in the same way as class components through props
+ * You can also directly use const {...}=useStore (store) in the Hook component without props;
+ * The effect of the two is the same, and it is also the most simple and convenient. Here is an example of props
+ * In actual development, we can simplify the use and directly use const {...}=useStore (store) in the Hook component;
+ */
 const HookCom = (props: MapStateToProps<Store>) => {
   // view will mount the store data to the new state attribute on props
   const { hookComTestState } = props.state;
+  
+  // It can be directly used in the Hook component, which has the same effect as props
+  // const { hookComTestState } = useStore(store);
   /**
    * First of all, count and text, classcomteststate data attributes in the store
    * Cannot affect hookcom's render

@@ -238,6 +238,9 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     return storeMap;
   }
   
+  // setState与subscribe以及store代理内部数据Map的合集
+  const externalMap: ExternalMapType<T> = new Map();
+  
   // 给useStore的驱动更新代理
   const storeMapProxy = new Proxy(storeMap, {
     get: (_, key: keyof T) => {
@@ -251,8 +254,6 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     },
   } as ProxyHandler<StoreMap<T>>);
   
-  // setState与subscribe以及store代理内部数据Map的合集
-  const externalMap: ExternalMapType<T> = new Map();
   externalMap.set("setState", setState);
   externalMap.set("subscribe", subscribe);
   externalMap.set(storeCoreMapKey, storeCoreMap);

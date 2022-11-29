@@ -143,19 +143,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
   
   /** 批量异步更新函数 */
   async function updater(stateParams: Partial<T> | T | StateFunc = {}) {
-    if (typeof stateParams === "function") {
-      /**
-       * 1、如果stateParams是函数的情况并且在函数中使用了直接更新的方式更新数据
-       * 那么这里需要先调用stateParams函数，产生一个直接更新的新一轮的批次更新
-       * 然后再直接检查产生的直接更新中这一轮的批次中的最新任务数据与任务队列，然后进行冲刷与更新
-       *
-       * 2、如果stateParams函数中不是使用直接更新的方式，
-       * 而是又使用了setState，那么会走到else分支仍然批量更新
-       * 因为如果是函数入参里面更新肯定通过scheduler调度统一共用到单次直接更新的逻辑，
-       * 不管它当前更新层是否使用，它最终总归会使用到单次直接更新的批量合并这一步
-       */
-      (stateParams as StateFunc)();
-    } else {
+    if (typeof stateParams !== "function") {
       // 对象方式更新直接走单次直接更新的add入栈，后续统一批次合并更新
       Object.keys(stateParams).forEach(key => {
         (scheduler.get("add") as Scheduler<T>["add"])(
@@ -168,6 +156,18 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
           (stateParams as Partial<T> | T)[key],
         );
       });
+    } else {
+      /**
+       * 1、如果stateParams是函数的情况并且在函数中使用了直接更新的方式更新数据
+       * 那么这里需要先调用stateParams函数，产生一个直接更新的新一轮的批次更新
+       * 然后再直接检查产生的直接更新中这一轮的批次中的最新任务数据与任务队列，然后进行冲刷与更新
+       *
+       * 2、如果stateParams函数中不是使用直接更新的方式，
+       * 而是又使用了setState，那么会走到else分支仍然批量更新
+       * 因为如果是函数入参里面更新肯定通过scheduler调度统一共用到单次直接更新的逻辑，
+       * 不管它当前更新层是否使用，它最终总归会使用到单次直接更新的批量合并这一步
+       */
+      (stateParams as StateFunc)();
     }
   }
   
@@ -194,7 +194,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
         
         batchUpdate(() => taskQueueMap.forEach(task => task()));
         
-        const changedData = typeof stateParams === "function" ? stateMap : new Map(Object.entries(stateParams));
+        const changedData = typeof stateParams !== "function" ? new Map(Object.entries(stateParams)) : stateMap;
         batchDispatch(prevState, changedData);
       }
       callback?.(mapToObject(stateMap));

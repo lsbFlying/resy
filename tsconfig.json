@@ -2,6 +2,14 @@
   "compilerOptions": {
     "jsx": "react",
     "target": "es5",
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ESNext",
+      "es5",
+      "es6",
+      "es7"
+    ],
     "module": "esnext",
     "moduleResolution": "node",
     "outDir": "./dist",

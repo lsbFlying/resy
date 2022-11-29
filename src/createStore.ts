@@ -161,7 +161,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
         (scheduler.get("add") as Scheduler<T>["add"])(
           () => (
             (
-              initialValueLinkStore(key).get(key) as StoreMapValue<T>
+              initialValueConnectStore(key).get(key) as StoreMapValue<T>
             ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
           )((stateParams as Partial<T> | T)[key]),
           key,
@@ -230,8 +230,8 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     };
   }
   
-  // 为每一个数据字段储存链接到store容器中
-  function initialValueLinkStore(key: keyof T) {
+  // 为每一个数据字段储存连接到store容器中
+  function initialValueConnectStore(key: keyof T) {
     // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
     if (storeMap.get(key) !== undefined) return storeMap;
     genStoreMapKeyValue(key);
@@ -244,7 +244,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
       return externalMap.get(key as keyof ExternalMapValue<T>) || (
         (
           (
-            initialValueLinkStore(key) as StoreMap<T>
+            initialValueConnectStore(key) as StoreMap<T>
           ).get(key) as StoreMapValue<T>
         ).get("useSnapshot") as StoreMapValueType<T>["useSnapshot"]
       )();
@@ -266,7 +266,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
       (scheduler.get("add") as Scheduler<T>["add"])(
         () => (
           (
-            initialValueLinkStore(key).get(key) as StoreMapValue<T>
+            initialValueConnectStore(key).get(key) as StoreMapValue<T>
           ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
         )(val),
         key,

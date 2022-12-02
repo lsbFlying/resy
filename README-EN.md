@@ -49,7 +49,7 @@ Welcome to use 🌟🌟🌟🌟
 </details>
 
 ### Features
-- Support hook components and class components 😎
+- It is generated for hook, and the data state is compatible with class components 😎
 - Fine grained update, Better avoid redundant re-render 😎
 - Easy to use, and the learning cost is almost zero 😎
 

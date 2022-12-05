@@ -21,6 +21,9 @@
 <details>
 <summary>changed logs</summary>
 
+🌟`v4.0.6`：<br/>
+优化了代码，修复了setState的混用场景的批量触发的订阅变化的数据不完备的bug
+
 🌟`v4.0.5`：<br/>
 完善了setState与直接更新的所有混用场景的合并更新
 

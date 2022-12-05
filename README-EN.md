@@ -21,6 +21,10 @@
 <details>
 <summary>changed logs</summary>
 
+🌟`v4.0.6`：<br/>
+Optimized the code and fixed the bug of incomplete data
+of batch triggered subscription changes in the mixed use scenario of setState
+
 🌟`v4.0.5`：<br/>
 Improved the merging and updating of setState and direct updating of all mixed scenarios
 

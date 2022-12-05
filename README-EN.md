@@ -143,12 +143,15 @@ const store = createStore<{
   form?: FormInstance<{ sortNumber: number }>;
 }>(initialState);
 
+// const storeOrigin = createStore(initialState);
+
 function App() {
   /**
    * privatize the store data storage container
    * The following usage methods make the useStore of resy equivalent to the native useState of react in effect
+   * Note: The store created by createStore must have been executed in the static template code before the component 
    */
-  // const store = useMemo(() => createStore(initialState), []);
+  // const store = useMemo(() => storeOrigin, []);
   // const { count } = useStore(store);
   /**
    * The useStore also has parameters for initializing data

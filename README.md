@@ -139,12 +139,15 @@ const store = createStore<{
   form?: FormInstance<{ sortNumber: number }>;
 }>(initialState);
 
+// const storeOrigin = createStore(initialState);
+
 function App() {
   /**
    * 将store数据储存容器私有化
    * 下面的使用方式，使得resy的useStore在效果上等价于react原生的useState
+   * 注意：createStore创建的store需在组件之前的静态模版代码中就已经执行过
    */
-  // const privateStore = useMemo(() => createStore(initialState), []);
+  // const privateStore = useMemo(() => storeOrigin, []);
   // const { count } = useStore(privateStore);
   /**
    * useStore同时还具有初始化数据的参数

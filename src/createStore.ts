@@ -141,20 +141,25 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
     }
   }
   
+  /** 更新任务添加入栈 */
+  async function taskPush(key: keyof T, val: T[keyof T]) {
+    (scheduler.get("add") as Scheduler<T>["add"])(
+      () => (
+        (
+          initialValueConnectStore(key).get(key) as StoreMapValue<T>
+        ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
+      )(val),
+      key,
+      val,
+    );
+  }
+  
   /** 批量异步更新函数 */
   async function updater(stateParams: Partial<T> | T | StateFunc = {}) {
     if (typeof stateParams !== "function") {
-      // 对象方式更新直接走单次直接更新的add入栈，后续统一批次合并更新
+      // 对象方式更新直接走单次直接更新的添加入栈，后续统一批次合并更新
       Object.keys(stateParams).forEach(key => {
-        (scheduler.get("add") as Scheduler<T>["add"])(
-          () => (
-            (
-              initialValueConnectStore(key).get(key) as StoreMapValue<T>
-            ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
-          )((stateParams as Partial<T> | T)[key]),
-          key,
-          (stateParams as Partial<T> | T)[key],
-        );
+        taskPush(key, (stateParams as Partial<T> | T)[key]);
       });
     } else {
       /**
@@ -168,6 +173,27 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
        * 不管它当前更新层是否使用，它最终总归会使用到单次直接更新的批量合并这一步
        */
       (stateParams as StateFunc)();
+    }
+  }
+  
+  /**
+   * @description 最终批量处理（更新、触发）
+   * 借助then的（微任务）事件循环实现数据与任务更新的执行都统一入栈，然后冲刷更新
+   * 同时可以帮助React v18以下的版本实现React管理不到的地方自动批处理更新
+   * 但是异步更新的批量处理也导致无法立即获取最新数据
+   * 如果想要立即同步获取最新数据可以使用setState的回调
+   * 由此可见为了实现批量更新与同步获取最新数据有点拆东墙补西墙的味道
+   * 但好在setState的回调弥补了同步获取最新数据的问题
+   */
+  function finallyBatchHandle() {
+    const { taskDataMap, taskQueueMap } = (scheduler.get("getTask") as Scheduler<T>["getTask"])();
+    // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
+    (scheduler.get("flush") as Scheduler<T>["flush"])();
+    if (taskDataMap.size !== 0) {
+      // 更新之前的数据
+      const prevState = new Map(stateMap);
+      batchUpdate(() => taskQueueMap.forEach(task => task()));
+      batchDispatch(prevState, taskDataMap);
     }
   }
   
@@ -186,17 +212,7 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
    */
   function setState(stateParams: Partial<T> | T | StateFunc = {}, callback?: (nextState: T) => void) {
     updater(stateParams).then(() => {
-      const { taskDataMap, taskQueueMap } = (scheduler.get("getTask") as Scheduler<T>["getTask"])();
-      (scheduler.get("flush") as Scheduler<T>["flush"])();
-      if (taskDataMap.size !== 0) {
-        // 更新之前的数据
-        const prevState = new Map(stateMap);
-        
-        batchUpdate(() => taskQueueMap.forEach(task => task()));
-        
-        const changedData = typeof stateParams !== "function" ? new Map(Object.entries(stateParams)) : stateMap;
-        batchDispatch(prevState, changedData);
-      }
+      finallyBatchHandle();
       callback?.(mapToObject(stateMap));
     });
   }
@@ -264,32 +280,8 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
       return externalMap.get(key as keyof ExternalMapValue<T>) || stateMap.get(key);
     },
     set: (_, key: keyof T, val: T[keyof T]) => {
-      (scheduler.get("add") as Scheduler<T>["add"])(
-        () => (
-          (
-            initialValueConnectStore(key).get(key) as StoreMapValue<T>
-          ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
-        )(val),
-        key,
-        val,
-      ).then(() => {
-        /**
-         * 借助then的事件循环实现数据与任务更新的执行都统一入栈，然后冲刷更新
-         * 同时可以帮助React v18以下的版本实现React管理不到的地方自动批处理更新
-         * 但是异步更新的批量处理也导致无法立即获取最新数据
-         * 如果想要立即同步获取最新数据可以使用setState的回调
-         * 由此可见为了实现批量更新与同步获取最新数据有点拆东墙补西墙的味道
-         * 但好在setState的回调弥补了同步获取最新数据的问题
-         */
-        const { taskDataMap, taskQueueMap } = (scheduler.get("getTask") as Scheduler<T>["getTask"])();
-        
-        // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
-        (scheduler.get("flush") as Scheduler<T>["flush"])();
-        if (taskDataMap.size !== 0) {
-          const prevState = new Map(stateMap);
-          batchUpdate(() => taskQueueMap.forEach(task => task()));
-          batchDispatch(prevState, taskDataMap);
-        }
+      taskPush(key, val).then(() => {
+        finallyBatchHandle();
       });
       return true;
     },

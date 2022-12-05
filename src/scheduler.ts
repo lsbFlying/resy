@@ -13,7 +13,7 @@ const taskDataMap = new Map();
  */
 const scheduler = new Map<keyof Scheduler, Scheduler[keyof Scheduler]>();
 
-scheduler.set("add", async (task, key, val) => {
+scheduler.set("add", (task, key, val) => {
   taskQueueMap.set(key, task);
   taskDataMap.set(key, val);
 });

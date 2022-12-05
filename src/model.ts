@@ -182,7 +182,7 @@ export type MapStateToProps<S extends State, P extends State = {}> = P & {
 // resy的调度类型接口
 export interface Scheduler<T extends State = {}> {
   /** 新增直接更新数据的key/value以及相应的任务函数 */
-  add(task: Callback, key: keyof T, val: T[keyof T]): Promise<void>;
+  add(task: Callback, key: keyof T, val: T[keyof T]): void;
   /** 冲刷任务数据与任务队列 */
   flush(): void;
   /** 获取任务数据与任务队列 */

@@ -48,7 +48,7 @@ export function createStore<T extends State>(
   
   /**
    * 不改变传参state，同时resy使用Map与Set提升性能
-   * 如stateMap、storeMap、storeCoreMap、storeChangesSet等
+   * 如stateMap、storeMap、storeCoreMap、storeChangeSet等
    */
   let stateMap: Map<keyof T, T[keyof T]> = new Map(Object.entries(state));
   
@@ -89,13 +89,13 @@ export function createStore<T extends State>(
      * 都需要一个subscribe的强更新绑定回调
      * 而每一个绑定回调函数是针对组件对于数据使用的更新开关
      */
-    const storeChangesSet = new Set<Callback>();
+    const storeChangeSet = new Set<Callback>();
     
     const storeMapValue: StoreMapValue<T> = new Map();
     storeMapValue.set("subscribe", (storeChange: Callback) => {
-      storeChangesSet.add(storeChange);
+      storeChangeSet.add(storeChange);
       return () => {
-        storeChangesSet.delete(storeChange);
+        storeChangeSet.delete(storeChange);
         if (unmountClear) stateMap.set(key, state[key]);
       };
     });
@@ -109,7 +109,7 @@ export function createStore<T extends State>(
         // 这一步是为了配合getSnapshot，使得getSnapshot可以获得最新值
         stateMap.set(key, val);
         // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
-        storeChangesSet.forEach(storeChange => storeChange());
+        storeChangeSet.forEach(storeChange => storeChange());
       }
     });
     storeMapValue.set("useSnapshot", () => useSyncExternalStore(

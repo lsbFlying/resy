@@ -136,20 +136,25 @@ import { FormInstance } from "antd/es/form";
 
 const initialState = {
   count: 123,
+  text: "QWE",
 };
 
 const store = createStore<{
   count: number;
+  text: string;
   form?: FormInstance<{ sortNumber: number }>;
 }>(initialState);
 
 function App() {
   /**
    * 将store数据储存容器私有化
-   * 下面的使用方式，使得resy的useStore在效果上等价于react原生的useState
+   * 下面的使用方式，使得resy的useStore在效果上等价于react原生的useState:
+   * const [count, setCount] = useStore(privateStore);
+   * const [text, setText] = useStore(privateStore);
    */
-  // const privateStore = useMemo(() => createStore(initialState, { privatization: true }), []);
-  // const { count } = useStore(privateStore);
+  // const privateStore = useMemo(() => createStore({ count: 0, text: "QWE }, { privatization: true }), []);
+  // 或者setState不解构直接使用store.setState
+  // const { count, text, setState } = useStore(privateStore);
   /**
    * useStore同时还具有初始化数据的参数
    * 尽管createStore在传入初始化默认数据时已经有过默认数据

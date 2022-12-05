@@ -141,10 +141,12 @@ import {Input} from "postcss";
 
 const initialState = {
   count: 123,
+	text: "QWE",
 };
 
 const store = createStore<{
   count: number;
+  text: string;
   form?: FormInstance<{ sortNumber: number }>;
 }>(initialState);
 
@@ -152,9 +154,12 @@ function App() {
   /**
    * privatize the store data storage container
    * The following usage methods make the useStore of resy equivalent to the native useState of react in effect
+   * const [count, setCount] = useStore(privateStore);
+   * const [text, setText] = useStore(privateStore);
    */
   // const privateStore = useMemo(() => createStore(initialState, { privatization: true }), []);
-  // const { count } = useStore(store);
+  // Or use store.setState directly without deconstructing the setState
+  // const { count, text, setState } = useStore(privateStore);
   /**
    * The useStore also has parameters for initializing data
    * Although createStore already has default data when it passes in initialization default data

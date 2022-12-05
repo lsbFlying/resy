@@ -221,6 +221,8 @@ export interface Scheduler<T extends State = {}> {
  * 作用实现其实就是原生的useState：
  * const [count, setCount] = useStore(privateStore);
  * const [text, setText] = useStore(privateStore);
+ *
+ * notes: privatization参数需要结合useMemo使用才可以达到数据状态私有化的效果
  */
 export type CreateStoreOptions = {
   unmountClear?: boolean;

@@ -36,7 +36,7 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  */
 export function createStore<T extends State>(
   state: T,
-  options: CreateStoreOptions,
+  options?: CreateStoreOptions,
 ): T & SetState<T> & Subscribe<T> {
   const { unmountClear = true, privatization } = options || {};
   

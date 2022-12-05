@@ -182,12 +182,41 @@ export type MapStateToProps<S extends State, P extends State = {}> = P & {
 // resy的调度类型接口
 export interface Scheduler<T extends State = {}> {
   /** 新增直接更新数据的key/value以及相应的任务函数 */
-  add(task: Callback, key: keyof T, val: T[keyof T]): void;
+  add(
+    task: Callback,
+    key: keyof T,
+    val: T[keyof T],
+    taskDataMap?: Map<keyof T, T>,
+    taskQueueMap?: Map<keyof T, Callback>
+  ): void;
   /** 冲刷任务数据与任务队列 */
-  flush(): void;
+  flush(
+    taskDataMap?: Map<keyof T, T>,
+    taskQueueMap?: Map<keyof T, Callback>
+  ): void;
   /** 获取任务数据与任务队列 */
-  getTask(): {
+  getTask(
+    taskDataMap?: Map<keyof T, T>,
+    taskQueueMap?: Map<keyof T, Callback>
+  ): {
     taskDataMap: Map<keyof T, T[keyof T]>,
-    taskQueueMap: Map<string | number | symbol, Callback>,
+    taskQueueMap: Map<keyof T, Callback>,
   };
 }
+
+/**
+ * unmountClear：该参数主要是为了在某模块卸载的时候自动清除初始化数据，恢复数据为初始化传入的state数据
+ * 之所以会有unmountClear这样的参数设计是因为resy为了极简的使用便利性，一般是放在某个文件中进行调用返回一个store
+ * 但是之后再进入该模块之后都是走的Node.js的import的缓存了，即没有再次执行resy方法了导致数据状态始终保持
+ * 也就是在 "静态模板" 的实现方式下，函数是不会再次运行的
+ * 但这不是一个坏事儿，因为本身store作为一个全局范围内可控可引用的状态存储器而言，具备这样的能力是有益的
+ * 比如登录后的用户信息数据作为一个全局模块都可公用分享的数据而言就很好的体现了这一点
+ * 但这种全局真正公用分享的数据是相对而言少数的，大部分情况下是没那么多要全局分享公用的数据的
+ * 所以unmountClear默认设置为true，符合常规使用即可，除非遇到像上述登录信息数据那样的全局数据而言才会设置为false
+ *
+ * privatization：该参数主要是
+ */
+export type CreateStoreOptions = {
+  unmountClear?: boolean;
+  privatization?: boolean;
+};

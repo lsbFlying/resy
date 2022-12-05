@@ -22,8 +22,9 @@
 <summary>changed logs</summary>
 
 🌟`v4.0.6`：<br/>
-Optimized the code and fixed the bug of incomplete data
-of batch triggered subscription changes in the mixed use scenario of setState
+1. Optimized the code and fixed the bug of incomplete data
+of batch triggered subscription changes in the mixed use scenario of setState.
+2. Fixed a bug in the way createStore is used as a private data state.
 
 🌟`v4.0.5`：<br/>
 Improved the merging and updating of setState and direct updating of all mixed scenarios
@@ -147,15 +148,12 @@ const store = createStore<{
   form?: FormInstance<{ sortNumber: number }>;
 }>(initialState);
 
-// const storeOrigin = createStore(initialState);
-
 function App() {
   /**
    * privatize the store data storage container
    * The following usage methods make the useStore of resy equivalent to the native useState of react in effect
-   * Note: The store created by createStore must have been executed in the static template code before the component 
    */
-  // const store = useMemo(() => storeOrigin, []);
+  // const privateStore = useMemo(() => createStore(initialState, { privatization: true }), []);
   // const { count } = useStore(store);
   /**
    * The useStore also has parameters for initializing data

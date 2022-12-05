@@ -13,21 +13,42 @@ const taskDataMap = new Map();
  */
 const scheduler = new Map<keyof Scheduler, Scheduler[keyof Scheduler]>();
 
-scheduler.set("add", (task, key, val) => {
-  taskQueueMap.set(key, task);
-  taskDataMap.set(key, val);
-});
+scheduler.set(
+  "add",
+  (
+    task,
+    key,
+    val,
+    taskDataMapParam,
+    taskQueueMapParam,
+  ) => {
+    (taskDataMapParam || taskDataMap).set(key, val);
+    (taskQueueMapParam || taskQueueMap).set(key, task);
+  },
+);
 
-scheduler.set("flush", () => {
-  taskQueueMap.clear();
-  taskDataMap.clear();
-});
+scheduler.set(
+  "flush",
+  (
+    taskDataMapParam: Map<never, {}> | undefined,
+    taskQueueMapParam: Map<never, Callback> | undefined,
+  ) => {
+    (taskDataMapParam || taskQueueMap).clear();
+    (taskQueueMapParam || taskQueueMap).clear();
+  },
+);
 
-scheduler.set("getTask", () => {
-  return {
-    taskDataMap: new Map(taskDataMap),
-    taskQueueMap: new Map(taskQueueMap),
-  };
-});
+scheduler.set(
+  "getTask",
+  (
+    taskDataMapParam: Map<never, {}> | undefined,
+    taskQueueMapParam: Map<never, Callback> | undefined,
+  ) => {
+    return {
+      taskDataMap: new Map(taskDataMapParam || taskDataMap),
+      taskQueueMap: new Map(taskQueueMapParam || taskQueueMap),
+    };
+  },
+);
 
 export default scheduler;

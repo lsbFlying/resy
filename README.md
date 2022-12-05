@@ -22,7 +22,8 @@
 <summary>changed logs</summary>
 
 🌟`v4.0.6`：<br/>
-优化了代码，修复了setState的混用场景的批量触发的订阅变化的数据不完备的bug
+1、优化了代码，修复了setState的混用场景的批量触发的订阅变化的数据不完备的bug；
+2、修复了createStore作为私有化数据状态使用的的方式的bug；
 
 🌟`v4.0.5`：<br/>
 完善了setState与直接更新的所有混用场景的合并更新
@@ -142,15 +143,12 @@ const store = createStore<{
   form?: FormInstance<{ sortNumber: number }>;
 }>(initialState);
 
-// const storeOrigin = createStore(initialState);
-
 function App() {
   /**
    * 将store数据储存容器私有化
    * 下面的使用方式，使得resy的useStore在效果上等价于react原生的useState
-   * 注意：createStore创建的store需在组件之前的静态模版代码中就已经执行过
    */
-  // const privateStore = useMemo(() => storeOrigin, []);
+  // const privateStore = useMemo(() => createStore(initialState, { privatization: true }), []);
   // const { count } = useStore(privateStore);
   /**
    * useStore同时还具有初始化数据的参数

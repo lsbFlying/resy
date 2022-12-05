@@ -13,7 +13,7 @@ import { batchUpdate, storeCoreMapKey, useStoreKey } from "./static";
 import type {
   Callback, ExternalMapType, ExternalMapValue, SetState, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Subscribe, Unsubscribe,
-  Scheduler, CustomEventListener, Listener,
+  Scheduler, CustomEventListener, Listener, CreateStoreOptions,
 } from "./model";
 import { mapToObject } from "./utils";
 
@@ -32,17 +32,20 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * @author liushanbao
  * @date 2022-05-05
  * @param state
- * @param unmountClear
- * @description unmountClear参数主要是为了在某模块卸载的时候自动清除初始化数据，恢复数据为初始化传入的state数据
- * 之所以会有unmountClear这样的参数设计是因为resy为了极简的使用便利性，一般是放在某个文件中进行调用返回一个store
- * 但是之后再进入该模块之后都是走的Node.js的import的缓存了，即没有再次执行resy方法了导致数据状态始终保持
- * 也就是在 "静态模板" 的实现方式下，函数是不会再次运行的
- * 但这不是一个坏事儿，因为本身store作为一个全局范围内可控可引用的状态存储器而言，具备这样的能力是有益的
- * 比如登录后的用户信息数据作为一个全局模块都可公用分享的数据而言就很好的体现了这一点
- * 但这种全局真正公用分享的数据是相对而言少数的，大部分情况下是没那么多要全局分享公用的数据的
- * 所以unmountClear默认设置为true，符合常规使用即可，除非遇到像上述登录信息数据那样的全局数据而言才会设置为false
+ * @param options
  */
-export function createStore<T extends State>(state: T, unmountClear = true): T & SetState<T> & Subscribe<T> {
+export function createStore<T extends State>(
+  state: T,
+  options: CreateStoreOptions,
+): T & SetState<T> & Subscribe<T> {
+  const { unmountClear = true, privatization } = options || {};
+  
+  // 更新的任务队列（私有化）
+  const taskQueueMapPrivate = privatization ? new Map<keyof T, Callback>() : undefined;
+  
+  // 更新的任务数据（私有化）
+  const taskDataMapPrivate = privatization ? new Map<keyof T, T>() : undefined;
+  
   /**
    * 不改变传参state，同时resy使用Map与Set提升性能
    * 如stateMap、storeMap、storeCoreMap、storeChangesSet等
@@ -151,6 +154,8 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
       )(val),
       key,
       val,
+      taskDataMapPrivate,
+      taskQueueMapPrivate,
     );
   }
   
@@ -186,9 +191,12 @@ export function createStore<T extends State>(state: T, unmountClear = true): T &
    * 但好在setState的回调弥补了同步获取最新数据的问题
    */
   function finallyBatchHandle() {
-    const { taskDataMap, taskQueueMap } = (scheduler.get("getTask") as Scheduler<T>["getTask"])();
+    const { taskDataMap, taskQueueMap } = (scheduler.get("getTask") as Scheduler<T>["getTask"])(
+      taskDataMapPrivate,
+      taskQueueMapPrivate,
+    );
     // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
-    (scheduler.get("flush") as Scheduler<T>["flush"])();
+    (scheduler.get("flush") as Scheduler<T>["flush"])(taskDataMapPrivate, taskQueueMapPrivate);
     if (taskDataMap.size !== 0) {
       // 更新之前的数据
       const prevState = new Map(stateMap);

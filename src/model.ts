@@ -214,7 +214,13 @@ export interface Scheduler<T extends State = {}> {
  * 但这种全局真正公用分享的数据是相对而言少数的，大部分情况下是没那么多要全局分享公用的数据的
  * 所以unmountClear默认设置为true，符合常规使用即可，除非遇到像上述登录信息数据那样的全局数据而言才会设置为false
  *
- * privatization：该参数主要是
+ * privatization：该参数主要是为了createStore创建的store成为私有化数据状态容器
+ * 它可以用如下方式：
+ * const privateStore = useMemo(() => createStore({ count: 0, text: "QWE }, { privatization: true }), []);
+ * const { count, text, setState } = useStore(privateStore);  // 或者setState不解构直接使用store.setState
+ * 作用实现其实就是原生的useState：
+ * const [count, setCount] = useStore(privateStore);
+ * const [text, setText] = useStore(privateStore);
  */
 export type CreateStoreOptions = {
   unmountClear?: boolean;

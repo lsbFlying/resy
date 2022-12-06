@@ -105,7 +105,7 @@ const store = createStore<Store>(
      * 特殊使用场景如login登录信息数据
      * 或theme主题数据属于全局状态数据可以设置为false
      */
-    unmountClear: true,
+    unmountReset: true,
     /**
      * @description 该参数主要是为了createStore创建的store成为私有化数据状态容器
      * 它可以用如下方式：

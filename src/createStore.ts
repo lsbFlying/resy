@@ -38,13 +38,13 @@ export function createStore<T extends State>(
   state: T,
   options?: CreateStoreOptions,
 ): T & SetState<T> & Subscribe<T> {
-  const { unmountClear = true, privatization } = options || {};
+  const { unmountReset = true, privatization } = options || {};
   
   // 更新的任务队列（私有化）
   const taskQueueMapPrivate = privatization ? new Map<keyof T, Callback>() : undefined;
   
   // 更新的任务数据（私有化）
-  const taskDataMapPrivate = privatization ? new Map<keyof T, T>() : undefined;
+  const taskDataMapPrivate = privatization ? new Map<keyof T, T[keyof T]>() : undefined;
   
   /**
    * 不改变传参state，同时resy使用Map与Set提升性能
@@ -63,7 +63,7 @@ export function createStore<T extends State>(
     });
   });
   storeCoreMap.set("resetState", () => {
-    if (unmountClear) stateMap = new Map(Object.entries(state));
+    if (unmountReset) stateMap = new Map(Object.entries(state));
   });
   storeCoreMap.set("listenerEventType", Symbol("storeListenerSymbol"));
   storeCoreMap.set("dispatchStoreSet", new Set<CustomEventListener<T>>());
@@ -96,7 +96,7 @@ export function createStore<T extends State>(
       storeChangeSet.add(storeChange);
       return () => {
         storeChangeSet.delete(storeChange);
-        if (unmountClear) stateMap.set(key, state[key]);
+        if (unmountReset) stateMap.set(key, state[key]);
       };
     });
     storeMapValue.set("getSnapshot", () => stateMap.get(key));

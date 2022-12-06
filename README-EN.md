@@ -109,7 +109,7 @@ const store = createStore<Store>(
      * Special usage scenarios, such as login information data
      * Or theme data belongs to global status data, which can be set to false
      */
-    unmountClear: true,
+    unmountReset: true,
     /**
      * @description This parameter is mainly used to create a store to become a private data status container
      * It can be used in the following ways:

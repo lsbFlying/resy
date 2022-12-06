@@ -1,7 +1,7 @@
 import type { Callback, Scheduler } from "./model";
 
 // 更新的任务队列
-const taskQueueMap = new Map<string | number | symbol, Callback>();
+const taskQueueMap = new Map();
 
 // 更新的任务数据
 const taskDataMap = new Map();
@@ -16,11 +16,11 @@ const scheduler = new Map<keyof Scheduler, Scheduler[keyof Scheduler]>();
 scheduler.set(
   "add",
   (
-    task,
-    key,
-    val,
-    taskDataMapParam,
-    taskQueueMapParam,
+    task: Callback,
+    key: never,
+    val: any,
+    taskDataMapParam?: Map<never, any>,
+    taskQueueMapParam?: Map<never, Callback>,
   ) => {
     (taskDataMapParam || taskDataMap).set(key, val);
     (taskQueueMapParam || taskQueueMap).set(key, task);
@@ -30,8 +30,8 @@ scheduler.set(
 scheduler.set(
   "flush",
   (
-    taskDataMapParam: Map<never, {}> | undefined,
-    taskQueueMapParam: Map<never, Callback> | undefined,
+    taskDataMapParam?: Map<never, any>,
+    taskQueueMapParam?: Map<never, Callback>,
   ) => {
     (taskDataMapParam || taskQueueMap).clear();
     (taskQueueMapParam || taskQueueMap).clear();
@@ -41,8 +41,8 @@ scheduler.set(
 scheduler.set(
   "getTask",
   (
-    taskDataMapParam: Map<never, {}> | undefined,
-    taskQueueMapParam: Map<never, Callback> | undefined,
+    taskDataMapParam?: Map<never, any>,
+    taskQueueMapParam?: Map<never, Callback>,
   ) => {
     return {
       taskDataMap: new Map(taskDataMapParam || taskDataMap),

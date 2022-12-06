@@ -31,11 +31,11 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * 虽然resy会有类型自动推断，但是对于数据状态类型可能变化的情况下还是不够准确的
  * @author liushanbao
  * @date 2022-05-05
- * @param state
- * @param options
+ * @param initialState 初始化状态数据
+ * @param options 状态容器配置项
  */
 export function createStore<T extends State>(
-  state: T,
+  initialState: T,
   options?: CreateStoreOptions,
 ): T & SetState<T> & Subscribe<T> {
   const { unmountReset = true, privatization } = options || {};
@@ -50,7 +50,7 @@ export function createStore<T extends State>(
    * 不改变传参state，同时resy使用Map与Set提升性能
    * 如stateMap、storeMap、storeCoreMap、storeChangeSet等
    */
-  let stateMap: Map<keyof T, T[keyof T]> = new Map(Object.entries(state));
+  let stateMap: Map<keyof T, T[keyof T]> = new Map(Object.entries(initialState));
   
   // 每一个resy生成的store具有的监听订阅处理，并且可以获取最新state数据
   const storeCoreMap: StoreCoreMapType<T> = new Map();
@@ -63,7 +63,7 @@ export function createStore<T extends State>(
     });
   });
   storeCoreMap.set("resetState", () => {
-    if (unmountReset) stateMap = new Map(Object.entries(state));
+    if (unmountReset) stateMap = new Map(Object.entries(initialState));
   });
   storeCoreMap.set("listenerEventType", Symbol("storeListenerSymbol"));
   storeCoreMap.set("dispatchStoreSet", new Set<CustomEventListener<T>>());
@@ -96,7 +96,7 @@ export function createStore<T extends State>(
       storeChangeSet.add(storeChange);
       return () => {
         storeChangeSet.delete(storeChange);
-        if (unmountReset) stateMap.set(key, state[key]);
+        if (unmountReset) stateMap.set(key, initialState[key]);
       };
     });
     storeMapValue.set("getSnapshot", () => stateMap.get(key));
@@ -283,7 +283,7 @@ export function createStore<T extends State>(
   externalMap.set(storeCoreMapKey, storeCoreMap);
   externalMap.set(useStoreKey, storeMapProxy);
   
-  return new Proxy(state, {
+  return new Proxy(initialState, {
     get: (_, key: keyof T) => {
       return externalMap.get(key as keyof ExternalMapValue<T>) || stateMap.get(key);
     },

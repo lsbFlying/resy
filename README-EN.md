@@ -23,8 +23,8 @@
 
 🌟`v5.0.0`：<br/>
 1. Optimized the code and fixed the bug of incomplete data
-of batch triggered subscription changes in the mixed use scenario of setState.
-2. Fixed a bug in the way createStore is used as a private data state.
+of batch triggered subscription changes in the mixed use scenario of setState.<br/>
+2. Fixed a bug in the way createStore is used as a private data state.<br/>
 3. Added usePrivateStore hook to simplify the use of status privatization.
 
 🌟`v4.0.5`：<br/>

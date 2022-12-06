@@ -22,8 +22,8 @@
 <summary>changed logs</summary>
 
 🌟`v5.0.0`：<br/>
-1、优化了代码，修复了setState的混用场景的批量触发的订阅变化的数据不完备的bug；
-2、修复了createStore作为私有化数据状态使用的的方式的bug；
+1、优化了代码，修复了setState的混用场景的批量触发的订阅变化的数据不完备的bug；<br/>
+2、修复了createStore作为私有化数据状态使用的的方式的bug；<br/>
 3、新增了usePrivateStore钩子简化了状态数据私有化的使用方式；
 
 🌟`v4.0.5`：<br/>

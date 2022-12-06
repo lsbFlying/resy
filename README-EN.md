@@ -67,7 +67,7 @@ npm i resy
 ```
 
 ### Overview
-resy requires react version V >= 16.8; resy has five APIs, which are:
+resy requires react version V >= 16.8; resy has six APIs, which are:
 - createStore：Create a storage container for global status data
 - useStore：Use state data in the state storage container generated from createstore
 - usePrivateStore：Change the store created by createStore into a private state data container

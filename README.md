@@ -63,7 +63,7 @@ npm i resy
 ```
 
 ### 概览
-resy需要react版本 v >= 16.8；resy有五个API，分别是：
+resy需要react版本 v >= 16.8；resy有六个API，分别是：
 - createStore：创建一个全局状态数据的存储容器
 - useStore：从createStore生成的状态存储容器中使用state数据
 - usePrivateStore：将createStore创建的store变为私有化状态数据容器

@@ -21,7 +21,7 @@
 <details>
 <summary>changed logs</summary>
 
-🌟`v4.0.6`：<br/>
+🌟`v5.0.0`：<br/>
 1. Optimized the code and fixed the bug of incomplete data
 of batch triggered subscription changes in the mixed use scenario of setState.
 2. Fixed a bug in the way createStore is used as a private data state.

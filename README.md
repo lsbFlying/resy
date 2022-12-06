@@ -24,6 +24,7 @@
 🌟`v5.0.0`：<br/>
 1、优化了代码，修复了setState的混用场景的批量触发的订阅变化的数据不完备的bug；
 2、修复了createStore作为私有化数据状态使用的的方式的bug；
+3、新增了usePrivateStore钩子简化了状态数据私有化的使用方式；
 
 🌟`v4.0.5`：<br/>
 完善了setState与直接更新的所有混用场景的合并更新
@@ -65,11 +66,12 @@ npm i resy
 resy需要react版本 v >= 16.8；resy有五个API，分别是：
 - createStore：创建一个全局状态数据的存储容器
 - useStore：从createStore生成的状态存储容器中使用state数据
+- usePrivateStore：将createStore创建的store变为私有化状态数据容器
 - setState：更新数据
 - subscribe：订阅监听createStore生成的store数据的变化
 - view：帮助组件具备 "更完善的规避re-render的方式" 的能力
 
-### createStore、useStore
+### createStore、useStore、usePrivateStore
 ```tsx
 import { createStore, useStore } from "resy";
 
@@ -93,15 +95,31 @@ const store = createStore<Store>(
       console.log("testFun");
     },
   },
-  /**
-   * 默认为true
-   * true：默认模块卸载时自动恢复初始化数据状态
-   * false：模块卸载时也不恢复初始化数据，保持数据状态
-   * 常规使用场景设置为true即可
-   * 特殊使用场景如login登录信息数据
-   * 或theme主题数据属于全局状态数据可以设置为false
-   */
-  // false,
+  // 常规而言options配置项不需要配置，可不填
+  {
+    /**
+     * 默认为true
+     * true：默认模块卸载时自动恢复初始化数据状态
+     * false：模块卸载时也不恢复初始化数据，保持数据状态
+     * 常规使用场景设置为true即可
+     * 特殊使用场景如login登录信息数据
+     * 或theme主题数据属于全局状态数据可以设置为false
+     */
+    unmountClear: true,
+    /**
+     * @description 该参数主要是为了createStore创建的store成为私有化数据状态容器
+     * 它可以用如下方式：
+     * const privateStore = useMemo(() => createStore({ count: 0, text: "QWE }, { privatization: true }), []);
+     * 或者： const privateStore = usePrivateStore({ count: 0, text: "QWE });
+     * const { count, text, setState } = useStore(privateStore);  // 或者setState不解构直接使用store.setState
+     * 作用实现其实就是原生的useState：
+     * const [count, setCount] = useStore(privateStore);
+     * const [text, setText] = useStore(privateStore);
+     *
+     * notes: privatization参数需要结合useMemo或者usePrivateStore使用才可以达到数据状态私有化的效果
+     */
+    privatization: false,
+  },
 );
 
 function App() {
@@ -130,7 +148,7 @@ function App() {
 
 ```tsx
 import { useMemo } from "react";
-import { createStore, useStore } from "resy";
+import { createStore, useStore, usePrivateStore } from "resy";
 import { Form } from "antd";
 import { FormInstance } from "antd/es/form";
 
@@ -153,6 +171,9 @@ function App() {
    * const [text, setText] = useStore(privateStore);
    */
   // const privateStore = useMemo(() => createStore({ count: 0, text: "QWE }, { privatization: true }), []);
+  // 上下这两句代码等效，usePrivateStore钩子是上面代码的实现
+  // const privateStore = usePrivateStore(initialState);
+  
   // 或者setState不解构直接使用store.setState
   // const { count, text, setState } = useStore(privateStore);
   /**

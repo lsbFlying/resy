@@ -1,7 +1,8 @@
 import { useMemo } from "react";
-import type { State } from "./model";
+import type { State, SetState, Subscribe } from "./model";
 import { storeCoreMapKey, useStoreKey } from "./static";
 import { isEmptyObj } from "./utils";
+import { createStore } from "./createStore";
 
 /**
  * useStore
@@ -28,4 +29,20 @@ export function useStore<S extends State>(store: S, hookInitialState?: Partial<S
   }, []);
   
   return store[useStoreKey as keyof S];
+}
+
+/**
+ * @description 帮助组件可以使用resy创建私有化的store数据状态容器
+ * 它可以用如下方式：
+ * const privateStore = usePrivateStore({ count: 0, text: "QWE });
+ * const { count, text, setState } = useStore(privateStore);  // 或者setState不解构直接使用store.setState
+ * 作用实现其实就是原生的useState：
+ * const [count, setCount] = useStore(privateStore);
+ * const [text, setText] = useStore(privateStore);
+ *
+ * notes: 出入参与createStore是一样的
+ */
+export function usePrivateStore<T extends State>(state: T): T & SetState<T> & Subscribe<T> {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => createStore<T>(state, { privatization: true }), []);
 }

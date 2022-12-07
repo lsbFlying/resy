@@ -24,7 +24,8 @@
 🌟`v5.0.0`：<br/>
 1、优化了代码，修复了setState的混用场景的批量触发的订阅变化的数据不完备的bug；<br/>
 2、修复了createStore作为私有化数据状态使用的的方式的bug；<br/>
-3、新增了usePrivateStore钩子简化了状态数据私有化的使用方式；
+3、新增了 "usePrivateStore" 钩子简化了状态数据私有化的使用方式；<br/>
+4、新增了 "syncUpdate" 同步更新api；
 
 🌟`v4.0.5`：<br/>
 完善了setState与直接更新的所有混用场景的合并更新
@@ -68,6 +69,7 @@ resy需要react版本 v >= 16.8；resy有六个API，分别是：
 - useStore：从createStore生成的状态存储容器中使用state数据
 - usePrivateStore：将createStore创建的store变为私有化状态数据容器
 - setState：更新数据
+- syncUpdate：同步更新数据
 - subscribe：订阅监听createStore生成的store数据的变化
 - view：帮助组件具备 "更完善的规避re-render的方式" 的能力
 
@@ -82,6 +84,7 @@ type Store = {
   testObj: { name: string };
   testArr: { age: number }[];
   testFun: () => void;
+  inputValue: string;
 };
 // 生成的这个store可以全局共享，直接引入store即可
 const store = createStore<Store>(
@@ -94,6 +97,7 @@ const store = createStore<Store>(
       store.count++;
       console.log("testFun");
     },
+    inputValue: "",
   },
   // 常规而言options配置项不需要配置，可不填
   {
@@ -128,17 +132,31 @@ function App() {
    * 则只能获取纯数据而无法驱动组件更新重新渲染
    */
   const {
-    count, text, testObj: { name }, testArr, testFun,
+    count, text, testObj: { name }, testArr, testFun, inputValue,
   } = useStore(store);
   
   // 或者: const state = useStore(store);
   // state.count; ...等等
+  
+  function inputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    /**
+     * todo：这种受控input一类的输入框的更新需要同步更新
+     * 否则由于store.setState或者store.xxx = newValue这种异步更新
+     * 会导致输入文本域无法输入英文以外的语言字符文本
+     * todo：这算是resy更新调度机制与react本身针对文本输入的
+     * 更新执行机制冲突的一个无奈的解决办法吧
+     */
+    store.syncUpdate({
+      inputValue: event.target.value,
+    });
+  }
   
   return (
     <>
       <p>{count}</p>
       <p>{text}</p>
       <p>{name}</p>
+      <input value={inputValue} onChange={inputChange}/>
       <button onClick={testFun}>测试按钮</button><br/>
       {testArr.map(item => `年龄：${item}`)}
     </>

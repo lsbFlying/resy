@@ -162,7 +162,8 @@ export type SetState<T extends State> = Readonly<{
  * 而直接的单次更新是异步的，同步内嵌套异步会让代码变得更复杂而难以维护
  * 也不符合同步更新的本质逻辑，所以是单纯的对象数据更新即可
  *
- * C：这算是resy更新调度机制与react本身输入更新的执行机制的冲突的一个解决办法吧
+ * C："syncUpdate" 算是resy更新调度机制与react本身针对文本输入的
+ * 更新执行机制冲突的一个无奈的解决办法吧
  */
 export type SyncUpdate<T extends State> = Readonly<{
   syncUpdate(

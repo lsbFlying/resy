@@ -40,10 +40,17 @@ export function createStore<T extends State>(
 ): T & SetState<T> & Subscribe<T> & SyncUpdate<T> {
   const { unmountReset = true, privatization } = options || {};
   
-  // 更新的任务队列（私有化）
+  /**
+   * @description 更新的任务队列（私有化）、更新的任务数据（私有化）
+   * 配合usePrivateStore该hook api的使用
+   * 因为 "scheduler" 全局统一调度在如果作为私有状态的情况下
+   * 会使得状态数据的更新针对每一个私有数据而失效
+   * 只会对最后一个私有状态容器产生更新效果
+   *
+   * 这就需要私有的 "更新的任务队列（私有化）" 与 "更新的任务数据（私有化）"
+   * 来解决每一个私有状态容器的有效更新的任务或者更新数据Map中的key不会因为相同而冲突的问题
+   */
   const taskQueueMapPrivate = privatization ? new Map<keyof T, Callback>() : undefined;
-  
-  // 更新的任务数据（私有化）
   const taskDataMapPrivate = privatization ? new Map<keyof T, T[keyof T]>() : undefined;
   
   /**

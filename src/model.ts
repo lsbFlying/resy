@@ -89,7 +89,7 @@ export type StoreCoreMapType<T extends State> = Map<
   StoreCoreMapValue<T>[keyof StoreCoreMapValue<T>]
 >;
 
-export type ExternalMapValue<T extends State> = SetState<T> & Subscribe<T> & {
+export type ExternalMapValue<T extends State> = SetState<T> & Subscribe<T> & SyncUpdate<T> & {
   [storeCoreMapKey]: StoreCoreMapType<T>;
   [useStoreKey]: object;
 }
@@ -147,6 +147,18 @@ export type SetState<T extends State> = Readonly<{
   setState(
     state: Partial<T> | T | StateFunc,
     callback?: (nextState: T) => void,
+  ): void;
+}>;
+
+/**
+ * @description 非异步更新，强制同步更新
+ * 为了react的更新机制不适应在异步中执行的场景
+ * 该场景为在异步中更新受控input类输入框的value值
+ * 会导致输入不了非英文以外的语言文字
+ */
+export type SyncUpdate<T extends State> = Readonly<{
+  syncUpdate(
+    state: Partial<T> | T,
   ): void;
 }>;
 

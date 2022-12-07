@@ -13,7 +13,7 @@ import { batchUpdate, storeCoreMapKey, useStoreKey } from "./static";
 import type {
   Callback, ExternalMapType, ExternalMapValue, SetState, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Subscribe, Unsubscribe,
-  Scheduler, CustomEventListener, Listener, CreateStoreOptions,
+  Scheduler, CustomEventListener, Listener, CreateStoreOptions, SyncUpdate,
 } from "./model";
 import { mapToObject } from "./utils";
 
@@ -37,7 +37,7 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
 export function createStore<T extends State>(
   initialState: T,
   options?: CreateStoreOptions,
-): T & SetState<T> & Subscribe<T> {
+): T & SetState<T> & Subscribe<T> & SyncUpdate<T> {
   const { unmountReset = true, privatization } = options || {};
   
   // 更新的任务队列（私有化）
@@ -81,7 +81,7 @@ export function createStore<T extends State>(
   // 数据存储容器storeMap
   const storeMap: StoreMap<T> = new Map();
   
-  /** 生成storeMap键值对 */
+  // 生成storeMap键值对
   function genStoreMapKeyValue(key: keyof T) {
     /**
      * 为每一个数据的change更新回调做一个闭包MSet储存
@@ -120,7 +120,15 @@ export function createStore<T extends State>(
     storeMap.set(key, storeMapValue);
   }
   
-  /** 批量触发订阅监听的数据变动 */
+  // 为每一个数据字段储存连接到store容器中
+  function initialValueConnectStore(key: keyof T) {
+    // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
+    if (storeMap.get(key) !== undefined) return storeMap;
+    genStoreMapKeyValue(key);
+    return storeMap;
+  }
+  
+  // 批量触发订阅监听的数据变动
   function batchDispatch(prevState: Map<keyof T, T[keyof T]>, changedData: Map<keyof T, T[keyof T]>) {
     if (changedData.size > 0 && (storeCoreMap.get("dispatchStoreSet") as StoreCoreMapValue<T>["dispatchStoreSet"]).size > 0) {
       /**
@@ -144,7 +152,7 @@ export function createStore<T extends State>(
     }
   }
   
-  /** 更新任务添加入栈 */
+  // 更新任务添加入栈
   async function taskPush(key: keyof T, val: T[keyof T]) {
     (scheduler.get("add") as Scheduler<T>["add"])(
       () => (
@@ -159,7 +167,7 @@ export function createStore<T extends State>(
     );
   }
   
-  /** 批量异步更新函数 */
+  // 批量异步更新函数
   async function updater(stateParams: Partial<T> | T | StateFunc = {}) {
     if (typeof stateParams !== "function") {
       // 对象方式更新直接走单次直接更新的添加入栈，后续统一批次合并更新
@@ -225,7 +233,18 @@ export function createStore<T extends State>(
     });
   }
   
-  /** 订阅函数 */
+  // 同步更新
+  function syncUpdate(key: keyof T, val: T[keyof T]) {
+    const prevState = new Map(stateMap);
+    (
+      (
+        initialValueConnectStore(key).get(key) as StoreMapValue<T>
+      ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
+    )(val);
+    batchDispatch(prevState, new Map(Object.entries({ [key]: val })));
+  }
+  
+  // 订阅函数
   function subscribe(listener: Listener<T>, stateKeys?: (keyof T)[]): Unsubscribe {
     const dispatchStoreSetTemp = storeCoreMap.get("dispatchStoreSet") as StoreCoreMapValue<T>["dispatchStoreSet"];
     
@@ -254,14 +273,6 @@ export function createStore<T extends State>(
     };
   }
   
-  // 为每一个数据字段储存连接到store容器中
-  function initialValueConnectStore(key: keyof T) {
-    // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
-    if (storeMap.get(key) !== undefined) return storeMap;
-    genStoreMapKeyValue(key);
-    return storeMap;
-  }
-  
   // setState与subscribe以及store代理内部数据Map的合集
   const externalMap: ExternalMapType<T> = new Map();
   
@@ -279,6 +290,7 @@ export function createStore<T extends State>(
   } as ProxyHandler<StoreMap<T>>);
   
   externalMap.set("setState", setState);
+  externalMap.set("syncUpdate", syncUpdate);
   externalMap.set("subscribe", subscribe);
   externalMap.set(storeCoreMapKey, storeCoreMap);
   externalMap.set(useStoreKey, storeMapProxy);
@@ -293,5 +305,5 @@ export function createStore<T extends State>(
       });
       return true;
     },
-  } as ProxyHandler<T>) as T & SetState<T> & Subscribe<T>;
+  } as ProxyHandler<T>) as T & SetState<T> & Subscribe<T> & SyncUpdate<T>;
 }

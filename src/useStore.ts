@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { State, SetState, Subscribe } from "./model";
+import type { State, SetState, Subscribe, SyncUpdate } from "./model";
 import { storeCoreMapKey, useStoreKey } from "./static";
 import { isEmptyObj } from "./utils";
 import { createStore } from "./createStore";
@@ -42,7 +42,7 @@ export function useStore<S extends State>(store: S, hookInitialState?: Partial<S
  *
  * notes: 出入参与createStore是一样的
  */
-export function usePrivateStore<T extends State>(state: T): T & SetState<T> & Subscribe<T> {
+export function usePrivateStore<T extends State>(state: T): T & SetState<T> & Subscribe<T> & SyncUpdate<T> {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => createStore<T>(state, { privatization: true }), []);
 }

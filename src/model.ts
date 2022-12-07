@@ -152,9 +152,15 @@ export type SetState<T extends State> = Readonly<{
 
 /**
  * @description 非异步更新，强制同步更新
- * 为了react的更新机制不适应在异步中执行的场景
+ * A：为了react的更新机制不适应在异步中执行的场景
  * 该场景为在异步中更新受控input类输入框的value值
  * 会导致输入不了非英文以外的语言文字
+ *
+ * B：因为是同步更新，所以没有回调函数机制
+ * 它可以在同步更新函数执行完之后直接读取store的各个属性而获取最新值
+ * 且不允许是函数参数，因为函数参数里可以写直接的单次更新
+ * 而直接的单次更新是异步的，同步内嵌套异步会让代码变得更复杂而难以维护
+ * 也不符合同步更新的本质逻辑，所以是单纯的对象数据更新即可
  */
 export type SyncUpdate<T extends State> = Readonly<{
   syncUpdate(

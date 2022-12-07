@@ -234,14 +234,18 @@ export function createStore<T extends State>(
   }
   
   // 同步更新
-  function syncUpdate(key: keyof T, val: T[keyof T]) {
+  function syncUpdate(syncStateParams: Partial<T> | T) {
     const prevState = new Map(stateMap);
-    (
-      (
-        initialValueConnectStore(key).get(key) as StoreMapValue<T>
-      ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
-    )(val);
-    batchDispatch(prevState, new Map(Object.entries({ [key]: val })));
+    batchUpdate(() => {
+      Object.keys(syncStateParams).forEach(key => {
+        (
+          (
+            initialValueConnectStore(key).get(key) as StoreMapValue<T>
+          ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
+        )((syncStateParams as Partial<T> | T)[key]);
+      });
+    });
+    batchDispatch(prevState, new Map(Object.entries(syncStateParams)));
   }
   
   // 订阅函数

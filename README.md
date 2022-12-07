@@ -143,8 +143,12 @@ function App() {
      * todo：这种受控input一类的输入框的更新需要同步更新
      * 否则由于store.setState或者store.xxx = newValue这种异步更新
      * 会导致输入文本域无法输入英文以外的语言字符文本
-     * todo：这算是resy更新调度机制与react本身针对文本输入的
+     * todo："syncUpdate" 算是resy更新调度机制与react本身针对文本输入的
      * 更新执行机制冲突的一个无奈的解决办法吧
+     *
+     * todo notes：react 本身，甚至是 react V18+ 的版本
+     * 都存在异步更新导致输入不了英文以外的语言文本的问题
+     * eg: (xxxpromise).then(() => { setState(xxx); });
      */
     store.syncUpdate({
       inputValue: event.target.value,

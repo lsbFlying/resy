@@ -147,8 +147,12 @@ function App() {
      * Todo: The update of input boxes such as controlled input needs to be synchronized
      * Otherwise, due to store.setState or store Xxx=newValue This asynchronous update
      * This will cause the input text field to be unable to input text in languages other than English
-     * Todo: This is a helpless solution to the conflict between the resy update scheduling mechanism
+     * Todo: "syncUpdate" is a helpless solution to the conflict between the resy update scheduling mechanism
      * and react's own update execution mechanism for text input
+     *
+     * Todo notes: react itself, even the V18+ version of react
+     * There is a problem that asynchronous updates result in text input in languages other than English
+     * eg: (xxxpromise).then(() => { setState(xxx); });
      */
     store.syncUpdate({
       inputValue: event.target.value,

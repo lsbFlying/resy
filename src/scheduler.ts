@@ -13,6 +13,10 @@ const taskDataMap = new Map();
  */
 const scheduler = new Map<keyof Scheduler, Scheduler[keyof Scheduler]>();
 
+scheduler.set("isOn", false);
+scheduler.set("on", () => scheduler.set("isOn", true));
+scheduler.set("off", () => scheduler.set("isOn", false));
+
 scheduler.set(
   "add",
   (

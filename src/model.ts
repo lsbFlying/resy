@@ -173,7 +173,7 @@ export type SyncUpdate<T extends State> = Readonly<{
 
 // resy的订阅监听的取消返回函数
 export interface Unsubscribe {
-  (): void
+  (): void;
 }
 
 // resy的订阅监听
@@ -223,6 +223,18 @@ export interface Scheduler<T extends State = {}> {
     taskDataMap: Map<keyof T, T[keyof T]>,
     taskQueueMap: Map<keyof T, Callback>,
   };
+  /**
+   * @description 是否正在更新进程中的标识位
+   * 在业务极端复杂的情况下有些更新已经在调度程序逻辑中应用更新
+   * 则通过此标志位判断来不要再次批处理应用它
+   * 因为它会在前后更新调度的批处理中间刷新，即此中间刷新改为同步刷新操作，不再走批处理的异步更新
+   * 这样会使得更新过程更加协调，否则会应为极端的更新场景导致页面更新缓慢不流畅甚至崩溃
+   */
+  isOn: boolean;
+  /** 打开更新进程中的标识位 */
+  on(): void;
+  /** 关闭更新进程中的标识位 */
+  off(): void;
 }
 
 // createStore该API第二个参数配置项

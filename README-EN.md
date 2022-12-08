@@ -250,9 +250,13 @@ function App() {
   
   function btn2() {
     /**
-     * It should be noted that resy has automatic batch update
+     * A: It should be noted that resy has automatic batch update
      * In addition, the batch update of resy can make up for the version below react v18.
      * In places where react cannot manage, such as promise or setTimeout, batch update also has the effect
+     *
+     * B: In most cases, setState and a single direct update are asynchronous,
+     * However, in some extreme cases, the updates of a batch in the middle will become synchronous updates,
+     * This is to ensure the smoothness and coordination of updates.
      */
     // It can be updated by direct assignment (the simplest update way)
     store.count++;
@@ -299,6 +303,10 @@ function App() {
      *
      * 2. The batch update of setState is asynchronous just like the direct update,
      * Therefore, the incoming parameter nextState of the callback function is required to obtain the latest data, or the latest data is directly obtained by reading the store inside the callback
+     *
+     * 3. In most cases, setState and single direct update are asynchronous,
+     * However, in some extreme cases, the updates of a batch in the middle will become synchronous updates,
+     * This is to ensure the smoothness and coordination of updates
      */
     // @example A
     store.setState({

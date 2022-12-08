@@ -43,7 +43,11 @@ test("resy-basic", async () => {
     const { count, text, testFun, testObj, testArr, sex } = useStore(store);
     index++;
     useEffect(() => {
-      const unsubscribe = store.subscribe((effectState, prevState, nextState) => {
+      const unsubscribe = store.subscribe((
+        effectState,
+        prevState,
+        nextState,
+      ) => {
         if (effectState.sex === "no-sex-subscribe") {
           console.log(prevState.sex, nextState.sex);
           store.count = 999;
@@ -166,29 +170,36 @@ test("resy-basic", async () => {
   fireEvent.click(getByText("btn6"));
   await waitFor(() => {
     getByText("no-sex");
+    console.log("btn6", index); // btn6, 6
   });
 
   fireEvent.click(getByText("btn7"));
   await waitFor(() => {
     getByText("batch-forEach");
     getByText("testObj-age:12");
+    /**
+     * 按钮7更新后触发的订阅subscribe的逻辑更新来testObj，同时由于resy的批次更新调度的处理
+     * 它将store.testObj = { age: 12 }与按钮7的setState更新作为一个批次处理了
+     * 同理，按钮8、按钮9 触发的subscribe再次更新逻辑也是如此按这个统一批次更新处理
+     */
+    console.log("btn7", index, store.testObj); // btn7, 7
   });
 
   fireEvent.click(getByText("btn8"));
   await waitFor(() => {
     getByText("999");
-    console.log("btn8", index); // btn8, 9
+    console.log("btn8", index); // btn8, 8
   });
 
   fireEvent.click(getByText("btn9"));
   await waitFor(() => {
     getByText("999666");
-    console.log("btn9", index); // btn9, 11
+    console.log("btn9", index); // btn9, 9
   });
-  
+
   fireEvent.click(getByText("btn10"));
   await waitFor(() => {
-    console.log("btn10", index); // btn10, 11
-    expect(index === 11).toBeTruthy();
+    console.log("btn10", index); // btn10, 9
+    expect(index === 9).toBeTruthy();
   });
 });

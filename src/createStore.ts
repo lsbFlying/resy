@@ -236,6 +236,10 @@ export function createStore<T extends State>(
    * 但有时候我就不想多此一步操作就想这样简单的写法，所以自身多次调用的场景合并也是很有必要的
    */
   function setState(stateParams: Partial<T> | T | StateFunc = {}, callback?: (nextState: T) => void) {
+    /**
+     * 这个条件分支一般情况走不进去，极端情况会进入来保证调度更新的统一协调性与流畅度
+     * 测试文件无法覆盖到这种极端复杂的场景，但是实际生产应用中遇见过
+     */
     if (scheduler.get("isOn")) {
       typeof stateParams !== "function" ? syncUpdate(stateParams) : stateParams();
       return;

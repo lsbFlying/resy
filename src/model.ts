@@ -164,6 +164,9 @@ export type SetState<T extends State> = Readonly<{
  *
  * C："syncUpdate" 算是resy更新调度机制与react本身针对文本输入的
  * 更新执行机制冲突的一个无奈的解决办法吧
+ *
+ * D：同时，同步更新也可以供给不喜欢用回调回去最新数据值的开发小伙伴使用
+ * 因为它执行完之后可以通过store拿到最新的数据值进行下一步的业务逻辑处理
  */
 export type SyncUpdate<T extends State> = Readonly<{
   syncUpdate(

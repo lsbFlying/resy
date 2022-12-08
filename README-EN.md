@@ -153,6 +153,9 @@ function App() {
      * Todo notes: react itself, even the V18+ version of react
      * There is a problem that asynchronous updates result in text input in languages other than English
      * eg: (xxxpromise).then(() => { setState(xxx); });
+     *
+     * Todo: At the same time, synchronous update can also be used by development partners who do not like to use callback to return the latest data value
+     * Because after it is executed, the latest data value can be obtained through the store for the next step of business logic processing
      */
     store.syncUpdate({
       inputValue: event.target.value,

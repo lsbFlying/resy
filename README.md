@@ -149,6 +149,9 @@ function App() {
      * todo notes：react 本身，甚至是 react V18+ 的版本
      * 都存在异步更新导致输入不了英文以外的语言文本的问题
      * eg: (xxxpromise).then(() => { setState(xxx); });
+     * 
+     * todo：同时，同步更新也可以供给不喜欢用回调回去最新数据值的开发小伙伴使用
+     * 因为它执行完之后可以通过store拿到最新的数据值进行下一步的业务逻辑处理
      */
     store.syncUpdate({
       inputValue: event.target.value,

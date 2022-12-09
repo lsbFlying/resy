@@ -4,7 +4,7 @@
 **re**act **s**tate eas**y**
 
 <h3>一款简单的react状态管理器</h3>
-<h4>支持React Native、SSR、小程序（有平台兼容处理的如Taro、rax或remax等）</h4>
+<h4>支持React Native、SSR、小程序（如Taro、rax或remax等）</h4>
 
 [![GitHub license](https://img.shields.io/github/license/lsbFlying/resy?style=flat-square)](https://github.com/lsbFlying/resy/blob/master/LICENSE)
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/lsbFlying/resy/CI?color=blue&style=flat-square)](https://github.com/lsbFlying/resy/actions/workflows/test.yml)
@@ -52,9 +52,12 @@
 </details>
 
 ### 特点
-- 为hook而生，数据状态可兼容class组件 😎
-- 细粒度更新，更完善地规避冗余的re-render 😎
-- 简单易用，学习成本几乎为0 😎
+- 简单创建 😎
+- 自由共享 😎
+- 方便使用 😎
+- 可全局也可局部 😎
+- 细粒度更新 😎
+- 更完善的规避冗余的re-render 😎
 
 ### 安装
 ```sh

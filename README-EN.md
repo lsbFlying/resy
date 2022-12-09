@@ -4,7 +4,7 @@
 **re**act **s**tate eas**y**
 
 <h3>A simple react state manager</h3>
-<h4>Support React Native、SSR、Mini WeChat Apps (with platform compatible processing, such as taro, rax, remax etc)</h4>
+<h4>Support React Native、SSR、Mini WeChat Apps (such as taro, rax, remax etc)</h4>
 
 [![GitHub license](https://img.shields.io/github/license/lsbFlying/resy?style=flat-square)](https://github.com/lsbFlying/resy/blob/master/LICENSE)
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/lsbFlying/resy/CI?color=blue&style=flat-square)](https://github.com/lsbFlying/resy/actions/workflows/test.yml)
@@ -34,12 +34,12 @@ Improved the merging and updating of setState and direct updating of all mixed s
 🌟`v4.0.4`：<br/>
 1. Fixed the bug that the direct update could not be updated in the next round of update batches similar to the useEffect<br/>
 2. Optimize the execution of add function in direct update mode<br/>
-3. Optimized merge update in the scenario where direct update and setState batch update are mixed
+3. Optimized merge update in the scenario where direct update and setState batch update mixed scenarios
 
 🌟`v4.0.3`：<br/>
-1、Fixed the logic of comparing props in view's deepEqual, avoiding the problem of additional update
+1. Fixed the logic of comparing props in view's deepEqual, avoiding the problem of additional update
 and rendering due to different reference addresses of props;<br/>
-2、Improved and optimized the execution performance of the data subscription listener "subscriber function" code.
+2. Improved and optimized the execution performance of the data subscription and listener "subscriber function" code.
 
 🌟`v4.0.2`：<br/>
 1. Fixed the processing bug that the logic data of getDerivedStateFromProps of view is empty;<br/>
@@ -56,9 +56,12 @@ Welcome to use 🌟🌟🌟🌟
 </details>
 
 ### Features
-- It is generated for hook, and the data state is compatible with class components 😎
-- Fine grained update, Better avoid redundant re-render 😎
-- Easy to use, and the learning cost is almost zero 😎
+- Simple creation 😎
+- Free sharing 😎
+- Easy to use 😎
+- Can be global or local 😎
+- Fine-grained update 😎
+- Better re-render to avoid redundancy 😎
 
 ### Install
 ```sh

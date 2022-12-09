@@ -83,7 +83,7 @@ resy requires the version of react v >= 16.8, resy has seven API, which are:
 
 ### createStore
 ```tsx
-import { createStore, useStore } from "resy";
+import { createStore } from "resy";
 
 type StateType = {
   count: number;

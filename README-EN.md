@@ -56,8 +56,8 @@ Welcome to use 🌟🌟🌟🌟
 </details>
 
 ### Features
-- 😎 Simple creation
-- 😎 Free sharing
+- 😎 Create simple
+- 😎 Sharing freedom
 - 😎 Easy to use
 - 😎 Can be global or local
 - 😎 Fine-grained update

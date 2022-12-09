@@ -179,7 +179,7 @@ function App() {
 }
 ```
 
-### useStore ———— with hooks value
+### useStore — with hooks value
 ```tsx
 import { createStore, useStore } from "resy";
 import { Form } from "antd";

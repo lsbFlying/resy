@@ -131,6 +131,8 @@ const store = createStore<StateType>(
 
 ### useStore
 ```tsx
+import { useStore } from "resy";
+
 function App() {
   /**
    * @description You can think of it as useState, but not exactly.

@@ -14,7 +14,7 @@ export function proxyStateHandler<S extends State>(latestState: Map<keyof S, S[k
   } as ProxyHandler<Map<keyof S, S[keyof S]>>) as object as S;
 }
 
-// 判断空对象
+// 判断空对象（内部使用，前提已确定是[object Object]）
 export function isEmptyObj(obj: object) {
   for (const _key in obj) {
     return false;

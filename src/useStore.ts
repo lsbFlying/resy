@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import type { State, SetState, Subscribe, SyncUpdate } from "./model";
 import { storeCoreMapKey, useStoreKey } from "./static";
-import { isEmptyObj } from "./utils";
 import { createStore } from "./createStore";
 
 /**
@@ -11,6 +10,7 @@ import { createStore } from "./createStore";
  * 本身产生的数据就是hook数据，所以会多一层代理
  * @param store
  * @param hookInitialState 针对hook的初始化使用
+ *
  * @example
  * const { count, form } = useStore(
  *   store,
@@ -20,29 +20,21 @@ import { createStore } from "./createStore";
  * );
  */
 export function useStore<S extends State>(store: S, hookInitialState?: Partial<S>): S {
-  useMemo(() => {
-    if (hookInitialState && !isEmptyObj(hookInitialState)) {
-      const storeCoreMap = store[storeCoreMapKey as keyof S];
-      storeCoreMap.get("setHookFieldsValue")(hookInitialState);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  
+  store[storeCoreMapKey as keyof S].get("setHookInitialState")(hookInitialState);
   return store[useStoreKey as keyof S];
 }
 
 /**
  * @description 帮助组件可以使用resy创建私有化的store数据状态容器
  * 它可以用如下方式：
- * const privateStore = usePrivateStore({ count: 0, text: "QWE });
- * const { count, text, setState } = useStore(privateStore);  // 或者setState不解构直接使用store.setState
- * 作用实现其实就是原生的useState：
- * const [count, setCount] = useStore(privateStore);
- * const [text, setText] = useStore(privateStore);
- *
- * notes: 出入参与createStore是一样的
+ * const { count, text, setState } = useRocketState({ count: 0, text: "QWE });
+ * 或者setState不解构直接使用store.setState
+ * 作用实现其实就是等价于原生的useState：
+ * const [count, setCount] = useState(0);
+ * const [text, setText] = useState("QWE");
  */
-export function usePrivateStore<T extends State>(state: T): T & SetState<T> & Subscribe<T> & SyncUpdate<T> {
+export function useRocketState<T extends State>(state: T): T & SetState<T> & Subscribe<T> & SyncUpdate<T> {
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => createStore<T>(state, { privatization: true }), []);
+  const store = useMemo(() => createStore<T>(state, { privatization: true }), []);
+  return store[useStoreKey as keyof T];
 }

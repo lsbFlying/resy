@@ -32,9 +32,9 @@ export type StoreMap<T extends State> = Map<keyof T, StoreMapValue<T>>;
 
 // 订阅事件的监听回调函数类型
 export type Listener<T extends State> = (
-  effectState: Partial<Omit<T, keyof SetState<T> | keyof Subscribe<T>>>,
-  prevState: Omit<T, keyof SetState<T> | keyof Subscribe<T>>,
-  nextState: Omit<T, keyof SetState<T> | keyof Subscribe<T>>,
+  effectState: Partial<T>,
+  prevState: T,
+  nextState: T,
 ) => void;
 
 // 自定义订阅监听函数接口类型
@@ -71,8 +71,8 @@ export interface CustomEventListenerConstructor<T extends State> {
 export interface StoreCoreMapValue<T extends State> {
   // store内部的state数据对象（使用函数来维持数据获取最新数据值）
   getState: () => Map<keyof T, T[keyof T]>;
-  // 设置stateMap部分字段数据值（主要是给useStore的初始化值是某些hooks返回值赋值使用的）
-  setHookFieldsValue: (hookInitialState: { [key in keyof T]: T[keyof T] }) => void;
+  // 设置stateMap部分字段数据值
+  setHookInitialState: (hookInitialState?: { [key in keyof T]: T[keyof T] }) => void;
   // 重置(恢复)初始化数据（供view使用）
   resetState: Callback;
   // 订阅监听的事件类型
@@ -100,9 +100,7 @@ export type ExternalMapType<T extends State> = Map<
 >;
 
 // setState的函数更新处理
-export interface StateFunc {
-  (): void;
-}
+export type StateFunc = Callback;
 
 /**
  * @description setState —————— 更新数据的函数，主要是为了批量更新
@@ -179,9 +177,7 @@ export type SyncUpdate<T extends State> = Readonly<{
 }>;
 
 // resy的订阅监听的取消返回函数
-export interface Unsubscribe {
-  (): void;
-}
+export type Unsubscribe = Callback;
 
 // resy的订阅监听
 export type Subscribe<T extends State> = Readonly<{
@@ -201,6 +197,8 @@ export type Subscribe<T extends State> = Readonly<{
     stateKeys?: (keyof T)[],
   ): Unsubscribe;
 }>;
+
+export type Store<S extends State> = S & SetState<S> & Subscribe<S> & SyncUpdate<S>;
 
 // 将resy生成的store容器数据映射挂载到组件props的state属性上
 export type MapStateToProps<S extends State, P extends State = {}> = P & {

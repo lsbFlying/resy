@@ -24,7 +24,7 @@
 🌟`v5.0.0`：<br/>
 1、优化了代码，修复了setState的混用场景的批量触发的订阅变化的数据不完备的bug；<br/>
 2、修复了createStore作为私有化数据状态使用的的方式的bug；<br/>
-3、新增了 "usePrivateStore" 钩子简化了状态数据私有化的使用方式；<br/>
+3、新增了 "useRocketState" 钩子简化了状态数据私有化的使用方式；<br/>
 4、新增了 "syncUpdate" 同步更新api；
 
 🌟`v4.0.5`：<br/>
@@ -52,12 +52,12 @@
 </details>
 
 ### 特点
-- 简单创建 😎
-- 自由共享 😎
-- 方便使用 😎
-- 可全局也可局部 😎
-- 细粒度更新 😎
-- 更完善的规避冗余的re-render 😎
+- 😎 简单创建
+- 😎 自由共享
+- 😎 方便使用
+- 😎 可全局也可局部
+- 😎 细粒度更新
+- 😎 自动化处理SCU与memo
 
 ### 安装
 ```sh
@@ -70,13 +70,13 @@ npm i resy
 resy需要react版本 v >= 16.8；resy有七个API，分别是：
 - createStore：创建一个全局状态数据的存储容器
 - useStore：从createStore生成的状态存储容器中使用state数据
-- usePrivateStore：该hook内部会自动执行createStore，将其创建的store变为私有化状态数据容器
 - setState：更新数据
 - syncUpdate：同步更新数据
+- useRocketState：useState的简化使用版本
 - subscribe：订阅监听createStore生成的store数据的变化
-- view：帮助组件具备 "更完善的规避re-render的方式" 的能力
+- view：帮助组件自动化处理SCU与memo
 
-### createStore、useStore、usePrivateStore
+### createStore
 ```tsx
 import { createStore, useStore } from "resy";
 
@@ -107,150 +107,45 @@ const store = createStore<Store>(
     /**
      * 默认为true
      * true：默认模块卸载时自动恢复初始化数据状态
-     * false：模块卸载时也不恢复初始化数据，保持数据状态
+     * false：模块卸载时也不恢复初始化数据，
+     * 除非你特意刷新浏览器或者设备，否则它会一直保持数据状态
+     *
      * 常规使用场景设置为true即可
      * 特殊使用场景如login登录信息数据
      * 或theme主题数据属于全局状态数据可以设置为false
      */
     unmountReset: true,
     /**
-     * @description 该参数主要是为了createStore创建的store成为私有化数据状态容器
-     * 它可以用如下方式：
-     * const privateStore = useMemo(() => createStore({ count: 0, text: "QWE }, { privatization: true }), []);
-     * 或者： const privateStore = usePrivateStore({ count: 0, text: "QWE });
-     * const { count, text, setState } = useStore(privateStore);  // 或者setState不解构直接使用store.setState
-     * 作用实现其实就是原生的useState：
-     * const [count, setCount] = useStore(privateStore);
-     * const [text, setText] = useStore(privateStore);
-     *
-     * notes: privatization参数需要结合useMemo或者usePrivateStore使用才可以达到数据状态私有化的效果
+     * @description 该参数主要是为了使得createStore创建的store成为私有化数据状态容器
+     * 后续会结合useRocketState钩子作详细介绍
      */
     privatization: false,
   },
 );
+```
 
+### useStore
+```tsx
 function App() {
   /**
    * useStore用于组件的驱动更新，如果不用useStore直接使用store，
    * 则只能获取纯数据而无法驱动组件更新重新渲染
+   *
+   * useStore的store入参就是createStore创建的store
    */
   const {
     count, text, testObj: { name }, testArr, testFun, inputValue,
   } = useStore(store);
   
   // 或者: const state = useStore(store);
-  // state.count; ...等等
-  
-  function inputChange(event: React.ChangeEvent<HTMLInputElement>) {
-    /**
-     * todo：这种受控input一类的输入框的更新需要同步更新
-     * 否则由于store.setState或者store.xxx = newValue这种异步更新
-     * 会导致输入文本域无法输入英文以外的语言字符文本
-     * todo："syncUpdate" 算是resy更新调度机制与react本身针对文本输入的
-     * 更新执行机制冲突的一个无奈的解决办法吧
-     *
-     * todo notes：react 本身，甚至是 react V18+ 的版本
-     * 都存在异步更新导致输入不了英文以外的语言文本的问题
-     * eg: (xxxpromise).then(() => { setState(xxx); });
-     * 
-     * todo：同时，同步更新也可以供给不喜欢用回调回去最新数据值的开发小伙伴使用
-     * 因为它执行完之后可以通过store拿到最新的数据值进行下一步的业务逻辑处理
-     */
-    store.syncUpdate({
-      inputValue: event.target.value,
-    });
-  }
-  
-  return (
-    <>
-      <p>{count}</p>
-      <p>{text}</p>
-      <p>{name}</p>
-      <input value={inputValue} onChange={inputChange}/>
-      <button onClick={testFun}>测试按钮</button><br/>
-      {testArr.map(item => `年龄：${item}`)}
-    </>
-  );
-}
-```
-
-```tsx
-import { useMemo } from "react";
-import { createStore, useStore, usePrivateStore } from "resy";
-import { Form } from "antd";
-import { FormInstance } from "antd/es/form";
-
-const initialState = {
-  count: 123,
-  text: "QWE",
-};
-
-const store = createStore<{
-  count: number;
-  text: string;
-  form?: FormInstance<{ sortNumber: number }>;
-}>(initialState);
-
-function App() {
-  /**
-   * 将store数据储存容器私有化
-   * 下面的使用方式，使得resy的useStore在效果上等价于react原生的useState:
-   * const [count, setCount] = useStore(privateStore);
-   * const [text, setText] = useStore(privateStore);
-   */
-  // const privateStore = useMemo(() => createStore({ count: 0, text: "QWE }, { privatization: true }), []);
-  // 上下这两句代码等效，usePrivateStore钩子是上面代码的实现
-  // const privateStore = usePrivateStore(initialState);
-  
-  // 或者setState不解构直接使用store.setState
-  // const { count, text, setState } = useStore(privateStore);
-  /**
-   * useStore同时还具有初始化数据的参数
-   * 尽管createStore在传入初始化默认数据时已经有过默认数据
-   * 但是如果初始化默认数据是需要某些hooks产生
-   * 此时则需要使用useStore的第二个参数 ———— 初始化数据参数
-   */
-  const { count, form } = useStore(
-    store,
-    {
-      form: Form.useForm<{ sortNumber: number }>()[0],
-    },
-  );
-  
-  function addClick() {
-    store.count++;
-    form?.setFieldsValue({
-      sortNumber: 9999,
-    });
-  }
-  
-  return (
-    <Form form={form} components={false}>
-      <p>{count}</p>
-      <button onClick={}>测试按钮</button><br/>
-      <Form.Item name="sortNumber">
-        <InputNumber/>
-      </Form.Item>
-    </Form>
-  );
-}
-```
-
-### 直接更新
-```tsx
-import { useStore } from "resy";
-
-function App() {
-  const {
-    count, text, testObj: {name}, testArr, testFun,
-  } = useStore(store);
+  // state.count; ...等
   
   function btn2() {
     /**
      * A: 需要说明的是resy是具备自动批处理更新的
      * 且resy的批处理更新可以弥补React V18以下的版本
      * 在React管理不到的地方如Promise或者setTimeout等也有批处理更新的效果
-     * 
+     *
      * B: 大多数情况下setState与单次直接更新都是异步的，
      * 但是有些极端少数情况会在中间某一批次的更新中变成同步更新，
      * 这样做是为了保证更新的流畅性与协调度。
@@ -287,9 +182,54 @@ function App() {
 }
 ```
 
-### setState 更新数据
+### useStore ———— with hooks value
+```tsx
+import { createStore, useStore } from "resy";
+import { Form } from "antd";
+import { FormInstance } from "antd/es/form";
+
+const store = createStore<{
+  form?: FormInstance<{ sortNumber: number }>;
+}>();
+
+function App() {
+  /**
+   * 如果初始化默认数据是需要某些hooks产生
+   * 此时则需要使用useStore的第二个参数：hooInitialState
+   *
+   * 如果是ts的话，类型设置的时候hook的初始化值需要设置为非必需?
+   * eg: { form?: FormInstance<{ sortNumber: number }>; }
+   */
+  const { form } = useStore(
+    store,
+    {
+      form: Form.useForm<{ sortNumber: number }>()[0],
+    },
+  );
+  
+  function addClick() {
+    form?.setFieldsValue({
+      sortNumber: 9999,
+    });
+  }
+  
+  return (
+    <Form form={form} components={false}>
+      <Form.Item name="sortNumber">
+        <InputNumber/>
+      </Form.Item>
+      <br/>
+      <button onClick={}>测试按钮</button>
+    </Form>
+  );
+}
+```
+
+### setState
 ```tsx
 function App() {
+  const { count, text } = useStore(store);
+  
   function btnClick() {
     /**
      * 1、resy需要setState最主要的原因是需要回调callback获取更新后的最新数据
@@ -301,7 +241,7 @@ function App() {
      * 所以需要回调函数callback的入参nextState来获取取最新数据，
      * 或者在回调内部直接通过读取store获取最新数据
      * 
-     * 3、大多数情况下setState与单次直接更新都是异步的，
+     * 3、注意：大多数情况下setState与单次直接更新(store[key] = newValue;)都是异步的，
      * 但是有些极端少数情况会在中间某一批次的更新中变成同步更新，
      * 这样做是为了保证更新的流畅性与协调度
      */
@@ -326,12 +266,83 @@ function App() {
   }
   
   return (
-    <button onClick={btnClick}>按钮</button>
+    <>
+      <div>{count}</div>
+      <div>{text}</div>
+      <button onClick={btnClick}>按钮</button>
+    </>
   );
 }
 ```
 
-### subscribe 订阅监听
+### syncUpdate
+```tsx
+function App() {
+  const { inputValue } = useStore(store);
+  
+  function inputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    /**
+     * todo：这种受控input一类的输入框的更新需要同步更新
+     * 否则由于store.setState或者store.xxx = newValue这种异步更新
+     * 会导致输入文本域无法输入英文以外的语言字符文本
+     * todo："syncUpdate" 算是resy更新调度机制与react本身针对文本输入的
+     * 更新执行机制冲突的一个无奈的解决办法吧
+     *
+     * todo notes：react 本身，甚至是 react V18+ 的版本
+     * 都存在异步更新导致输入不了英文以外的语言文本的问题
+     * eg: (xxxpromise).then(() => { setState(xxx); });
+     * 
+     * todo：同时，同步更新也可以供给不喜欢用回调回去最新数据值的开发小伙伴使用
+     * 因为它执行完之后可以通过store拿到最新的数据值进行下一步的业务逻辑处理
+     */
+    store.syncUpdate({
+      inputValue: event.target.value,
+    });
+  }
+  
+  return (
+    <input value={inputValue} onChange={inputChange}/>
+  );
+}
+```
+
+### useRocketState
+```tsx
+import { useRocketState } from "resy";
+
+const initialState = {
+  count: 123,
+  text: "QWE",
+};
+
+function App() {
+  /**
+   * 将store数据储存容器私有化
+   * 下面的使用方式，使得resy的useStore在效果上等价于react原生的useState:
+   * const [count, setCount] = useState(0);
+   * const [text, setText] = useState("QWE");
+   */
+  // const privateStore = useMemo(() => createStore({ count: 0, text: "QWE }, { privatization: true }), []);
+  // 上下这两句代码等效，useRocketState钩子是上面代码的实现
+  const privateStore = useRocketState(initialState);
+  
+  const { count, text, setState } = useStore(privateStore);
+  
+  function addClick() {
+    store.count++;
+    store.text = "ASD";
+  }
+  
+  return (
+    <>
+      <div onClick={addClick}>{count}</div>
+      <div>{text}</div>
+    </>
+  );
+}
+```
+
+### subscribe
 ```tsx
 import { useEffect } from "react";
 import { useStore } from "resy";
@@ -362,7 +373,10 @@ function App() {
     
     // 取消订阅监听
     // unsubscribe();
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      // ... to do else anything
+    };
   }, []);
   
   function btnClickA() {
@@ -389,7 +403,7 @@ function App() {
 }
 ```
 
-### resy自身特性的规避re-render
+### avoid "redundant re-render"
 ```tsx
 import { createStore, useStore } from "resy";
 
@@ -438,7 +452,7 @@ function App() {
 }
 ```
 
-### view 更完善的规避re-render
+### view
 ```markdown
 总结：相较于resy自身规避额外re-render的特性
     view处理规避额外的re-render更加完善

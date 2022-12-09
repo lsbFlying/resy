@@ -11,9 +11,9 @@ import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
 import { batchUpdate, storeCoreMapKey, useStoreKey } from "./static";
 import type {
-  Callback, ExternalMapType, ExternalMapValue, SetState, State, StateFunc, StoreCoreMapType,
-  StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Subscribe, Unsubscribe,
-  Scheduler, CustomEventListener, Listener, CreateStoreOptions, SyncUpdate,
+  Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType,
+  StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe,
+  Scheduler, CustomEventListener, Listener, CreateStoreOptions, Store,
 } from "./model";
 import { isEmptyObj, mapToObject } from "./utils";
 
@@ -23,6 +23,8 @@ import { isEmptyObj, mapToObject } from "./utils";
  * 等use-sync-external-store什么时候更新版本导出ESM模块的时候再更新吧
  */
 const { useSyncExternalStore } = useSyncExternalStoreExports;
+
+const _DEV_ = process.env.NODE_ENV !== "production";
 
 /**
  * createStore
@@ -35,9 +37,15 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * @param options 状态容器配置项
  */
 export function createStore<T extends State>(
-  initialState: T,
+  initialState?: T,
   options?: CreateStoreOptions,
-): T & SetState<T> & Subscribe<T> & SyncUpdate<T> {
+): Store<T> {
+  const state = initialState || ({} as T);
+  
+  if (_DEV_ && Object.prototype.toString.call(state) !== "[object Object]") {
+    throw new Error("createStore`s initialState param required object!");
+  }
+  
   const { unmountReset = true, privatization } = options || {};
   
   /**
@@ -57,20 +65,20 @@ export function createStore<T extends State>(
    * 不改变传参state，同时resy使用Map与Set提升性能
    * 如stateMap、storeMap、storeCoreMap、storeChangeSet等
    */
-  let stateMap: Map<keyof T, T[keyof T]> = new Map(Object.entries(initialState));
+  let stateMap: Map<keyof T, T[keyof T]> = new Map(Object.entries(state));
   
   // 每一个resy生成的store具有的监听订阅处理，并且可以获取最新state数据
   const storeCoreMap: StoreCoreMapType<T> = new Map();
   storeCoreMap.set("getState", () => stateMap);
-  storeCoreMap.set("setHookFieldsValue", (hookInitialState: Partial<T>) => {
-    Object.keys(hookInitialState).forEach(key => {
-      if (stateMap.get(key) === undefined) {
-        stateMap.set(key, hookInitialState[key] as T[keyof T]);
-      }
-    });
+  storeCoreMap.set("setHookInitialState", (hookInitialState?: Partial<T>) => {
+    if (Object.prototype.toString.call(hookInitialState) === "[object Object]") {
+      Object.keys(hookInitialState as Partial<T>).forEach(key => {
+        stateMap.set(key, (hookInitialState as Partial<T>)[key] as T[keyof T]);
+      });
+    }
   });
   storeCoreMap.set("resetState", () => {
-    if (unmountReset) stateMap = new Map(Object.entries(initialState));
+    if (unmountReset) stateMap = new Map(Object.entries(state));
   });
   storeCoreMap.set("listenerEventType", Symbol("storeListenerSymbol"));
   storeCoreMap.set("dispatchStoreSet", new Set<CustomEventListener<T>>());
@@ -103,7 +111,7 @@ export function createStore<T extends State>(
       storeChangeSet.add(storeChange);
       return () => {
         storeChangeSet.delete(storeChange);
-        if (unmountReset) stateMap.set(key, initialState[key]);
+        if (unmountReset) stateMap.set(key, state[key]);
       };
     });
     storeMapValue.set("getSnapshot", () => stateMap.get(key));
@@ -277,9 +285,9 @@ export function createStore<T extends State>(
        */
       storeCoreMap.get("listenerEventType") as StoreCoreMapValue<T>["listenerEventType"],
       (
-        effectState: Partial<Omit<T, keyof SetState<T> | keyof Subscribe<T>>>,
-        prevState: Omit<T, keyof SetState<T> | keyof Subscribe<T>>,
-        nextState: Omit<T, keyof SetState<T> | keyof Subscribe<T>>,
+        effectState: Partial<T>,
+        prevState: T,
+        nextState: T,
       ) => {
         let includesFlag = false;
         const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
@@ -316,7 +324,7 @@ export function createStore<T extends State>(
   externalMap.set(storeCoreMapKey, storeCoreMap);
   externalMap.set(useStoreKey, storeMapProxy);
   
-  return new Proxy(initialState, {
+  return new Proxy(state, {
     get: (_, key: keyof T) => {
       return externalMap.get(key as keyof ExternalMapValue<T>) || stateMap.get(key);
     },
@@ -330,5 +338,5 @@ export function createStore<T extends State>(
       });
       return true;
     },
-  } as ProxyHandler<T>) as T & SetState<T> & Subscribe<T> & SyncUpdate<T>;
+  } as ProxyHandler<T>) as Store<T>;
 }

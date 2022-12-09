@@ -1,6 +1,6 @@
 import isEqual from "react-fast-compare";
 import React, { memo, useEffect, useMemo, useState } from "react";
-import type { SetState, State, StoreCoreMapType, StoreCoreMapValue, Subscribe, MapStateToProps } from "./model";
+import type { State, StoreCoreMapType, StoreCoreMapValue, Subscribe, MapStateToProps } from "./model";
 import { storeCoreMapKey } from "./static";
 import { proxyStateHandler } from "./utils";
 
@@ -34,7 +34,7 @@ export type { MapStateToProps };
  * 除非遇到很重量级的组件渲染很耗费性能则开启可以通过JS的计算减轻页面更新渲染的负担
  */
 export function view<P extends State = {}, S extends State = {}>(
-  store: S & SetState<S> & Subscribe<S>,
+  store: S & Subscribe<S>,
   // any用于防范某些HOC导致的类型不合一问题，比如withRouter(低版本的react-router还是存在该HOC)
   Comp: React.ComponentType<MapStateToProps<S, P> | any>,
   deepEqual?: boolean,

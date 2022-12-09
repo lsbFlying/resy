@@ -229,7 +229,12 @@ function App() {
 import { useStore } from "resy";
 
 function App() {
-  const { count, text } = useStore(store);
+  const {
+  	count, text,
+    // you can also deconstruct setState directly, or use store.setState,
+    // and syncUpdate, subscribe, these two api are the same.
+    // setState,
+  } = useStore(store);
   
   function btnClick() {
     /**
@@ -279,6 +284,8 @@ function App() {
 
 ### syncUpdate
 ```tsx
+import { useStore, syncUpdate } from "resy";
+
 function App() {
   const { inputValue } = useStore(store);
   

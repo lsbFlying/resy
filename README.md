@@ -20,32 +20,39 @@
 <summary>changed logs</summary>
 
 🌟`v5.0.0`：<br/>
-1、优化了代码，修复了setState的混用场景的批量触发的订阅变化的数据不完备的bug；<br/>
-2、修复了createStore作为私有化数据状态使用的的方式的bug；<br/>
-3、新增了 "useRocketState" 钩子简化了状态数据私有化的使用方式；<br/>
-4、新增了 "syncUpdate" 同步更新api；
+1. Optimized code to fix bug with incomplete data of batch-triggered subscription changes
+   in setState mixing scenarios.<br/>
+2. Fixed bug for the way createStore is used as the state of privatized data.<br/>
+3. The addition of "useRocketState" hook simplifies the use of state data privatization.<br/>
+4. Added "syncUpdate" synchronous update api.
 
 🌟`v4.0.5`：<br/>
-完善了setState与直接更新的所有混用场景的合并更新
+Improved merge updates for all mixed scenarios of setState and direct updates.
 
 🌟`v4.0.4`：<br/>
-1、修复了直接更新在useEffect中相近的下一轮的更新批次中无法得到更新的bug<br/>
-2、优化直接更新方式的add函数的执行<br/>
-3、优化了直接更新与setState批量更新混用的场景中的合并更新
+1. Fixed direct update of bug that could not be updated in similar next round update batches in useEffect.<br/>
+2. Optimize the execution of the "add" function in direct update mode.<br/>
+3. Optimized merge updates in scenarios where direct updates are partially mixed with setState batch updates.
 
 🌟`v4.0.3`：<br/>
-1、修复了view的deepEqual的对比props的逻辑，避免了组件因为props的引用地址的不同产生额外更新渲染的问题；<br/>
-2、完善优化了数据订阅监听"subscribe"代码的执行性能。
+1. Fixed the logic of comparing props of view's deepEqual to avoid the problem of components updating rendering
+   due to different reference addresses of props<br/>
+2. Improved and optimized the execution performance of data subscription listening "subscribe" code.
 
 🌟`v4.0.2`：<br/>
-1、修复了view的getDerivedStateFromProps的逻辑数据为空的处理bug；<br/>
-2、修复了view包裹的组件内部可能的复杂引用逻辑导致的数据引用字段的获取缺失，进而导致的更新失效的bug；
+1. Fixed processing bug with empty logical data for view's getDerivedStateFromProps.<br/>
+2. Fixed bug that failed to update due to missing acquisition of data reference fields
+   caused by possible complex reference logic within components of view packages
 
-🌟`v4.0.1`：修复了useStore的hookInitialState初始化hook参数的使用时，
-可能存在的多次设置对应的key值问题
+🌟`v4.0.1`：<br/>
+Reduce the use of the hookInitialState initialization hook parameter of useStore
+to set the corresponding key value multiple times, increase code efficiency.
 
-🌟`v4.0.0`：resy自v4.0.0版本开始，正式进入稳定发展的开始，api已完成命名不会轻易变更，
-同时代码也趋于稳定与强化，欢迎大家使用🌟🌟🌟🌟🌟
+🌟`v4.0.0`：<br/>
+Starting from version v4.0.0, resy has officially entered a stage of stable development.
+Api has been named and will not be changed easily.
+At the same time, the code tends to be stable and strengthened.
+🌟🌟🌟🌟🌟🌟You are welcome to use the website.🌟🌟🌟🌟🌟🌟
 
 </details>
 

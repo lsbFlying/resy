@@ -226,6 +226,8 @@ function App() {
 
 ### setState
 ```tsx
+import { useStore } from "resy";
+
 function App() {
   const { count, text } = useStore(store);
   

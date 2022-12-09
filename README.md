@@ -141,15 +141,6 @@ function App() {
   // state.count; ...eg
   
   function btn2() {
-    /**
-     * A: Resy has the effect of automatic batch updating.
-     * It can make up for the effect of batch updating of versions below react v18
-     * for promises or setTimeout that cannot be managed by react
-     *
-     * B: 大多数情况下setState与单次直接更新都是异步的，
-     * 但是有些极端少数情况会在中间某一批次的更新中变成同步更新，
-     * 这样做是为了保证更新的流畅性与协调度。
-     */
     // 可以直接赋值更新（最简单的更新方式）
     store.count++;
     store.text = "456asd";
@@ -232,18 +223,18 @@ function App() {
   
   function btnClick() {
     /**
-     * 1、resy需要setState最主要的原因是需要回调callback获取更新后的最新数据
-     * 以及setState本身的使用方式在编码的时候具备很好的读写能力，
-     * 支持扩展运算符的对象数据更新的便捷、函数入参的循环更新的宽泛，
-     * 都让setState具备更强的生命力
+     * A: setState and a single direct update are asynchronous,
+     * the callback function of setState can obtain the latest data.
+     * setState uses objects as the data update method to have more robust coding capabilities.
+     * The update method of function input parameters makes setState more robust.
      *
-     * 2、setState的批量更新跟直接更新一样也是异步的，
-     * 所以需要回调函数callback的入参nextState来获取取最新数据，
-     * 或者在回调内部直接通过读取store获取最新数据
-     * 
-     * 3、注意：大多数情况下setState与单次直接更新(store[key] = newValue;)都是异步的，
-     * 但是有些极端少数情况会在中间某一批次的更新中变成同步更新，
-     * 这样做是为了保证更新的流畅性与协调度
+     * B: Resy has the effect of automatic batch updating.
+     * It can make up for the effect of batch updating of versions below react v18
+     * for promises or setTimeout that cannot be managed by react
+     *
+     * C: In most cases, setState and a single direct update are asynchronous,
+     * but in some extreme cases, a batch of updates in the middle will become synchronous.
+     * This is to ensure the smoothness and coordination of updates.
      */
     // @example A
     store.setState({

@@ -542,7 +542,7 @@ function App() {
   const { countAddFun, name } = useStore(store);
   
   return (
-  	<>
+    <>
       <Text/>
       <Count/>
       {/* name data update, will not cause TestView re-render */}

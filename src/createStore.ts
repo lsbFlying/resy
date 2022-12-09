@@ -302,7 +302,7 @@ export function createStore<T extends State>(
     };
   }
   
-  // setState与subscribe以及store代理内部数据Map的合集
+  // setState、subscribe与syncUpdate以及store代理内部数据Map的合集
   const externalMap: ExternalMapType<T> = new Map();
   
   // 给useStore的驱动更新代理

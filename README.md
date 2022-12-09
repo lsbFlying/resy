@@ -51,7 +51,7 @@ to set the corresponding key value multiple times, increase code efficiency.
 🌟`v4.0.0`：<br/>
 Starting from version v4.0.0, resy has officially entered a stage of stable development.
 Api has been named and will not be changed easily.
-At the same time, the code tends to be stable and strengthened.
+At the same time, the code tends to be stable and strengthened.<br/>
 🌟🌟🌟🌟🌟🌟You are welcome to use the website.🌟🌟🌟🌟🌟🌟
 
 </details>

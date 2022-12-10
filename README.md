@@ -230,7 +230,7 @@ import { useStore } from "resy";
 
 function App() {
   const {
-  	count, text,
+    count, text,
     // you can also deconstruct setState directly, or use store.setState,
     // and syncUpdate, subscribe, these two api are the same.
     // setState,
@@ -512,7 +512,7 @@ class ClassCom extends React.Component<MapStateToProps<StateType>> {
 //   );
 // }
 /**
- * View supports Hook components in the same way as class components through props.
+ * view supports Hook components in the same way as class components through props.
  * You can also deconstruct reading using useStore (store) directly in the Hook component.
  * The effect of the two is the same, but also more convenient.
  */

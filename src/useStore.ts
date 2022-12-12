@@ -27,12 +27,13 @@ export function useStore<S extends State>(store: S, hookInitialState?: Partial<S
 /**
  * @description 帮助组件可以使用resy创建私有化的store数据状态容器
  * 它可以用如下方式：
- * const { count, text, setState } = useRocketState({ count: 0, text: "hello" });
+ * const { count, text, setState } = useConciseState({ count: 0, text: "hello" });
  * 作用实现其实就是等价于原生的useState：
  * const [count, setCount] = useState(0);
  * const [text, setText] = useState("hello");
+ * 🌟: useConciseState相对于useState在多个数据状态时使用相对简单明了
  */
-export function useRocketState<T extends State>(state: T): T & SetState<T> & Subscribe<T> & SyncUpdate<T> {
+export function useConciseState<T extends State>(state: T): T & SetState<T> & Subscribe<T> & SyncUpdate<T> {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const store = useMemo(() => createStore<T>(state, { privatization: true }), []);
   return store[useStoreKey as keyof T];

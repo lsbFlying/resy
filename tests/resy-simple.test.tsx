@@ -9,8 +9,39 @@ test("resy-simple", async () => {
     count2: number;
     text?: string;
     formRef?: any;
+    formRef2?: any;
     hookValueTestEmpty?: any;
   }>({ count: 0, count2: 123, });
+  
+  const storeInner2 = createStore(() => ({ inner2Count: 0, }));
+  
+  function AppInner2() {
+    const { inner2Count } = useStore(storeInner2);
+    return (
+      <>
+        <div>AppInner2-inner2Count：{inner2Count}</div>
+        <div onClick={() => { storeInner2.inner2Count++; }}>
+          AppInner2
+        </div>
+      </>
+    );
+  }
+  
+  function AppInner() {
+    const { formRef2 } = useStore(store, () => ({ formRef2: React.useRef<any>(), }));
+  
+    function formBtnClick(event: any) {
+      event.preventDefault();
+      formRef2.current.value = "AppInnerFormRefFuncReturnTest";
+    }
+    
+    return (
+      <form>
+        name2: <input id="testInput2" ref={formRef2} type="text" name="Name2"/><br/>
+        <button onClick={formBtnClick} type="submit">form-button2</button>
+      </form>
+    );
+  }
   
   const AppTest = () => {
     const { count2, formRef } = useStore(store, { formRef: React.useRef<any>() });
@@ -23,12 +54,16 @@ test("resy-simple", async () => {
     }
     
     return (
-      <form>
-        <span>{count2}</span>
-        <span>{hookValueTestEmpty === undefined ? "hookValueTestEmpty" : ""}</span>
-        name: <input id="testInput" ref={formRef} type="text" name="Name"/><br/>
-        <button onClick={formBtnClick} type="submit">form-button</button>
-      </form>
+      <>
+        <form>
+          <span>{count2}</span>
+          <span>{hookValueTestEmpty === undefined ? "hookValueTestEmpty" : ""}</span>
+          name: <input id="testInput" ref={formRef} type="text" name="Name"/><br/>
+          <button onClick={formBtnClick} type="submit">form-button</button>
+        </form>
+        <AppInner/>
+        <AppInner2/>
+      </>
     );
   }
   
@@ -71,4 +106,12 @@ test("resy-simple", async () => {
   
   fireEvent.click(getByText("form-button"));
   getAllByDisplayValue("QWE");
+  
+  fireEvent.click(getByText("form-button2"));
+  getAllByDisplayValue("AppInnerFormRefFuncReturnTest");
+  
+  fireEvent.click(getByText("AppInner2"));
+  await waitFor(() => {
+    getByText("AppInner2-inner2Count：1");
+  });
 });

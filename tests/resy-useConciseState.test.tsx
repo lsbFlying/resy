@@ -30,12 +30,22 @@ test("resy-simple", async () => {
       </>
     );
   }
+  
+  function InnerTest() {
+    const { flag, setState } = useConciseState(() => ({ flag: true }));
+    return (
+      <p onClick={() => { setState({ flag: !flag }); }}>
+        {flag ? "flag-123" : "flag-456"}
+      </p>
+    );
+  }
 
   const App = () => {
     return (
       <>
         <InnerApp name="app1"/>
         <InnerApp name="app2"/>
+        <InnerTest/>
       </>
     );
   };
@@ -60,5 +70,10 @@ test("resy-simple", async () => {
   fireEvent.click(getByText("text2"));
   await waitFor(() => {
     getByText("app2app2");
+  });
+  
+  fireEvent.click(getByText("flag-123"));
+  await waitFor(() => {
+    getByText("flag-456");
   });
 });

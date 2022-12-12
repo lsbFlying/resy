@@ -333,7 +333,7 @@ function App() {
    * The above usage is equivalent to the native useState of react in effect.
    * const [count, setCount] = useState(0);
    * const [text, setText] = useState("QWE");
-   * 
+   *
    * The useConciseState hook is the implementation of the above code.
    * It can be seen that privatization is mainly for useConciseState to simplify
    * the configuration of useState.

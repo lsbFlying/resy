@@ -24,7 +24,8 @@
    in setState mixing scenarios.<br/>
 2. Fixed bug for the way createStore is used as the state of privatized data.<br/>
 3. Added the "useConciseState" hook to simplify the "use of data state localization".<br/>
-4. Added "syncUpdate" synchronous update api.
+4. Added "syncUpdate" synchronous update api.<br/>
+5. Compatible with many function return types.
 
 🌟`v4.0.5`：<br/>
 Improved merge updates for all mixed scenarios of setState and direct updates.

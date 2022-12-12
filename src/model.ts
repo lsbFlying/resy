@@ -64,6 +64,9 @@ export interface CustomEventListenerConstructor<T extends State> {
   prototype: CustomEventListener<T>;
 }
 
+// 兼容适应函数入参的返回类型的使用场景
+export type AdaptFuncTypeReturn<T extends State> = T | (() => T);
+
 /**
  * StoreCoreMap的数据值类型，作为createStore的核心Map接口类型
  * 具备获取内部state数据对象、重置数据、订阅监听等功能
@@ -72,7 +75,7 @@ export interface StoreCoreMapValue<T extends State> {
   // store内部的state数据对象（使用函数来维持数据获取最新数据值）
   getState: () => Map<keyof T, T[keyof T]>;
   // 设置stateMap部分字段数据值
-  setHookInitialState: (hookInitialState?: { [key in keyof T]: T[keyof T] }) => void;
+  setHookInitialState: (hookInitialState?: AdaptFuncTypeReturn<Partial<T>>) => void;
   // 重置(恢复)初始化数据（供view使用）
   resetState: Callback;
   // 订阅监听的事件类型

@@ -13,7 +13,7 @@ import { batchUpdate, storeCoreMapKey, useStoreKey } from "./static";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe,
-  Scheduler, CustomEventListener, Listener, CreateStoreOptions, Store,
+  Scheduler, CustomEventListener, Listener, CreateStoreOptions, Store, AdaptFuncTypeReturn,
 } from "./model";
 import { isEmptyObj, mapToObject } from "./utils";
 
@@ -37,10 +37,11 @@ const _DEV_ = process.env.NODE_ENV !== "production";
  * @param options 状态容器配置项
  */
 export function createStore<T extends State>(
-  initialState?: T,
+  initialState?: AdaptFuncTypeReturn<T>,
   options?: CreateStoreOptions,
 ): Store<T> {
-  const state = initialState || ({} as T);
+  // 使用 "?." 增加使用容错率
+  const state = (typeof initialState !== "function" ? initialState : initialState?.()) || ({} as T);
   
   if (_DEV_ && Object.prototype.toString.call(state) !== "[object Object]") {
     throw new Error("createStore`s initialState param required object!");
@@ -70,10 +71,11 @@ export function createStore<T extends State>(
   // 每一个resy生成的store具有的监听订阅处理，并且可以获取最新state数据
   const storeCoreMap: StoreCoreMapType<T> = new Map();
   storeCoreMap.set("getState", () => stateMap);
-  storeCoreMap.set("setHookInitialState", (hookInitialState?: Partial<T>) => {
-    if (Object.prototype.toString.call(hookInitialState) === "[object Object]") {
-      Object.keys(hookInitialState as Partial<T>).forEach(key => {
-        stateMap.set(key, (hookInitialState as Partial<T>)[key] as T[keyof T]);
+  storeCoreMap.set("setHookInitialState", (hookInitialState?: AdaptFuncTypeReturn<Partial<T>>) => {
+    const res = typeof hookInitialState !== "function" ? hookInitialState : hookInitialState();
+    if (Object.prototype.toString.call(res) === "[object Object]") {
+      Object.keys(res as Partial<T>).forEach(key => {
+        stateMap.set(key, (res as Partial<T>)[key] as T[keyof T]);
       });
     }
   });

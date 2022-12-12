@@ -1,7 +1,7 @@
 import React from "react";
 import { expect, test } from "vitest";
 import { createStore, useStore } from "../src";
-import {fireEvent, render, waitFor} from "@testing-library/react";
+import { fireEvent, render, waitFor } from "@testing-library/react";
 
 test("resy-simple", async () => {
   const store = createStore<{

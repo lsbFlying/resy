@@ -23,7 +23,7 @@
 1. Optimized code to fix bug with incomplete data of batch-triggered subscription changes
    in setState mixing scenarios.<br/>
 2. Fixed bug for the way createStore is used as the state of privatized data.<br/>
-3. The addition of "useConciseState" hook simplifies the use of state data privatization.<br/>
+3. Added the "useConciseState" hook to simplify the "use of data state localization".<br/>
 4. Added "syncUpdate" synchronous update api.
 
 🌟`v4.0.5`：<br/>

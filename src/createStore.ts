@@ -44,7 +44,7 @@ export function createStore<T extends State>(
   const state = (typeof initialState !== "function" ? initialState : initialState?.()) || ({} as T);
   
   if (_DEV_ && Object.prototype.toString.call(state) !== "[object Object]") {
-    throw new Error("createStore`s initialState param required object!");
+    throw new Error("The initialization parameter of createStore needs to be an object!");
   }
   
   const { unmountReset = true, privatization } = options || {};

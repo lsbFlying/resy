@@ -32,11 +32,24 @@ test("resy-simple", async () => {
   }
   
   function InnerTest() {
-    const { flag, setState } = useConciseState(() => ({ flag: true }));
+    const { flag, text, setState } = useConciseState(() => ({ flag: true, text: "Hello" }));
     return (
-      <p onClick={() => { setState({ flag: !flag }); }}>
-        {flag ? "flag-123" : "flag-456"}
-      </p>
+      <>
+        <p
+          onClick={() => {
+            setState({
+              flag: !flag,
+            }, () => {
+              setState({
+                text: "OK",
+              });
+            });
+          }}
+        >
+          {flag ? "flag-123" : "flag-456"}
+        </p>
+        <span>{text}</span>
+      </>
     );
   }
 
@@ -75,5 +88,6 @@ test("resy-simple", async () => {
   fireEvent.click(getByText("flag-123"));
   await waitFor(() => {
     getByText("flag-456");
+    getByText("OK");
   });
 });

@@ -252,6 +252,7 @@ export function createStore<T extends State>(
      */
     if (scheduler.get("isOn")) {
       typeof stateParams !== "function" ? syncUpdate(stateParams) : stateParams();
+      callback?.(mapToObject(stateMap));
       return;
     }
     updater(stateParams).then(() => {

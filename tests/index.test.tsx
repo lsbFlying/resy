@@ -146,33 +146,33 @@ test("resy-basic", async () => {
     getByText("2");
     getByText("456asd");
   });
-
+  
   fireEvent.click(getByText("btn3"));
   await waitFor(() => {
     getByText("2");
     getByText("Jack");
   });
-
+  
   fireEvent.click(getByText("btn4"));
   await waitFor(() => {
     getByText("1");
     getByText("Alen：11");
     getByText("man");
   });
-
+  
   fireEvent.click(getByText("btn5"));
   await waitFor(() => {
     console.log(queryByText("Forrest Gump"), queryByText("Forrest Gump：7"));
     expect(queryByText("Forrest Gump")).toBeNull();
     expect(queryByText("Forrest Gump：7")).toBeNull();
   });
-
+  
   fireEvent.click(getByText("btn6"));
   await waitFor(() => {
     getByText("no-sex");
     console.log("btn6", index); // btn6, 6
   });
-
+  
   fireEvent.click(getByText("btn7"));
   await waitFor(() => {
     getByText("batch-forEach");
@@ -184,19 +184,19 @@ test("resy-basic", async () => {
      */
     console.log("btn7", index, store.testObj); // btn7, 7
   });
-
+  
   fireEvent.click(getByText("btn8"));
   await waitFor(() => {
     getByText("999");
     console.log("btn8", index); // btn8, 8
   });
-
+  
   fireEvent.click(getByText("btn9"));
   await waitFor(() => {
     getByText("999666");
     console.log("btn9", index); // btn9, 9
   });
-
+  
   fireEvent.click(getByText("btn10"));
   await waitFor(() => {
     console.log("btn10", index); // btn10, 9

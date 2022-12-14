@@ -8,7 +8,7 @@ test("resy-simple", async () => {
     count: 123,
     text: "QWE",
   };
-
+  
   const InnerApp = (props: { name: string }) => {
     const { name } = props;
     /**
@@ -52,7 +52,7 @@ test("resy-simple", async () => {
       </>
     );
   }
-
+  
   const App = () => {
     return (
       <>
@@ -62,24 +62,24 @@ test("resy-simple", async () => {
       </>
     );
   };
-
+  
   const { getByText } = render(<App/>);
-
+  
   fireEvent.click(getByText("count1"));
   await waitFor(() => {
     getByText("124app1");
   });
-
+  
   fireEvent.click(getByText("count2"));
   await waitFor(() => {
     getByText("124app2");
   });
-
+  
   fireEvent.click(getByText("text1"));
   await waitFor(() => {
     getByText("app1app1");
   });
-
+  
   fireEvent.click(getByText("text2"));
   await waitFor(() => {
     getByText("app2app2");

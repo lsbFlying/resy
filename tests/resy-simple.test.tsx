@@ -29,7 +29,7 @@ test("resy-simple", async () => {
   
   function AppInner() {
     const { formRef2 } = useStore(store, () => ({ formRef2: React.useRef<any>(), }));
-  
+    
     function formBtnClick(event: any) {
       event.preventDefault();
       formRef2.current.value = "AppInnerFormRefFuncReturnTest";

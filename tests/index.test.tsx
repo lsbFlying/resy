@@ -200,6 +200,7 @@ test("resy-basic", async () => {
      * store.setState(() => {
      *   store.text = "qweasdzxc";
      * });
+     * todo：这种函数入参的更新具有更新合并的优势，它是凭借这种方式的执行时效经由unstable_batchedUpdates内部实现
      */
     console.log("btn7", index, store.testObj); // btn7, 7
   });

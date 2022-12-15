@@ -201,6 +201,9 @@ export function createStore<T extends State>(
        * 而是又使用了setState，那么会走到else分支仍然批量更新
        * 因为如果是函数入参里面更新肯定通过scheduler调度统一共用到单次直接更新的逻辑，
        * 不管它当前更新层是否使用，它最终总归会使用到单次直接更新的批量合并这一步
+       *
+       * 3、并且这种函数入参的更新具有更新合并的优势，
+       * 它是凭借这种方式的执行时效经由unstable_batchedUpdates内部实现
        */
       (stateParams as StateFunc)();
     }

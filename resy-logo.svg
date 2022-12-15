@@ -49,8 +49,6 @@
       class="flagIconText"
       x="1000"
       y="300"
-      stroke-width="20"
-      stroke="rgb(127 236 173 / 80%)"
       font-size="900px"
       font-weight="bolder"
       textLength="2000"

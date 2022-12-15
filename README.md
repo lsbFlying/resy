@@ -1,12 +1,15 @@
 <div align="center">
 <img src="./resy-logo.svg" alt="resy">
 
-<div style="display: flex; justify-content: center; align-items: center">
-<img src="logo.svg" alt="resy"/>
-<span style="margin-left: 16px; font-size: 20px; color: #333;">resy</span>
-</div>
+<div style="height:24px; line-height: 24px; display: flex; justify-content: center; align-items: center">
+   <img src="logo.svg" alt="resy"/>
+   <span style="margin-left: 16px; font-weight: bold; font-size: 20px; color: #333;">
+      resy
 
-**re**act **s**tate eas**y**
+   **re**act **s**tate eas**y**
+
+   </span>
+</div>
 
 <h3>A simple react state manager</h3>
 <h4>Support React Native、SSR、Mini Apps (such as taro, rax, remax etc)</h4>

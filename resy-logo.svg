@@ -52,8 +52,7 @@
       font-size="900px"
       font-weight="bolder"
       textLength="2000"
-      fill="rgb(127 236 173 / 20%)"
-      text-rendering="geometricPrecision"
+      fill="rgb(127 236 173 / 60%)"
     >
         resy
     </text>

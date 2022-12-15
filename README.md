@@ -1,4 +1,6 @@
 <div align="center">
+<img src="./resy-logo.svg">
+
 <h1>resy</h1>
 
 **re**act **s**tate eas**y**

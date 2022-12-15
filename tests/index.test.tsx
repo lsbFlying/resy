@@ -53,9 +53,11 @@ test("resy-basic", async () => {
           store.count = 999;
         }
         if (effectState.text === "text-upgrade") {
+          console.log("subscribe-btn8", effectState);
           store.count = 999666;
         }
         if (effectState.text === "qweasdzxc") {
+          console.log("subscribe-btn7", effectState);
           store.testObj = { age: 12 };
         }
       }, ["sex", "text"]);
@@ -122,9 +124,15 @@ test("resy-basic", async () => {
         }}>btn7</button>
         <button onClick={() => {
           store.sex = "no-sex-subscribe";
+          // store.setState({
+          //   sex: "no-sex-subscribe",
+          // });
         }}>btn8</button>
         <button onClick={() => {
           store.text = "text-upgrade";
+          // store.setState({
+          //   text: "text-upgrade",
+          // });
         }}>btn9</button>
         <button onClick={() => {
           // 不产生更新
@@ -176,30 +184,41 @@ test("resy-basic", async () => {
   fireEvent.click(getByText("btn7"));
   await waitFor(() => {
     getByText("batch-forEach");
-    getByText("testObj-age:12");
+    // getByText("testObj-age:12");
     /**
      * 按钮7更新后触发的订阅subscribe的逻辑更新来testObj，同时由于resy的批次更新调度的处理
      * 它将store.testObj = { age: 12 }与按钮7的setState更新作为一个批次处理了
-     * 同理，按钮8、按钮9 触发的subscribe再次更新逻辑也是如此按这个统一批次更新处理
+     * 这里按钮7特殊一些：因为它是在setState的函数入参中再更新的，这种函数入参的更新会让setState的更新调度批次统一化
+     * 因为它内部会让这个函数直接执行，使得统一调度上的任务队列有更新，
+     * 所以这里会变成一次渲染更新，如果写成A、B的方式：
+     * A: store.text = "qweasdzxc";
+     * B: store.setState({
+     *   text: "qweasdzxc",
+     * });
+     * 则会变成两个更新渲染，按钮8、按钮9就是这样产生两次渲染的
+     * // 或者按钮7直接写成下面就达到了一次更新批处理的效果
+     * store.setState(() => {
+     *   store.text = "qweasdzxc";
+     * });
      */
     console.log("btn7", index, store.testObj); // btn7, 7
   });
-  
+  console.log("btn7-btn8", index);
   fireEvent.click(getByText("btn8"));
   await waitFor(() => {
     getByText("999");
-    console.log("btn8", index); // btn8, 8
+    console.log("btn8", index); // btn8, 9
   });
   
   fireEvent.click(getByText("btn9"));
   await waitFor(() => {
     getByText("999666");
-    console.log("btn9", index); // btn9, 9
+    console.log("btn9", index); // btn9, 11
   });
   
   fireEvent.click(getByText("btn10"));
   await waitFor(() => {
-    console.log("btn10", index); // btn10, 9
-    expect(index === 9).toBeTruthy();
+    console.log("btn10", index); // btn10, 11
+    expect(index === 11).toBeTruthy();
   });
 });

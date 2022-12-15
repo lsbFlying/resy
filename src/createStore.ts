@@ -232,6 +232,21 @@ export function createStore<T extends State>(
     }
   }
   
+  // 同步更新
+  function syncUpdate(syncStateParams: Partial<T> | T) {
+    const prevState = new Map(stateMap);
+    batchUpdate(() => {
+      Object.keys(syncStateParams).forEach(key => {
+        (
+          (
+            initialValueConnectStore(key).get(key) as StoreMapValue<T>
+          ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
+        )((syncStateParams as Partial<T> | T)[key]);
+      });
+    });
+    batchDispatch(prevState, new Map(Object.entries(syncStateParams)));
+  }
+  
   /**
    * @description setState批量更新函数
    * 为了解决"如果在同一个事件循环的批次之中setState批量更新与直接更新的方式混用了"这样的场景
@@ -259,21 +274,6 @@ export function createStore<T extends State>(
       finallyBatchHandle();
       callback?.(mapToObject(stateMap));
     });
-  }
-  
-  // 同步更新
-  function syncUpdate(syncStateParams: Partial<T> | T) {
-    const prevState = new Map(stateMap);
-    batchUpdate(() => {
-      Object.keys(syncStateParams).forEach(key => {
-        (
-          (
-            initialValueConnectStore(key).get(key) as StoreMapValue<T>
-          ).get("setSnapshot") as StoreMapValueType<T>["setSnapshot"]
-        )((syncStateParams as Partial<T> | T)[key]);
-      });
-    });
-    batchDispatch(prevState, new Map(Object.entries(syncStateParams)));
   }
   
   // 订阅函数

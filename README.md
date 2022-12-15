@@ -4,10 +4,7 @@
 <div style="height:24px; line-height: 24px; display: flex; justify-content: center; align-items: center">
    <img src="logo.svg" alt="resy"/>
    <span style="margin-left: 16px; font-weight: bold; font-size: 20px; color: #333;">
-      resy
-
-   **re**act **s**tate eas**y**
-
+      resy(<strong>re</strong>act <strong>s</strong>tate eas<strong>y</strong>)
    </span>
 </div>
 

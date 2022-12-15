@@ -1,7 +1,10 @@
 <div align="center">
-<img src="./resy-logo.svg">
+<img src="./resy-logo.svg" alt="resy">
 
-<h1>resy</h1>
+<div style="display: flex; justify-content: center; align-items: center">
+<img src="logo.svg" alt="resy"/>
+<span style="margin-left: 16px; font-size: 20px; color: #333;">resy</span>
+</div>
 
 **re**act **s**tate eas**y**
 

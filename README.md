@@ -1,13 +1,5 @@
 <div align="center">
 <img src="./resy-logo.svg" alt="resy">
-
-<h2 align="center" flex="center">
-   <img src="logo.svg" alt="resy"/>
-   <span>
-      resy(<strong>re</strong>act <strong>s</strong>tate eas<strong>y</strong>)
-   </span>
-</h2>
-
 <h3>A simple react state manager</h3>
 <h4>Support React Native、SSR、Mini Apps (such as taro, rax, remax etc)</h4>
 

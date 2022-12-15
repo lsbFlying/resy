@@ -5,7 +5,7 @@
   xmlns="http://www.w3.org/2000/svg"
   xmlns:xlink="http://www.w3.org/1999/xlink"
   width="730"
-  height="400"
+  height="200"
 >
     <style>
         @keyframes float-easy {
@@ -13,7 +13,7 @@
         transform: translate3d(0,0,0);
         }
         100% {
-        transform: translate3d(-60px,0,0);
+        transform: translate3d(0,-60px,0);
         }
         }
         
@@ -35,26 +35,57 @@
         
         @keyframes move {
         0% {
-        transform: translateX(-60px);
+        transform: translate3d(-60px,0,0);
         }
         100% {
-        transform: translateX(60px);
+        transform: translate3d(60px,0,0);
         }
         }
         svg > text.flagIconText {
-        animation: move linear 4s infinite alternate;
+        animation: move ease-in-out 4s infinite alternate;
         }
     </style>
+    <svg
+      class="icon"
+      viewBox="0 0 1024 1024"
+      version="1.1"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlns:xlink="http://www.w3.org/1999/xlink"
+      width="240"
+      height="240"
+      x="100"
+      y="780"
+    >
+        <path
+          d="M643.2 633.6h115.2L643.2 435.2V432H640l-83.2-140.8 3.2 176-6.4 393.6H348.8l-240-352L374.4 67.2H265.6L0 508.8l291.2 444.8h342.4v-3.2h3.2z"
+          fill="#7fecad"
+        />
+        <path
+          d="M732.8 67.2H387.2l-6.4 320H265.6l115.2 195.2v6.4h3.2l83.2 137.6-3.2-172.8 6.4-396.8h204.8l240 352-265.6 444.8h108.8L1024 508.8z"
+          fill="#16a951"
+        />
+    </svg>
+    
     <text
       class="flagIconText"
       x="1000"
-      y="300"
+      y="600"
       font-size="900px"
       font-weight="bolder"
       textLength="2000"
       fill="rgb(127 236 173 / 60%)"
     >
         resy
+    </text>
+    <text
+      x="400"
+      y="950"
+      font-size="200px"
+      font-weight="bolder"
+      textLength="3000"
+      fill="rgb(127 236 173 / 40%)"
+    >
+        react state easy
     </text>
     <svg
       class="icon"
@@ -63,7 +94,7 @@
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
       x="0"
-      y="600"
+      y="150"
     >
         <path
           class="easy"

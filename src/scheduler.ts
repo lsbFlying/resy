@@ -37,7 +37,7 @@ scheduler.set(
     taskDataMapParam?: Map<never, any>,
     taskQueueMapParam?: Map<never, Callback>,
   ) => {
-    (taskDataMapParam || taskQueueMap).clear();
+    (taskDataMapParam || taskDataMap).clear();
     (taskQueueMapParam || taskQueueMap).clear();
   },
 );

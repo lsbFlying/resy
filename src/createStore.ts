@@ -40,8 +40,7 @@ export function createStore<T extends State>(
   initialState?: AdaptFuncTypeReturn<T>,
   options?: CreateStoreOptions,
 ): Store<T> {
-  // 使用 "?." 增加使用容错率
-  const state = (typeof initialState !== "function" ? initialState : initialState?.()) || ({} as T);
+  const state = (typeof initialState !== "function" ? initialState : initialState()) || ({} as T);
   
   if (_DEV_ && Object.prototype.toString.call(state) !== "[object Object]") {
     throw new Error("The initialization parameter of createStore needs to be an object!");

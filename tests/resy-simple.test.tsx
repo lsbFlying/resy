@@ -87,8 +87,16 @@ test("resy-simple", async () => {
     );
   };
   
-  // @ts-ignore 测试非对象初始化入参报错
-  expect(() => createStore(123)).toThrowError();
+  // @ts-ignore 测试初始化入参报错
+  expect(() => createStore(0)).toThrowError();
+  // @ts-ignore 测试初始化入参报错
+  expect(() => createStore(null)).toThrowError();
+  // @ts-ignore 测试初始化入参报错
+  expect(() => createStore(false)).toThrowError();
+  // @ts-ignore 测试初始化入参报错
+  expect(() => createStore(NaN)).toThrowError();
+  // @ts-ignore 测试初始化入参报错
+  expect(() => createStore("")).toThrowError();
   
   const { getByText, getAllByDisplayValue } = render(<App/>);
   

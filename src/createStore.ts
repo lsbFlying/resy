@@ -40,10 +40,22 @@ export function createStore<T extends State>(
   initialState?: AdaptFuncTypeReturn<T>,
   options?: CreateStoreOptions,
 ): Store<T> {
-  const state = (typeof initialState !== "function" ? initialState : initialState()) || ({} as T);
+  /**
+   * 做了一个假值兼容，本想兼容createStore()以及useConciseState()的，
+   * 但这样刚好导致0、null、false、""、undefined、NaN都可以了
+   * 但事实上我最大程度允许的假值就是JS的undefined，因为必要条件下我不想写初始化参数
+   * 例如：const { 0, setState } = useConciseState<{ count?: number }>();
+   * 或者：const store = createStore<{ count?: number }>();
+   * 我可以不写初始化参数，即使在TS中我也可以只通过一个初始化的范型类型确定代码中我要使用的数据
+   * 这样写法看起来像是凭空捏造了一个有效的数据状态，it`s looks cool!
+   * 但同样除了undefined其他的假值可能是开发者的代码bug，如果都兼容了不太好
+   */
+  const initial = typeof initialState !== "function" ? initialState : initialState();
+  // 所以在这里的Object判断中只对undefined特殊处理
+  const state = initial === undefined ? ({} as T) : initial;
   
   if (_DEV_ && Object.prototype.toString.call(state) !== "[object Object]") {
-    throw new Error("The initialization parameter of createStore needs to be an object!");
+    throw new Error("The initialization parameter result of createStore needs to be an object!");
   }
   
   const { unmountReset = true, privatization } = options || {};

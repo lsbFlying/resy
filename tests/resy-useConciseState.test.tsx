@@ -53,12 +53,23 @@ test("resy-simple", async () => {
     );
   }
   
+  function NoInitial() {
+    const { count, setState } = useConciseState<{count?: number}>();
+    return (
+      <>
+        count：{count}<br/>
+        <button onClick={() => { setState({ count: (count || 0) + 1, }) }}>btn+</button>
+      </>
+    );
+  }
+  
   const App = () => {
     return (
       <>
         <InnerApp name="app1"/>
         <InnerApp name="app2"/>
         <InnerTest/>
+        <NoInitial/>
       </>
     );
   };
@@ -89,5 +100,10 @@ test("resy-simple", async () => {
   await waitFor(() => {
     getByText("flag-456");
     getByText("OK");
+  });
+  
+  fireEvent.click(getByText("btn+"));
+  await waitFor(() => {
+    getByText("count：1");
   });
 });

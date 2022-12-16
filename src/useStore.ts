@@ -33,7 +33,7 @@ export function useStore<S extends State>(store: S, hookInitialState?: AdaptFunc
  * const [text, setText] = useState("hello");
  * 🌟: useConciseState相对于useState在多个数据状态时使用相对简单明了
  */
-export function useConciseState<T extends State>(state: AdaptFuncTypeReturn<T>): Store<T> {
+export function useConciseState<T extends State>(state?: AdaptFuncTypeReturn<T>): Store<T> {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const store = useMemo(() => createStore<T>(state, { privatization: true }), []);
   return store[useStoreKey as keyof T];

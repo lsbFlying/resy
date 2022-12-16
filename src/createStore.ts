@@ -213,6 +213,8 @@ export function createStore<T extends State>(
        * 刚好常规而言的订阅联动更新就在这几毫秒的差距中就实现了批次处理的分水岭
        * 而4ms左右这样的一个时间间隔
        * 在react中就会被unstable_batchedUpdates或者react内部的调度机制处理成统一批次的更新
+       * todo：当然这里的特性是在react-V18中才有的，因为react-V18的unstable_batchedUpdates做了优化
+       * 如果是react-V18以下的版本，则还是分两个批次渲染更新。
        */
       (stateParams as StateFunc)();
     }

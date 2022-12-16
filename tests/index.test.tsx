@@ -184,7 +184,7 @@ test("resy-basic", async () => {
   fireEvent.click(getByText("btn7"));
   await waitFor(() => {
     getByText("batch-forEach");
-    // getByText("testObj-age:12");
+    getByText("testObj-age:12");
     /**
      * 按钮7更新后触发的订阅subscribe的逻辑更新来testObj，同时由于resy的批次更新调度的处理
      * 它将store.testObj = { age: 12 }与按钮7的setState更新作为一个批次处理了

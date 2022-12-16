@@ -16,6 +16,9 @@
 <details>
 <summary>changed logs</summary>
 
+🌟`v5.1.0`：<br/>
+1. Add non-required function of "useConciseState" initialState parameters.<br/>
+
 🌟`v5.0.1`：<br/>
 1. Remove redundant and useless processing scheduling,
    simplify and improve the execution of scheduling batches.<br/>

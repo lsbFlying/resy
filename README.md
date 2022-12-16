@@ -216,6 +216,7 @@ import { FormInstance } from "antd/es/form";
 
 const store = createStore<{
   form?: FormInstance<{ sortNumber: number }>;
+  text?: string;
 }>();
 
 function App() {
@@ -236,10 +237,16 @@ function App() {
    *   };
    * });
    */
-  const { form } = useStore(
+  const { form, text } = useStore(
     store,
     {
       form: Form.useForm<{ sortNumber: number }>()[0],
+      /**
+       * The hookInitialState parameter itself is for the generated value of hook,
+       * but if you fill in the data attribute that is not the generated value of hook,
+       * it will also make the value initialized again take effect.
+       */
+      text: "Hello",
     },
   );
   
@@ -255,6 +262,7 @@ function App() {
         <InputNumber/>
       </Form.Item>
       <br/>
+      <p>{text}</p>
       <button onClick={addClick}>btn</button>
     </Form>
   );

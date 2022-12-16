@@ -10,7 +10,8 @@ import { createStore } from "./createStore";
  * 本身产生的数据就是hook数据，所以会多一层代理
  * @param store
  * @param hookInitialState 针对hook的初始化使用
- *
+ * hookInitialState参数本身是针对hook的产生值，
+ * 但是如果你填写了非hook产生值的数据属性也会使得再次初始化的值生效
  * @example
  * const { count, form } = useStore(
  *   store,

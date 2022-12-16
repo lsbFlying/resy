@@ -247,16 +247,13 @@ export type CreateStoreOptions = {
    */
   unmountReset?: boolean;
   /**
-   * @description 该参数主要是为了createStore创建的store成为私有化数据状态容器
+   * @description 该参数主要是为了createStore创建的store成为局部(非全局)数据状态容器
    * 它可以用如下方式：
-   * const privateStore = useMemo(() => createStore({ count: 0, text: "QWE }, { privatization: true }), []);
-   * 或者： const privateStore = usePrivateStore({ count: 0, text: "QWE });
-   * const { count, text, setState } = useStore(privateStore);  // 或者setState不解构直接使用store.setState
+   * const { count, text, setState } = useConciseState({ count: 0, text: "Hello" });
    * 作用实现其实就是原生的useState：
-   * const [count, setCount] = useStore(privateStore);
-   * const [text, setText] = useStore(privateStore);
-   *
-   * notes: privatization参数需要结合useMemo或者usePrivateStore使用才可以达到数据状态私有化的效果
+   * const [count, setCount] = useState(0);
+   * const [text, setText] = useState("Hello");
+   * 如果在状态较多的情况下，useConciseState的写法较原生写法还是相对简洁明了的
    */
   privatization?: boolean;
 };

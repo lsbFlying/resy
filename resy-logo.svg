@@ -4,8 +4,6 @@
   version="1.1"
   xmlns="http://www.w3.org/2000/svg"
   xmlns:xlink="http://www.w3.org/1999/xlink"
-  width="730"
-  height="200"
 >
     <style>
         @keyframes float-easy {
@@ -16,7 +14,7 @@
         transform: translate3d(0,-60px,0);
         }
         }
-        
+
         @keyframes float-api {
         0% {
         transform: translate3d(0,0px,0);
@@ -25,14 +23,14 @@
         transform: translate3d(0,-60px,0);
         }
         }
-        
+
         svg > path.easy {
         animation: float-easy ease-in-out 3s infinite alternate;
         }
         svg > path.api {
         animation: float-api ease-in-out 3s infinite alternate;
         }
-        
+
         @keyframes move {
         0% {
         transform: translate3d(-60px,0,0);
@@ -65,14 +63,14 @@
           fill="#16a951"
         />
     </svg>
-    
+
     <text
       class="flagIconText"
-      x="1000"
+      x="1300"
       y="600"
-      font-size="900px"
+      font-size="600px"
       font-weight="bolder"
-      textLength="2000"
+      textLength="1400"
       fill="rgb(127 236 173 / 60%)"
     >
         resy

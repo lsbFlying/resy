@@ -7,8 +7,7 @@ import { proxyStateHandler } from "./utils";
 export type { MapStateToProps };
 
 /**
- * view
- *
+ * 自动memo与SCU的高阶HOC
  * @description 自动化规避组件额外re-render的HOC
  * A：通过将Comp组件包裹一层hook，转变成hook组件，从而实现对class组件的支持
  * 本身也自然是支持hook，Comp也可以是hook组件
@@ -32,7 +31,6 @@ export type { MapStateToProps };
  * 它会深对比props与state和之前的props、state状态进行对比
  * 是否开启需要开发者自己衡量所能带来的性能收益，常规情况下不需要开启此功能
  * 除非遇到很重量级的组件渲染很耗费性能则开启可以通过JS的计算减轻页面更新渲染的负担
- * @name view
  */
 export function view<P extends State = {}, S extends State = {}>(
   store: Store<S>,

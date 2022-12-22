@@ -3,8 +3,7 @@ import { unstable_batchedUpdates } from "react-platform";
 import type { Callback } from "./model";
 
 /**
- * batchUpdateShimRun
- * @name batchUpdateShimRun
+ * 批处理的安全补包
  * @description 一个unstable_batchedUpdates的shim垫片
  */
 export function batchUpdateShimRun(fn: Callback) { fn() }

@@ -34,7 +34,6 @@ const _DEV_ = process.env.NODE_ENV !== "production";
  * @date 2022-05-05
  * @param initialState 初始化状态数据
  * @param options 状态容器配置项
- * @name createStore
  */
 export function createStore<T extends State>(
   initialState?: AdaptFuncTypeReturn<T>,

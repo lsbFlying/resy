@@ -2,7 +2,8 @@ import type { State } from "./model";
 
 /**
  * 给Comp组件的props上挂载的state属性数据做一层引用代理
- * 核心作用是找出SCU或者useMemo所需要的更新依赖的数据属性
+ * @name proxyStateHandler
+ * @description 核心作用是找出SCU或者useMemo所需要的更新依赖的数据属性
  */
 export function proxyStateHandler<S extends State>(latestState: Map<keyof S, S[keyof S]>, linkStateSet: Set<keyof S>) {
   return new Proxy(latestState, {
@@ -14,15 +15,24 @@ export function proxyStateHandler<S extends State>(latestState: Map<keyof S, S[k
   } as ProxyHandler<Map<keyof S, S[keyof S]>>) as object as S;
 }
 
-// 判断空对象（内部使用，前提已确定是[object Object]）
+/**
+ * 判断空对象
+ * @name isEmptyObj
+ * @description 内部使用，前提已确定是[object Object]
+ */
 export function isEmptyObj(obj: object) {
+  // tslint:disable:variable-name
   for (const _key in obj) {
     return false;
   }
   return true;
 }
 
-// 解决回调参数如果是map的proxy代理的话无法做扩展运算的问题
+/**
+ * map转object
+ * @name mapToObject
+ * @description 解决回调参数如果是map的proxy代理的话无法做扩展运算的问题
+ */
 export function mapToObject<T extends State>(map: Map<keyof T, T[keyof T]>): T {
   return [...map.entries()].reduce((obj, [key, value]) => ((obj as T)[key] = value, obj), {}) as T;
 }

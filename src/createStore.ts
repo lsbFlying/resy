@@ -3,7 +3,6 @@
  * @description 一款简单易用的React数据状态管理器
  * @author liushanbao
  * @date 2022-05-05
- * @function createStore
  * @name createStore
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
@@ -35,13 +34,14 @@ const _DEV_ = process.env.NODE_ENV !== "production";
  * @date 2022-05-05
  * @param initialState 初始化状态数据
  * @param options 状态容器配置项
+ * @name createStore
  */
 export function createStore<T extends State>(
   initialState?: AdaptFuncTypeReturn<T>,
   options?: CreateStoreOptions,
 ): Store<T> {
   /**
-   * 做了一个假值兼容，本想兼容createStore()以及useConciseState()的，
+   * @description 做了一个假值兼容，本想兼容createStore()以及useConciseState()的，
    * 但这样刚好导致0、null、false、""、undefined、NaN都可以了
    * 但事实上我最大程度允许的假值就是JS的undefined，因为必要条件下我不想写初始化参数
    * 例如：const { 0, setState } = useConciseState<{ count?: number }>();
@@ -53,13 +53,13 @@ export function createStore<T extends State>(
   const initial = typeof initialState !== "function" ? initialState : initialState();
   // 所以在这里的Object判断中只对undefined特殊处理
   const state = initial === undefined ? ({} as T) : initial;
-  
+
   if (_DEV_ && Object.prototype.toString.call(state) !== "[object Object]") {
     throw new Error("The initialization parameter result of createStore needs to be an object!");
   }
-  
+
   const { unmountReset = true, privatization } = options || {};
-  
+
   /**
    * @description 更新的任务队列（私有化）、更新的任务数据（私有化）
    * 配合usePrivateStore该hook api的使用
@@ -72,13 +72,13 @@ export function createStore<T extends State>(
    */
   const taskQueueMapPrivate = privatization ? new Map<keyof T, Callback>() : undefined;
   const taskDataMapPrivate = privatization ? new Map<keyof T, T[keyof T]>() : undefined;
-  
+
   /**
-   * 不改变传参state，同时resy使用Map与Set提升性能
+   * @description 不改变传参state，同时resy使用Map与Set提升性能
    * 如stateMap、storeMap、storeCoreMap、storeChangeSet等
    */
   let stateMap: Map<keyof T, T[keyof T]> = new Map(Object.entries(state));
-  
+
   // 每一个resy生成的store具有的监听订阅处理，并且可以获取最新state数据
   const storeCoreMap: StoreCoreMapType<T> = new Map();
   storeCoreMap.set("getState", () => stateMap);
@@ -105,20 +105,20 @@ export function createStore<T extends State>(
       nextState,
     ));
   });
-  
+
   // 数据存储容器storeMap
   const storeMap: StoreMap<T> = new Map();
-  
+
   // 生成storeMap键值对
   function genStoreMapKeyValue(key: keyof T) {
     /**
-     * 为每一个数据的change更新回调做一个闭包MSet储存
+     * @description 为每一个数据的change更新回调做一个闭包MSet储存
      * 之所以用Set不用Map是因为每一个使用数据字段
      * 都需要一个subscribe的强更新绑定回调
      * 而每一个绑定回调函数是针对组件对于数据使用的更新开关
      */
     const storeChangeSet = new Set<Callback>();
-    
+
     const storeMapValue: StoreMapValue<T> = new Map();
     storeMapValue.set("subscribe", (storeChange: Callback) => {
       storeChangeSet.add(storeChange);
@@ -130,7 +130,7 @@ export function createStore<T extends State>(
     storeMapValue.set("getSnapshot", () => stateMap.get(key));
     storeMapValue.set("setSnapshot", (val: T[keyof T]) => {
       /**
-       * 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
+       * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
        * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
        */
       if (!Object.is(val, stateMap.get(key))) {
@@ -144,10 +144,10 @@ export function createStore<T extends State>(
       (storeMap.get(key) as StoreMapValue<T>).get("subscribe") as StoreMapValueType<T>["subscribe"],
       (storeMap.get(key) as StoreMapValue<T>).get("getSnapshot") as StoreMapValueType<T>["getSnapshot"],
     ));
-    
+
     storeMap.set(key, storeMapValue);
   }
-  
+
   // 为每一个数据字段储存连接到store容器中
   function initialValueConnectStore(key: keyof T) {
     // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
@@ -155,23 +155,23 @@ export function createStore<T extends State>(
     genStoreMapKeyValue(key);
     return storeMap;
   }
-  
+
   // 批量触发订阅监听的数据变动
   function batchDispatch(prevState: Map<keyof T, T[keyof T]>, changedData: Map<keyof T, T[keyof T]>) {
     if (changedData.size > 0 && (storeCoreMap.get("dispatchStoreSet") as StoreCoreMapValue<T>["dispatchStoreSet"]).size > 0) {
       /**
-       * effectState：实际真正影响变化的数据
+       * @description effectState：实际真正影响变化的数据
        * changedData是给予更新变化的数据，但是不是真正会产生变化影响的数据，
        * 就好比setState中的参数对象可以写与原数据一样数据，但是不产生更新
        */
       const effectState = {} as Partial<T>;
-      
+
       [...changedData.entries()].forEach(([key, value]) => {
         if (!Object.is(value, prevState.get(key))) {
           effectState[key as keyof T] = stateMap.get(key);
         }
       });
-      
+
       if (!isEmptyObj(effectState)) {
         (
           storeCoreMap.get("dispatchStoreEffect") as StoreCoreMapValue<T>["dispatchStoreEffect"]
@@ -179,7 +179,7 @@ export function createStore<T extends State>(
       }
     }
   }
-  
+
   // 更新任务添加入栈
   async function taskPush(key: keyof T, val: T[keyof T]) {
     (scheduler.get("add") as Scheduler<T>["add"])(
@@ -194,7 +194,7 @@ export function createStore<T extends State>(
       taskQueueMapPrivate,
     );
   }
-  
+
   // 批量异步更新函数
   async function updater(stateParams: Partial<T> | T | StateFunc = {}) {
     if (typeof stateParams !== "function") {
@@ -204,6 +204,7 @@ export function createStore<T extends State>(
       });
     } else {
       /**
+       * @description
        * 1、如果stateParams是函数的情况并且在函数中使用了直接更新的方式更新数据
        * 那么这里需要先调用stateParams函数，产生一个直接更新的新一轮的批次更新
        * 然后再直接检查产生的直接更新中这一轮的批次中的最新任务数据与任务队列，然后进行冲刷与更新
@@ -230,7 +231,7 @@ export function createStore<T extends State>(
       (stateParams as StateFunc)();
     }
   }
-  
+
   /**
    * @description 最终批量处理（更新、触发）
    * 借助then的（微任务）事件循环实现数据与任务更新的执行都统一入栈，然后冲刷更新
@@ -254,7 +255,7 @@ export function createStore<T extends State>(
       batchDispatch(prevState, taskDataMap);
     }
   }
-  
+
   // 同步更新
   function syncUpdate(syncStateParams: Partial<T> | T) {
     const prevState = new Map(stateMap);
@@ -269,7 +270,7 @@ export function createStore<T extends State>(
     });
     batchDispatch(prevState, new Map(Object.entries(syncStateParams)));
   }
-  
+
   /**
    * @description setState批量更新函数
    * 为了解决"如果在同一个事件循环的批次之中setState批量更新与直接更新的方式混用了"这样的场景
@@ -289,15 +290,15 @@ export function createStore<T extends State>(
       callback?.(mapToObject(stateMap));
     });
   }
-  
+
   // 订阅函数
   function subscribe(listener: Listener<T>, stateKeys?: (keyof T)[]): Unsubscribe {
     const dispatchStoreSetTemp = storeCoreMap.get("dispatchStoreSet") as StoreCoreMapValue<T>["dispatchStoreSet"];
-    
+
     const customEventDispatcher: CustomEventListener<T> = new EventDispatcher();
     customEventDispatcher.addEventListener(
       /**
-       * 每一个订阅监听实例有相同的event type不要紧，因为实例不同所以不会影响
+       * @description 每一个订阅监听实例有相同的event type不要紧，因为实例不同所以不会影响
        * 这里取一个实例类型常量反而方便节省内存、增加代码执行效率
        */
       storeCoreMap.get("listenerEventType") as StoreCoreMapValue<T>["listenerEventType"],
@@ -313,15 +314,15 @@ export function createStore<T extends State>(
       },
     );
     dispatchStoreSetTemp.add(customEventDispatcher);
-    
+
     return () => {
       dispatchStoreSetTemp.delete(customEventDispatcher);
     };
   }
-  
+
   // setState、subscribe与syncUpdate以及store代理内部数据Map的合集
   const externalMap: ExternalMapType<T> = new Map();
-  
+
   // 给useStore的驱动更新代理
   const storeMapProxy = new Proxy(storeMap, {
     get: (_, key: keyof T) => {
@@ -334,13 +335,13 @@ export function createStore<T extends State>(
       )();
     },
   } as ProxyHandler<StoreMap<T>>);
-  
+
   externalMap.set("setState", setState);
   externalMap.set("syncUpdate", syncUpdate);
   externalMap.set("subscribe", subscribe);
   externalMap.set(storeCoreMapKey, storeCoreMap);
   externalMap.set(useStoreKey, storeMapProxy);
-  
+
   return new Proxy(state, {
     get: (_, key: keyof T) => {
       return externalMap.get(key as keyof ExternalMapValue<T>) || stateMap.get(key);

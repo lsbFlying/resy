@@ -32,24 +32,26 @@ export type { MapStateToProps };
  * 它会深对比props与state和之前的props、state状态进行对比
  * 是否开启需要开发者自己衡量所能带来的性能收益，常规情况下不需要开启此功能
  * 除非遇到很重量级的组件渲染很耗费性能则开启可以通过JS的计算减轻页面更新渲染的负担
+ * @name view
  */
 export function view<P extends State = {}, S extends State = {}>(
   store: Store<S>,
   // any用于防范某些HOC导致的类型不合一问题，比如withRouter(低版本的react-router还是存在该HOC)
+  // tslint:disable-next-line:variable-name
   Comp: React.ComponentType<MapStateToProps<S, P> | any>,
   deepEqual?: boolean,
 ) {
   return memo((props: P) => {
     // 引用数据的代理Set
     const linkStateSet: Set<keyof S> = new Set();
-    
+
     // 需要使用getState获取store内部的即时最新数据值
     const latestState = (
       (
         store[storeCoreMapKey as keyof S] as StoreCoreMapType<S>
       ).get("getState") as StoreCoreMapValue<S>["getState"]
     )();
-    
+
     /**
      * 给state数据做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
      * 恰巧由于这里的proxy代理，导致在挂载属性数据的时候不能使用扩展运算符，
@@ -57,7 +59,7 @@ export function view<P extends State = {}, S extends State = {}>(
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
     const [state, setState] = useState<S>(() => proxyStateHandler(latestState, linkStateSet));
-    
+
     useEffect(() => {
       // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
       const unsubscribe = store.subscribe((
@@ -67,9 +69,9 @@ export function view<P extends State = {}, S extends State = {}>(
       ) => {
         // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
         const innerLinkUseFields = Array.from(linkStateSet);
-        
+
         const effectStateFields = Object.keys(effectState);
-        
+
         if (
           innerLinkUseFields.some(key => effectStateFields.includes(key as string))
           && (!deepEqual || !isEqual(prevState, nextState))
@@ -95,7 +97,7 @@ export function view<P extends State = {}, S extends State = {}>(
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-    
+
     return useMemo(() => <Comp {...props} state={state}/>, [state, props]);
   }, deepEqual ? (prevProps: P, nextProps: P) => {
     return isEqual(prevProps, nextProps);

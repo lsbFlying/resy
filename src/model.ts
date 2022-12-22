@@ -49,7 +49,7 @@ export interface CustomEventListener<T extends State> {
     nextState: T,
   ): void;
   /**
-   * 本身EventDispatcher可以单独使用，在结合resy是销毁监听订阅的时候实际上是移除了监听Set中的监听实例
+   * @description 本身EventDispatcher可以单独使用，在结合resy是销毁监听订阅的时候实际上是移除了监听Set中的监听实例
    * 所以subscribe这里可以不用多余使用removeEventListener，直接移除实例即可
    * 所以这里也是直接简化去除removeEventListener
    */
@@ -68,7 +68,7 @@ export interface CustomEventListenerConstructor<T extends State> {
 export type AdaptFuncTypeReturn<T extends State> = T | (() => T);
 
 /**
- * StoreCoreMap的数据值类型，作为createStore的核心Map接口类型
+ * @description StoreCoreMap的数据值类型，作为createStore的核心Map接口类型
  * 具备获取内部state数据对象、重置数据、订阅监听等功能
  */
 export interface StoreCoreMapValue<T extends State> {
@@ -208,9 +208,12 @@ export type MapStateToProps<S extends State, P extends State = {}> = P & {
   state: S;
 }
 
-// resy的调度类型接口
+/**
+ * resy的调度类型接口
+ * @description 调度类型
+ */
 export interface Scheduler<T extends State = {}> {
-  /** 新增直接更新数据的key/value以及相应的任务函数 */
+  // 新增直接更新数据的key/value以及相应的任务函数
   add(
     task: Callback,
     key: keyof T,
@@ -218,12 +221,12 @@ export interface Scheduler<T extends State = {}> {
     taskDataMap?: Map<keyof T, T[keyof T]>,
     taskQueueMap?: Map<keyof T, Callback>
   ): void;
-  /** 冲刷任务数据与任务队列 */
+  // 冲刷任务数据与任务队列
   flush(
     taskDataMap?: Map<keyof T, T[keyof T]>,
     taskQueueMap?: Map<keyof T, Callback>
   ): void;
-  /** 获取任务数据与任务队列 */
+  // 获取任务数据与任务队列
   getTask(
     taskDataMap?: Map<keyof T, T[keyof T]>,
     taskQueueMap?: Map<keyof T, Callback>

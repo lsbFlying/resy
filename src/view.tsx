@@ -42,14 +42,14 @@ export function view<P extends State = {}, S extends State = {}>(
   return memo((props: P) => {
     // 引用数据的代理Set
     const linkStateSet: Set<keyof S> = new Set();
-
+    
     // 需要使用getState获取store内部的即时最新数据值
     const latestState = (
       (
         store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
       ).get("getState") as StoreCoreMapValue<S>["getState"]
     )();
-
+    
     /**
      * 给state数据做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
      * 恰巧由于这里的proxy代理，导致在挂载属性数据的时候不能使用扩展运算符，
@@ -57,7 +57,7 @@ export function view<P extends State = {}, S extends State = {}>(
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
     const [state, setState] = useState<S>(() => proxyStateHandler(latestState, linkStateSet));
-
+    
     useEffect(() => {
       // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
       const unsubscribe = store.subscribe((
@@ -67,9 +67,9 @@ export function view<P extends State = {}, S extends State = {}>(
       ) => {
         // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
         const innerLinkUseFields = Array.from(linkStateSet);
-
+        
         const effectStateFields = Object.keys(effectState);
-
+        
         if (
           innerLinkUseFields.some(key => effectStateFields.includes(key as string))
           && (!deepEqual || !isEqual(prevState, nextState))
@@ -95,7 +95,7 @@ export function view<P extends State = {}, S extends State = {}>(
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
+    
     return useMemo(() => <Comp {...props} state={state}/>, [state, props]);
   }, deepEqual ? (prevProps: P, nextProps: P) => {
     return isEqual(prevProps, nextProps);

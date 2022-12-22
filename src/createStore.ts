@@ -8,7 +8,7 @@
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
-import { batchUpdate, storeCoreMapKey, useStoreKey } from "./static";
+import { BATCH_UPDATE, STORE_CORE_MAP_KEY, USE_STORE_KEY } from "./static";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe,
@@ -90,8 +90,12 @@ export function createStore<T extends State>(
       });
     }
   });
-  storeCoreMap.set("resetState", () => {
-    if (unmountReset) stateMap = new Map(Object.entries(state));
+  storeCoreMap.set("linkStateReset", (linkStateFields: (keyof T)[]) => {
+    if (unmountReset) {
+      linkStateFields.forEach(key => {
+        stateMap.set(key, state[key]);
+      });
+    }
   });
   storeCoreMap.set("listenerEventType", Symbol("storeListenerSymbol"));
   storeCoreMap.set("dispatchStoreSet", new Set<CustomEventListener<T>>());
@@ -251,7 +255,7 @@ export function createStore<T extends State>(
     if (taskDataMap.size !== 0) {
       // 更新之前的数据
       const prevState = new Map(stateMap);
-      batchUpdate(() => taskQueueMap.forEach(task => task()));
+      BATCH_UPDATE(() => taskQueueMap.forEach(task => task()));
       batchDispatch(prevState, taskDataMap);
     }
   }
@@ -259,7 +263,7 @@ export function createStore<T extends State>(
   // 同步更新
   function syncUpdate(syncStateParams: Partial<T> | T) {
     const prevState = new Map(stateMap);
-    batchUpdate(() => {
+    BATCH_UPDATE(() => {
       Object.keys(syncStateParams).forEach(key => {
         (
           (
@@ -339,8 +343,8 @@ export function createStore<T extends State>(
   externalMap.set("setState", setState);
   externalMap.set("syncUpdate", syncUpdate);
   externalMap.set("subscribe", subscribe);
-  externalMap.set(storeCoreMapKey, storeCoreMap);
-  externalMap.set(useStoreKey, storeMapProxy);
+  externalMap.set(STORE_CORE_MAP_KEY, storeCoreMap);
+  externalMap.set(USE_STORE_KEY, storeMapProxy);
 
   return new Proxy(state, {
     get: (_, key: keyof T) => {

@@ -1,7 +1,7 @@
 import isEqual from "react-fast-compare";
 import React, { memo, useEffect, useMemo, useState } from "react";
 import type { State, StoreCoreMapType, StoreCoreMapValue, MapStateToProps, Store } from "./model";
-import { storeCoreMapKey } from "./static";
+import { STORE_CORE_MAP_KEY } from "./static";
 import { proxyStateHandler } from "./utils";
 
 export type { MapStateToProps };
@@ -48,7 +48,7 @@ export function view<P extends State = {}, S extends State = {}>(
     // 需要使用getState获取store内部的即时最新数据值
     const latestState = (
       (
-        store[storeCoreMapKey as keyof S] as StoreCoreMapType<S>
+        store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
       ).get("getState") as StoreCoreMapValue<S>["getState"]
     )();
 
@@ -85,13 +85,13 @@ export function view<P extends State = {}, S extends State = {}>(
         /**
          * view会使得组件销毁时不执行StoreMap里的subscribe，就无法恢复重置数据
          * 因为它本身是订阅监听执行的，不属于组件的生命周期发生
-         * 所以这里需要特定的数据恢复，同时resetState内部注意关联到unmountReset的逻辑处理
+         * 所以这里需要特定的数据恢复，同时重置恢复内部注意关联到unmountReset的逻辑处理
          */
         (
           (
-            store[storeCoreMapKey as keyof S] as StoreCoreMapType<S>
-          ).get("resetState") as StoreCoreMapValue<S>["resetState"]
-        )();
+            store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
+          ).get("linkStateReset") as StoreCoreMapValue<S>["linkStateReset"]
+        )(Array.from(linkStateSet));
         unsubscribe();
         linkStateSet.clear();
       };

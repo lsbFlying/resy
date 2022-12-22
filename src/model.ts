@@ -1,4 +1,4 @@
-import { storeCoreMapKey, useStoreKey } from "./static";
+import { STORE_CORE_MAP_KEY, USE_STORE_KEY } from "./static";
 
 export type Callback = () => void;
 
@@ -77,7 +77,7 @@ export interface StoreCoreMapValue<T extends State> {
   // 设置stateMap部分字段数据值
   setHookInitialState: (hookInitialState?: AdaptFuncTypeReturn<Partial<T>>) => void;
   // 重置(恢复)初始化数据（供view使用）
-  resetState: Callback;
+  linkStateReset: (linkStateFields: (keyof T)[]) => void;
   // 订阅监听的事件类型
   listenerEventType: string | symbol;
   // 触发订阅监听的影响Set容器
@@ -93,8 +93,8 @@ export type StoreCoreMapType<T extends State> = Map<
 >;
 
 export type ExternalMapValue<T extends State> = SetState<T> & Subscribe<T> & SyncUpdate<T> & {
-  [storeCoreMapKey]: StoreCoreMapType<T>;
-  [useStoreKey]: object;
+  [STORE_CORE_MAP_KEY]: StoreCoreMapType<T>;
+  [USE_STORE_KEY]: object;
 }
 
 export type ExternalMapType<T extends State> = Map<

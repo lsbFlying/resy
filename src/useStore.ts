@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { State, AdaptFuncTypeReturn, Store } from "./model";
-import { storeCoreMapKey, useStoreKey } from "./static";
+import { STORE_CORE_MAP_KEY, USE_STORE_KEY } from "./static";
 import { createStore } from "./createStore";
 
 /**
@@ -22,11 +22,12 @@ import { createStore } from "./createStore";
  * );
  */
 export function useStore<S extends State>(store: S, hookInitialState?: AdaptFuncTypeReturn<Partial<S>>): S {
-  store[storeCoreMapKey as keyof S].get("setHookInitialState")(hookInitialState);
-  return store[useStoreKey as keyof S];
+  store[STORE_CORE_MAP_KEY as keyof S].get("setHookInitialState")(hookInitialState);
+  return store[USE_STORE_KEY as keyof S];
 }
 
 /**
+ * useState的简明版本
  * @description 帮助组件可以使用resy创建私有化的store数据状态容器
  * 它可以用如下方式：
  * const { count, text, setState } = useConciseState({ count: 0, text: "hello" });
@@ -39,5 +40,5 @@ export function useStore<S extends State>(store: S, hookInitialState?: AdaptFunc
 export function useConciseState<T extends State>(initialState?: AdaptFuncTypeReturn<T>): Store<T> {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const store = useMemo(() => createStore<T>(initialState, { privatization: true }), []);
-  return store[useStoreKey as keyof T];
+  return store[USE_STORE_KEY as keyof T];
 }

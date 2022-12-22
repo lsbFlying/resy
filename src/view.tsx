@@ -51,7 +51,7 @@ export function view<P extends State = {}, S extends State = {}>(
     )();
     
     /**
-     * 给state数据做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
+     * @description 给state数据做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
      * 恰巧由于这里的proxy代理，导致在挂载属性数据的时候不能使用扩展运算符，
      * 扩展运算符...会读取所有的属性数据，导致内部关联使用数据属性失去准确性
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
@@ -81,7 +81,7 @@ export function view<P extends State = {}, S extends State = {}>(
       });
       return () => {
         /**
-         * view会使得组件销毁时不执行StoreMap里的subscribe，就无法恢复重置数据
+         * @description view会使得组件销毁时不执行StoreMap里的subscribe，就无法恢复重置数据
          * 因为它本身是订阅监听执行的，不属于组件的生命周期发生
          * 所以这里需要特定的数据恢复，同时重置恢复内部注意关联到unmountReset的逻辑处理
          */

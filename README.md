@@ -16,6 +16,9 @@
 <details>
 <summary>changed logs</summary>
 
+🌟`v5.1.1`：<br/>
+1. Fixed logical bug of "view" internal resetState.<br/>
+
 🌟`v5.1.0`：<br/>
 1. Add non-required function of "useConciseState" initialState parameters.<br/>
 

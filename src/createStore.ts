@@ -8,7 +8,7 @@
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
-import { BATCH_UPDATE, STORE_CORE_MAP_KEY, USE_STORE_KEY } from "./static";
+import { batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY } from "./static";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe,
@@ -255,7 +255,7 @@ export function createStore<T extends State>(
     if (taskDataMap.size !== 0) {
       // 更新之前的数据
       const prevState = new Map(stateMap);
-      BATCH_UPDATE(() => taskQueueMap.forEach(task => task()));
+      batchUpdate(() => taskQueueMap.forEach(task => task()));
       batchDispatch(prevState, taskDataMap);
     }
   }
@@ -263,7 +263,7 @@ export function createStore<T extends State>(
   // 同步更新
   function syncUpdate(syncStateParams: Partial<T> | T) {
     const prevState = new Map(stateMap);
-    BATCH_UPDATE(() => {
+    batchUpdate(() => {
       Object.keys(syncStateParams).forEach(key => {
         (
           (

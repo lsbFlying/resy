@@ -115,7 +115,7 @@ export function createStore<T extends State>(
   // 生成storeMap键值对
   function genStoreMapKeyValue(key: keyof T) {
     /**
-     * @description 为每一个数据的change更新回调做一个闭包MSet储存
+     * @description 为每一个数据的change更新回调做一个闭包Set储存
      * 之所以用Set不用Map是因为每一个使用数据字段
      * 都需要一个subscribe的强更新绑定回调
      * 而每一个绑定回调函数是针对组件对于数据使用的更新开关

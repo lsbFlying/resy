@@ -4,10 +4,13 @@ import type { State } from "./model";
  * 给Comp组件的props上挂载的state属性数据做一层引用代理
  * @description 核心作用是找出SCU或者useMemo所需要的更新依赖的数据属性
  */
-export function proxyStateHandler<S extends State>(latestState: Map<keyof S, S[keyof S]>, linkStateSet: Set<keyof S>) {
+export function proxyStateHandler<S extends State>(
+  latestState: Map<keyof S, S[keyof S]>,
+  innerUseStateSet: Set<keyof S>,
+) {
   return new Proxy(latestState, {
     get: (target: Map<keyof S, S[keyof S]>, key: keyof S) => {
-      linkStateSet.add(key);
+      innerUseStateSet.add(key);
       // latestState给出了resy生成的store内部数据的引用，这里始终能获取到最新数据
       return target.get(key);
     },

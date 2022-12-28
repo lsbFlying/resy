@@ -41,7 +41,7 @@ export function view<P extends State = {}, S extends State = {}>(
 ) {
   return memo((props: P) => {
     // 引用数据的代理Set
-    const linkStateSet: Set<keyof S> = new Set();
+    const innerUseStateSet: Set<keyof S> = new Set();
     
     // 需要使用getState获取store内部的即时最新数据值
     const latestState = (
@@ -56,7 +56,7 @@ export function view<P extends State = {}, S extends State = {}>(
      * 扩展运算符...会读取所有的属性数据，导致内部关联使用数据属性失去准确性
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
-    const [state, setState] = useState<S>(() => proxyStateHandler(latestState, linkStateSet));
+    const [state, setState] = useState<S>(() => proxyStateHandler(latestState, innerUseStateSet));
     
     useEffect(() => {
       // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
@@ -65,17 +65,26 @@ export function view<P extends State = {}, S extends State = {}>(
         prevState,
         nextState,
       ) => {
-        // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
-        const innerLinkUseFields = Array.from(linkStateSet);
-        
         const effectStateFields = Object.keys(effectState);
         
         if (
-          innerLinkUseFields.some(key => effectStateFields.includes(key as string))
+          // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
+          Array.from(innerUseStateSet).some(key => effectStateFields.includes(key as string))
           && (!deepEqual || !isEqual(prevState, nextState))
         ) {
-          // 保持代理数据的更新从而保持innerLinkUseFields的最新化
-          setState(proxyStateHandler(new Map(Object.entries(nextState)), linkStateSet));
+          /**
+           * // innerUseStateSet.clear();
+           * @description 保持代理数据的更新从而保持内部引用的最新化
+           * 这里暂时不在最新化之前执行 innerUseStateSet.clear();
+           * 因为有时候view包裹的组件在因为自身引用数据导致的更新同时又卸载
+           * 会使得下面这句setState因为卸载而失效，innerUseStateSet暂时变成了空的
+           * 所以这里对于这种情况复杂的需要不采取"预清空"
+           * 虽然"预清空"在组件的更新使用效率上更好些，但因为此问题也需要避免开来
+           * 这样一来会把没有完成"预清空"优势的转给当前if的判断条件的执行压力上来
+           * 即some循环可能会多走一些，但至少保证innerUseStateSet有使用的数据字段
+           * 可以给stateReset逻辑执行使用
+           */
+          setState(proxyStateHandler(new Map(Object.entries(nextState)), innerUseStateSet));
         }
       });
       return () => {
@@ -88,9 +97,9 @@ export function view<P extends State = {}, S extends State = {}>(
           (
             store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
           ).get("stateReset") as StoreCoreMapValue<S>["stateReset"]
-        )(Array.from(linkStateSet));
+        )(Array.from(innerUseStateSet));
         unsubscribe();
-        linkStateSet.clear();
+        innerUseStateSet.clear();
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);

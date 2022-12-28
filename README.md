@@ -10,8 +10,6 @@
 [![npm](https://img.shields.io/npm/v/resy?color=blue&style=flat-square)](https://www.npmjs.com/package/resy)
 </div>
 
----
-
 ##### releases what's Changed
 <details>
 <summary>changed logs</summary>
@@ -66,6 +64,8 @@ At the same time, the code tends to be stable and strengthened.<br/>
 🌟🌟🌟🌟🌟🌟You are welcome to use the website.🌟🌟🌟🌟🌟🌟
 
 </details>
+
+---
 
 ### Usage
 ```tsx

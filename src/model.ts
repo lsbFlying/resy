@@ -72,17 +72,17 @@ export type AdaptFuncTypeReturn<T extends State> = T | (() => T);
  * 具备获取内部state数据对象、重置数据、订阅监听等功能
  */
 export interface StoreCoreMapValue<T extends State> {
-  // store内部的state数据对象（使用函数来维持数据获取最新数据值）
+  // store内部的state数据对象
   getState: () => Map<keyof T, T[keyof T]>;
   // 设置stateMap部分字段数据值
   setHookInitialState: (hookInitialState?: AdaptFuncTypeReturn<Partial<T>>) => void;
   // 重置(恢复)初始化数据（供view使用）
-  linkStateReset: (linkStateFields: (keyof T)[]) => void;
+  stateReset: (stateFields: (keyof T)[]) => void;
   // 订阅监听的事件类型
-  listenerEventType: string | symbol;
-  // 触发订阅监听的影响Set容器
-  dispatchStoreSet: Set<CustomEventListener<T>>;
-  // 触发订阅监听的变动影响
+  eventType: string | symbol;
+  // 触发订阅监听影响的Set容器
+  listenerStoreSet: Set<CustomEventListener<T>>;
+  // 触发订阅监听的变动影响（即循环遍历执行listenerStoreSet中的监听函数）
   dispatchStoreEffect: (effectState: Partial<T>, prevState: T, nextState: T) => void;
 }
 

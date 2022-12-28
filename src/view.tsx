@@ -88,7 +88,7 @@ export function view<P extends State = {}, S extends State = {}>(
         (
           (
             store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-          ).get("linkStateReset") as StoreCoreMapValue<S>["linkStateReset"]
+          ).get("stateReset") as StoreCoreMapValue<S>["stateReset"]
         )(Array.from(linkStateSet));
         unsubscribe();
         linkStateSet.clear();

@@ -89,20 +89,20 @@ export function createStore<T extends State>(
       });
     }
   });
-  storeCoreMap.set("linkStateReset", (linkStateFields: (keyof T)[]) => {
+  storeCoreMap.set("stateReset", (linkStateFields: (keyof T)[]) => {
     if (unmountReset) {
       linkStateFields.forEach(key => {
         stateMap.set(key, state[key]);
       });
     }
   });
-  storeCoreMap.set("listenerEventType", Symbol("storeListenerSymbol"));
-  storeCoreMap.set("dispatchStoreSet", new Set<CustomEventListener<T>>());
+  storeCoreMap.set("eventType", Symbol("storeListenerSymbol"));
+  storeCoreMap.set("listenerStoreSet", new Set<CustomEventListener<T>>());
   storeCoreMap.set("dispatchStoreEffect", (effectData: Partial<T>, prevState: T, nextState: T) => {
     (
-      storeCoreMap.get("dispatchStoreSet") as StoreCoreMapValue<T>["dispatchStoreSet"]
+      storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<T>["listenerStoreSet"]
     ).forEach(item => item.dispatchEvent(
-      storeCoreMap.get("listenerEventType") as string | symbol,
+      storeCoreMap.get("eventType") as string | symbol,
       effectData,
       prevState,
       nextState,
@@ -161,7 +161,7 @@ export function createStore<T extends State>(
   
   // 批量触发订阅监听的数据变动
   function batchDispatch(prevState: Map<keyof T, T[keyof T]>, changedData: Map<keyof T, T[keyof T]>) {
-    if (changedData.size > 0 && (storeCoreMap.get("dispatchStoreSet") as StoreCoreMapValue<T>["dispatchStoreSet"]).size > 0) {
+    if (changedData.size > 0 && (storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<T>["listenerStoreSet"]).size > 0) {
       /**
        * @description effectState：实际真正影响变化的数据
        * changedData是给予更新变化的数据，但是不是真正会产生变化影响的数据，
@@ -296,15 +296,15 @@ export function createStore<T extends State>(
   
   // 订阅函数
   function subscribe(listener: Listener<T>, stateKeys?: (keyof T)[]): Unsubscribe {
-    const dispatchStoreSetTemp = storeCoreMap.get("dispatchStoreSet") as StoreCoreMapValue<T>["dispatchStoreSet"];
+    const listenerStoreSetTemp = storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<T>["listenerStoreSet"];
     
     const customEventDispatcher: CustomEventListener<T> = new EventDispatcher();
     customEventDispatcher.addEventListener(
       /**
-       * @description 每一个订阅监听实例有相同的event type不要紧，因为实例不同所以不会影响
+       * @description 每一个订阅监听实例有相同的event-type不要紧，因为实例不同所以不会影响
        * 这里取一个实例类型常量反而方便节省内存、增加代码执行效率
        */
-      storeCoreMap.get("listenerEventType") as StoreCoreMapValue<T>["listenerEventType"],
+      storeCoreMap.get("eventType") as StoreCoreMapValue<T>["eventType"],
       (
         effectState: Partial<T>,
         prevState: T,
@@ -316,10 +316,10 @@ export function createStore<T extends State>(
         if (listenerKeysIsEmpty || (!listenerKeysIsEmpty && includesFlag)) listener(effectState, prevState, nextState);
       },
     );
-    dispatchStoreSetTemp.add(customEventDispatcher);
+    listenerStoreSetTemp.add(customEventDispatcher);
     
     return () => {
-      dispatchStoreSetTemp.delete(customEventDispatcher);
+      listenerStoreSetTemp.delete(customEventDispatcher);
     };
   }
   

@@ -79,10 +79,13 @@ export function view<P extends State = {}, S extends State = {}>(
            * 因为有时候view包裹的组件在因为自身引用数据导致的更新同时又卸载
            * 会使得下面这句setState因为卸载而失效，innerUseStateSet暂时变成了空的
            * 所以这里对于这种情况复杂的需要不采取"预清空"
-           * 虽然"预清空"在组件的更新使用效率上更好些，但因为此问题也需要避免开来
+           * 虽然"预清空"在组件的更新使用效率上更好些，但因为此问题也需要避免
            * 这样一来会把没有完成"预清空"优势的转给当前if的判断条件的执行压力上来
            * 即some循环可能会多走一些，但至少保证innerUseStateSet有使用的数据字段
-           * 可以给stateReset逻辑执行使用
+           * 可以给stateReset逻辑执行使用，但实际上"预清空"优势需要建立在view包裹的组件内部
+           * 有为真显示加载组件的情况才会有优势，而实际上这种场景并不多见
+           * 所以它的优势是有，但不多不明显，相对而言转嫁给if判断里的some循环的压力也是存在，但并不多不明显
+           * 所以这里还是选择移除 innerUseStateSet.clear(); 即可
            */
           setState(proxyStateHandler(new Map(Object.entries(nextState)), innerUseStateSet));
         }

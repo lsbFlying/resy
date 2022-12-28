@@ -21,6 +21,7 @@ export type StoreMapValueType<T extends State> = {
   getSnapshot: () => T[keyof T];
   setSnapshot: (val: T[keyof T]) => void;
   useSnapshot: () => T[keyof T];
+  // 存储onStoreChange的set容器，共view内部重置逻辑使用
   storeChangeSet: Set<Callback>;
 };
 

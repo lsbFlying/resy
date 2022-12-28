@@ -11,7 +11,9 @@
 </div>
 
 <details>
-<summary>changed logs - releases what's Changed</summary>
+<summary>
+<strong>changed logs - releases what's Changed</strong>
+</summary>
 
 🌟`v5.1.2`：<br/>
 1. Fixed bug for data unloading and reset logic for full scene types.

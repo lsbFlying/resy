@@ -74,7 +74,6 @@ export function view<P extends State = {}, S extends State = {}>(
           innerLinkUseFields.some(key => effectStateFields.includes(key as string))
           && (!deepEqual || !isEqual(prevState, nextState))
         ) {
-          linkStateSet.clear();
           // 保持代理数据的更新从而保持innerLinkUseFields的最新化
           setState(proxyStateHandler(new Map(Object.entries(nextState)), linkStateSet));
         }

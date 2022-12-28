@@ -92,7 +92,14 @@ export function createStore<T extends State>(
   storeCoreMap.set("stateReset", (linkStateFields: (keyof T)[]) => {
     if (unmountReset) {
       linkStateFields.forEach(key => {
-        stateMap.set(key, state[key]);
+        // 与subscribe中的重置逻辑一样，只要还有组件引用当前数据，就仍然在业务逻辑当中不需要卸载重置
+        if (
+          !(
+            (storeMap.get(key) as StoreMapValue<T>)?.get("storeChangeSet") as StoreMapValueType<T>["storeChangeSet"]
+          ).size
+        ) {
+          stateMap.set(key, state[key]);
+        }
       });
     }
   });
@@ -127,7 +134,14 @@ export function createStore<T extends State>(
       storeChangeSet.add(storeChange);
       return () => {
         storeChangeSet.delete(storeChange);
-        if (unmountReset) stateMap.set(key, state[key]);
+        /**
+         * @description 通过storeChangeSet判断当前数据是否还有组件引用
+         * 只要还有一个组件在引用当前数据，都不会重置数据，
+         * 因为当前还在业务逻辑中，不属于完整的卸载
+         */
+        if (unmountReset && !storeChangeSet.size) {
+          stateMap.set(key, state[key]);
+        }
       };
     });
     storeMapValue.set("getSnapshot", () => stateMap.get(key));
@@ -147,6 +161,7 @@ export function createStore<T extends State>(
       (storeMap.get(key) as StoreMapValue<T>).get("subscribe") as StoreMapValueType<T>["subscribe"],
       (storeMap.get(key) as StoreMapValue<T>).get("getSnapshot") as StoreMapValueType<T>["getSnapshot"],
     ));
+    storeMapValue.set("storeChangeSet", storeChangeSet);
     
     storeMap.set(key, storeMapValue);
   }

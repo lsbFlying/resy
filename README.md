@@ -16,6 +16,10 @@
 <details>
 <summary>changed logs</summary>
 
+🌟`v5.1.2`：<br/>
+1. Fix the unload reset logic so that as long as there are components referencing the current data,
+   it is still in the business logic and there is no need to unmount the reset.
+
 🌟`v5.1.1`：<br/>
 1. Fixed logical bug of "view" internal resetState.<br/>
 

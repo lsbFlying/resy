@@ -76,7 +76,7 @@ export function createStore<T extends State>(
    * @description 不改变传参state，同时resy使用Map与Set提升性能
    * 如stateMap、storeMap、storeCoreMap、storeChangeSet等
    */
-  let stateMap: Map<keyof T, T[keyof T]> = new Map(Object.entries(state));
+  const stateMap: Map<keyof T, T[keyof T]> = new Map(Object.entries(state));
   
   // 每一个resy生成的store具有的监听订阅处理，并且可以获取最新state数据
   const storeCoreMap: StoreCoreMapType<T> = new Map();

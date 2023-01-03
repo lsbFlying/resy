@@ -96,7 +96,7 @@ export function createStore<T extends State>(
         if (
           !(
             (storeMap.get(key) as StoreMapValue<T>)?.get("storeChangeSet") as StoreMapValueType<T>["storeChangeSet"]
-          ).size
+          )?.size
         ) {
           stateMap.set(key, state[key]);
         }

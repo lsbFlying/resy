@@ -1,5 +1,6 @@
-<div align="center">
+<div align="center" style="position: relative">
 <img src="./resy-logo.svg" alt="resy">
+<img src="./J20.png" alt="resy-J20" style="position: absolute; top: 0; left: 0;">
 <h3>A simple react state manager</h3>
 <h4>Support React Native、SSR、Mini Apps (such as taro, rax, remax etc)</h4>
 

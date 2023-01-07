@@ -4,9 +4,12 @@
   version="1.1"
   xmlns="http://www.w3.org/2000/svg"
   xmlns:xlink="http://www.w3.org/1999/xlink"
-  style="background-image: url('./J20.png')"
 >
     <style>
+        svg.icon {
+        background-image: url('./J20.png');
+        }
+
         @keyframes float-easy {
         0% {
         transform: translate3d(0,0,0);
@@ -45,7 +48,6 @@
         }
     </style>
     <svg
-      class="icon"
       viewBox="0 0 1024 1024"
       version="1.1"
       xmlns="http://www.w3.org/2000/svg"
@@ -87,7 +89,6 @@
         react state easy
     </text>
     <svg
-      class="icon"
       viewBox="0 0 3840 1024"
       version="1.1"
       xmlns="http://www.w3.org/2000/svg"

@@ -6,47 +6,44 @@
   xmlns:xlink="http://www.w3.org/1999/xlink"
 >
     <style>
-        svg.icon {
-        background-image: url('./J20.png');
-        }
-
         @keyframes float-easy {
-        0% {
-        transform: translate3d(0,0,0);
-        }
-        100% {
-        transform: translate3d(0,-90px,0);
-        }
+            0% {
+                transform: translate3d(0,0,0);
+            }
+            100% {
+                transform: translate3d(0,-90px,0);
+            }
         }
 
         @keyframes float-api {
-        0% {
-        transform: translate3d(0,0px,0);
-        }
-        100% {
-        transform: translate3d(0,-90px,0);
-        }
+            0% {
+                transform: translate3d(0,0px,0);
+            }
+            100% {
+                transform: translate3d(0,-90px,0);
+            }
         }
 
         svg > path.easy {
-        animation: float-easy ease-in-out 3s infinite alternate;
+            animation: float-easy ease-in-out 3s infinite alternate;
         }
         svg > path.api {
-        animation: float-api ease-in-out 3s infinite alternate;
+            animation: float-api ease-in-out 3s infinite alternate;
         }
 
         @keyframes move {
-        0% {
-        transform: translate3d(-60px,0,0);
-        }
-        100% {
-        transform: translate3d(60px,0,0);
-        }
+            0% {
+                transform: translate3d(-60px,0,0);
+            }
+            100% {
+                transform: translate3d(60px,0,0);
+            }
         }
         svg > text.flagIconText {
-        animation: move ease-in-out 4s infinite alternate;
+            animation: move ease-in-out 4s infinite alternate;
         }
     </style>
+    <image width="100%" height="100%" filter="opacity(0.1)" href="./J20.png"/>
     <svg
       viewBox="0 0 1024 1024"
       version="1.1"

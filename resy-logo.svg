@@ -4,7 +4,7 @@
   version="1.1"
   xmlns="http://www.w3.org/2000/svg"
   xmlns:xlink="http://www.w3.org/1999/xlink"
-  style="background-image: url('./J20.png');background-size: 100% 100%;"
+  style="background-image: url('./J20.png')"
 >
     <style>
         @keyframes float-easy {

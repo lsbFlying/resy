@@ -4,7 +4,7 @@
   version="1.1"
   xmlns="http://www.w3.org/2000/svg"
   xmlns:xlink="http://www.w3.org/1999/xlink"
-  style="background-image: url('./J20.png')"
+  style="background-image: url('./J20.png');background-size: 100% 100%;"
 >
     <style>
         @keyframes float-easy {
@@ -12,7 +12,7 @@
         transform: translate3d(0,0,0);
         }
         100% {
-        transform: translate3d(0,-60px,0);
+        transform: translate3d(0,-90px,0);
         }
         }
 
@@ -21,7 +21,7 @@
         transform: translate3d(0,0px,0);
         }
         100% {
-        transform: translate3d(0,-60px,0);
+        transform: translate3d(0,-90px,0);
         }
         }
 

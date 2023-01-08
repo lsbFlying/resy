@@ -210,7 +210,7 @@ export type Store<S extends State> = S & SetState<S> & Subscribe<S> & SyncUpdate
  * 增加了store的属性调用，为了完善最新数据值的获取，
  * 弥补了useState对于最新数据值获取不足的缺陷
  */
-export type ConciseStore<S extends State> = S & SetState<S> & Subscribe<S> & SyncUpdate<S> & {
+export type ConciseStore<S extends State> = Store<S> & {
   readonly store: S;
 };
 

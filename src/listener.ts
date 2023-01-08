@@ -6,16 +6,16 @@ import type { State, Listener, CustomEventListener, CustomEventListenerConstruct
  * @author liushanbao
  */
 // tslint:disable-next-line:variable-name
-const EventDispatcher = (function <T extends State>(this: CustomEventListener<T>) {
-  this.events = {} as T;
+const EventDispatcher = (function <S extends State>(this: CustomEventListener<S>) {
+  this.events = {} as S;
 } as unknown) as CustomEventListenerConstructor<any>;
 
-EventDispatcher.prototype.addEventListener = function<T extends State>(
-  this: CustomEventListener<T>,
+EventDispatcher.prototype.addEventListener = function<S extends State>(
+  this: CustomEventListener<S>,
   type: string,
-  listener: Listener<T>,
+  listener: Listener<S>,
 ) {
-  this.events[type as keyof T] = listener as T[keyof T];
+  this.events[type as keyof S] = listener as S[keyof S];
 }
 /**
  * @description 刚好也正是由于resy是销毁监听订阅的时候实际上是移除了监听Set中的监听实例
@@ -24,12 +24,12 @@ EventDispatcher.prototype.addEventListener = function<T extends State>(
 // EventDispatcher.prototype.removeEventListener = function(type: string | symbol) {
 //   this.events[type] = undefined;
 // }
-EventDispatcher.prototype.dispatchEvent = function<T extends State>(
-  this: CustomEventListener<T>,
+EventDispatcher.prototype.dispatchEvent = function<S extends State>(
+  this: CustomEventListener<S>,
   type: string,
-  effectState: Partial<T>,
-  prevState: T,
-  nextState: T,
+  effectState: Partial<S>,
+  prevState: S,
+  nextState: S,
 ) {
   /**
    * @description 由于resy是销毁监听订阅的时候实际上是移除了监听Set中的监听实例

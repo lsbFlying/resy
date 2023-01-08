@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { State, AdaptFuncTypeReturn, Store } from "./model";
+import type { State, AdaptFuncTypeReturn, ConciseStore } from "./model";
 import { STORE_CORE_MAP_KEY, USE_STORE_KEY } from "./static";
 import { createStore } from "./createStore";
 
@@ -35,8 +35,8 @@ export function useStore<S extends State>(store: S, hookInitialState?: AdaptFunc
  * const [text, setText] = useState("hello");
  * 🌟: useConciseState相对于useState在多个数据状态时使用相对简单明了
  */
-export function useConciseState<T extends State>(initialState?: AdaptFuncTypeReturn<T>): Store<T> {
+export function useConciseState<S extends State>(initialState?: AdaptFuncTypeReturn<S>): ConciseStore<S> {
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const store = useMemo(() => createStore<T>(initialState, { privatization: true }), []);
-  return store[USE_STORE_KEY as keyof T];
+  const store = useMemo(() => createStore<S>(initialState, { privatization: true }), []);
+  return store[USE_STORE_KEY as keyof S];
 }

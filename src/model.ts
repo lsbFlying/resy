@@ -16,39 +16,39 @@ export type State = Record<string, any>;
  * getSnapshot单纯是获取内部静态数据值的函数
  * 刚好与useSnapshot以及subscribe组件一个两参一方的三角挂钩
  */
-export type StoreMapValueType<T extends State> = {
+export type StoreMapValueType<S extends State> = {
   subscribe: (onStoreChange: Callback) => Callback;
-  getSnapshot: () => T[keyof T];
-  setSnapshot: (val: T[keyof T]) => void;
-  useSnapshot: () => T[keyof T];
+  getSnapshot: () => S[keyof S];
+  setSnapshot: (val: S[keyof S]) => void;
+  useSnapshot: () => S[keyof S];
   // 存储onStoreChange的set容器，共view内部重置逻辑使用
   storeChangeSet: Set<Callback>;
 };
 
-export type StoreMapValue<T extends State> = Map<
-  keyof StoreMapValueType<T>,
-  StoreMapValueType<T>[keyof StoreMapValueType<T>]
+export type StoreMapValue<S extends State> = Map<
+  keyof StoreMapValueType<S>,
+  StoreMapValueType<S>[keyof StoreMapValueType<S>]
 >;
 // createStore的storeMap数据类型
-export type StoreMap<T extends State> = Map<keyof T, StoreMapValue<T>>;
+export type StoreMap<S extends State> = Map<keyof S, StoreMapValue<S>>;
 
 // 订阅事件的监听回调函数类型
-export type Listener<T extends State> = (
-  effectState: Partial<T>,
-  prevState: T,
-  nextState: T,
+export type Listener<S extends State> = (
+  effectState: Partial<S>,
+  prevState: S,
+  nextState: S,
 ) => void;
 
 // 自定义订阅监听函数接口类型
-export interface CustomEventListener<T extends State> {
+export interface CustomEventListener<S extends State> {
   // 监听事件的合集对象
-  events: T;
-  addEventListener(type: string | symbol, listener: Listener<T>): void;
+  events: S;
+  addEventListener(type: string | symbol, listener: Listener<S>): void;
   dispatchEvent(
     type: string | symbol,
-    effectState: Partial<T>,
-    prevState: T,
-    nextState: T,
+    effectState: Partial<S>,
+    prevState: S,
+    nextState: S,
   ): void;
   /**
    * @description 本身EventDispatcher可以单独使用，在结合resy是销毁监听订阅的时候实际上是移除了监听Set中的监听实例
@@ -59,49 +59,49 @@ export interface CustomEventListener<T extends State> {
 }
 
 // 自定义监听事件的构造函数接口类型
-export interface CustomEventListenerConstructor<T extends State> {
+export interface CustomEventListenerConstructor<S extends State> {
   // 声明可以作为构造函数调用
-  new (): CustomEventListener<T>;
+  new (): CustomEventListener<S>;
   // 声明prototype，支持后续修改prototype（这里主要是构造函数时定义了原型链上面的方法，后续不需要更改）
-  prototype: CustomEventListener<T>;
+  prototype: CustomEventListener<S>;
 }
 
 // 兼容适应函数入参的返回类型的使用场景
-export type AdaptFuncTypeReturn<T extends State> = T | (() => T);
+export type AdaptFuncTypeReturn<S extends State> = S | (() => S);
 
 /**
  * @description StoreCoreMap的数据值类型，作为createStore的核心Map接口类型
  * 具备获取内部state数据对象、重置数据、订阅监听等功能
  */
-export interface StoreCoreMapValue<T extends State> {
+export interface StoreCoreMapValue<S extends State> {
   // store内部的state数据对象
-  getState: () => Map<keyof T, T[keyof T]>;
+  getState: () => Map<keyof S, S[keyof S]>;
   // 设置stateMap部分字段数据值
-  setHookInitialState: (hookInitialState?: AdaptFuncTypeReturn<Partial<T>>) => void;
+  setHookInitialState: (hookInitialState?: AdaptFuncTypeReturn<Partial<S>>) => void;
   // 重置(恢复)初始化数据（供view使用）
-  stateReset: (stateFields: (keyof T)[]) => void;
+  stateReset: (stateFields: (keyof S)[]) => void;
   // 订阅监听的事件类型
   eventType: string | symbol;
   // 触发订阅监听影响的Set容器
-  listenerStoreSet: Set<CustomEventListener<T>>;
+  listenerStoreSet: Set<CustomEventListener<S>>;
   // 触发订阅监听的变动影响（即循环遍历执行listenerStoreSet中的监听函数）
-  dispatchStoreEffect: (effectState: Partial<T>, prevState: T, nextState: T) => void;
+  dispatchStoreEffect: (effectState: Partial<S>, prevState: S, nextState: S) => void;
 }
 
 // 每一个resy生成的store的监听订阅对象、内部stateMap数据以及重置初始化数据的方法
-export type StoreCoreMapType<T extends State> = Map<
-  keyof StoreCoreMapValue<T>,
-  StoreCoreMapValue<T>[keyof StoreCoreMapValue<T>]
+export type StoreCoreMapType<S extends State> = Map<
+  keyof StoreCoreMapValue<S>,
+  StoreCoreMapValue<S>[keyof StoreCoreMapValue<S>]
 >;
 
-export type ExternalMapValue<T extends State> = SetState<T> & Subscribe<T> & SyncUpdate<T> & {
-  [STORE_CORE_MAP_KEY]: StoreCoreMapType<T>;
+export type ExternalMapValue<S extends State> = SetState<S> & Subscribe<S> & SyncUpdate<S> & {
+  [STORE_CORE_MAP_KEY]: StoreCoreMapType<S>;
   [USE_STORE_KEY]: object;
 }
 
-export type ExternalMapType<T extends State> = Map<
-  keyof ExternalMapValue<T>,
-  ExternalMapValue<T>[keyof ExternalMapValue<T>]
+export type ExternalMapType<S extends State> = Map<
+  keyof ExternalMapValue<S>,
+  ExternalMapValue<S>[keyof ExternalMapValue<S>]
 >;
 
 // setState的函数更新处理
@@ -150,10 +150,10 @@ export type StateFunc = Callback;
  *   console.log(nextState);
  * });
  */
-export type SetState<T extends State> = Readonly<{
+export type SetState<S extends State> = Readonly<{
   setState(
-    state: Partial<T> | T | StateFunc,
-    callback?: (nextState: T) => void,
+    state: Partial<S> | S | StateFunc,
+    callback?: (nextState: S) => void,
   ): void;
 }>;
 
@@ -175,9 +175,9 @@ export type SetState<T extends State> = Readonly<{
  * D：同时，同步更新也可以供给不喜欢用回调回去最新数据值的开发小伙伴使用
  * 因为它执行完之后可以通过store拿到最新的数据值进行下一步的业务逻辑处理
  */
-export type SyncUpdate<T extends State> = Readonly<{
+export type SyncUpdate<S extends State> = Readonly<{
   syncUpdate(
-    state: Partial<T> | T,
+    state: Partial<S> | S,
   ): void;
 }>;
 
@@ -185,7 +185,7 @@ export type SyncUpdate<T extends State> = Readonly<{
 export type Unsubscribe = Callback;
 
 // resy的订阅监听
-export type Subscribe<T extends State> = Readonly<{
+export type Subscribe<S extends State> = Readonly<{
   /**
    * subscribe
    * @description 监听订阅，类似subscribe/addEventListener，但是这里对应的数据的变化监听订阅
@@ -198,43 +198,52 @@ export type Subscribe<T extends State> = Readonly<{
    * @return unsubscribe 返回取消监听的函数
    */
   subscribe(
-    listener: Listener<T>,
-    stateKeys?: (keyof T)[],
+    listener: Listener<S>,
+    stateKeys?: (keyof S)[],
   ): Unsubscribe;
 }>;
 
 export type Store<S extends State> = S & SetState<S> & Subscribe<S> & SyncUpdate<S>;
 
+/**
+ * @description useConciseState的Store返回类型
+ * 增加了store的属性调用，为了完善最新数据值的获取，
+ * 弥补了useState对于最新数据值获取不足的缺陷
+ */
+export type ConciseStore<S extends State> = S & SetState<S> & Subscribe<S> & SyncUpdate<S> & {
+  readonly store: S;
+};
+
 // 将resy生成的store容器数据映射挂载到组件props的state属性上
 export type MapStateToProps<S extends State, P extends State = {}> = P & {
-  state: S;
+  readonly state: S;
 }
 
 /**
  * resy的调度类型接口
  * @description 调度类型
  */
-export interface Scheduler<T extends State = {}> {
+export interface Scheduler<S extends State = {}> {
   // 新增直接更新数据的key/value以及相应的任务函数
   add(
     task: Callback,
-    key: keyof T,
-    val: T[keyof T],
-    taskDataMap?: Map<keyof T, T[keyof T]>,
-    taskQueueMap?: Map<keyof T, Callback>
+    key: keyof S,
+    val: S[keyof S],
+    taskDataMap?: Map<keyof S, S[keyof S]>,
+    taskQueueMap?: Map<keyof S, Callback>
   ): void;
   // 冲刷任务数据与任务队列
   flush(
-    taskDataMap?: Map<keyof T, T[keyof T]>,
-    taskQueueMap?: Map<keyof T, Callback>
+    taskDataMap?: Map<keyof S, S[keyof S]>,
+    taskQueueMap?: Map<keyof S, Callback>
   ): void;
   // 获取任务数据与任务队列
   getTask(
-    taskDataMap?: Map<keyof T, T[keyof T]>,
-    taskQueueMap?: Map<keyof T, Callback>
+    taskDataMap?: Map<keyof S, S[keyof S]>,
+    taskQueueMap?: Map<keyof S, Callback>
   ): {
-    taskDataMap: Map<keyof T, T[keyof T]>,
-    taskQueueMap: Map<keyof T, Callback>,
+    taskDataMap: Map<keyof S, S[keyof S]>,
+    taskQueueMap: Map<keyof S, Callback>,
   };
 }
 

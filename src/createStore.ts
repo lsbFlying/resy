@@ -169,11 +169,10 @@ export function createStore<S extends State>(
       }
     });
     
-    const getSnap = (storeMap.get(key) as StoreMapValue<S>).get("getSnapshot") as StoreMapValueType<S>["getSnapshot"];
     storeMapValue.set("useSnapshot", () => useSyncExternalStore(
       (storeMap.get(key) as StoreMapValue<S>).get("subscribe") as StoreMapValueType<S>["subscribe"],
-      getSnap,
-      getSnap,
+      (storeMap.get(key) as StoreMapValue<S>).get("getSnapshot") as StoreMapValueType<S>["getSnapshot"],
+      (storeMap.get(key) as StoreMapValue<S>).get("getSnapshot") as StoreMapValueType<S>["getSnapshot"],
     ));
     
     storeMapValue.set("storeChangeSet", storeChangeSet);

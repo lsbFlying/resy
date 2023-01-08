@@ -20,3 +20,6 @@ export const STORE_CORE_MAP_KEY = Symbol("storeCoreMapKey");
 
 // useStore的key值，获取storeMap的代理key值
 export const USE_STORE_KEY = Symbol("useStoreKey");
+
+// useConciseStore的key值，获取storeMap的代理key值
+export const USE_CONCISE_STORE_KEY = Symbol("useConciseStoreKey");

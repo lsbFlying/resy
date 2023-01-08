@@ -3,7 +3,7 @@ import { test } from "vitest";
 import { useConciseState } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 
-test("resy-simple", async () => {
+test("resy-useConciseState", async () => {
   const initialState = {
     count: 123,
     text: "QWE",
@@ -57,8 +57,25 @@ test("resy-simple", async () => {
     const { count, setState } = useConciseState<{count?: number}>();
     return (
       <>
-        count：{count}<br/>
+        <span>count：{count}</span><br/>
         <button onClick={() => { setState({ count: (count || 0) + 1, }) }}>btn+</button>
+      </>
+    );
+  }
+  
+  function TestCom() {
+    const { count, store, setState } = useConciseState({ count: 0 });
+    
+    function add() {
+      setState({ count: count + 1 }, () => {
+        console.log("useConciseState-key-store", store.count === 1);
+      });
+    }
+    
+    return (
+      <>
+        TestComCount-{count}<br/>
+        <button onClick={add}>TestComBtn+</button>
       </>
     );
   }
@@ -70,6 +87,7 @@ test("resy-simple", async () => {
         <InnerApp name="app2"/>
         <InnerTest/>
         <NoInitial/>
+        <TestCom/>
       </>
     );
   };
@@ -106,4 +124,6 @@ test("resy-simple", async () => {
   await waitFor(() => {
     getByText("count：1");
   });
+  
+  // fireEvent.click(getByText("TestComBtn+"));
 });

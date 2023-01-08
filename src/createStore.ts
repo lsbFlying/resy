@@ -8,7 +8,7 @@
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
-import { batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY } from "./static";
+import {batchUpdate, STORE_CORE_MAP_KEY, USE_CONCISE_STORE_KEY, USE_STORE_KEY} from "./static";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe,
@@ -356,7 +356,7 @@ export function createStore<S extends State>(
   const externalMap: ExternalMapType<S> = new Map();
   
   // 给useStore的驱动更新代理
-  const storeMapProxy = new Proxy(storeMap, {
+  const storeProxy = new Proxy(storeMap, {
     get: (_, key: keyof S) => {
       return externalMap.get(key as keyof ExternalMapValue<S>) || (
         (
@@ -368,11 +368,28 @@ export function createStore<S extends State>(
     },
   } as ProxyHandler<StoreMap<S>>);
   
+  // 给useConciseStore的驱动更新代理
+  const conciseStoreProxy = new Proxy(storeMap, {
+    get: (_, key: keyof S, receiver) => {
+      if (key !== "store") {
+        return externalMap.get(key as keyof ExternalMapValue<S>) || (
+          (
+            (
+              initialValueConnectStore(key) as StoreMap<S>
+            ).get(key) as StoreMapValue<S>
+          ).get("useSnapshot") as StoreMapValueType<S>["useSnapshot"]
+        )();
+      }
+      return receiver;
+    },
+  } as ProxyHandler<StoreMap<S>>);
+  
   externalMap.set("setState", setState);
   externalMap.set("syncUpdate", syncUpdate);
   externalMap.set("subscribe", subscribe);
   externalMap.set(STORE_CORE_MAP_KEY, storeCoreMap);
-  externalMap.set(USE_STORE_KEY, storeMapProxy);
+  externalMap.set(USE_STORE_KEY, storeProxy);
+  externalMap.set(USE_CONCISE_STORE_KEY, conciseStoreProxy);
   
   return new Proxy(state, {
     get: (_, key: keyof S) => {

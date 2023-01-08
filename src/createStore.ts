@@ -153,7 +153,9 @@ export function createStore<T extends State>(
         }
       };
     });
+    
     storeMapValue.set("getSnapshot", () => stateMap.get(key));
+    
     storeMapValue.set("setSnapshot", (val: T[keyof T]) => {
       /**
        * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
@@ -166,10 +168,14 @@ export function createStore<T extends State>(
         storeChangeSet.forEach(storeChange => storeChange());
       }
     });
+    
+    const getSnap = (storeMap.get(key) as StoreMapValue<T>).get("getSnapshot") as StoreMapValueType<T>["getSnapshot"];
     storeMapValue.set("useSnapshot", () => useSyncExternalStore(
       (storeMap.get(key) as StoreMapValue<T>).get("subscribe") as StoreMapValueType<T>["subscribe"],
-      (storeMap.get(key) as StoreMapValue<T>).get("getSnapshot") as StoreMapValueType<T>["getSnapshot"],
+      getSnap,
+      getSnap,
     ));
+    
     storeMapValue.set("storeChangeSet", storeChangeSet);
     
     storeMap.set(key, storeMapValue);

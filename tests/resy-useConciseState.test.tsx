@@ -65,16 +65,16 @@ test("resy-useConciseState", async () => {
   
   function TestCom() {
     const { count, store, setState } = useConciseState({ count: 0 });
-    
+    console.log(store.count);
     function add() {
       setState({ count: count + 1 }, () => {
         console.log("useConciseState-key-store", store.count === 1);
       });
     }
-    
+
     return (
       <>
-        TestComCount-{count}<br/>
+        <span>TestComCount-{count}</span><br/>
         <button onClick={add}>TestComBtn+</button>
       </>
     );
@@ -125,5 +125,8 @@ test("resy-useConciseState", async () => {
     getByText("count：1");
   });
   
-  // fireEvent.click(getByText("TestComBtn+"));
+  fireEvent.click(getByText("TestComBtn+"));
+  await waitFor(() => {
+    getByText("TestComCount-1");
+  });
 });

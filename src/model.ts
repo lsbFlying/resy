@@ -1,4 +1,4 @@
-import {STORE_CORE_MAP_KEY, USE_CONCISE_STORE_KEY, USE_STORE_KEY} from "./static";
+import { STORE_CORE_MAP_KEY, USE_STORE_KEY } from "./static";
 
 export type Callback = () => void;
 
@@ -97,7 +97,7 @@ export type StoreCoreMapType<S extends State> = Map<
 export type ExternalMapValue<S extends State> = SetState<S> & Subscribe<S> & SyncUpdate<S> & {
   [STORE_CORE_MAP_KEY]: StoreCoreMapType<S>;
   [USE_STORE_KEY]: object;
-  [USE_CONCISE_STORE_KEY]: object;
+  readonly store: Store<S>;
 }
 
 export type ExternalMapType<S extends State> = Map<

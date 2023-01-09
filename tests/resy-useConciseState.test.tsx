@@ -54,7 +54,8 @@ test("resy-useConciseState", async () => {
   }
   
   function NoInitial() {
-    const { count, setState } = useConciseState<{count?: number}>();
+    const { count, setState, store } = useConciseState<{count?: number}>();
+    console.log("NoInitial-store", store.count);
     return (
       <>
         <span>count：{count}</span><br/>
@@ -65,7 +66,7 @@ test("resy-useConciseState", async () => {
   
   function TestCom() {
     const { count, store, setState } = useConciseState({ count: 0 });
-    console.log(store.count);
+    console.log("TestCom-store", store.count);
     function add() {
       setState({ count: count + 1 }, () => {
         console.log("useConciseState-key-store", store.count === 1);

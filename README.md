@@ -397,11 +397,18 @@ function App() {
    *   // to do something for return initialStateObject;
    *   return { count: 0 };
    * });
+   * 
+   * 🌟note: At the same time,
+   * store attributes can be parsed in useConciseState,
+   * and the latest data values of each data can be read through store,
+   * which makes up for the deficiency that the latest values of attribute data can not be read in useState.
    */
   const {
-    count, text, setState,
+    count, text, setState, store,
     // syncUpdate, subscribe,
   } = useConciseState(initialState);
+  
+  console.log(store.count);
   
   function addClick() {
     setState({

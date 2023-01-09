@@ -34,6 +34,8 @@ export function useStore<S extends State>(store: S, hookInitialState?: AdaptFunc
  * const [count, setCount] = useState(0);
  * const [text, setText] = useState("hello");
  * 🌟: useConciseState相对于useState在多个数据状态时使用相对简单明了
+ * 🌟:同时 useConciseState中可以解析出store属性，通过store可以读取各个数据的最新数据值
+ * 弥补了useState中无法读取属性数据的最新值的不足
  */
 export function useConciseState<S extends State>(initialState?: AdaptFuncTypeReturn<S>): ConciseStore<S> {
   // eslint-disable-next-line react-hooks/exhaustive-deps

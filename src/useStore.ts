@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { State, AdaptFuncTypeReturn, ConciseStore } from "./model";
-import { STORE_CORE_MAP_KEY, USE_STORE_KEY } from "./static";
+import { STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY } from "./static";
 import { createStore } from "./createStore";
 
 /**
@@ -38,5 +38,5 @@ export function useStore<S extends State>(store: S, hookInitialState?: AdaptFunc
 export function useConciseState<S extends State>(initialState?: AdaptFuncTypeReturn<S>): ConciseStore<S> {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const store = useMemo(() => createStore<S>(initialState, { privatization: true }), []);
-  return store[USE_STORE_KEY as keyof S];
+  return store[USE_CONCISE_STORE_KEY as keyof S];
 }

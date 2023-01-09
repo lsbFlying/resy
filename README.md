@@ -15,6 +15,9 @@
 <strong>changed logs - releases what's Changed</strong>
 </summary>
 
+🌟`v5.2.0`：<br/>
+1. Added a new function in useConciseState that can parse store attributes.
+
 🌟`v5.1.3`：<br/>
 1. Fix logical bug with inconsistent data reset and data usage scenarios.
 

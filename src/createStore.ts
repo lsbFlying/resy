@@ -371,7 +371,11 @@ export function createStore<S extends State>(
     },
   } as ProxyHandler<StoreMap<S>>);
   
-  // 给useConciseState的store代理的净化代理，只作单纯的数据读取操作以及set/sync/sub三个函数的使用
+  /**
+   * @description 给useConciseState的store代理的净化代理，
+   * 同时store不仅仅是单纯的数据读取操作，set/sync/sub三个函数的使用一样可以，
+   * 与createStore生成的store具有一样的功能
+   */
   const pureStoreProxy = new Proxy(state, {
     get: (_, key: keyof S) => {
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || stateMap.get(key);

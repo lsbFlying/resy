@@ -221,7 +221,7 @@ export type Store<S extends State> = S & SetState<S> & Subscribe<S> & SyncUpdate
  * 弥补了useState对于最新数据值获取不足的缺陷
  */
 export type ConciseStore<S extends State> = Store<S> & {
-  readonly store: S;
+  readonly store: Store<S>;
 };
 
 // 将resy生成的store容器数据映射挂载到组件props的state属性上

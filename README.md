@@ -15,6 +15,9 @@
 <strong>changed logs - releases what's Changed</strong>
 </summary>
 
+🌟`v5.2.1`：<br/>
+1. Release the call of useConciseStore to the set/sub/sync functions of store.
+
 🌟`v5.2.0`：<br/>
 1. Added a new function in useConciseState that can parse store attributes.
 

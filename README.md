@@ -427,8 +427,8 @@ function App() {
      * You can use store.setState/syncUpdate/subscribe.
      */
     // store.setState({
-    //    count: count + 1,
-    //    text: "ASD",
+    //   count: count + 1,
+    //   text: "ASD",
     // });
   }
   

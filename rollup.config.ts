@@ -4,7 +4,7 @@ import replace from "@rollup/plugin-replace";
 import autoExternal from "rollup-plugin-auto-external";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import { babel } from "@rollup/plugin-babel";
-// import { terser } from "rollup-plugin-terser"; // 压缩打包文件
+// import terser from "@rollup/plugin-terser"; // 压缩打包文件
 
 const input = "src/index.ts";
 /**

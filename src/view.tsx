@@ -56,10 +56,8 @@ export function view<P extends State = {}, S extends State = {}>(
     
     // 需要使用getState获取store内部的即时最新数据值
     const latestState = (
-      (
-        store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-      ).get("getState") as StoreCoreMapValue<S>["getState"]
-    )();
+      store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
+    ).get("stateMap") as StoreCoreMapValue<S>["stateMap"];
     
     /**
      * @description 给state数据做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
@@ -93,7 +91,7 @@ export function view<P extends State = {}, S extends State = {}>(
            * 虽然"预清空"在组件的更新使用效率上更好些，但因为此问题也需要避免
            * 这样一来会把没有完成"预清空"优势的转给当前if的判断条件的执行压力上来
            * 即some循环可能会多走一些，但至少保证innerUseStateSet有使用的数据字段
-           * 可以给stateReset逻辑执行使用，但实际上"预清空"优势需要建立在view包裹的组件内部
+           * 可以给viewUnmountReset逻辑执行使用，但实际上"预清空"优势需要建立在view包裹的组件内部
            * 有为真显示加载组件的情况才会有优势，而实际上这种场景并不多见
            * 所以它的优势是有，但不多不明显，相对而言转嫁给if判断里的some循环的压力也是存在，但并不多不明显
            * 所以这里还是选择移除 innerUseStateSet.clear(); 即可
@@ -110,7 +108,7 @@ export function view<P extends State = {}, S extends State = {}>(
         (
           (
             store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-          ).get("stateReset") as StoreCoreMapValue<S>["stateReset"]
+          ).get("viewUnmountReset") as StoreCoreMapValue<S>["viewUnmountReset"]
         )(Array.from(innerUseStateSet));
         unsubscribe();
         innerUseStateSet.clear();

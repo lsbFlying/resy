@@ -8,11 +8,12 @@
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
-import { batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY } from "./static";
+import { batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY } from "./static";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe,
   Scheduler, CustomEventListener, Listener, CreateStoreOptions, Store, AdaptFuncTypeReturn,
+  ConciseExternalMapType, ConciseExternalMapValue,
 } from "./model";
 import { isEmptyObj, mapToObject } from "./utils";
 
@@ -355,7 +356,7 @@ export function createStore<S extends State>(
   // setState、subscribe与syncUpdate以及store代理内部数据Map的合集
   const externalMap: ExternalMapType<S> = new Map();
   
-  // 给useStore/useConciseState的驱动更新代理
+  // 给useStore的驱动更新代理
   const storeProxy = new Proxy(storeMap, {
     get: (_, key: keyof S) => {
       return externalMap.get(key as keyof ExternalMapValue<S>) || (
@@ -368,6 +369,12 @@ export function createStore<S extends State>(
     },
   } as ProxyHandler<StoreMap<S>>);
   
+  externalMap.set("setState", setState);
+  externalMap.set("syncUpdate", syncUpdate);
+  externalMap.set("subscribe", subscribe);
+  
+  const conciseExternalMap = new Map(externalMap) as ConciseExternalMapType<S>;
+  
   /**
    * @description 给useConciseState的store代理的净化代理，
    * 同时store不仅仅是单纯的数据读取操作，set/sync/sub三个函数的使用一样可以，
@@ -375,18 +382,28 @@ export function createStore<S extends State>(
    */
   const pureStoreProxy = new Proxy(state, {
     get: (_, key: keyof S) => {
-      return externalMap.get(key as keyof ExternalMapValue<S>) || stateMap.get(key);
+      return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || stateMap.get(key);
     },
   } as ProxyHandler<S>) as Store<S>;
   
-  externalMap.set("setState", setState);
-  externalMap.set("syncUpdate", syncUpdate);
-  externalMap.set("subscribe", subscribe);
+  conciseExternalMap.set("store", pureStoreProxy);
   
-  externalMap.set("store", pureStoreProxy);
+  // 给useConciseState的驱动更新代理，与useStore分离开来，避免useStore中解构读取store产生冗余
+  const conciseStoreProxy = new Proxy(storeMap, {
+    get: (_, key: keyof S) => {
+      return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || (
+        (
+          (
+            initialValueConnectStore(key) as StoreMap<S>
+          ).get(key) as StoreMapValue<S>
+        ).get("useSnapshot") as StoreMapValueType<S>["useSnapshot"]
+      )();
+    },
+  } as ProxyHandler<StoreMap<S>>);
   
   externalMap.set(STORE_CORE_MAP_KEY, storeCoreMap);
   externalMap.set(USE_STORE_KEY, storeProxy);
+  externalMap.set(USE_CONCISE_STORE_KEY, conciseStoreProxy);
   
   return new Proxy(state, {
     get: (_, key: keyof S) => {

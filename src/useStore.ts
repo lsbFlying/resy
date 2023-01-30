@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { State, AdaptFuncTypeReturn, ConciseStore } from "./model";
+import type { State, ConciseStore } from "./model";
 import { STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY } from "./static";
 import { createStore } from "./createStore";
 
@@ -20,7 +20,7 @@ import { createStore } from "./createStore";
  *   },
  * );
  */
-export function useStore<S extends State>(store: S, hookInitialState?: AdaptFuncTypeReturn<Partial<S>>): S {
+export function useStore<S extends State>(store: S, hookInitialState?: Partial<S>): S {
   store[STORE_CORE_MAP_KEY as keyof S].get("setHookInitialState")(hookInitialState);
   return store[USE_STORE_KEY as keyof S];
 }
@@ -37,7 +37,7 @@ export function useStore<S extends State>(store: S, hookInitialState?: AdaptFunc
  * 🌟:同时 useConciseState中可以解析出store属性，通过store可以读取各个数据的最新数据值
  * 弥补了useState中无法读取属性数据的最新值的不足
  */
-export function useConciseState<S extends State>(initialState?: AdaptFuncTypeReturn<S>): ConciseStore<S> {
+export function useConciseState<S extends State>(initialState?: S): ConciseStore<S> {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const store = useMemo(() => createStore<S>(initialState, { privatization: true }), []);
   return store[USE_CONCISE_STORE_KEY as keyof S];

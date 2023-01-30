@@ -353,6 +353,19 @@ export function createStore<S extends State>(
     };
   }
   
+  /**
+   * 防止有对象继承了createStore生成的代理对象，
+   * 同时initialState属性中又有 "属性描述对象" 的get (getter) 或者set (setter) 存取器 的写法
+   * 会导致proxy中的receiver对象指向的this上下文对象变化
+   * 使得 get / set 所得到的数据产生非期望的数据值
+   * set不会影响数据，因为set之后会从proxy的get走，所以只要控制好get即可保证数据的正确性
+   */
+  function proxyReceiverThisHandle(proxyReceiver: any, proxyStore: any, target: S, key: keyof S) {
+    return proxyStore === proxyReceiver
+      ? stateMap.get(key)
+      : Reflect.get(target, key, proxyReceiver);
+  }
+  
   // setState、subscribe与syncUpdate以及store代理内部数据Map的合集
   const externalMap: ExternalMapType<S> = new Map();
   
@@ -381,8 +394,9 @@ export function createStore<S extends State>(
    * 与createStore生成的store具有一样的功能
    */
   const pureStoreProxy = new Proxy(state, {
-    get: (_, key: keyof S) => {
-      return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || stateMap.get(key);
+    get: (target, key: keyof S, receiver: any) => {
+      return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>)
+        || proxyReceiverThisHandle(receiver, pureStoreProxy, target, key);
     },
   } as ProxyHandler<S>) as Store<S>;
   
@@ -405,9 +419,10 @@ export function createStore<S extends State>(
   externalMap.set(USE_STORE_KEY, storeProxy);
   externalMap.set(USE_CONCISE_STORE_KEY, conciseStoreProxy);
   
-  return new Proxy(state, {
-    get: (_, key: keyof S) => {
-      return externalMap.get(key as keyof ExternalMapValue<S>) || stateMap.get(key);
+  const store = new Proxy(state, {
+    get: (target, key: keyof S, receiver: any) => {
+      return externalMap.get(key as keyof ExternalMapValue<S>)
+        || proxyReceiverThisHandle(receiver, store, target, key);
     },
     set: (_, key: keyof S, val: S[keyof S]) => {
       taskPush(key, val).then(() => {
@@ -416,4 +431,6 @@ export function createStore<S extends State>(
       return true;
     },
   } as ProxyHandler<S>) as Store<S>;
+  
+  return store;
 }

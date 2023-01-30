@@ -4,8 +4,6 @@ import type { State, StoreCoreMapType, StoreCoreMapValue, MapStateToProps, Store
 import { STORE_CORE_MAP_KEY } from "./static";
 import { proxyStateHandler } from "./utils";
 
-export type { MapStateToProps };
-
 /**
  * 自动memo与SCU的高阶HOC
  * @description 自动化规避组件额外re-render的HOC

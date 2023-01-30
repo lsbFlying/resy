@@ -15,6 +15,11 @@
 <strong>changed logs - releases what's Changed</strong>
 </summary>
 
+🌟`v5.3.1`：<br/>
+1. Increase the use of the "this" context object within the function data.
+2. Fixed the influence of adjusting the accessor get and set of the attribute description object
+   on the inheritance of store.
+
 🌟`v5.2.1`：<br/>
 1. Release the call of useConciseStore to the set/sub/sync functions of store.
 

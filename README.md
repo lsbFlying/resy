@@ -15,7 +15,7 @@
 <strong>changed logs - releases what's Changed</strong>
 </summary>
 
-🌟`v5.3.1`：<br/>
+🌟`v6.0.0`：<br/>
 1. Fixed the influence of adjusting the accessor get and set of the attribute description object
    on the inheritance of store.
 2. Increase the use of the "this" context object within the function data.
@@ -153,6 +153,12 @@ const store = createStore<StateType>(
        * Be careful: if it is an arrow function, this points to undefined.
        */
       console.log(this.count);
+      /**
+       * you can also access store data attributes in the initialization function.
+       * if you are in TS, you need to add a type description to store,
+       * otherwise there will be type errors.
+       * eg: const store: Store<S> = createStore<S>({...});
+       */
       store.count++;
       console.log("testFun");
     },

@@ -13,7 +13,7 @@ test("resy-simple", async () => {
     hookValueTestEmpty?: any;
   }>({ count: 0, count2: 123, });
   
-  const storeInner2 = createStore(() => ({ inner2Count: 0, }));
+  const storeInner2 = createStore({ inner2Count: 0 });
   
   function AppInner2() {
     const { inner2Count } = useStore(storeInner2);
@@ -28,7 +28,7 @@ test("resy-simple", async () => {
   }
   
   function AppInner() {
-    const { formRef2 } = useStore(store, () => ({ formRef2: React.useRef<any>(), }));
+    const { formRef2 } = useStore(store, { formRef2: React.useRef<any>() });
     
     function formBtnClick(event: any) {
       event.preventDefault();

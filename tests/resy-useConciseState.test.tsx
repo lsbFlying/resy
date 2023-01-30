@@ -32,7 +32,7 @@ test("resy-useConciseState", async () => {
   }
   
   function InnerTest() {
-    const { flag, text, setState } = useConciseState(() => ({ flag: true, text: "Hello" }));
+    const { flag, text, setState } = useConciseState({ flag: true, text: "Hello" });
     return (
       <>
         <p

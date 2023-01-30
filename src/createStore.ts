@@ -12,7 +12,7 @@ import { batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY }
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe,
-  Scheduler, CustomEventListener, Listener, CreateStoreOptions, Store, AdaptFuncTypeReturn,
+  Scheduler, CustomEventListener, Listener, CreateStoreOptions, Store,
   ConciseExternalMapType, ConciseExternalMapValue,
 } from "./model";
 import { isEmptyObj, mapToObject } from "./utils";
@@ -37,7 +37,7 @@ const _DEV_ = process.env.NODE_ENV !== "production";
  * @param options 状态容器配置项
  */
 export function createStore<S extends State>(
-  initialState?: AdaptFuncTypeReturn<S>,
+  initialState?: S,
   options?: CreateStoreOptions,
 ): Store<S> {
   /**
@@ -50,9 +50,8 @@ export function createStore<S extends State>(
    * 这样写法看起来像是凭空捏造了一个有效的数据状态，it`s looks cool!
    * 但同样除了undefined其他的假值可能是开发者的代码bug，如果都兼容了不太好
    */
-  const initial = typeof initialState !== "function" ? initialState : initialState();
   // 所以在这里的Object判断中只对undefined特殊处理
-  const state = initial === undefined ? ({} as S) : initial;
+  const state = initialState === undefined ? ({} as S) : initialState;
   
   if (_DEV_ && Object.prototype.toString.call(state) !== "[object Object]") {
     throw new Error("The initialization parameter result of createStore needs to be an object!");
@@ -82,11 +81,10 @@ export function createStore<S extends State>(
   // 每一个resy生成的store具有的监听订阅处理，并且可以获取最新state数据
   const storeCoreMap: StoreCoreMapType<S> = new Map();
   storeCoreMap.set("stateMap", stateMap);
-  storeCoreMap.set("setHookInitialState", (hookInitialState?: AdaptFuncTypeReturn<Partial<S>>) => {
-    const res = typeof hookInitialState !== "function" ? hookInitialState : hookInitialState();
-    if (Object.prototype.toString.call(res) === "[object Object]") {
-      Object.keys(res as Partial<S>).forEach(key => {
-        stateMap.set(key, (res as Partial<S>)[key] as S[keyof S]);
+  storeCoreMap.set("setHookInitialState", (hookInitialState?: Partial<S>) => {
+    if (Object.prototype.toString.call(hookInitialState) === "[object Object]") {
+      Object.keys(hookInitialState as Partial<S>).forEach(key => {
+        stateMap.set(key, (hookInitialState as Partial<S>)[key] as S[keyof S]);
       });
     }
   });
@@ -372,6 +370,9 @@ export function createStore<S extends State>(
   // 给useStore的驱动更新代理
   const storeProxy = new Proxy(storeMap, {
     get: (_, key: keyof S) => {
+      if (typeof stateMap.get(key) === "function") {
+        return (stateMap.get(key) as Function).bind(mapToObject(stateMap));
+      }
       return externalMap.get(key as keyof ExternalMapValue<S>) || (
         (
           (
@@ -395,6 +396,9 @@ export function createStore<S extends State>(
    */
   const pureStoreProxy = new Proxy(state, {
     get: (target, key: keyof S, receiver: any) => {
+      if (typeof stateMap.get(key) === "function") {
+        return (stateMap.get(key) as Function).bind(mapToObject(stateMap));
+      }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, pureStoreProxy, target, key);
     },
@@ -405,6 +409,9 @@ export function createStore<S extends State>(
   // 给useConciseState的驱动更新代理，与useStore分离开来，避免useStore中解构读取store产生冗余
   const conciseStoreProxy = new Proxy(storeMap, {
     get: (_, key: keyof S) => {
+      if (typeof stateMap.get(key) === "function") {
+        return (stateMap.get(key) as Function).bind(mapToObject(stateMap));
+      }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || (
         (
           (
@@ -421,6 +428,9 @@ export function createStore<S extends State>(
   
   const store = new Proxy(state, {
     get: (target, key: keyof S, receiver: any) => {
+      if (typeof stateMap.get(key) === "function") {
+        return (stateMap.get(key) as Function).bind(mapToObject(stateMap));
+      }
       return externalMap.get(key as keyof ExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, store, target, key);
     },

@@ -7,6 +7,13 @@ test("resy-useConciseState", async () => {
   const initialState = {
     count: 123,
     text: "QWE",
+    testCount: 1,
+    testFun() {
+      console.log("testFun");
+    },
+    testFun2() {
+      console.log("testFun2");
+    },
   };
   
   const InnerApp = (props: { name: string }) => {
@@ -16,11 +23,15 @@ test("resy-useConciseState", async () => {
      * 乍一看下面两句代码反而没有react原生方式有优势
      * 但实际上在超过两个以上的数据状态的情况下，下面的写法的优势是直线上升
      */
-    const { count, text, setState } = useConciseState(initialState);
+    const { count, text, testFun, store, setState } = useConciseState(initialState);
     return (
       <>
         <p>{name}{text}</p>
         <p>{name === "app1" ? `${count}app1` : `${count}app2`}</p>
+        <button onClick={testFun}>{name === "app1" ? "testFunBtn1" : "testFunBtn1T"}</button>
+        <button onClick={() => {
+          store.testFun2();
+        }}>{name === "app1" ? "testFunBtn2" : "testFunBtn2T"}</button>
         <button onClick={() => setState({count: count + 1})}>
           {name === "app1" ? "count1" : "count2"}
         </button>
@@ -94,6 +105,11 @@ test("resy-useConciseState", async () => {
   };
   
   const { getByText } = render(<App/>);
+  
+  fireEvent.click(getByText("testFunBtn1"));
+  fireEvent.click(getByText("testFunBtn1T"));
+  fireEvent.click(getByText("testFunBtn2"));
+  fireEvent.click(getByText("testFunBtn2T"));
   
   fireEvent.click(getByText("count1"));
   await waitFor(() => {

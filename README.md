@@ -151,14 +151,10 @@ const store = createStore<StateType>(
       /**
        * You can use this inside the function to get the latest data values
        * Be careful: if it is an arrow function, this points to undefined.
+       * You can also obtain data attributes through store.
+       * eg: console.log(store.count);
        */
       console.log(this.count);
-      /**
-       * you can also access store data attributes in the initialization function.
-       * if you are in TS, you need to add a type description to store,
-       * otherwise there will be type errors.
-       * eg: const store: Store<S> = createStore<S>({...});
-       */
       store.count++;
       console.log("testFun");
     },

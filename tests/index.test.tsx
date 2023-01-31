@@ -7,10 +7,12 @@ test("resy-basic", async () => {
   // 数据范型类型接口
   type Store = {
     count: number;
+    testCount: number;
     text: string;
     testObj: { name?: string; age?: number };
     testArr: { age: number; name: string }[];
-    testFun: () => void;
+    testFun(): void;
+    testFun2(): void;
     sex?: "man" | "woman" | string;
   };
 
@@ -18,12 +20,17 @@ test("resy-basic", async () => {
   const store = createStore<Store>(
     {
       count: 0,
+      testCount: 0,
       text: "123qwe",
       testObj: { name: "Paul" },
       testArr: [{age: 12, name: "Alen"}, { age: 16, name: "Frac" }],
-      testFun: () => {
+      testFun() {
         store.count++;
         console.log("testFun");
+      },
+      testFun2() {
+        store.testCount++;
+        console.log("testFun: 'store.count === this.count'", store.testCount === this.testCount);
       },
     },
     /**
@@ -43,6 +50,9 @@ test("resy-basic", async () => {
     const { count, text, testFun, testObj, testArr, sex } = useStore(store);
     index++;
     useEffect(() => {
+      const { testFun2 } = store;
+      testFun2();
+      
       const unsubscribe = store.subscribe((
         effectState,
         prevState,
@@ -76,7 +86,11 @@ test("resy-basic", async () => {
         <p>{testObj?.name || "batch-forEach"}</p>
         <p>{testArr[0]?.name}：{testArr[0]?.age}</p>
         <p>{testArr.map(item => `${item.name}：${item.age}`)}</p>
-        <button onClick={testFun}>btn1</button>
+        <button onClick={() => {
+          // store.count++;
+          // console.log(store.setState)
+          testFun();
+        }}>btn1</button>
         <button onClick={() => {
           store.count++;
           store.text = "456asd";

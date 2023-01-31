@@ -18,18 +18,6 @@ export function proxyStateHandler<S extends State>(
 }
 
 /**
- * 判断空对象
- * @description 内部使用，前提已确定是[object Object]
- */
-export function isEmptyObj(obj: object) {
-  // tslint:disable:variable-name
-  for (const _key in obj) {
-    return false;
-  }
-  return true;
-}
-
-/**
  * map转object
  * @description 解决回调参数如果是map的proxy代理的话无法做扩展运算的问题
  */

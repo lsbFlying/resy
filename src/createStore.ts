@@ -15,7 +15,7 @@ import type {
   Scheduler, CustomEventListener, Listener, CreateStoreOptions, Store,
   ConciseExternalMapType, ConciseExternalMapValue,
 } from "./model";
-import { isEmptyObj, mapToObject } from "./utils";
+import { mapToObject } from "./utils";
 
 /**
  * 从use-sync-external-store包的导入方式到下面的引用方式
@@ -203,11 +203,9 @@ export function createStore<S extends State>(
         }
       });
       
-      if (!isEmptyObj(effectState)) {
-        (
-          storeCoreMap.get("dispatchStoreEffect") as StoreCoreMapValue<S>["dispatchStoreEffect"]
-        )(effectState, mapToObject(prevState), mapToObject(stateMap));
-      }
+      (
+        storeCoreMap.get("dispatchStoreEffect") as StoreCoreMapValue<S>["dispatchStoreEffect"]
+      )(effectState, mapToObject(prevState), mapToObject(stateMap));
     }
   }
   

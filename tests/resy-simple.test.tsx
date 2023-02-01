@@ -3,15 +3,36 @@ import { expect, test } from "vitest";
 import { createStore, useStore } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 
+type State = {
+  count: number;
+  count2: number;
+  text?: string;
+  formRef?: any;
+  formRef2?: any;
+  hookValueTestEmpty?: any;
+  value: string;
+  name: string;
+};
+
 test("resy-simple", async () => {
-  const store = createStore<{
-    count: number;
-    count2: number;
-    text?: string;
-    formRef?: any;
-    formRef2?: any;
-    hookValueTestEmpty?: any;
-  }>({ count: 0, count2: 123, });
+  const store = createStore<State>({
+    count: 0,
+    count2: 123,
+    name: "resy-simple",
+    get value() {
+      return this.name;
+    },
+  });
+  
+  const obj = {
+    name: "Obj-FGH",
+  };
+  Object.setPrototypeOf(obj, store);
+  
+  // @ts-ignore
+  console.log("obj.value：", obj.value);
+  // @ts-ignore
+  expect(obj.value === "Obj-FGH").toBeTruthy();
   
   const storeInner2 = createStore({ inner2Count: 0 });
   

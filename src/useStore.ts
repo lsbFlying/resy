@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import type { State, ConciseStore } from "./model";
-import { STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY } from "./static";
+import { USE_STORE_KEY, USE_CONCISE_STORE_KEY } from "./static";
 import { createStore } from "./createStore";
 
 /**
@@ -9,19 +9,8 @@ import { createStore } from "./createStore";
  * 特意分离直接从store获取hook调用是为了数据的安全使用
  * 本身产生的数据就是hook数据，所以会多一层代理
  * @param store
- * @param hookInitialState 针对hook的初始化使用
- * hookInitialState参数本身是针对hook的产生值，
- * 但是如果你填写了非hook产生值的数据属性也会使得再次初始化的值生效
- * @example
- * const { count, form } = useStore(
- *   store,
- *   {
- *     form: Form.useForm<{ sortNumber: number }>()[0],
- *   },
- * );
  */
-export function useStore<S extends State>(store: S, hookInitialState?: Partial<S>): S {
-  store[STORE_CORE_MAP_KEY as keyof S].get("setHookInitialState")(hookInitialState);
+export function useStore<S extends State>(store: S): S {
   return store[USE_STORE_KEY as keyof S];
 }
 

@@ -73,8 +73,6 @@ export interface CustomEventListenerConstructor<S extends State> {
 export interface StoreCoreMapValue<S extends State> {
   // store内部的stateMap数据对象
   stateMap: Map<keyof S, S[keyof S]>;
-  // 设置stateMap部分字段数据值
-  setHookInitialState: (hookInitialState?: Partial<S>) => void;
   // 重置(恢复)初始化数据（供view使用）
   viewUnmountReset: (stateFields: (keyof S)[]) => void;
   // 订阅监听的事件类型

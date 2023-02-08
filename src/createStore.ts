@@ -81,13 +81,6 @@ export function createStore<S extends State>(
   // 每一个resy生成的store具有的监听订阅处理，并且可以获取最新state数据
   const storeCoreMap: StoreCoreMapType<S> = new Map();
   storeCoreMap.set("stateMap", stateMap);
-  storeCoreMap.set("setHookInitialState", (hookInitialState?: Partial<S>) => {
-    if (Object.prototype.toString.call(hookInitialState) === "[object Object]") {
-      Object.keys(hookInitialState as Partial<S>).forEach(key => {
-        stateMap.set(key, (hookInitialState as Partial<S>)[key] as S[keyof S]);
-      });
-    }
-  });
   storeCoreMap.set("viewUnmountReset", (linkStateFields: (keyof S)[]) => {
     if (unmountReset) {
       linkStateFields.forEach(key => {
@@ -102,9 +95,9 @@ export function createStore<S extends State>(
          * 所以这里直接通过?.size来多一层兼容也简化判断
          */
         if (
-          !(
+          (
             (storeMap.get(key) as StoreMapValue<S>)?.get("storeChangeSet") as StoreMapValueType<S>["storeChangeSet"]
-          )?.size
+          )?.size === 0
         ) {
           stateMap.set(key, state[key]);
         }

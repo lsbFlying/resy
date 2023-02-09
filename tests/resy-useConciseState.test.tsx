@@ -114,7 +114,7 @@ test("resy-useConciseState", async () => {
           store.syncUpdate({
             sex: "man",
           });
-          expect(sex === "man").toBeTruthy();
+          expect(store.sex === "man").toBeTruthy();
         }}>TestComBtnSex</button>
       </>
     );

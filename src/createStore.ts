@@ -406,18 +406,18 @@ export function createStore<S extends State>(
    * 并且也让store具有单个数据属性更新的能力
    * 与createStore生成的store具有一样的功能
    */
-  const pureStoreProxy = new Proxy(state, {
+  const conciseExtraStoreProxy = new Proxy(state, {
     get: (target, key: keyof S, receiver: any) => {
       if (typeof stateMap.get(key) === "function") {
         return (stateMap.get(key) as Function).bind(funcInnerThisProxyStore);
       }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>)
-        || proxyReceiverThisHandle(receiver, pureStoreProxy, target, key);
+        || proxyReceiverThisHandle(receiver, conciseExtraStoreProxy, target, key);
     },
     set: singlePropUpdate,
   } as ProxyHandler<S>) as Store<S>;
   
-  conciseExternalMap.set("store", pureStoreProxy);
+  conciseExternalMap.set("store", conciseExtraStoreProxy);
   
   // 给useConciseState的驱动更新代理，与useStore分离开来，避免useStore中解构读取store产生冗余
   const conciseStoreProxy = new Proxy(storeMap, {

@@ -11,10 +11,7 @@ import { getLatestStateMap, mapToObject, proxyStateHandler } from "./utils";
  *
  * B：view创建初衷：
  * resy本身是为hook而生的，但是还是需要对class组件进行支持
- * 毕竟class组件与hook组件不是非此即彼，class组件的存在还是很有必要的
- * class组件依然具有很好的性能与代码健壮读写能力
- * hook可以认为是react如虎添翼/锦上添花，但是不能把class组件作为虎腿而卸掉
- * 至少目前来看二者两分天下才是对代码更友好健康的方式
+ * class组件依然具有很好的性能与代码健壮性以及读写能力
  *
  * C：view连接了resy生成的store数据，使得Comp组件可以共享store
  * 同时完善了Comp组件自动避免额外re-render，并且特殊的是
@@ -32,7 +29,7 @@ import { getLatestStateMap, mapToObject, proxyStateHandler } from "./utils";
  * 剩下的就是需要深对比来进一步优化了，但是深对比所获取的效益需要开发人员自行衡量
  * 如果遇到嵌套较深的大型数据对象，一般不建议深对比，
  * 与此同时，如上所说，resy本身即使不使用isDeepEqual函数参数来优化
- * 也可以取得相当不错的渲染、数据共享、等使用效益了
+ * 也可以取得相当不错的渲染、数据共享等使用效益了
  *
  * 🌟：view更多的是为了兼容class组件，
  * todo 但是暂时无法做到class组件使用多个store数据，后续待优化更进

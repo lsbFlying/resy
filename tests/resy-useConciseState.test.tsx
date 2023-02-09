@@ -1,4 +1,4 @@
-import React, {useEffect} from "react";
+import React, { useEffect } from "react";
 import { expect, test } from "vitest";
 import { useConciseState } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";

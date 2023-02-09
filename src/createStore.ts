@@ -414,6 +414,7 @@ export function createStore<S extends State>(
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, pureStoreProxy, target, key);
     },
+    set: singlePropUpdate,
   } as ProxyHandler<S>) as Store<S>;
   
   conciseExternalMap.set("store", pureStoreProxy);

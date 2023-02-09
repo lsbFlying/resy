@@ -401,10 +401,13 @@ export function createStore<S extends State>(
   const conciseExternalMap = new Map(externalMap) as ConciseExternalMapType<S>;
   
   /**
-   * @description 给useConciseState的store代理的净化代理，
+   * @description 给useConciseState的store代理的额外的store代理，
    * 同时store不仅仅是单纯的数据读取操作，set/sync/sub三个函数的使用一样可以，
    * 并且也让store具有单个数据属性更新的能力
    * 与createStore生成的store具有一样的功能
+   * todo 这样主要是为了解决react的useState中产生的数据不具有可追溯性的问题
+   * 比如在某些函数中因为因为或者作用域的不同导致函数内部再次获取useState的数据会不准确
+   * 而使用这个额外的store来读取数据可以具有追溯性得到最新的数据状态
    */
   const conciseExtraStoreProxy = new Proxy(state, {
     get: (target, key: keyof S, receiver: any) => {

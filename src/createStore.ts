@@ -342,6 +342,14 @@ export function createStore<S extends State>(
     };
   }
   
+  // 单个属性数据更新
+  const singlePropUpdate = (_: S, key: keyof S, val: S[keyof S]) => {
+    taskPush(key, val).then(() => {
+      finallyBatchHandle();
+    });
+    return true;
+  };
+  
   /**
    * 防止有对象继承了createStore生成的代理对象，
    * 同时initialState属性中又有 "属性描述对象" 的get (getter) 或者set (setter) 存取器 的写法
@@ -355,9 +363,7 @@ export function createStore<S extends State>(
       : Reflect.get(target, key, proxyReceiver);
   }
   
-  /**
-   * @description 代理函数内部的this指向对象的proxy代理对象
-   */
+  // 代理函数内部的this指向对象的proxy代理对象
   const funcInnerThisProxyStore = new Proxy(state, {
     get: (target: S, key: keyof S, receiver: any) => {
       /**
@@ -366,12 +372,7 @@ export function createStore<S extends State>(
        */
       return proxyReceiverThisHandle(receiver, funcInnerThisProxyStore, target, key);
     },
-    set: (_: S, key: keyof S, val: S[keyof S]) => {
-      taskPush(key, val).then(() => {
-        finallyBatchHandle();
-      });
-      return true;
-    }
+    set: singlePropUpdate,
   } as ProxyHandler<S>) as S;
   
   // setState、subscribe与syncUpdate以及store代理内部数据Map的合集
@@ -402,6 +403,7 @@ export function createStore<S extends State>(
   /**
    * @description 给useConciseState的store代理的净化代理，
    * 同时store不仅仅是单纯的数据读取操作，set/sync/sub三个函数的使用一样可以，
+   * 并且也让store具有单个数据属性更新的能力
    * 与createStore生成的store具有一样的功能
    */
   const pureStoreProxy = new Proxy(state, {
@@ -444,12 +446,7 @@ export function createStore<S extends State>(
       return externalMap.get(key as keyof ExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, store, target, key);
     },
-    set: (_, key: keyof S, val: S[keyof S]) => {
-      taskPush(key, val).then(() => {
-        finallyBatchHandle();
-      });
-      return true;
-    },
+    set: singlePropUpdate,
   } as ProxyHandler<S>) as Store<S>;
   
   return store;

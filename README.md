@@ -19,6 +19,8 @@
 1. Remove useStore hookInitialState params and fixed viewUnmountReset size Judgment on zero.
 2. Improved the use of "this" context object in function data.
 3. Improved the data storage and reading of additional stores in useConciseState.
+4. Remove "react-fast-compare"
+   and modify the parameter of the isDeepEqual function of view to the usage of a custom function
 
 🌟`v6.0.0`：<br/>
 1. Fixed the influence of adjusting the accessor get and set of the attribute description object

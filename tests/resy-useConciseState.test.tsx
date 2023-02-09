@@ -187,7 +187,4 @@ test("resy-useConciseState", async () => {
   
   fireEvent.click(getByText("TestComBtnSex"));
   getByText("ArosySex:man");
-  // await waitFor(() => {
-  //   getByText("ArosySex:man");
-  // });
 });

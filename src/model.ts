@@ -276,3 +276,9 @@ export type CreateStoreOptions = {
    */
   privatization?: boolean;
 };
+
+// view中isDeepEqual函数的参数类型，props与state的类型合集
+export type PS<P extends State = {}, S extends State = {}> = Readonly<{
+  props: P;
+  state: S;
+}>;

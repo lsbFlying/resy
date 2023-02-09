@@ -1,8 +1,7 @@
-import isEqual from "react-fast-compare";
 import React, { memo, useEffect, useMemo, useState } from "react";
-import type { State, StoreCoreMapType, StoreCoreMapValue, MapStateToProps, Store } from "./model";
+import type { State, StoreCoreMapType, StoreCoreMapValue, MapStateToProps, Store, PS } from "./model";
 import { STORE_CORE_MAP_KEY } from "./static";
-import { proxyStateHandler } from "./utils";
+import { getLatestStateMap, mapToObject, proxyStateHandler } from "./utils";
 
 /**
  * 自动memo与SCU的高阶HOC
@@ -25,10 +24,15 @@ import { proxyStateHandler } from "./utils";
  *
  * @param store resy生成的store数据状态储存容器
  * @param Comp 被包裹的组件
- * @param deepEqual props、state深度对比
- * 它会深对比props与state和之前的props、state状态进行对比
- * 是否开启需要开发者自己衡量所能带来的性能收益，常规情况下不需要开启此功能
- * 除非遇到很重量级的组件渲染很耗费性能则开启可以通过JS的计算减轻页面更新渲染的负担
+ * @param isDeepEqual 深度对比自定义函数
+ * 可以自定义深对比props与state和之前的props、state状态
+ * 从而来决定是否要更新渲染re-render
+ *
+ * todo resy 本身的数据更新在"避免额外冗余的re-render方面"已经做得较为完备了
+ * 剩下的就是需要深对比来进一步优化了，但是深对比所获取的效益需要开发人员自行衡量
+ * 如果遇到嵌套较深的大型数据对象，一般不建议深对比，
+ * 与此同时，如上所说，resy本身即使不使用isDeepEqual函数参数来优化
+ * 也可以取得相当不错的渲染、数据共享、等使用效益了
  *
  * 🌟：view更多的是为了兼容class组件，
  * 如果是hook组件，直接使用原生的useMemo然后内部仍然继续使用useStore也是可以的，如下：
@@ -46,16 +50,14 @@ export function view<P extends State = {}, S extends State = {}>(
   // any用于防范某些HOC导致的类型不合一问题，比如withRouter(低版本的react-router还是存在该HOC)
   // tslint:disable-next-line:variable-name
   Comp: React.ComponentType<MapStateToProps<S, P> | any>,
-  deepEqual?: boolean,
+  isDeepEqual?: (prev: PS<P, S>, next: PS<P, S>) => boolean,
 ) {
   return memo((props: P) => {
     // 引用数据的代理Set
     const innerUseStateSet: Set<keyof S> = new Set();
     
     // 需要使用getState获取store内部的即时最新数据值
-    const latestState = (
-      store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-    ).get("stateMap") as StoreCoreMapValue<S>["stateMap"];
+    const latestState = getLatestStateMap(store);
     
     /**
      * @description 给state数据做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
@@ -77,7 +79,7 @@ export function view<P extends State = {}, S extends State = {}>(
         if (
           // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
           Array.from(innerUseStateSet).some(key => effectStateFields.includes(key as string))
-          && (!deepEqual || !isEqual(prevState, nextState))
+          && (!isDeepEqual || !isDeepEqual({ props, state: prevState }, { props, state: nextState }))
         ) {
           /**
            * // innerUseStateSet.clear();
@@ -115,7 +117,11 @@ export function view<P extends State = {}, S extends State = {}>(
     }, []);
     
     return useMemo(() => <Comp {...props} state={state}/>, [state, props]);
-  }, deepEqual ? (prevProps: P, nextProps: P) => {
-    return isEqual(prevProps, nextProps);
+  }, isDeepEqual ? (prevProps: P, nextProps: P) => {
+    const latestState = mapToObject(getLatestStateMap(store));
+    return isDeepEqual(
+      { props: prevProps, state: latestState },
+      { props: nextProps, state: latestState },
+    );
   } : undefined);
 }

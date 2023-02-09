@@ -92,19 +92,61 @@ const TestCom = (props: MapStateToProps<Store, TestComProps>) => {
   useEffect(() => {
     setCount(count + 1);
     console.log("useEffect", testComTestState)
-  }, [testComTestState]);
+  }, [testComTestState, testObj]);
   
   console.log("PureTestCom", testComTestState);
   return (
     <div>
-      <span>数量：{count}</span>
+      <span>count：{count}</span>
       <span>testObj：{testObj.name}</span>
-      名字：{testComTestState.name}-年龄：{testComTestState.age}
+      name：{testComTestState.name}-age：{testComTestState.age}
     </div>
   );
 }
 
-const PureTestCom = view<TestComProps>(store, TestCom, true);
+const PureTestCom = view<TestComProps, Store>(
+  store,
+  TestCom,
+  (prev, next) => {
+  const { props: prevProps, state: prevState } = prev;
+  const { props: nextProps, state: nextState } = next;
+  if (
+    prevProps.testObj.name === nextProps.testObj.name
+    || (
+      prevState.testComTestState.name === nextState.testComTestState.name
+      && prevState.testComTestState.age === nextState.testComTestState.age
+    )
+  ) {
+    console.log(123);
+    return true;
+  }
+  console.log(456);
+  return false;
+});
+
+const TestCom2 = (props: MapStateToProps<Store, TestComProps>) => {
+  // view会将store数据挂载到props上新增的state属性上
+  const { testComTestState } = props.state;
+  const { testObj } = props;
+  
+  const [count, setCount] = useState(0);
+  
+  useEffect(() => {
+    setCount(count + 1);
+  }, [testComTestState, testObj]);
+  
+  console.log("PureTestCom2");
+  
+  return (
+    <div>
+      <span>count2：{count}</span>
+      <span>testObj2：{testObj.name}</span>
+      name2：{testComTestState.name}-age2：{testComTestState.age}
+    </div>
+  );
+}
+
+const PureTestCom2 = view<TestComProps, Store>(store, TestCom2);
 
 // count数据状态的变化不会引起Text的re-render
 function Text() {
@@ -158,7 +200,7 @@ test("resy-view", async () => {
       store.hookComTestState = `!${Math.random()}hookComTestState!`;
       store.hookBooleanTest = true;
     }
-    
+    console.log("App");
     /**
      * 总结：相较于resy自身特性的re-render
      * view处理规避的re-render更加完善
@@ -181,14 +223,20 @@ test("resy-view", async () => {
         <button onClick={() => { store.count = 0; }}>btn-zero</button>
         <button onClick={() => { store.setState({}); }}>btn-empty</button>
         <button onClick={() => {
-          store.setState({ testComTestState: { name: "liushanbao", age: 19 } });
+          store.setState({
+            testComTestState: { name: "liushanbao", age: 18 },
+          });
         }}>viewDeepEqual-1</button>
         <button onClick={() => {
-          store.setState({ testObj: { name: "testObjName" } });
+          store.setState({
+            testObj: { name: "testObjName" },
+            testComTestState: Object.assign({}, store.testComTestState),
+          });
         }}>viewDeepEqual-2</button>
         <PureClassCom/>
         <PureHookCom/>
         <PureTestCom testObj={testObj}/>
+        <PureTestCom2 testObj={testObj}/>
       </>
     );
   };
@@ -226,11 +274,13 @@ test("resy-view", async () => {
   
   fireEvent.click(getByText("viewDeepEqual-1"));
   await waitFor(() => {
-    getByText("数量：2");
+    getByText("count：1");
+    getByText("count2：2");
   });
-  
+
   fireEvent.click(getByText("viewDeepEqual-2"));
   await waitFor(() => {
-    getByText("testObj：testObjName");
+    getByText("count：1");
+    getByText("count2：3");
   });
 });

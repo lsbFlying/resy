@@ -1,6 +1,4 @@
-import { MapStateToProps, Store } from "./model";
-
 export * from "./createStore";
-export * from "./useStore";
+export * from "./use";
 export * from "./view";
-export type { MapStateToProps, Store };
+export type { MapStateToProps, Store } from "./model";

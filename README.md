@@ -157,9 +157,12 @@ const store = createStore<StateType>(
        * You can also obtain data attributes through store.
        * eg: console.log(store.count);
        */
-      console.log(this.count);
+      console.log("testFunCount:", this.count === store.count);
       store.count++;
-      console.log("testFun");
+      // or:
+      // this.count++;
+      // Similarly, this can be read from the settings,
+      // and is updated asynchronously.
     },
   },
   // Generally, the options configuration item does not need to be configured

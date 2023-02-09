@@ -355,6 +355,25 @@ export function createStore<S extends State>(
       : Reflect.get(target, key, proxyReceiver);
   }
   
+  /**
+   * @description 代理函数内部的this指向对象的proxy代理对象
+   */
+  const funcInnerThisProxyStore = new Proxy(state, {
+    get: (target: S, key: keyof S, receiver: any) => {
+      /**
+       * 这里不用担心如果再次代理到函数怎么办，因为这里再次代理到函数肯定是上次bind了funcInnerThisProxyStore才走到这里的
+       * 而bind函数的内部this指向的函数内部的this指向都会是bind的this对象，所以刚好形成良性this上下文循环
+       */
+      return proxyReceiverThisHandle(receiver, funcInnerThisProxyStore, target, key);
+    },
+    set: (_: S, key: keyof S, val: S[keyof S]) => {
+      taskPush(key, val).then(() => {
+        finallyBatchHandle();
+      });
+      return true;
+    }
+  } as ProxyHandler<S>) as S;
+  
   // setState、subscribe与syncUpdate以及store代理内部数据Map的合集
   const externalMap: ExternalMapType<S> = new Map();
   
@@ -362,7 +381,7 @@ export function createStore<S extends State>(
   const storeProxy = new Proxy(storeMap, {
     get: (_, key: keyof S) => {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as Function).bind(mapToObject(stateMap));
+        return (stateMap.get(key) as Function).bind(funcInnerThisProxyStore);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>) || (
         (
@@ -388,7 +407,7 @@ export function createStore<S extends State>(
   const pureStoreProxy = new Proxy(state, {
     get: (target, key: keyof S, receiver: any) => {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as Function).bind(mapToObject(stateMap));
+        return (stateMap.get(key) as Function).bind(funcInnerThisProxyStore);
       }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, pureStoreProxy, target, key);
@@ -401,7 +420,7 @@ export function createStore<S extends State>(
   const conciseStoreProxy = new Proxy(storeMap, {
     get: (_, key: keyof S) => {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as Function).bind(mapToObject(stateMap));
+        return (stateMap.get(key) as Function).bind(funcInnerThisProxyStore);
       }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || (
         (
@@ -420,7 +439,7 @@ export function createStore<S extends State>(
   const store = new Proxy(state, {
     get: (target, key: keyof S, receiver: any) => {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as Function).bind(mapToObject(stateMap));
+        return (stateMap.get(key) as Function).bind(funcInnerThisProxyStore);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, store, target, key);

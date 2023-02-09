@@ -5,9 +5,7 @@ import { fireEvent, render, waitFor } from "@testing-library/react";
 
 type State = {
   count: number;
-  count2: number;
   text?: string;
-  hookValueTestEmpty?: any;
   value: string;
   name: string;
 };
@@ -15,7 +13,6 @@ type State = {
 test("resy-simple", async () => {
   const store = createStore<State>({
     count: 0,
-    count2: 123,
     name: "resy-simple",
     get value() {
       return this.name;

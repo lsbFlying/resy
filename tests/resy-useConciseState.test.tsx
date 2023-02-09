@@ -1,5 +1,5 @@
-import React from "react";
-import { test } from "vitest";
+import React, {useEffect} from "react";
+import { expect, test } from "vitest";
 import { useConciseState } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 
@@ -76,7 +76,18 @@ test("resy-useConciseState", async () => {
   }
   
   function TestCom() {
-    const { count, store, setState } = useConciseState({ count: 0 });
+    const { count, store, name, age, sex, setState } = useConciseState({
+      count: 0, name: "Alen", age: 14, sex: "womam",
+    });
+    
+    useEffect(() => {
+      return store.subscribe((effectState, prevState, nextState) => {
+        expect(effectState.age === 28).toBeTruthy();
+        expect(prevState.age === 14).toBeTruthy();
+        expect(nextState.age === 28).toBeTruthy();
+      }, ["age"]);
+    }, []);
+    
     console.log("TestCom-store", store.count);
     function add() {
       setState({ count: count + 1 }, () => {
@@ -87,7 +98,24 @@ test("resy-useConciseState", async () => {
     return (
       <>
         <span>TestComCount-{count}</span><br/>
+        <span>TestComName:{name}</span>
+        <span>ArosyAge:{age}</span>
+        <span>ArosySex:{sex}</span>
         <button onClick={add}>TestComBtn+</button>
+        <button onClick={() => {
+          store.name = "Arosy";
+        }}>TestComBtnName</button>
+        <button onClick={() => {
+          store.setState({
+            age: 28,
+          });
+        }}>TestComBtnAge</button>
+        <button onClick={() => {
+          store.syncUpdate({
+            sex: "man",
+          });
+          expect(sex === "man").toBeTruthy();
+        }}>TestComBtnSex</button>
       </>
     );
   }
@@ -146,4 +174,20 @@ test("resy-useConciseState", async () => {
   await waitFor(() => {
     getByText("TestComCount-1");
   });
+  
+  fireEvent.click(getByText("TestComBtnName"));
+  await waitFor(() => {
+    getByText("TestComName:Arosy");
+  });
+  
+  fireEvent.click(getByText("TestComBtnAge"));
+  await waitFor(() => {
+    getByText("ArosyAge:28");
+  });
+  
+  fireEvent.click(getByText("TestComBtnSex"));
+  getByText("ArosySex:man");
+  // await waitFor(() => {
+  //   getByText("ArosySex:man");
+  // });
 });

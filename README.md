@@ -174,20 +174,10 @@ const store = createStore<StateType>(
   // Generally, the options configuration item does not need to be configured
   {
     /**
-     * @default true
-     * @description
-     * if value is true, reset state to initialState after components unmounted
-     * or false not reset state to initialState.
-     * Unless you refresh the browser or device intentionally,
-     * otherwise it will keep the data status.
-     * In fact, its description is a little complicated,
-     * not as I briefly described,
-     * but it is safe, please rest assured.
-     *
-     * So, if situation for example login or theme,
-     * we can set unmountReset is false.
+     * This parameter is mainly used to automatically reset the data during the initialization phase of the mount of a certain module.
+     * For example, it will be set to false when it encounters global data like login information, theme, etc.
      */
-    unmountReset: true,
+    initialReset: true,
     /**
      * @description It is generally unnecessary to set it,
      * It is a configuration item used internally in the code,

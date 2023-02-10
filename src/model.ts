@@ -255,8 +255,9 @@ export interface Scheduler<S extends State = {}> {
 // createStore该API第二个参数配置项
 export type CreateStoreOptions = {
   /**
-   * @description 该参数主要是为了在某模块mount初始化阶段自动重置数据的
-   * 如遇到诸如登录信息数据、主题数据类似这样的全局数据而言才会设置为false
+   * @description 该参数主要是为了在某模块mount初始化阶段自动重置数据的，
+   * 如遇到登录信息、主题等类似这样的全局数据而言才会设置为false
+   * @default true
    */
   initialReset?: boolean;
   /**

@@ -15,7 +15,7 @@
 <strong>changed logs - releases what's Changed</strong>
 </summary>
 
-🌟`v???`：<br/>
+🌟`v7.0.0`：<br/>
 1. Adjusted the timing of initialization reset data, change unmountReset to initialReset,
    fixed conflicts between reset execution and promise data reset.
 2. Remove useStore hookInitialState params and fixed execution logic of viewInitialReset.

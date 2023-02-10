@@ -13,7 +13,7 @@ import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe,
   Scheduler, CustomEventListener, Listener, CreateStoreOptions, Store,
-  ConciseExternalMapType, ConciseExternalMapValue,
+  ConciseExternalMapType, ConciseExternalMapValue, AnyFn,
 } from "./model";
 import { mapToObject } from "./utils";
 
@@ -380,7 +380,7 @@ export function createStore<S extends State>(
   const storeProxy = new Proxy(storeMap, {
     get: (_, key: keyof S) => {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as Function).bind(funcInnerThisProxyStore);
+        return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>) || (
         (
@@ -410,7 +410,7 @@ export function createStore<S extends State>(
   const conciseExtraStoreProxy = new Proxy(state, {
     get: (target, key: keyof S, receiver: any) => {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as Function).bind(funcInnerThisProxyStore);
+        return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
       }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, conciseExtraStoreProxy, target, key);
@@ -424,7 +424,7 @@ export function createStore<S extends State>(
   const conciseStoreProxy = new Proxy(storeMap, {
     get: (_, key: keyof S) => {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as Function).bind(funcInnerThisProxyStore);
+        return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
       }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || (
         (
@@ -443,7 +443,7 @@ export function createStore<S extends State>(
   const store = new Proxy(state, {
     get: (target, key: keyof S, receiver: any) => {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as Function).bind(funcInnerThisProxyStore);
+        return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, store, target, key);

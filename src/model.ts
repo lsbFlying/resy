@@ -277,3 +277,6 @@ export type PS<P extends State = {}, S extends State = {}> = Readonly<{
   props: P;
   state: S;
 }>;
+
+// 函数类型，Function的替代类型
+export type AnyFn = (...args: unknown[]) => unknown;

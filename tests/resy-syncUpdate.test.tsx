@@ -3,7 +3,7 @@ import { test, expect } from "vitest";
 import { createStore, useStore } from "../src";
 import { fireEvent, render } from "@testing-library/react";
 
-test("resy-sync", async () => {
+test("resy-syncUpdate", async () => {
   const store = createStore({ text: "qwe" });
   let textRes = "";
   const App = () => {

@@ -82,27 +82,25 @@ export function createStore<S extends State>(
   const storeCoreMap: StoreCoreMapType<S> = new Map();
   storeCoreMap.set("stateMap", stateMap);
   storeCoreMap.set("viewInitialReset", (linkStateFields: (keyof S)[]) => {
-    if (initialReset) {
-      linkStateFields.forEach(key => {
-        /**
-         * 与subscribe中的重置逻辑一样，只要还有组件引用当前数据，就仍然在业务逻辑当中不需要卸载重置
-         * 多一层?.get("storeChangeSet")是为了判断当前数据是否有引用，
-         * 多一层?.size是为了兼容如果无当前数据变化的情况，这样其实本可以不执行stateMap.set(key, state[key])
-         * 核心原因是但凡有数据改变都会在createStore内部生成storeMap核心键值对
-         * 而有storeMap核心键值对就意味着有数据通过useStore引用或者通过store来更新数据
-         * 而它没有storeMap核心键值对恰巧说明这个数据自始自终都没有变化
-         * 与多一层判断不执行stateMap.set(key, state[key])相比相差无几，
-         * 所以这里直接通过?.size来多一层兼容也简化判断
-         */
-        if (
-          (
-            (storeMap.get(key) as StoreMapValue<S>)?.get("storeChangeSet") as StoreMapValueType<S>["storeChangeSet"]
-          )?.size === 0
-        ) {
-          stateMap.set(key, state[key]);
-        }
-      });
-    }
+    linkStateFields.forEach(key => {
+      /**
+       * 与subscribe中的重置逻辑一样，只要还有组件引用当前数据，就仍然在业务逻辑当中不需要卸载重置
+       * 多一层?.get("storeChangeSet")是为了判断当前数据是否有引用，
+       * 多一层?.size是为了兼容如果无当前数据变化的情况，这样其实本可以不执行stateMap.set(key, state[key])
+       * 核心原因是但凡有数据改变都会在createStore内部生成storeMap核心键值对
+       * 而有storeMap核心键值对就意味着有数据通过useStore引用或者通过store来更新数据
+       * 而它没有storeMap核心键值对恰巧说明这个数据自始自终都没有变化
+       * 与多一层判断不执行stateMap.set(key, state[key])相比相差无几，
+       * 所以这里直接通过?.size来多一层兼容也简化判断
+       */
+      if (
+        initialReset && (
+          (storeMap.get(key) as StoreMapValue<S>)?.get("storeChangeSet") as StoreMapValueType<S>["storeChangeSet"]
+        )?.size === 0
+      ) {
+        stateMap.set(key, state[key]);
+      }
+    });
   });
   storeCoreMap.set("eventType", Symbol("storeListenerSymbol"));
   storeCoreMap.set("listenerStoreSet", new Set<CustomEventListener<S>>());

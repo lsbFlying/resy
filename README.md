@@ -16,10 +16,12 @@
 </summary>
 
 🌟`v???`：<br/>
-1. Remove useStore hookInitialState params and fixed viewUnmountReset size Judgment on zero.
-2. Improved the use of "this" context object in function data.
-3. Improved the data storage and reading of additional stores in useConciseState.
-4. Remove "react-fast-compare"
+1. Adjusted the timing of initialization reset data, change unmountReset to initialReset,
+   fixed conflicts between reset execution and promise data reset.
+2. Remove useStore hookInitialState params and fixed execution logic of viewInitialReset.
+3. Improved the use of "this" context object in function data.
+4. Improved the data storage and reading of additional stores in useConciseState.
+5. Remove "react-fast-compare"
    and modify the parameter of the isDeepEqual function of view to the usage of a custom function
 
 🌟`v6.0.0`：<br/>

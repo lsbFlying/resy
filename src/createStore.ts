@@ -57,7 +57,7 @@ export function createStore<S extends State>(
     throw new Error("The initialization parameter result of createStore needs to be an object!");
   }
   
-  const { unmountReset = true, privatization } = options || {};
+  const { initialReset = true, privatization } = options || {};
   
   /**
    * @description 更新的任务队列（私有化）、更新的任务数据（私有化）
@@ -81,8 +81,8 @@ export function createStore<S extends State>(
   // 每一个resy生成的store具有的监听订阅处理，并且可以获取最新state数据
   const storeCoreMap: StoreCoreMapType<S> = new Map();
   storeCoreMap.set("stateMap", stateMap);
-  storeCoreMap.set("viewUnmountReset", (linkStateFields: (keyof S)[]) => {
-    if (unmountReset) {
+  storeCoreMap.set("viewInitialReset", (linkStateFields: (keyof S)[]) => {
+    if (initialReset) {
       linkStateFields.forEach(key => {
         /**
          * 与subscribe中的重置逻辑一样，只要还有组件引用当前数据，就仍然在业务逻辑当中不需要卸载重置
@@ -132,17 +132,17 @@ export function createStore<S extends State>(
     
     const storeMapValue: StoreMapValue<S> = new Map();
     storeMapValue.set("subscribe", (storeChange: Callback) => {
+      /**
+       * @description 通过storeChangeSet判断当前数据是否还有组件引用
+       * 只要还有一个组件在引用当前数据，都不会重置数据，
+       * 因为当前还在业务逻辑中，不属于完整的卸载
+       */
+      if (initialReset && !storeChangeSet.size) {
+        stateMap.set(key, state[key]);
+      }
       storeChangeSet.add(storeChange);
       return () => {
         storeChangeSet.delete(storeChange);
-        /**
-         * @description 通过storeChangeSet判断当前数据是否还有组件引用
-         * 只要还有一个组件在引用当前数据，都不会重置数据，
-         * 因为当前还在业务逻辑中，不属于完整的卸载
-         */
-        if (unmountReset && !storeChangeSet.size) {
-          stateMap.set(key, state[key]);
-        }
       };
     });
     

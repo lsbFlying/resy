@@ -66,6 +66,20 @@ export function view<P extends State = {}, S extends State = {}>(
     const [state, setState] = useState<S>(() => proxyStateHandler(latestState, innerUseStateSet));
     
     useEffect(() => {
+      /**
+       * @description view会使得组件销毁时不执行StoreMap里的subscribe，就无法恢复重置数据
+       * 因为它本身是订阅监听执行的，不属于组件的生命周期发生
+       * 所以这里需要特定的数据恢复，同时重置恢复内部注意关联到initialReset的逻辑处理
+       */
+      (
+        (
+          store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
+        ).get("viewInitialReset") as StoreCoreMapValue<S>["viewInitialReset"]
+      )(Array.from(innerUseStateSet));
+      
+      // 重置之后需要更新一下重置后的数据生效
+      setState(proxyStateHandler(latestState, innerUseStateSet));
+      
       // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
       const unsubscribe = store.subscribe((
         effectState,
@@ -89,7 +103,7 @@ export function view<P extends State = {}, S extends State = {}>(
            * 虽然"预清空"在组件的更新使用效率上更好些，但因为此问题也需要避免
            * 这样一来会把没有完成"预清空"优势的转给当前if的判断条件的执行压力上来
            * 即some循环可能会多走一些，但至少保证innerUseStateSet有使用的数据字段
-           * 可以给viewUnmountReset逻辑执行使用，但实际上"预清空"优势需要建立在view包裹的组件内部
+           * 可以给viewInitialReset逻辑执行使用，但实际上"预清空"优势需要建立在view包裹的组件内部
            * 有为真显示加载组件的情况才会有优势，而实际上这种场景并不多见
            * 所以它的优势是有，但不多不明显，相对而言转嫁给if判断里的some循环的压力也是存在，但并不多不明显
            * 所以这里还是选择移除 innerUseStateSet.clear(); 即可
@@ -98,16 +112,6 @@ export function view<P extends State = {}, S extends State = {}>(
         }
       });
       return () => {
-        /**
-         * @description view会使得组件销毁时不执行StoreMap里的subscribe，就无法恢复重置数据
-         * 因为它本身是订阅监听执行的，不属于组件的生命周期发生
-         * 所以这里需要特定的数据恢复，同时重置恢复内部注意关联到unmountReset的逻辑处理
-         */
-        (
-          (
-            store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-          ).get("viewUnmountReset") as StoreCoreMapValue<S>["viewUnmountReset"]
-        )(Array.from(innerUseStateSet));
         unsubscribe();
         innerUseStateSet.clear();
       };

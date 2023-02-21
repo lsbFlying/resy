@@ -521,8 +521,8 @@ import React from "react";
 import { useStore, MapStateToProps, view } from "resy";
 
 /**
- * view's support for class components requires props.
- * You can write StateToProps<StateType>
+ * view is support for class components requires props.
+ * You can write "MapStateToProps<StateType>"
  * in the paradigm of the component's inherited component PureComponent/ComponentMap.
  * The state data mounted on props can be used through this.props.state.
  */
@@ -562,7 +562,20 @@ function HookCom() {
  * and state and the previous props and state to determine whether to update the rendering re-render.
  */
 // const TestView = view(store, HookCom);
-const TestView = view(store, ClassCom);
+const TestView = view(
+  store,
+  ClassCom,
+  // You can customize the contrast function to control whether to update the rendering
+  // (prev, next) => {
+  //   const { props: prevProps, state: prevState } = prev;
+  //   const { props: nextProps, state: nextState } = next;
+  //   // some conditon
+  //   if (xxx) {
+  //     return true;
+  //   }
+  //   return false;
+  // }
+);
 
 function App() {
   const { countAddFun, name } = useStore(store);

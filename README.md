@@ -1,7 +1,7 @@
 <div align="center">
-<img src="./resy-logo.svg" alt="resy">
-<h3>A simple react state manager</h3>
-<h4>Support React Native、SSR、Mini Apps (such as taro, rax, remax etc)</h4>
+<img style="width: 470px" src="./resy-logo.svg" alt="resy">
+<h3 style="margin-top: 0">A simple react state manager</h3>
+<h4 style="margin-top: 8px">Support React Native、SSR、Mini Apps (such as taro, rax, remax etc)</h4>
 
 [![GitHub license](https://img.shields.io/github/license/lsbFlying/resy?style=flat-square)](https://github.com/lsbFlying/resy/blob/master/LICENSE)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lsbFlying/resy/test.yml?branch=master&color=blue&style=flat-square)](https://github.com/lsbFlying/resy/actions/workflows/test.yml)

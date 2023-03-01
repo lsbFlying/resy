@@ -108,6 +108,7 @@ export function createStore<S extends State>(
     /**
      * 这里虽然addEventListener监听的listener每一个都触发执行了，
      * 但是内部的内层listener会有数据变化的判断来实现进一步的精准定位变化执行
+     * todo 后续可以考虑使用Map进行优化，避免全部循环在内层判断，可以尝试直接在外层判断精准执行一次
      */
     (
       storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"]

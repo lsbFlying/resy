@@ -105,6 +105,10 @@ export function createStore<S extends State>(
   storeCoreMap.set("eventType", Symbol("storeListenerSymbol"));
   storeCoreMap.set("listenerStoreSet", new Set<CustomEventListener<S>>());
   storeCoreMap.set("dispatchStoreEffect", (effectData: Partial<S>, prevState: S, nextState: S) => {
+    /**
+     * 这里虽然addEventListener监听的listener每一个都触发执行了，
+     * 但是内部的内层listener会有数据变化的判断来实现进一步的精准定位变化执行
+     */
     (
       storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"]
     ).forEach(item => item.dispatchEvent(
@@ -330,6 +334,10 @@ export function createStore<S extends State>(
         let includesFlag = false;
         const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
         if (!listenerKeysIsEmpty && Object.keys(effectState).some(key => stateKeys.includes(key))) includesFlag = true;
+        /**
+         * 事实上最终订阅触发时，每一个订阅的这个外层listener都被触发了，
+         * 只是这里在最终执行内层listener的时候做了数据变化的判断才实现了subscribe中的listener的是否执行
+         */
         if (listenerKeysIsEmpty || (!listenerKeysIsEmpty && includesFlag)) listener(effectState, prevState, nextState);
       },
     );

@@ -514,6 +514,13 @@ The perfect point is:
     as long as the data in the parent component is not used.
     Then even if the parent component is updated,
     the component of the view package will not re-render.
+
+But at the same time,
+    it should be noted that the starting point of "view" creation is to support class components.
+    Its essence is to encapsulate the memo and useMemo in combination with the internal subscription of resy.
+    So, just like react for memo or useMemo,
+    resy's suggestions for "view" use are the same as that of react for memo and useMemo.
+    The developer is expected to control it by himself.
 ```
 
 ```tsx

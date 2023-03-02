@@ -120,6 +120,7 @@ export function view<P extends State = {}, S extends State = {}>(
     
     return useMemo(() => <Comp {...props} state={state}/>, [state, props]);
   }, isDeepEqual ? (prevProps: P, nextProps: P) => {
+    // props与state的变化可能存在同时变化的情况，但不影响isDeepEqual的执行
     const latestState = mapToObject(getLatestStateMap(store));
     return isDeepEqual(
       { props: prevProps, state: latestState },

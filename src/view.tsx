@@ -55,7 +55,7 @@ export function view<P extends State = {}, S extends State = {}>(
     const innerUseStateSet: Set<keyof S> = new Set();
     
     // 需要使用getState获取store内部的即时最新数据值
-    const latestState = getLatestStateMap(store);
+    const stateMap = getLatestStateMap(store);
     
     /**
      * @description 给state数据做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
@@ -63,7 +63,7 @@ export function view<P extends State = {}, S extends State = {}>(
      * 扩展运算符...会读取所有的属性数据，导致内部关联使用数据属性失去准确性
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
-    const [state, setState] = useState<S>(() => proxyStateHandler(latestState, innerUseStateSet));
+    const [state, setState] = useState<S>(() => proxyStateHandler(stateMap, innerUseStateSet));
     
     useEffect(() => {
       /**
@@ -78,7 +78,7 @@ export function view<P extends State = {}, S extends State = {}>(
       )(Array.from(innerUseStateSet));
       
       // 重置之后需要更新一下重置后的数据生效
-      setState(proxyStateHandler(latestState, innerUseStateSet));
+      setState(proxyStateHandler(stateMap, innerUseStateSet));
       
       // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
       const unsubscribe = store.subscribe((

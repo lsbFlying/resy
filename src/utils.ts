@@ -6,13 +6,13 @@ import { STORE_CORE_MAP_KEY } from "./static";
  * @description 核心作用是找出SCU或者useMemo所需要的更新依赖的数据属性
  */
 export function proxyStateHandler<S extends State>(
-  latestState: Map<keyof S, S[keyof S]>,
+  stateMap: Map<keyof S, S[keyof S]>,
   innerUseStateSet: Set<keyof S>,
 ) {
-  return new Proxy(latestState, {
+  return new Proxy(stateMap, {
     get: (target: Map<keyof S, S[keyof S]>, key: keyof S) => {
       innerUseStateSet.add(key);
-      // latestState给出了resy生成的store内部数据的引用，这里始终能获取到最新数据
+      // stateMap(即最新的状态数据Map-latestState)给出了resy生成的store内部数据的引用，这里始终能获取到最新数据
       return target.get(key);
     },
   } as ProxyHandler<Map<keyof S, S[keyof S]>>) as object as S;

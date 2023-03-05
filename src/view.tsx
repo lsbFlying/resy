@@ -25,14 +25,14 @@ import { getLatestStateMap, mapToObject, proxyStateHandler } from "./utils";
  * 可以自定义深对比props与state和之前的props、state状态
  * 从而来决定是否要更新渲染re-render
  *
- * todo resy 本身的数据更新在"避免额外冗余的re-render方面"已经做得较为完备了
+ * be careful: resy 本身的数据更新在"避免额外冗余的re-render方面"已经做得较为完备了
  * 剩下的就是需要深对比来进一步优化了，但是深对比所获取的效益需要开发人员自行衡量
  * 如果遇到嵌套较深的大型数据对象，一般不建议深对比，
  * 与此同时，如上所说，resy本身即使不使用isDeepEqual函数参数来优化
  * 也可以取得相当不错的渲染、数据共享等使用效益了
  *
  * 🌟：view更多的是为了兼容class组件，
- * todo 但是暂时无法做到class组件使用多个store数据，后续待优化更进
+ * be careful: 但是暂时无法做到class组件使用多个store数据，后续待优化更进
  * 如果是hook组件，直接使用原生的useMemo然后内部仍然继续使用useStore也是可以的，如下：
  * function SomeHookCom() {
  *   const { ... } = useStore(store);

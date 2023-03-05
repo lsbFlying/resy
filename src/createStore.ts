@@ -108,7 +108,9 @@ export function createStore<S extends State>(
     /**
      * 这里虽然addEventListener监听的listener每一个都触发执行了，
      * 但是内部的内层listener会有数据变化的判断来实现进一步的精准定位变化执行
-     * todo 后续可以考虑使用Map进行优化，避免全部循环在内层判断，可以尝试直接在外层判断精准执行一次
+     * 表面上好像使用Map进行优化，避免全部循环在内层判断，尝试直接在外层判断精准执行一次
+     * 但实际上可能存在不同组件多次监听同一个数据变化但是处理不同的业务逻辑的可能
+     * 所以使用Set相对于Map而言是必要的，可以满足这种复杂的业务场景
      */
     (
       storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"]
@@ -250,7 +252,7 @@ export function createStore<S extends State>(
        * 刚好常规而言的订阅联动更新就在这几毫秒的差距中就实现了批次处理的分水岭
        * 而4ms左右这样的一个时间间隔
        * 在react中就会被unstable_batchedUpdates或者react内部的调度机制处理成统一批次的更新
-       * todo：当然这里的特性是在react-V18中才有的，因为react-V18的unstable_batchedUpdates做了优化
+       * be careful：当然这里的特性是在react-V18中才有的，因为react-V18的unstable_batchedUpdates做了优化
        * 如果是react-V18以下的版本，则还是分两个批次渲染更新。
        */
       (stateParams as StateFunc)();
@@ -412,7 +414,7 @@ export function createStore<S extends State>(
    * 同时store不仅仅是单纯的数据读取操作，set/sync/sub三个函数的使用一样可以，
    * 并且也让store具有单个数据属性更新的能力
    * 与createStore生成的store具有一样的功能
-   * todo 这样主要是为了解决react的useState中产生的数据不具有可追溯性的问题
+   * be careful: 这样主要是为了解决react的useState中产生的数据不具有可追溯性的问题
    * 比如在某些函数中因为因为或者作用域的不同导致函数内部再次获取useState的数据会不准确
    * 而使用这个额外的store来读取数据可以具有追溯性得到最新的数据状态
    */

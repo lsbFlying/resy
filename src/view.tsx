@@ -32,7 +32,7 @@ import { getLatestStateMap, mapToObject, proxyStateHandler } from "./utils";
  * 也可以取得相当不错的渲染、数据共享等使用效益了
  *
  * 🌟：view更多的是为了兼容class组件，
- * be careful: 但是暂时无法做到class组件使用多个store数据，后续待优化更进
+ * todo: 但是暂时无法做到class组件使用多个store数据，后续待优化更进
  * 如果是hook组件，直接使用原生的useMemo然后内部仍然继续使用useStore也是可以的，如下：
  * function SomeHookCom() {
  *   const { ... } = useStore(store);

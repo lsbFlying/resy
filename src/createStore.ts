@@ -288,7 +288,10 @@ export function createStore<S extends State>(
     }
   }
   
-  // 同步更新
+  /**
+   * 同步更新
+   * @description todo 更多意义上是为了解决input无法输入非英文语言bug的无奈，后续待优化setState与单次更新
+   */
   function syncUpdate(syncStateParams: Partial<S> | S) {
     const prevState = new Map(stateMap);
     batchUpdate(() => {

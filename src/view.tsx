@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useMemo, useState } from "react";
 import type { State, StoreCoreMapType, StoreCoreMapValue, MapStateToProps, Store, PS } from "./model";
 import { STORE_CORE_MAP_KEY } from "./static";
-import { getLatestStateMap, mapToObject, proxyStateHandler } from "./utils";
+import { getLatestStateMap, mapToObject, proxyStateHandler, storeErrorHandle } from "./utils";
 
 /**
  * 自动memo与SCU的高阶HOC
@@ -50,6 +50,7 @@ export function view<P extends State = {}, S extends State = {}>(
   Comp: React.ComponentType<MapStateToProps<S, P> | any>,
   isDeepEqual?: (prev: PS<P, S>, next: PS<P, S>) => boolean,
 ) {
+  storeErrorHandle(store);
   return memo((props: P) => {
     // 引用数据的代理Set
     const innerUseStateSet: Set<keyof S> = new Set();

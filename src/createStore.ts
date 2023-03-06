@@ -8,7 +8,7 @@
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
-import { batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY } from "./static";
+import { batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_ } from "./static";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe,
@@ -23,8 +23,6 @@ import { mapToObject } from "./utils";
  * 等use-sync-external-store什么时候更新版本导出ESM模块的时候再更新吧
  */
 const { useSyncExternalStore } = useSyncExternalStoreExports;
-
-const _DEV_ = process.env.NODE_ENV !== "production";
 
 /**
  * createStore
@@ -101,6 +99,13 @@ export function createStore<S extends State>(
         stateMap.set(key, state[key]);
       }
     });
+  });
+  storeCoreMap.set("setRefInStore", (refState: Partial<S>) => {
+    if (Object.prototype.toString.call(refState) === "[object Object]") {
+      Object.keys(refState).forEach(key => {
+        stateMap.set(key, refState[key] as S[keyof S]);
+      });
+    }
   });
   storeCoreMap.set("eventType", Symbol("storeListenerSymbol"));
   storeCoreMap.set("listenerStoreSet", new Set<CustomEventListener<S>>());

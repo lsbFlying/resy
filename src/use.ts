@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import type { State, ConciseStore } from "./model";
-import { USE_STORE_KEY, USE_CONCISE_STORE_KEY } from "./static";
+import { USE_STORE_KEY, USE_CONCISE_STORE_KEY, STORE_CORE_MAP_KEY } from "./static";
 import { createStore } from "./createStore";
+import { storeErrorHandle } from "./utils";
 
 /**
  * 驱动组件更新
@@ -11,6 +12,7 @@ import { createStore } from "./createStore";
  * @param store
  */
 export function useStore<S extends State>(store: S): S {
+  storeErrorHandle(store);
   return store[USE_STORE_KEY as keyof S];
 }
 
@@ -30,4 +32,13 @@ export function useConciseState<S extends State>(initialState?: S): ConciseStore
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const store = useMemo(() => createStore<S>(initialState, { privatization: true }), []);
   return store[USE_CONCISE_STORE_KEY as keyof S];
+}
+
+/**
+ * 将某些数据引用到store全局储存容器上
+ * @description 比如可以将antd的useForm的form引用映射到store上，方便后续在别的地方通过store读取form
+ */
+export function refInStore<S extends State>(store: S, refState: Partial<S>) {
+  storeErrorHandle(store);
+  store[STORE_CORE_MAP_KEY as keyof S].get("setHookInitialState")(refState);
 }

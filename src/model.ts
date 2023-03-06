@@ -259,18 +259,26 @@ export interface Scheduler<S extends State = {}> {
 export type CreateStoreOptions = {
   /**
    * @description 该参数主要是为了在某模块mount初始化阶段自动重置数据的，
-   * 如遇到登录信息、主题等类似这样的全局数据而言才会设置为false
+   * 如遇到登录信息、主题等这样的全局数据而言才会设置为false，
+   * 这样可以使得生成的loginStore或者themeStore系统的全局生效
    * @default true
    */
   initialReset?: boolean;
   /**
-   * @description 该参数主要是为了createStore创建的store成为局部(非全局)数据状态容器
-   * 它可以用如下方式：
-   * const { count, text, setState } = useConciseState({ count: 0, text: "Hello" });
-   * 作用实现其实就是原生的useState：
-   * const [count, setCount] = useState(0);
-   * const [text, setText] = useState("Hello");
-   * 如果在状态较多的情况下，useConciseState的写法较原生写法还是相对简洁明了的
+   * @description 该参数主要是为了使得createStore创建的store成为局部(非全局)数据状态容器
+   * 一般而言如果我们使用createStore的时候是不需要设置该参数的，如果特殊需要局部数据状态容器
+   * 可以使用useConciseState来获取局部数据状态，而useConciseState就是使用改参数进行实现的
+   * 即该参数是相对而言库的内部使用参数
+   * 如果真的想用createStore且用该参数也可以，使用方式如下：
+   * function AppCom() {
+   *   const {
+   *      ..., store, setState, syncUpdate, subscribe,
+   *   } = useMemo(() => createStore({...}, { privatization: true }), []);
+   *
+   *   return (
+   *     <>{...}</>
+   *   );
+   * }
    */
   privatization?: boolean;
 };

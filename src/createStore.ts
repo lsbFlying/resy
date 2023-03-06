@@ -13,7 +13,7 @@ import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe,
   Scheduler, CustomEventListener, Listener, CreateStoreOptions, Store,
-  ConciseExternalMapType, ConciseExternalMapValue, AnyFn,
+  ConciseExternalMapType, ConciseExternalMapValue, AnyFn, EventsType,
 } from "./model";
 import { mapToObject } from "./utils";
 
@@ -328,7 +328,7 @@ export function createStore<S extends State>(
        * @description 每一个订阅监听实例有相同的event-type不要紧，因为实例不同所以不会影响
        * 这里取一个实例类型常量反而方便节省内存、增加代码执行效率
        */
-      storeCoreMap.get("eventType") as StoreCoreMapValue<S>["eventType"],
+      storeCoreMap.get("eventType") as EventsType,
       (
         effectState: Partial<S>,
         prevState: S,
@@ -348,6 +348,7 @@ export function createStore<S extends State>(
     listenerStoreSetTemp.add(customEventDispatcher);
     
     return () => {
+      customEventDispatcher.removeEventListener(storeCoreMap.get("eventType") as EventsType)
       listenerStoreSetTemp.delete(customEventDispatcher);
     };
   }

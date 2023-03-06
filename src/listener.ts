@@ -1,4 +1,4 @@
-import type { State, Listener, CustomEventListener, CustomEventListenerConstructor } from "./model";
+import type { State, Listener, CustomEventListener, CustomEventListenerConstructor, EventsType } from "./model";
 
 /**
  * created by liushanbao
@@ -27,7 +27,7 @@ EventDispatcher.prototype.removeEventListener = function(type: string | symbol) 
 }
 EventDispatcher.prototype.dispatchEvent = function<S extends State>(
   this: CustomEventListener<S>,
-  type: number | string | symbol,
+  type: EventsType,
   effectState: Partial<S>,
   prevState: S,
   nextState: S,

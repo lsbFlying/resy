@@ -39,13 +39,16 @@ export type Listener<S extends State> = (
   nextState: S,
 ) => void;
 
+// 监听事件的key类型
+export type EventsType = number | string | symbol;
+
 // 自定义订阅监听函数接口类型
 export interface CustomEventListener<S extends State> {
   // 监听事件的合集对象
-  events: Map<number | string | symbol, Listener<S>>;
-  addEventListener(type: string | symbol, listener: Listener<S>): void;
+  events: Map<EventsType, Listener<S>>;
+  addEventListener(type: EventsType, listener: Listener<S>): void;
   dispatchEvent(
-    type: string | symbol,
+    type: EventsType,
     effectState: Partial<S>,
     prevState: S,
     nextState: S,
@@ -55,7 +58,7 @@ export interface CustomEventListener<S extends State> {
    * 所以subscribe这里可以不用多余使用removeEventListener，直接移除实例即可
    * 所以这里也是直接简化去除removeEventListener
    */
-  removeEventListener(type: number | string | symbol): void;
+  removeEventListener(type: EventsType): void;
 }
 
 // 自定义监听事件的构造函数接口类型
@@ -76,7 +79,7 @@ export interface StoreCoreMapValue<S extends State> {
   // 重置(恢复)初始化数据（供view使用）
   viewInitialReset: (stateFields: (keyof S)[]) => void;
   // 订阅监听的事件类型
-  eventType: string | symbol;
+  eventType: EventsType;
   // 触发订阅监听影响的Set容器
   listenerStoreSet: Set<CustomEventListener<S>>;
   // 触发订阅监听的变动影响（即循环遍历执行listenerStoreSet中的监听函数）

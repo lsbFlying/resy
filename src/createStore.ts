@@ -344,6 +344,7 @@ export function createStore<S extends State>(
         if (listenerKeysIsEmpty || (!listenerKeysIsEmpty && includesFlag)) listener(effectState, prevState, nextState);
       },
     );
+    
     listenerStoreSetTemp.add(customEventDispatcher);
     
     return () => {

@@ -186,7 +186,7 @@ export function createStore<S extends State>(
   }
   
   // 批量触发订阅监听的数据变动
-  function batchDispatch(prevState: Map<keyof S, S[keyof S]>, changedData: Map<keyof S, S[keyof S]>) {
+  function batchDispatchListener(prevState: Map<keyof S, S[keyof S]>, changedData: Map<keyof S, S[keyof S]>) {
     if (changedData.size > 0 && (storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"]).size > 0) {
       /**
        * @description effectState：实际真正影响变化的数据
@@ -279,7 +279,7 @@ export function createStore<S extends State>(
       // 更新之前的数据
       const prevState = new Map(stateMap);
       batchUpdate(() => taskQueueMap.forEach(task => task()));
-      batchDispatch(prevState, taskDataMap);
+      batchDispatchListener(prevState, taskDataMap);
     }
   }
   
@@ -295,7 +295,7 @@ export function createStore<S extends State>(
         )((syncStateParams as Partial<S> | S)[key]);
       });
     });
-    batchDispatch(prevState, new Map(Object.entries(syncStateParams)));
+    batchDispatchListener(prevState, new Map(Object.entries(syncStateParams)));
   }
   
   /**

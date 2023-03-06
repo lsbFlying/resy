@@ -310,17 +310,17 @@ function App() {
   
   function inputChange(event: React.ChangeEvent<HTMLInputElement>) {
     /**
-      * todo：The update of this controlled input/textarea needs to be updated synchronously,
+      * be careful：The update of this controlled input/textarea needs to be updated synchronously,
       * otherwise, due to asynchronous updates such as "store.setState" or "store[key] = newValue",
       * it will cause input/textarea unable to input characters in languages other than English.
-      * todo："syncUpdate" is a helpless solution to the conflict between
+      * be careful："syncUpdate" is a helpless solution to the conflict between
       * resy update scheduling mechanism and react's update execution mechanism for text input.
       *
-      * todo notes：react itself, even the version of react V18+,
+      * be careful：react itself, even the version of react V18,
       * There is a problem that asynchronous updates make it impossible to input text in languages other than English.
       * eg: (xxxpromise).then(() => { setState(xxx); });
       *
-      * todo：At the same time, "syncUpdate" can also be used by development partners
+      * be careful：At the same time, "syncUpdate" can also be used by development partners
       * who do not like to use callbacks to get the latest data.
       * Because after it is executed, it can get the latest data through store
       * for the next step of business logic processing.

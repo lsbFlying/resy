@@ -42,7 +42,7 @@ export type Listener<S extends State> = (
 // 自定义订阅监听函数接口类型
 export interface CustomEventListener<S extends State> {
   // 监听事件的合集对象
-  events: S;
+  events: Map<number | string | symbol, Listener<S>>;
   addEventListener(type: string | symbol, listener: Listener<S>): void;
   dispatchEvent(
     type: string | symbol,
@@ -55,7 +55,7 @@ export interface CustomEventListener<S extends State> {
    * 所以subscribe这里可以不用多余使用removeEventListener，直接移除实例即可
    * 所以这里也是直接简化去除removeEventListener
    */
-  // removeEventListener(type: string | symbol): void;
+  removeEventListener(type: number | string | symbol): void;
 }
 
 // 自定义监听事件的构造函数接口类型

@@ -54,9 +54,9 @@ export interface CustomEventListener<S extends State> {
     nextState: S,
   ): void;
   /**
-   * @description 本身EventDispatcher可以单独使用，在结合resy是销毁监听订阅的时候实际上是移除了监听Set中的监听实例
-   * 所以subscribe这里可以不用多余使用removeEventListener，直接移除实例即可
-   * 所以这里也是直接简化去除removeEventListener
+   * @description resy销毁监听订阅的时候尽管实际上是移除了监听Set中的监听实例
+   * 但是这里仍然建议移除监听的事件，即removeEventListener仍然需要
+   * 是为了删除后腾出内存空间不占内存，避免"内存释放"的心智负担
    */
   removeEventListener(type: EventsType): void;
 }

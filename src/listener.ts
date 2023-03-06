@@ -17,11 +17,6 @@ EventDispatcher.prototype.addEventListener = function<S extends State>(
 ) {
   this.events.set(type as keyof S, listener as S[keyof S]);
 }
-/**
- * @description resy销毁监听订阅的时候尽管实际上是移除了监听Set中的监听实例
- * 但是这里仍然建议移除监听的事件，即removeEventListener仍然需要
- * 是为了删除后腾出内存空间不占内存，避免"内存释放"的心智负担
- */
 EventDispatcher.prototype.removeEventListener = function(type: string | symbol) {
   this.events.delete(type);
 }

@@ -207,7 +207,12 @@ export function createStore<S extends State>(
     }
   }
   
-  // 更新任务添加入栈
+  /**
+   * 更新任务添加入栈
+   * @description 采用微任务的方式达到批量更新的效果，
+   * 以达到与reactV18一样的批处理更新效果，
+   * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
+   */
   async function taskPush(key: keyof S, val: S[keyof S]) {
     (scheduler.get("add") as Scheduler<S>["add"])(
       () => (

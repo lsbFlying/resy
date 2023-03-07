@@ -40,5 +40,5 @@ export function useConciseState<S extends State>(initialState?: S): ConciseStore
  */
 export function refInStore<S extends State>(store: S, refState: Partial<S>) {
   storeErrorHandle(store);
-  store[STORE_CORE_MAP_KEY as keyof S].get("setHookInitialState")(refState);
+  store[STORE_CORE_MAP_KEY as keyof S].get("setRefInStore")(refState);
 }

@@ -146,6 +146,7 @@ function App() {
 ### createStore
 ```tsx
 import { createStore } from "resy";
+import { FormInstance } from "antd/es/form";
 
 type StateType = {
   count: number;
@@ -153,6 +154,7 @@ type StateType = {
   testObj: { name: string };
   testArr: { age: number }[];
   testFun(): void;
+  form?: FormInstance;
 };
 
 // The generated store can be shared globally
@@ -254,7 +256,6 @@ import { useStore, useStoreWithRef } from "resy";
 import { Form, Input } from "antd";
 
 function NameTemp() {
-  // Or you can use store to deconstruct form directly in other execution functions.
   const { form } = useStore(store);
   
   return (
@@ -262,7 +263,9 @@ function NameTemp() {
       <span>NameTemp</span><br/>
       <button
         onClick={() => {
-          form.setFieldsValue({name: "NameTemp",});
+          form?.setFieldsValue({name: "NameTemp",});
+          // Or you can use store to deconstruct form directly in other execution functions.
+          // store.form.setFieldsValue({name: "NameTemp",});
         }}
       >
         btnName
@@ -271,17 +274,27 @@ function NameTemp() {
   );
 }
 
+function FormWrap() {
+  const {form} = useStoreWithRef(store, {
+    form: Form.useForm()[0],
+  });
+  return (
+    <Form form={form}>
+      <Form.Item name="name" label="名字">
+        <Input/>
+      </Form.Item>
+    </Form>
+  );
+}
+
 function App() {
-   const {form} = useStoreWithRef(store, {
-      form: Form.useForm()[0],
-   });
+   const { form } = useStore(store);
+   React.useEffect(() => {
+     console.log(form?.getFieldsValue());
+   }, []);
    return (
      <>
-       <Form form={form}>
-         <Form.Item name="name" label="名字">
-           <Input/>
-         </Form.Item>
-       </Form>
+       <FormWrap/>
        <NameTemp/>
      </>
    );

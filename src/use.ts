@@ -46,7 +46,7 @@ export function useConciseState<S extends State>(initialState?: S): ConciseStore
  * ...some code start...
  * const { form } = store;
  * // 方便form的读取使用
- * form.xxx
+ * const formValues = form?.getFieldsValue();
  * ...some code end...
  * 除此之外，也可以将某些不方便修改到全局的组件内部的数据引用挂载到全局的store上，
  * 从而便于私有数据的全局化使用。

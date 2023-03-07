@@ -214,7 +214,7 @@ test("resy-basic", async () => {
      * store.setState(() => {
      *   store.text = "qweasdzxc";
      * });
-     * todo：详细原因参见createStore文件中的updater函数的注释3
+     * be careful：详细原因参见createStore文件中的updater函数的注释3
      */
     console.log("btn7", index, store.testObj); // btn7, 7
   });

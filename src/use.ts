@@ -36,7 +36,7 @@ export function useConciseState<S extends State>(initialState?: S): ConciseStore
 }
 
 /**
- * useStore的升级版，
+ * useStore的升级版，它可以完全兼容useStore
  * 它可以将某些数据引用到store全局储存容器上，
  * 更多更主要地是为了将某些hook产生的值即不方便全局使用的数据值引用挂载到全局的store上方便使用
  * @description 比如可以将antd的useForm的form引用映射到store上，方便后续在别的地方通过store读取form

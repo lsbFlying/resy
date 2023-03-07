@@ -77,7 +77,7 @@ export function createStore<S extends State>(
   const stateMap: Map<keyof S, S[keyof S]> = new Map(Object.entries(state));
   
   // 挂载引用缓存
-  let refStateCache: Partial<S> | undefined;
+  let refDataCache: Partial<S> | undefined;
   
   // 处理store的监听订阅、ref数据引用关联、view初始化重置以及获取最新state数据的相关核心处理Map
   const storeCoreMap: StoreCoreMapType<S> = new Map();
@@ -103,15 +103,15 @@ export function createStore<S extends State>(
       }
     });
   });
-  storeCoreMap.set("setRefInStore", (refState: Partial<S>) => {
-    if (Object.prototype.toString.call(refState) === "[object Object]") {
+  storeCoreMap.set("setRefInStore", (refData: Partial<S>) => {
+    if (Object.prototype.toString.call(refData) === "[object Object]") {
       // 合并ref引用缓存保持更新
-      refStateCache = Object.assign({}, refStateCache, refState);
-      Object.keys(refState).forEach(key => {
-        stateMap.set(key, refState[key] as S[keyof S]);
+      refDataCache = Object.assign({}, refDataCache, refData);
+      Object.keys(refData).forEach(key => {
+        stateMap.set(key, refData[key] as S[keyof S]);
       });
     } else if (_DEV_) {
-      throw new Error("The refState parameter of refInStore is not an object!");
+      throw new Error("The refData parameter of useStoreWithRef is not an object!");
     }
   });
   storeCoreMap.set("eventType", Symbol("storeListenerSymbol"));
@@ -226,7 +226,7 @@ export function createStore<S extends State>(
    * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
    */
   async function taskPush(key: keyof S, val: S[keyof S]) {
-    if (!refStateCache?.hasOwnProperty(key)) {
+    if (!refDataCache?.hasOwnProperty(key)) {
       (scheduler.get("add") as Scheduler<S>["add"])(
         () => (
           (
@@ -238,7 +238,7 @@ export function createStore<S extends State>(
         taskDataMapPrivate,
         taskQueueMapPrivate,
       );
-    } else if (_DEV_ && refStateCache) {
+    } else if (_DEV_ && refDataCache) {
       console.error(
         "The property of the current update data contains the ref reference attribute." +
         " Please check for updates of the data."
@@ -315,13 +315,13 @@ export function createStore<S extends State>(
     const prevState = new Map(stateMap);
     batchUpdate(() => {
       Object.keys(syncStateParams).forEach(key => {
-        if(!refStateCache?.hasOwnProperty(key)) {
+        if(!refDataCache?.hasOwnProperty(key)) {
           (
             (
               initialValueConnectStore(key).get(key) as StoreMapValue<S>
             ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
           )((syncStateParams as Partial<S> | S)[key]);
-        } else if (_DEV_ && refStateCache) {
+        } else if (_DEV_ && refDataCache) {
           console.error(
             "The property of the current update data contains the ref reference attribute." +
             " Please check for updates of the data."

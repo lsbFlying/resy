@@ -79,7 +79,7 @@ export interface StoreCoreMapValue<S extends State> {
   // 重置(恢复)初始化数据（供view使用）
   viewInitialReset: (stateFields: (keyof S)[]) => void;
   // 将某些数据引用挂载到store全局储存容器上
-  setRefInStore: (refState: Partial<S>) => void;
+  setRefInStore: (refData: Partial<S>) => void;
   // 订阅监听的事件类型
   eventType: EventsType;
   // 触发订阅监听影响的Set容器

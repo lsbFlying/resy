@@ -39,7 +39,7 @@ export function useConciseState<S extends State>(initialState?: S): ConciseStore
  * useStore的升级版，它可以完全兼容useStore
  * 它可以将某些数据引用到store全局储存容器上，
  * 更多更主要地是为了将某些hook产生的值即不方便全局使用的数据值引用挂载到全局的store上方便使用
- * 正因为是引用，所以useStoreWithRef中的refState的数据是不能更新的
+ * 正因为是引用，所以useStoreWithRef中的refData的数据是不能更新的
  * 比如下面的例子中
  * 不能store.form = "newFormStr"; 不能store.setState({ form: "newFormStr" });
  * 也不能store.syncUpdate({ form: "newFormStr" })
@@ -56,9 +56,9 @@ export function useConciseState<S extends State>(initialState?: S): ConciseStore
  * 除此之外，也可以将某些不方便修改到全局的组件内部的数据引用挂载到全局的store上，
  * 从而便于私有数据的全局化使用。
  */
-export function useStoreWithRef<S extends State>(store: S, refState: Partial<S>): S {
+export function useStoreWithRef<S extends State>(store: S, refData: Partial<S>): S {
   storeErrorHandle(store);
-  const ref = useRef(refState);
+  const ref = useRef(refData);
   store[STORE_CORE_MAP_KEY as keyof S].get("setRefInStore")(ref.current);
   return store[USE_STORE_KEY as keyof S];
 }

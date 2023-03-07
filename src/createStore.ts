@@ -79,7 +79,7 @@ export function createStore<S extends State>(
   // 挂载引用缓存
   let refStateCache: Partial<S> | undefined;
   
-  // 处理store的监听订阅、ref、viewReset以及获取最新state数据的相关核心处理Map
+  // 处理store的监听订阅、ref数据引用关联、view初始化重置以及获取最新state数据的相关核心处理Map
   const storeCoreMap: StoreCoreMapType<S> = new Map();
   storeCoreMap.set("stateMap", stateMap);
   storeCoreMap.set("viewInitialReset", (linkStateFields: (keyof S)[]) => {

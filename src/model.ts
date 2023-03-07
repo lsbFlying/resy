@@ -71,7 +71,7 @@ export interface CustomEventListenerConstructor<S extends State> {
 
 /**
  * @description StoreCoreMap的数据值类型，作为createStore的核心Map接口类型
- * 具备获取内部state数据对象、重置数据、订阅监听等功能
+ * 具备处理store的监听订阅、重置数据、以及获取最新state数据等相关处理功能的核心Map
  */
 export interface StoreCoreMapValue<S extends State> {
   // store内部的stateMap数据对象

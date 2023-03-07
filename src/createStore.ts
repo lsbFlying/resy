@@ -105,6 +105,8 @@ export function createStore<S extends State>(
       Object.keys(refState).forEach(key => {
         stateMap.set(key, refState[key] as S[keyof S]);
       });
+    } else if (_DEV_) {
+      throw new Error("The refState parameter of refInStore is not an object!");
     }
   });
   storeCoreMap.set("eventType", Symbol("storeListenerSymbol"));

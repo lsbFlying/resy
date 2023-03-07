@@ -53,7 +53,6 @@ export function useConciseState<S extends State>(initialState?: S): ConciseStore
  */
 export function useStoreWithRef<S extends State>(store: S, refState: Partial<S>) {
   storeErrorHandle(store);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const ref = useRef(refState);
   store[STORE_CORE_MAP_KEY as keyof S].get("setRefInStore")(ref.current);
   return store[USE_STORE_KEY as keyof S];

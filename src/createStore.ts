@@ -76,7 +76,10 @@ export function createStore<S extends State>(
    */
   const stateMap: Map<keyof S, S[keyof S]> = new Map(Object.entries(state));
   
-  // 每一个resy生成的store具有的监听订阅处理，并且可以获取最新state数据
+  // 挂载引用缓存
+  let refStateCache: Partial<S> | undefined;
+  
+  // 处理store的监听订阅、ref、viewReset以及获取最新state数据的相关核心处理Map
   const storeCoreMap: StoreCoreMapType<S> = new Map();
   storeCoreMap.set("stateMap", stateMap);
   storeCoreMap.set("viewInitialReset", (linkStateFields: (keyof S)[]) => {
@@ -102,6 +105,8 @@ export function createStore<S extends State>(
   });
   storeCoreMap.set("setRefInStore", (refState: Partial<S>) => {
     if (Object.prototype.toString.call(refState) === "[object Object]") {
+      // 合并ref引用缓存保持更新
+      refStateCache = Object.assign({}, refStateCache, refState);
       Object.keys(refState).forEach(key => {
         stateMap.set(key, refState[key] as S[keyof S]);
       });
@@ -221,17 +226,19 @@ export function createStore<S extends State>(
    * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
    */
   async function taskPush(key: keyof S, val: S[keyof S]) {
-    (scheduler.get("add") as Scheduler<S>["add"])(
-      () => (
-        (
-          initialValueConnectStore(key).get(key) as StoreMapValue<S>
-        ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
-      )(val),
-      key,
-      val,
-      taskDataMapPrivate,
-      taskQueueMapPrivate,
-    );
+    if (!refStateCache?.hasOwnProperty(key)) {
+      (scheduler.get("add") as Scheduler<S>["add"])(
+        () => (
+          (
+            initialValueConnectStore(key).get(key) as StoreMapValue<S>
+          ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
+        )(val),
+        key,
+        val,
+        taskDataMapPrivate,
+        taskQueueMapPrivate,
+      );
+    }
   }
   
   // 批量异步更新函数
@@ -303,11 +310,13 @@ export function createStore<S extends State>(
     const prevState = new Map(stateMap);
     batchUpdate(() => {
       Object.keys(syncStateParams).forEach(key => {
-        (
+        if(!refStateCache?.hasOwnProperty(key)) {
           (
-            initialValueConnectStore(key).get(key) as StoreMapValue<S>
-          ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
-        )((syncStateParams as Partial<S> | S)[key]);
+            (
+              initialValueConnectStore(key).get(key) as StoreMapValue<S>
+            ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
+          )((syncStateParams as Partial<S> | S)[key]);
+        }
       });
     });
     batchDispatchListener(prevState, new Map(Object.entries(syncStateParams)));

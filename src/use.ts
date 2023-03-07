@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import type { State, ConciseStore } from "./model";
 import { USE_STORE_KEY, USE_CONCISE_STORE_KEY, STORE_CORE_MAP_KEY } from "./static";
 import { createStore } from "./createStore";
@@ -29,16 +29,32 @@ export function useStore<S extends State>(store: S): S {
  * 弥补了useState中无法读取属性数据的最新值的不足
  */
 export function useConciseState<S extends State>(initialState?: S): ConciseStore<S> {
+  const ref = useRef(initialState);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const store = useMemo(() => createStore<S>(initialState, { privatization: true }), []);
+  const store = useMemo(() => createStore<S>(ref.current, { privatization: true }), []);
   return store[USE_CONCISE_STORE_KEY as keyof S];
 }
 
 /**
- * 将某些数据引用到store全局储存容器上
+ * useStore的升级版，
+ * 它可以将某些数据引用到store全局储存容器上，
+ * 更多更主要地是为了将某些hook产生的值即不方便全局使用的数据值引用挂载到全局的store上方便使用
  * @description 比如可以将antd的useForm的form引用映射到store上，方便后续在别的地方通过store读取form
+ * eg:
+ * const { form } = useStoreWithRef(store, { form: useForm()[0] });
+ * next:
+ * ...some code start...
+ * const { form } = store;
+ * // 方便form的读取使用
+ * form.xxx
+ * ...some code end...
+ * 除此之外，也可以将某些不方便修改到全局的组件内部的数据引用挂载到全局的store上，
+ * 从而便于私有数据的全局化使用。
  */
-export function refInStore<S extends State>(store: S, refState: Partial<S>) {
+export function useStoreWithRef<S extends State>(store: S, refState: Partial<S>) {
   storeErrorHandle(store);
-  store[STORE_CORE_MAP_KEY as keyof S].get("setRefInStore")(refState);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const ref = useRef(refState);
+  store[STORE_CORE_MAP_KEY as keyof S].get("setRefInStore")(ref.current);
+  return store[USE_STORE_KEY as keyof S];
 }

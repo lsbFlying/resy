@@ -76,7 +76,7 @@ export function createStore<S extends State>(
    */
   const stateMap: Map<keyof S, S[keyof S]> = new Map(Object.entries(state));
   
-  // 挂载引用缓存
+  // 挂载引用缓存 todo 可能需要改成WeakRef弱引用来解决对于refData的initialReset处理问题
   let refDataCache: Partial<S> | undefined;
   
   // 处理store的监听订阅、ref数据引用关联、view初始化重置以及获取最新state数据的相关核心处理Map

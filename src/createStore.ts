@@ -238,6 +238,11 @@ export function createStore<S extends State>(
         taskDataMapPrivate,
         taskQueueMapPrivate,
       );
+    } else if (_DEV_ && refStateCache) {
+      console.error(
+        "The property of the current update data contains the ref reference attribute." +
+        " Please check for updates of the data."
+      );
     }
   }
   
@@ -316,6 +321,11 @@ export function createStore<S extends State>(
               initialValueConnectStore(key).get(key) as StoreMapValue<S>
             ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
           )((syncStateParams as Partial<S> | S)[key]);
+        } else if (_DEV_ && refStateCache) {
+          console.error(
+            "The property of the current update data contains the ref reference attribute." +
+            " Please check for updates of the data."
+          );
         }
       });
     });

@@ -1,7 +1,7 @@
 <div align="center">
 <img style="width: 470px" src="./resy-logo.svg" alt="resy">
-<h3 style="margin-top: 0">A simple react state manager</h3>
-<h4 style="margin-top: 8px">Support React Native、SSR、Mini Apps (such as taro, rax, remax etc)</h4>
+<h3>A simple react state manager</h3>
+<h4>Support React Native、SSR、Mini Apps (such as taro, rax, remax etc)</h4>
 
 [![GitHub license](https://img.shields.io/github/license/lsbFlying/resy?style=flat-square)](https://github.com/lsbFlying/resy/blob/master/LICENSE)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lsbFlying/resy/test.yml?branch=master&color=blue&style=flat-square)](https://github.com/lsbFlying/resy/actions/workflows/test.yml)
@@ -18,7 +18,6 @@
 
 🌟`v7.1.0`：<br/>
 1. Added a new api for useStoreWithRef.
-2. Optimized and improved the code.
 
 🌟`v7.0.0`：<br/>
 1. Adjusted the timing of initialization reset data, change unmountReset to initialReset,

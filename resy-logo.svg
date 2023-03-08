@@ -8,6 +8,8 @@
   viewBox="0 0 1596 678"
   enable-background="new 0 0 1596 678"
   xml:space="preserve"
+  width="830px"
+  height="353px"
 >
     <svg
       viewBox="0 0 1024 1024"
@@ -49,7 +51,7 @@
         </text>
         <text
           x="360"
-          y="950"
+          y="1050"
           font-size="200px"
           font-weight="bolder"
           textLength="3000"
@@ -63,7 +65,7 @@
           xmlns="http://www.w3.org/2000/svg"
           xmlns:xlink="http://www.w3.org/1999/xlink"
           x="0"
-          y="150"
+          y="-100px"
         >
             <path
               class="easy"

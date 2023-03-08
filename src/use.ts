@@ -69,6 +69,7 @@ export function useStoreWithRef<S extends State>(store: S, refData: Partial<S>):
         store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
       ).get("refInStore") as StoreCoreMapValue<S>["refInStore"]
     )(ref.current, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   ), []);
   
   (

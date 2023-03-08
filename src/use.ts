@@ -1,8 +1,8 @@
 import { useMemo, useRef } from "react";
-import type { State, ConciseStore } from "./model";
 import { USE_STORE_KEY, USE_CONCISE_STORE_KEY, STORE_CORE_MAP_KEY } from "./static";
 import { createStore } from "./createStore";
 import { storeErrorHandle } from "./utils";
+import type { State, ConciseStore, StoreCoreMapType, StoreCoreMapValue } from "./model";
 
 /**
  * 驱动组件更新
@@ -39,6 +39,8 @@ export function useConciseState<S extends State>(initialState?: S): ConciseStore
  * useStore的升级版，它可以完全兼容useStore
  * 它可以将某些数据引用到store全局储存容器上，
  * 更多更主要地是为了将某些hook产生的值即不方便全局使用的数据值引用挂载到全局的store上方便使用
+ * 即通过useStoreWithRef将refData引用挂载到全局store上一次即可，
+ * 然后通过useStore或者直接用"store."来读取refData中的数据即可方便使用
  * 正因为是引用，所以useStoreWithRef中的refData的数据是不能更新的
  * 比如下面的例子中
  * 不能store.form = "newFormStr"; 不能store.setState({ form: "newFormStr" });
@@ -55,11 +57,25 @@ export function useConciseState<S extends State>(initialState?: S): ConciseStore
  * ...some code end...
  * 除此之外，也可以将某些不方便修改到全局的组件内部的数据引用挂载到全局的store上，
  * 从而便于私有数据的全局化使用。
- * todo 对于refData的initialReset处理还有待调整
  */
 export function useStoreWithRef<S extends State>(store: S, refData: Partial<S>): S {
   storeErrorHandle(store);
   const ref = useRef(refData);
-  store[STORE_CORE_MAP_KEY as keyof S].get("setRefInStore")(ref.current);
+  
+  // 先执行重置
+  useMemo(() => (
+    (
+      (
+        store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
+      ).get("refInStore") as StoreCoreMapValue<S>["refInStore"]
+    )(ref.current, true)
+  ), []);
+  
+  (
+    (
+      store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
+    ).get("refInStore") as StoreCoreMapValue<S>["refInStore"]
+  )(ref.current);
+  
   return store[USE_STORE_KEY as keyof S];
 }

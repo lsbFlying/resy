@@ -76,7 +76,7 @@ export function createStore<S extends State>(
    */
   const stateMap: Map<keyof S, S[keyof S]> = new Map(Object.entries(state));
   
-  // 挂载引用缓存 todo 可能需要改成WeakRef弱引用来解决对于refData的initialReset处理问题
+  // 挂载引用缓存，没有使用Map是考虑到refInStore函数处理中使用来对象的合并，可能对象更方便一些
   let refDataCache: Partial<S> | undefined;
   
   // 处理store的监听订阅、ref数据引用关联、view初始化重置以及获取最新state数据的相关核心处理Map
@@ -103,13 +103,20 @@ export function createStore<S extends State>(
       }
     });
   });
-  storeCoreMap.set("setRefInStore", (refData: Partial<S>) => {
+  storeCoreMap.set("refInStore", (refData: Partial<S>, lookInitialReset?: boolean) => {
     if (Object.prototype.toString.call(refData) === "[object Object]") {
-      // 合并ref引用缓存保持更新
-      refDataCache = Object.assign({}, refDataCache, refData);
-      Object.keys(refData).forEach(key => {
-        stateMap.set(key, refData[key] as S[keyof S]);
-      });
+      if (!lookInitialReset) {
+        // 合并ref引用缓存保持更新
+        refDataCache = Object.assign({}, refDataCache, refData);
+        Object.keys(refData).forEach(key => {
+          stateMap.set(key, refData[key] as S[keyof S]);
+        });
+      } else if (initialReset) {
+        Object.keys(refData).forEach(key => {
+          stateMap.set(key, state[key]);
+          refDataCache && delete refDataCache[key];
+        });
+      }
     } else if (_DEV_) {
       throw new Error("The refData parameter of useStoreWithRef is not an object!");
     }

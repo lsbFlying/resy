@@ -247,9 +247,9 @@ export function createStore<S extends State>(
         taskQueueMapPrivate,
       );
     } else if (_DEV_ && refDataCache) {
-      console.error(
-        "The property of the current update data contains the ref reference attribute." +
-        " Please check for updates of the data."
+      throw new Error(
+        "The property of the current update data contains the refData reference attribute," +
+        " RefData is only a reference, so update is prohibited."
       );
     }
   }
@@ -330,9 +330,9 @@ export function createStore<S extends State>(
             ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
           )((syncStateParams as Partial<S> | S)[key]);
         } else if (_DEV_ && refDataCache) {
-          console.error(
-            "The property of the current update data contains the ref reference attribute." +
-            " Please check for updates of the data."
+          throw new Error(
+            "The property of the current update data contains the refData reference attribute," +
+            " RefData is only a reference, so update is prohibited."
           );
         }
       });

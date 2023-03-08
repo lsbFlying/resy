@@ -257,9 +257,11 @@ import { Form, Input } from "antd";
 function NameTemp() {
   /**
    * be careful: Because it is a reference, the data of refData in useStoreWithRef cannot be updated.
-   * That is, you cannot write "store.form = "newFormStr";", "store.setState({ form: "newFormStr" });",
+   * That is, you cannot write
+   * "store.form = "newFormStr";",
+   * "store.setState({ form: "newFormStr" });",
    * or "store.syncUpdate({ form: "newFormStr" })".
-   * These updates are invalid and will report an error on the browser console.
+   * These updates are invalid and will throw an error.
    */
   const { form } = useStore(store);
   

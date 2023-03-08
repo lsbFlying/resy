@@ -48,16 +48,20 @@ test("resy-simple", async () => {
     );
   };
   
-  // @ts-ignore 测试初始化入参报错
+  /** 测试初始化入参报错 start */
+  // @ts-ignore
   expect(() => createStore(0)).toThrowError();
-  // @ts-ignore 测试初始化入参报错
+  // @ts-ignore
+  expect(() => createStore(1)).toThrowError();
+  // @ts-ignore
   expect(() => createStore(null)).toThrowError();
-  // @ts-ignore 测试初始化入参报错
+  // @ts-ignore
   expect(() => createStore(false)).toThrowError();
-  // @ts-ignore 测试初始化入参报错
+  // @ts-ignore
   expect(() => createStore(NaN)).toThrowError();
-  // @ts-ignore 测试初始化入参报错
+  // @ts-ignore
   expect(() => createStore("")).toThrowError();
+  /** 测试初始化入参报错 end */
   
   const { getByText } = render(<App/>);
   

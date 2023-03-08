@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { expect, test } from "vitest";
 import { createStore, useStoreWithRef, useStore } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
+import {useConciseState} from "../dist/resy";
 
 type State = {
   count: number;
@@ -47,7 +48,76 @@ test("resy-useStoreWithRef", async () => {
     getByText("count:1");
   });
   
-  // expect(() => store.refName = "newRefName").toThrowError();
+  /** 测试store类型报错 start */
+  // @ts-ignore
+  expect(() => useStore(123)).toThrowError();
+  // @ts-ignore
+  expect(() => useStore("123")).toThrowError();
+  // @ts-ignore
+  expect(() => useStore({})).toThrowError();
+  // @ts-ignore
+  expect(() => useStore(() => {})).toThrowError();
+  // @ts-ignore
+  expect(() => useStore([])).toThrowError();
+  // @ts-ignore
+  expect(() => useStore(null)).toThrowError();
+  // @ts-ignore
+  expect(() => useStore(undefined)).toThrowError();
+  // @ts-ignore
+  expect(() => useStore(new Symbol())).toThrowError();
+  // @ts-ignore
+  expect(() => useStore(NaN)).toThrowError();
+  // @ts-ignore
+  expect(() => useStore(true)).toThrowError();
+  /** 测试store类型报错 end */
+  
+  /** 测试store类型报错 start */
+  // @ts-ignore
+  expect(() => useStoreWithRef(123)).toThrowError();
+  // @ts-ignore
+  expect(() => useStoreWithRef("123")).toThrowError();
+  // @ts-ignore
+  expect(() => useStoreWithRef({})).toThrowError();
+  // @ts-ignore
+  expect(() => useStoreWithRef(() => {})).toThrowError();
+  // @ts-ignore
+  expect(() => useStoreWithRef([])).toThrowError();
+  // @ts-ignore
+  expect(() => useStoreWithRef(null)).toThrowError();
+  // @ts-ignore
+  expect(() => useStoreWithRef(undefined)).toThrowError();
+  // @ts-ignore
+  expect(() => useStoreWithRef(new Symbol())).toThrowError();
+  // @ts-ignore
+  expect(() => useStoreWithRef(NaN)).toThrowError();
+  // @ts-ignore
+  expect(() => useStoreWithRef(true)).toThrowError();
+  /** 测试store类型报错 end */
+  
+  /** 测试store类型报错 start */
+  // @ts-ignore
+  expect(() => useConciseState(123)).toThrowError();
+  // @ts-ignore
+  expect(() => useConciseState("123")).toThrowError();
+  // @ts-ignore
+  expect(() => useConciseState({})).toThrowError();
+  // @ts-ignore
+  expect(() => useConciseState(() => {})).toThrowError();
+  // @ts-ignore
+  expect(() => useConciseState([])).toThrowError();
+  // @ts-ignore
+  expect(() => useConciseState(null)).toThrowError();
+  // @ts-ignore
+  expect(() => useConciseState(undefined)).toThrowError();
+  // @ts-ignore
+  expect(() => useConciseState(new Symbol())).toThrowError();
+  // @ts-ignore
+  expect(() => useConciseState(NaN)).toThrowError();
+  // @ts-ignore
+  expect(() => useConciseState(true)).toThrowError();
+  /** 测试store类型报错 end */
+  
+  // expect(() => store.refName = "newRefName").then().toThrowError();
   // expect(() => store.setState({ refName: "newRefName" })).toThrowError();
-  expect(() => (() => store.syncUpdate({ refName: "newRefName" }))()).toThrowError();
+  expect(() => store.syncUpdate({ refName: "newRefName" })).toThrowError();
 });

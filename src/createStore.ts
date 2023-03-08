@@ -234,7 +234,7 @@ export function createStore<S extends State>(
    * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
    */
   async function taskPush(key: keyof S, val: S[keyof S]) {
-    if (!refDataCache || Object.prototype.hasOwnProperty.call(refDataCache, key)) {
+    if (!refDataCache || !Object.prototype.hasOwnProperty.call(refDataCache, key)) {
       (scheduler.get("add") as Scheduler<S>["add"])(
         () => (
           (
@@ -323,7 +323,7 @@ export function createStore<S extends State>(
     const prevState = new Map(stateMap);
     batchUpdate(() => {
       Object.keys(syncStateParams).forEach(key => {
-        if(!refDataCache || Object.prototype.hasOwnProperty.call(refDataCache, key)) {
+        if(!refDataCache || !Object.prototype.hasOwnProperty.call(refDataCache, key)) {
           (
             (
               initialValueConnectStore(key).get(key) as StoreMapValue<S>

@@ -6,7 +6,6 @@
   x="0px"
   y="0px"
   width="1596px"
-  height="678px"
   viewBox="0 0 1596 678"
   enable-background="new 0 0 1596 678"
   xml:space="preserve"
@@ -17,7 +16,7 @@
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
       width="1596px"
-      height="678"
+      height="240px"
       x="0"
       y="0"
     >
@@ -39,7 +38,7 @@
     >
         <text
           class="flagIconText"
-          x="1300"
+          x="1250"
           y="600"
           font-size="600px"
           font-weight="bolder"
@@ -49,7 +48,7 @@
             resy
         </text>
         <text
-          x="400"
+          x="360"
           y="950"
           font-size="200px"
           font-weight="bolder"

@@ -21,7 +21,14 @@ test("resy-useStoreWithRef", async () => {
     }, []);
     
     return (
-      <p>ref-com-refName:{refName}</p>
+      <>
+        <p>ref-com-refName:{refName}</p>
+        <button onClick={() => {
+          store.syncUpdate({ refName: "newRefName" });
+        }}>ref-btn1</button>
+        <button>ref-btn2</button>
+        <button>ref-btn3</button>
+      </>
     );
   }
   
@@ -41,11 +48,6 @@ test("resy-useStoreWithRef", async () => {
   };
   
   const { getByText } = render(<App/>);
-  
-  fireEvent.click(getByText("btn"));
-  await waitFor(() => {
-    getByText("count:1");
-  });
   
   /** 测试store类型报错 start */
   // @ts-ignore
@@ -116,7 +118,13 @@ test("resy-useStoreWithRef", async () => {
   expect(() => useConciseState(true)).toThrowError();
   /** 测试store类型报错 end */
   
-  // expect(() => store.refName = "newRefName").then().toThrowError();
+  fireEvent.click(getByText("btn"));
+  await waitFor(() => {
+    getByText("count:1");
+  });
+  
+  // todo I haven't found a good test method to test internal errors. To be optimized
+  // await expect(() => { return Promise.resolve().then(() => store.refName = "newRefName"); }).rejects.toHaveErrorMessage();
   // expect(() => store.setState({ refName: "newRefName" })).toThrowError();
   expect(() => store.syncUpdate({ refName: "newRefName" })).toThrowError();
 });

@@ -27,7 +27,8 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
 /**
  * createStore
  * created by liushanbao
- * @description 初始化状态编写的时候最好加上一个自定义的准确的泛型类型，
+ * @description 创建一个可全局使用的状态存储容器
+ * 初始化状态编写的时候最好加上一个自定义的准确的泛型类型，
  * 虽然resy会有类型自动推断，但是对于数据状态类型可能变化的情况下还是不够准确的
  * @author liushanbao
  * @date 2022-05-05

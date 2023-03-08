@@ -21,14 +21,7 @@ test("resy-useStoreWithRef", async () => {
     }, []);
     
     return (
-      <>
-        <p>ref-com-refName:{refName}</p>
-        <button onClick={() => {
-          store.syncUpdate({ refName: "newRefName" });
-        }}>ref-btn1</button>
-        <button>ref-btn2</button>
-        <button>ref-btn3</button>
-      </>
+      <p>ref-com-refName:{refName}</p>
     );
   }
   
@@ -124,7 +117,15 @@ test("resy-useStoreWithRef", async () => {
   });
   
   // todo I haven't found a good test method to test internal errors. To be optimized
-  // await expect(() => { return Promise.resolve().then(() => store.refName = "newRefName"); }).rejects.toHaveErrorMessage();
+  // await expect(() => {
+  //   return new Promise(function (_, reject) {
+  //     try {
+  //       store.refName = "newRefName";
+  //     } catch (e) {
+  //       return reject(e);
+  //     }
+  //   });
+  // }).rejects.toThrowError();
   // expect(() => store.setState({ refName: "newRefName" })).toThrowError();
   expect(() => store.syncUpdate({ refName: "newRefName" })).toThrowError();
 });

@@ -1,8 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { expect, test } from "vitest";
-import { createStore, useStoreWithRef, useStore } from "../src";
+import { createStore, useConciseState, useStoreWithRef, useStore } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
-import {useConciseState} from "../dist/resy";
 
 type State = {
   count: number;

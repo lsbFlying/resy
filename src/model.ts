@@ -271,6 +271,7 @@ export type CreateStoreOptions = {
    */
   initialReset?: boolean;
   /**
+   * be careful: 内部属性，请勿使用！！！
    * @description 该参数主要是为了使得createStore创建的store成为局部(非全局)数据状态容器
    * 一般而言如果我们使用createStore的时候是不需要设置该参数的，如果特殊需要局部数据状态容器
    * 可以使用useConciseState来获取局部数据状态，而useConciseState就是使用改参数进行实现的
@@ -279,14 +280,14 @@ export type CreateStoreOptions = {
    * function AppCom() {
    *   const {
    *      ..., store, setState, syncUpdate, subscribe,
-   *   } = useMemo(() => createStore({...}, { privatization: true }), []);
+   *   } = useMemo(() => createStore({...}, { __privatization__: true }), []);
    *
    *   return (
    *     <>{...}</>
    *   );
    * }
    */
-  privatization?: boolean;
+  __privatization__?: boolean;
 };
 
 // view中isDeepEqual函数的参数类型，props与state的类型合集

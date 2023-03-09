@@ -56,7 +56,7 @@ export function createStore<S extends State>(
     throw new Error("The initialization parameter result of createStore needs to be an object!");
   }
   
-  const { initialReset = true, privatization } = options || {};
+  const { initialReset = true, __privatization__ } = options || {};
   
   /**
    * @description 更新的任务队列（私有化）、更新的任务数据（私有化）
@@ -68,8 +68,8 @@ export function createStore<S extends State>(
    * 这就需要私有的 "更新的任务队列（私有化）" 与 "更新的任务数据（私有化）"
    * 来解决每一个私有状态容器的有效更新的任务或者更新数据Map中的key不会因为相同而冲突的问题
    */
-  const taskQueueMapPrivate = privatization ? new Map<keyof S, Callback>() : undefined;
-  const taskDataMapPrivate = privatization ? new Map<keyof S, S[keyof S]>() : undefined;
+  const taskQueueMapPrivate = __privatization__ ? new Map<keyof S, Callback>() : undefined;
+  const taskDataMapPrivate = __privatization__ ? new Map<keyof S, S[keyof S]>() : undefined;
   
   /**
    * @description 不改变传参state，同时resy使用Map与Set提升性能

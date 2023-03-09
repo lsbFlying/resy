@@ -186,12 +186,6 @@ const store = createStore<StateType>(
      * For example, it will be set to false when it encounters global data like login information, theme, etc.
      */
     initialReset: true,
-    /**
-     * @description It is generally unnecessary to set it,
-     * It is a configuration item used internally in the code,
-     * and will be introduced in detail in combination with "useConciseState"
-     */
-    privatization: false,
   },
 );
 ```
@@ -415,26 +409,13 @@ const initialState = {
 };
 
 function App() {
-  // const privateStore = useMemo(() => createStore({ count: 0, text: "QWE }, { privatization: true }), []);
-  // const { count, text, setState } = useStore(privateStore);
-  /**
-   * The above usage is equivalent to the native useState of react in effect.
-   * const [count, setCount] = useState(0);
-   * const [text, setText] = useState("QWE");
-   *
-   * The useConciseState hook is the implementation of the above code.
-   * It can be seen that privatization is mainly for useConciseState to simplify
-   * the configuration of useState.
-   * 
-   * 🌟note: At the same time,
-   * store attributes can be parsed in useConciseState,
-   * and the latest data values of each data can be read through store,
-   * which makes up for the deficiency that the latest values of attribute data can not be read in useState.
-   */
   const {
     count, text, setState, store,
     // syncUpdate, subscribe,
   } = useConciseState(initialState);
+  // useConciseState is equivalent to the following usage
+  // const [count, setCount] = useState(0);
+  // const [text, setText] = useState("QWE");
   
   console.log(store.count);
   

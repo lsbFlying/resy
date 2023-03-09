@@ -31,7 +31,7 @@ export function useStore<S extends State>(store: S): S {
 export function useConciseState<S extends State>(initialState?: S): ConciseStore<S> {
   const ref = useRef(initialState);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const store = useMemo(() => createStore<S>(ref.current, { privatization: true }), []);
+  const store = useMemo(() => createStore<S>(ref.current, { __privatization__: true }), []);
   return store[USE_CONCISE_STORE_KEY as keyof S];
 }
 

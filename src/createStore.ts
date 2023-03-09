@@ -232,6 +232,9 @@ export function createStore<S extends State>(
    * @description 采用微任务的方式达到批量更新的效果，
    * 以达到与reactV18一样的批处理更新效果，
    * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
+   *
+   * be careful：因为考虑到不知道什么情况的业务逻辑需要函数作为数据属性来进行更新
+   * 所以这里没有阻止函数作为数据属性的更新
    */
   async function taskPush(key: keyof S, val: S[keyof S]) {
     if (!refDataCache || !Object.prototype.hasOwnProperty.call(refDataCache, key)) {

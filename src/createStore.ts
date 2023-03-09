@@ -501,9 +501,6 @@ export function createStore<S extends State>(
   
   const store = new Proxy(state, {
     get: (target, key: keyof S, receiver: any) => {
-      if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
-      }
       return externalMap.get(key as keyof ExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, store, target, key);
     },

@@ -107,6 +107,7 @@ At the same time, the code tends to be stable and strengthened.<br/>
 npm i resy
 
 # yarn add resy
+# pnpm add resy
 ```
 
 ### Overview

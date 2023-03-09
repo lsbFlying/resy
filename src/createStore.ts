@@ -468,9 +468,6 @@ export function createStore<S extends State>(
    */
   const conciseExtraStoreProxy = new Proxy(state, {
     get: (target, key: keyof S, receiver: any) => {
-      if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
-      }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, conciseExtraStoreProxy, target, key);
     },

@@ -176,6 +176,9 @@ const store = createStore<StateType>(
       // or:
       // this.count++;
       // Similarly, it`s equivalent to store.count++;
+      // The sincere purpose of compatibility and support for this pointers is to correctly point to the initialization object "initialState"
+      // and achieve intuitive this pointing.
+      // So this doesn't have setState, syncUpdate, and subscribe functions.
     },
   },
   {

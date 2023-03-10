@@ -175,15 +175,15 @@ const store = createStore<StateType>(
       store.count++;
       // or:
       // this.count++;
-      // Similarly, this can be read from the settings,
-      // and is updated asynchronously.
+      // Similarly, it`s equivalent to store.count++;
     },
   },
-  // Generally, the options configuration item does not need to be configured
   {
     /**
-     * This parameter is mainly used to automatically reset the data during the initialization phase of the mount of a certain module.
-     * For example, it will be set to false when it encounters global data like login information, theme, etc.
+     * This parameter is mainly used to automatically reset the data
+     * during the initialization phase of the mount of a certain module.
+     * For example, it will be set to false
+     * when it encounters global data like login information, theme, etc.
      */
     initialReset: true,
   },

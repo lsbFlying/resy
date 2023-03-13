@@ -412,6 +412,9 @@ export function createStore<S extends State>(
    * 会导致proxy中的receiver对象指向的this上下文对象变化
    * 使得 get / set 所得到的数据产生非期望的数据值
    * set不会影响数据，因为set之后会从proxy的get走，所以只要控制好get即可保证数据的正确性
+   * @description be careful：为了避免原型链继承导致的需要Reflect.get
+   * 从继承者对象自身获取setState等同名重写函数影响createStore本身的逻辑
+   * 所以这里this只代理数据层，不包含函数层（setState、syncUpdate、subscribe）
    */
   function proxyReceiverThisHandle(proxyReceiver: any, proxyStore: any, target: S, key: keyof S) {
     return proxyStore === proxyReceiver

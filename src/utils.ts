@@ -39,3 +39,10 @@ export function storeErrorHandle<S extends State>(store: S) {
     throw new Error("The store parameter is not created by resty's createStore！");
   }
 }
+
+// 不是纯对象参数报错处理
+export function objectRequiredErrorHandle<S extends State>(obj: S, errMsg?: string) {
+  if (_DEV_ && Object.prototype.toString.call(obj) !== "[object Object]") {
+    throw new Error(errMsg || "object required!");
+  }
+}

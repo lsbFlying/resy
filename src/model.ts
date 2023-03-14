@@ -19,7 +19,7 @@ export type State = Record<string, any>;
 export type StoreMapValueType<S extends State> = {
   subscribe: (onStoreChange: Callback) => Callback;
   getSnapshot: () => S[keyof S];
-  setSnapshot: (val: S[keyof S], callback?: (nextState: S) => void) => void;
+  setSnapshot: (val: S[keyof S]) => void;
   useSnapshot: () => S[keyof S];
   // 存储onStoreChange的set容器，共view内部重置逻辑使用
   storeChangeSet: Set<Callback>;
@@ -118,9 +118,6 @@ export type ConciseExternalMapType<S extends State> = Map<
   ConciseExternalMapValue<S>[keyof ConciseExternalMapValue<S>]
 >;
 
-// setState的函数更新处理
-export type StateFunc = Callback;
-
 /**
  * @description setState —————— 更新数据的函数，主要是为了批量更新
  *
@@ -166,10 +163,13 @@ export type StateFunc = Callback;
  */
 export type SetState<S extends State> = Readonly<{
   setState(
-    state: Partial<S> | S | StateFunc,
+    state: Partial<S> | StateFunc<S>,
     callback?: (nextState: S) => void,
   ): void;
 }>;
+
+// setState的函数更新处理
+export type StateFunc<S extends State> = () => Partial<S>;
 
 /**
  * @description 非异步更新，强制同步更新

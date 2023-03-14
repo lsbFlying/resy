@@ -26,17 +26,15 @@ test("resy-set-and-sub4", async () => {
           store.text2 = "iop";
         }}>btn-1</button>
         <button onClick={() => {
-          store.setState(() => {
-            store.text = "bnm";
-          });
+          store.setState(() => ({
+            text: "bnm",
+          }));
         }}>btn-2</button>
         <button onClick={() => {
           store.text2 = "fgh";
-          store.setState(() => {
-            store.setState({
-              text: "dfg",
-            });
-          });
+          store.setState(() => ({
+            text: "dfg",
+          }));
         }}>btn-3</button>
         <button onClick={() => {
           store.setState({
@@ -59,10 +57,10 @@ test("resy-set-and-sub4", async () => {
           });
         }}>btn-6</button>
         <button onClick={() => {
-          store.setState(() => {
-            store.count = 234;
-            store.text2 = "yuiop";
-          }, () => {
+          store.setState(() => ({
+            count: 234,
+            text2: "yuiop",
+          }), () => {
             store.setState({
               text: "Hello",
             });
@@ -81,10 +79,10 @@ test("resy-set-and-sub4", async () => {
           });
         }}>btn-8</button>
         <button onClick={() => {
-          store.setState(() => {
-            store.count = store.count + 1;
-            store.text2 = "阿克苏结合地方";
-          }, () => {
+          store.setState(() => ({
+            count: store.count + 1,
+            text2: "阿克苏结合地方",
+          }), () => {
             setTimeout(() => {
               store.setState({
                 text: "ASD-Hello",
@@ -94,12 +92,10 @@ test("resy-set-and-sub4", async () => {
           });
         }}>btn-9</button>
         <button onClick={() => {
-          store.setState(() => {
-            setTimeout(() => {
-              store.count = store.count + 1;
-              store.text2 = "离开是大概率事件";
-            }, 0);
-          }, () => {
+          store.setState(() => ({
+            count: store.count + 1,
+            text2: "离开是大概率事件",
+          }), () => {
             store.setState({
               text: "哦器物俄欧哦啊就是来打卡的数据连接",
             });
@@ -107,9 +103,9 @@ test("resy-set-and-sub4", async () => {
           });
         }}>btn-10</button>
         <button onClick={() => {
-          store.setState(() => {
-            store.count++;
-          }, () => {
+          store.setState(() => ({
+            count: count + 1,
+          }), () => {
             store.text2 = "科瑞围殴";
           });
         }}>btn-11</button>

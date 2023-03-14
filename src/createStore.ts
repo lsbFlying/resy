@@ -9,13 +9,13 @@ import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
 import { batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_ } from "./static";
+import { mapToObject, objectRequiredErrorHandle } from "./utils";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe,
   Scheduler, CustomEventListener, Listener, CreateStoreOptions, Store,
   ConciseExternalMapType, ConciseExternalMapValue, AnyFn, EventsType,
 } from "./model";
-import { mapToObject } from "./utils";
 
 /**
  * 从use-sync-external-store包的导入方式到下面的引用方式
@@ -52,9 +52,7 @@ export function createStore<S extends State>(
   // 所以在这里的Object判断中只对undefined特殊处理
   const state = initialState === undefined ? ({} as S) : initialState;
   
-  if (_DEV_ && Object.prototype.toString.call(state) !== "[object Object]") {
-    throw new Error("The initialization parameter result of createStore needs to be an object!");
-  }
+  objectRequiredErrorHandle(state, "The initialization parameter result of createStore needs to be an object!");
   
   const { initialReset = true, __privatization__ } = options || {};
   
@@ -173,7 +171,7 @@ export function createStore<S extends State>(
     
     storeMapValue.set("getSnapshot", () => stateMap.get(key));
     
-    storeMapValue.set("setSnapshot", (val: S[keyof S], callback?: (nextState: S) => void) => {
+    storeMapValue.set("setSnapshot", (val: S[keyof S]) => {
       /**
        * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
        * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
@@ -184,7 +182,6 @@ export function createStore<S extends State>(
         // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
         storeChangeSet.forEach(storeChange => storeChange());
       }
-      callback?.(mapToObject(stateMap));
     });
     
     storeMapValue.set("useSnapshot", () => useSyncExternalStore(
@@ -233,14 +230,14 @@ export function createStore<S extends State>(
    * be careful：因为考虑到不知道什么情况的业务逻辑需要函数作为数据属性来进行更新
    * 所以这里没有阻止函数作为数据属性的更新
    */
-  function taskPush(key: keyof S, val: S[keyof S], callback?: (nextState: S) => void) {
+  function taskPush(key: keyof S, val: S[keyof S]) {
     if (!refDataCache || !Object.prototype.hasOwnProperty.call(refDataCache, key)) {
       (scheduler.get("add") as Scheduler<S>["add"])(
         () => (
           (
             initialValueConnectStore(key).get(key) as StoreMapValue<S>
           ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
-        )(val, callback),
+        )(val),
         key,
         val,
         taskDataMapPrivate,
@@ -251,43 +248,6 @@ export function createStore<S extends State>(
         "The property of the current update data contains the refData reference attribute," +
         " RefData is only a reference, so update is prohibited."
       );
-    }
-  }
-  
-  // 批量更新函数任务入栈，主要是为了更新任务的入栈
-  function updater(stateParams: Partial<S> | S | StateFunc = {}, callback?: (nextState: S) => void) {
-    if (typeof stateParams !== "function") {
-      // 对象方式更新直接走单次直接更新的添加入栈，后续统一批次合并更新
-      Object.keys(stateParams).forEach(key => {
-        taskPush(key, (stateParams as Partial<S> | S)[key], callback);
-      });
-    } else {
-      /**
-       * @description
-       * 1、如果stateParams是函数的情况并且在函数中使用了直接更新的方式更新数据
-       * 那么这里需要先调用stateParams函数，产生一个直接更新的新一轮的批次更新
-       * 然后再直接检查产生的直接更新中这一轮的批次中的最新任务数据与任务队列，然后进行冲刷与更新
-       *
-       * 2、如果stateParams函数中不是使用直接更新的方式，
-       * 而是又使用了setState，那么会走到else分支仍然批量更新
-       * 因为如果是函数入参里面更新肯定通过scheduler调度统一共用到单次直接更新的逻辑，
-       * 不管它当前更新层是否使用，它最终总归会使用到单次直接更新的批量合并这一步
-       *
-       * 3、并且这种函数入参的更新具有更高效完善的合并优势，
-       * "即函数入参内部的更新触发的订阅函数内的更新会统一成一个批次更新"
-       * 它是凭借这种方式的 "执行时效" 并结合unstable_batchedUpdates内部的批处理实现
-       * "执行时效" 在于触发的订阅函数内的更新会随着第一次setState函数更新的then而冲刷更新掉
-       * 而这个冲刷更新与前一个函数入参内的更新的时间间隔仅有4ms以内左右
-       * 而之所以这样前后冲刷的间隔只有4ms以内左右，
-       * 是因为它相对于常规而言少经历了订阅函数内部更新的一个promise函数的执行
-       * 而promise函数在底层实现中还是较为复杂的，需要的代码时耗也有几毫秒
-       * 刚好常规而言的订阅联动更新就在这几毫秒的差距中就实现了批次处理的分水岭
-       * 而4ms左右这样的一个时间间隔
-       * 在react中就会被unstable_batchedUpdates或者react内部的调度机制处理成统一批次的更新
-       * be careful：当然这里的特性是在react-V18中才有的，因为react-V18的unstable_batchedUpdates做了优化
-       * 如果是react-V18以下的版本，则还是分两个批次渲染更新。
-       */
-      (stateParams as StateFunc)();
     }
   }
   
@@ -344,27 +304,58 @@ export function createStore<S extends State>(
     }
   }
   
-  /**
-   * @description setState批量更新函数
-   * 为了解决"如果在同一个事件循环的批次之中setState批量更新与直接更新的方式混用了"这样的场景
-   * 决定将setState的更新与直接更新的方式共用一个scheduler调用，这样可以从根本上解决"混用合并"的问题
-   * 也不仅仅是混用的场景，还包含setState连续多次调用的场景，至于这种场景的出现有些其实是合理的
-   * 比如需要条件更新:
-   * if (condition) {
-   *   setState(???);
-   * }
-   * setState(???);
-   * 类似这种场景；我们当然可以使用一个对象容器然后再一次性更新对象容器，
-   * 但有时候我就不想多此一步操作就想这样简单的写法，所以自身多次调用的场景合并也是很有必要的
-   */
-  function setState(stateParams: Partial<S> | S | StateFunc = {}, callback?: (nextState: S) => void) {
-    updater(stateParams, callback);
+  // 批量更新函数入栈
+  function updater(stateParams: Partial<S> | StateFunc<S> = {}) {
+    if (typeof stateParams !== "function") {
+      // 对象方式更新直接走单次直接更新的添加入栈，后续统一批次合并更新
+      Object.keys(stateParams).forEach(key => {
+        taskPush(key, (stateParams as Partial<S> | S)[key]);
+      });
+    } else {
+      /**
+       * @description
+       * 1、如果stateParams是函数的情况并且在函数中使用了直接更新的方式更新数据
+       * 那么这里需要先调用stateParams函数，产生一个直接更新的新一轮的批次更新
+       * 然后再直接检查产生的直接更新中这一轮的批次中的最新任务数据与任务队列，然后进行冲刷与更新
+       *
+       * 2、如果stateParams函数中不是使用直接更新的方式，
+       * 而是又使用了setState，那么会走到else分支仍然批量更新
+       * 因为如果是函数入参里面更新肯定通过scheduler调度统一共用到单次直接更新的逻辑，
+       * 不管它当前更新层是否使用，它最终总归会使用到单次直接更新的批量合并这一步
+       *
+       * 3、并且这种函数入参的更新具有更高效完善的合并优势，
+       * "即函数入参内部的更新触发的订阅函数内的更新会统一成一个批次更新"
+       * 它是凭借这种方式的 "执行时效" 并结合unstable_batchedUpdates内部的批处理实现
+       * "执行时效" 在于触发的订阅函数内的更新会随着第一次setState函数更新的then而冲刷更新掉
+       * 而这个冲刷更新与前一个函数入参内的更新的时间间隔仅有4ms以内左右
+       * 而之所以这样前后冲刷的间隔只有4ms以内左右，
+       * 是因为它相对于常规而言少经历了订阅函数内部更新的一个promise函数的执行
+       * 而promise函数在底层实现中还是较为复杂的，需要的代码时耗也有几毫秒
+       * 刚好常规而言的订阅联动更新就在这几毫秒的差距中就实现了批次处理的分水岭
+       * 而4ms左右这样的一个时间间隔
+       * 在react中就会被unstable_batchedUpdates或者react内部的调度机制处理成统一批次的更新
+       * be careful：当然这里的特性是在react-V18中才有的，因为react-V18的unstable_batchedUpdates做了优化
+       * 如果是react-V18以下的版本，则还是分两个批次渲染更新。
+       */
+      const stateParamsTemp = (stateParams as StateFunc<S>)();
+      Object.keys(stateParamsTemp).forEach(key => {
+        taskPush(key, (stateParamsTemp as S)[key]);
+      });
+    }
+  }
+  
+  // 批量更新函数
+  function setState(stateParams: Partial<S> | StateFunc<S> = {}, callback?: (nextState: S) => void) {
+    updater(stateParams);
     if (!scheduler.get("isOn")) {
       scheduler.set("isOn", Promise.resolve().then(() => {
         scheduler.set("isOn", undefined);
         finallyBatchHandle();
       }));
     }
+    callback && Promise.resolve().then(() => {
+      callback(Object.assign({}, mapToObject(stateMap), stateParams));
+    });
   }
   
   // 订阅函数
@@ -403,21 +394,20 @@ export function createStore<S extends State>(
   }
   
   // 单个属性数据更新
-  const singlePropUpdate = (_: S, key: keyof S, val: S[keyof S]) => {
+  function singlePropUpdate(_: S, key: keyof S, val: S[keyof S]) {
     taskPush(key, val);
     if (!scheduler.get("isOn")) {
+      /**
+       * @description 采用微任务结合开关标志控制的方式达到批量更新的效果，
+       * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
+       */
       scheduler.set("isOn", Promise.resolve().then(() => {
         scheduler.set("isOn", undefined);
-        /**
-         * @description 采用微任务的方式达到批量更新的效果，
-         * 以达到与reactV18一样的批处理更新效果，
-         * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
-         */
         finallyBatchHandle();
       }));
     }
     return true;
-  };
+  }
   
   /**
    * 防止有对象继承了createStore生成的代理对象，
@@ -437,7 +427,7 @@ export function createStore<S extends State>(
   
   // 代理函数内部的this指向对象的proxy代理对象
   const funcInnerThisProxyStore = new Proxy(state, {
-    get: (target: S, key: keyof S, receiver: any) => {
+    get(target: S, key: keyof S, receiver: any) {
       /**
        * 这里不用担心如果再次代理到函数怎么办，因为这里再次代理到函数肯定是上次bind了funcInnerThisProxyStore才走到这里的
        * 而bind函数的内部this指向的函数内部的this指向都会是bind的this对象，所以刚好形成良性this上下文循环
@@ -452,7 +442,7 @@ export function createStore<S extends State>(
   
   // 给useStore的驱动更新代理
   const storeProxy = new Proxy(storeMap, {
-    get: (_, key: keyof S) => {
+    get(_, key: keyof S) {
       if (typeof stateMap.get(key) === "function") {
         return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
       }
@@ -483,7 +473,7 @@ export function createStore<S extends State>(
    * 而使用这个额外的store来读取数据可以具有追溯性得到最新的数据状态
    */
   const conciseExtraStoreProxy = new Proxy(state, {
-    get: (target, key: keyof S, receiver: any) => {
+    get(target, key: keyof S, receiver: any) {
       if (typeof stateMap.get(key) === "function") {
         return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
       }
@@ -497,7 +487,7 @@ export function createStore<S extends State>(
   
   // 给useConciseState的驱动更新代理，与useStore分离开来，避免useStore中解构读取store产生冗余
   const conciseStoreProxy = new Proxy(storeMap, {
-    get: (_, key: keyof S) => {
+    get(_, key: keyof S) {
       if (typeof stateMap.get(key) === "function") {
         return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
       }
@@ -516,7 +506,7 @@ export function createStore<S extends State>(
   externalMap.set(USE_CONCISE_STORE_KEY, conciseStoreProxy);
   
   const store = new Proxy(state, {
-    get: (target, key: keyof S, receiver: any) => {
+    get(target, key: keyof S, receiver: any) {
       if (typeof stateMap.get(key) === "function") {
         return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
       }

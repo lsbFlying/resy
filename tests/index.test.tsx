@@ -119,21 +119,16 @@ test("resy-basic", async () => {
           store.sex = undefined;
         }}>btn6</button>
         <button onClick={() => {
-          store.setState(() => {
-            const updateArr = ["count", "text", "testObj", "testArr"];
-            updateArr.forEach(key => {
+          const updateArr = ["count", "text", "testObj", "testArr"];
+          updateArr.forEach(key => {
+            // @ts-ignore
+            store[key] = typeof store[key] === "number"
+              ? 0
               // @ts-ignore
-              store[key] = typeof store[key] === "number"
-                ? 0
+              : typeof store[key] === "string"
+                ? "qweasdzxc"
                 // @ts-ignore
-                : typeof store[key] === "string"
-                  ? "qweasdzxc"
-                  // @ts-ignore
-                  : typeof store[key] === "boolean"
-                    ? false
-                    // @ts-ignore
-                    : Object.prototype.toString.call(store[key]) === "[object Array]" ? [] : {};
-            });
+                : Object.prototype.toString.call(store[key]) === "[object Array]" ? [] : {};
           });
         }}>btn7</button>
         <button onClick={() => {
@@ -199,41 +194,25 @@ test("resy-basic", async () => {
   await waitFor(() => {
     getByText("batch-forEach");
     getByText("testObj-age:12");
-    /**
-     * 按钮7更新后触发的订阅subscribe的逻辑更新来testObj，同时由于resy的批次更新调度的处理
-     * 它将store.testObj = { age: 12 }与按钮7的setState更新作为一个批次处理了
-     * 这里按钮7特殊一些：因为它是在setState的函数入参中再更新的，这种函数入参的更新会让setState的更新调度批次统一化
-     * 因为它内部会让这个函数直接执行，使得统一调度上的任务队列有更新，
-     * 所以这里会变成一次渲染更新，如果写成A、B的方式：
-     * A: store.text = "qweasdzxc";
-     * B: store.setState({
-     *   text: "qweasdzxc",
-     * });
-     * 则会变成两个更新渲染，按钮8、按钮9就是这样产生两次渲染的
-     * // 或者按钮7直接写成下面就达到了一次更新批处理的效果
-     * store.setState(() => {
-     *   store.text = "qweasdzxc";
-     * });
-     * be careful：详细原因参见createStore文件中的updater函数的注释3
-     */
-    console.log("btn7", index, store.testObj); // btn7, 7
+    console.log("btn7", index, store.testObj); // btn7, 8
   });
-  console.log("btn7-btn8", index);
+  console.log("btn7-btn8", index);  // btn7-btn8 8
+  
   fireEvent.click(getByText("btn8"));
   await waitFor(() => {
     getByText("999");
-    console.log("btn8", index); // btn8, 9
+    console.log("btn8", index); // btn8, 10
   });
 
   fireEvent.click(getByText("btn9"));
   await waitFor(() => {
     getByText("999666");
-    console.log("btn9", index); // btn9, 11
+    console.log("btn9", index); // btn9, 12
   });
 
   fireEvent.click(getByText("btn10"));
   await waitFor(() => {
-    console.log("btn10", index); // btn10, 11
-    expect(index === 11).toBeTruthy();
+    console.log("btn10", index); // btn10, 12
+    expect(index === 12).toBeTruthy();
   });
 });

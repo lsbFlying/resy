@@ -16,6 +16,11 @@
 <strong>changed logs - releases what's Changed</strong>
 </summary>
 
+🌟`v7.1.1`：<br/>
+1. Fixed bug that did not correspond to the latest data parameters of setState's callback function.
+2. Optimized scheduling adjustment for update batches of scheduler.
+3. Improved the use of function types of the state parameter of setState.
+
 🌟`v7.1.0`：<br/>
 1. Added a new api for useStoreWithRef.
 
@@ -341,15 +346,23 @@ function App() {
     }, (nextState) => {
       // nextState：The latest data
       console.log(nextState.count, nextState.text);
-      // Or at this time, you can read store to get the latest data.
+      /**
+       * be careful, you can also read store to get the latest data.
+       * But unlike nextState, nextState acquires the current round of update data,
+       * while store acquires the final round of update data.
+       */
       // console.log(store.count, store.text);
     });
     // The B way can write circular updates in the callback function
     // to facilitate the handling of some more complex business logic.
     // @example B
     // store.setState(() => {
-    //   store.count++;
-    //   store.text = "B-Way-setState-with-function";
+    //   // Returns the data object that will eventually be updated
+    //   // through the calculation of complex business logic
+    //   return {
+    //     count: count + 1,
+    //     text: "B-Way-setState-with-function",
+    //   };
     // }, (nextState) => {
     //   console.log(nextState.count, nextState.text);
     // });
@@ -393,6 +406,9 @@ function App() {
     store.syncUpdate({
       inputValue: event.target.value,
     });
+    // be careful: you can get the latest data by read store.
+    // this is different from setState
+    // console.log(store.inputValue);
   }
   
   return (

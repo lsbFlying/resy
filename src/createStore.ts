@@ -314,7 +314,9 @@ export function createStore<S extends State>(
       // 更新之前的数据
       const prevState = new Map(stateMap);
       batchUpdate(() => taskQueueMap.forEach(task => task()));
-      batchDispatchListener(prevState, taskDataMap);
+      if ((storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"]).size) {
+        batchDispatchListener(prevState, taskDataMap);
+      }
     }
   }
   
@@ -340,7 +342,9 @@ export function createStore<S extends State>(
         }
       });
     });
-    batchDispatchListener(prevState, new Map(Object.entries(syncStateParams)));
+    if ((storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"]).size) {
+      batchDispatchListener(prevState, new Map(Object.entries(syncStateParams)));
+    }
   }
   
   /**

@@ -290,6 +290,8 @@ export function createStore<S extends State>(
         }
         
         setStateCallbackStack.forEach(callbackItem => callbackItem());
+        // 执行完之后清空回调执行栈，否则回调中如果有更新则形成死循环
+        setStateCallbackStack.clear();
       }));
     }
   }

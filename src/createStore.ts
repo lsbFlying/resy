@@ -9,7 +9,7 @@ import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
 import { batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_ } from "./static";
-import { mapToObject, objectRequiredErrorHandle } from "./utils";
+import { mapToObject } from "./utils";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe,
@@ -52,7 +52,9 @@ export function createStore<S extends State>(
   // 所以在这里的Object判断中只对undefined特殊处理
   const state = initialState === undefined ? ({} as S) : initialState;
   
-  objectRequiredErrorHandle(state, "The initialization parameter result of createStore needs to be an object!");
+  if (_DEV_ && Object.prototype.toString.call(state) !== "[object Object]") {
+    throw new Error("The initialization parameter result of createStore needs to be an object!");
+  }
   
   const { initialReset = true, __privatization__ } = options || {};
   
@@ -306,6 +308,14 @@ export function createStore<S extends State>(
   
   // 批量更新函数入栈
   function updater(stateParams: Partial<S> | StateFunc<S> = {}) {
+    if (
+      _DEV_ && (
+        Object.prototype.toString.call(stateParams) !== "[object Object]"
+        || Object.prototype.toString.call(stateParams) !== "[object Function]"
+      )
+    ) {
+      throw new Error("The state parameter of setState is either an object or a function that returns an object!");
+    }
     if (typeof stateParams !== "function") {
       // 对象方式更新直接走单次直接更新的添加入栈，后续统一批次合并更新
       Object.keys(stateParams).forEach(key => {

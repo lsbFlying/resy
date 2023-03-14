@@ -9,7 +9,7 @@ import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
 import { batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_ } from "./static";
-import { mapToObject } from "./utils";
+import { updateDataErrorHandle, mapToObject, errorHandle } from "./utils";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe,
@@ -118,8 +118,8 @@ export function createStore<S extends State>(
           refDataCache && delete refDataCache[key];
         });
       }
-    } else if (_DEV_) {
-      throw new Error("The refData parameter of useStoreWithRef is not an object!");
+    } else {
+      errorHandle("The refData parameter of useStoreWithRef is not an object!");
     }
   });
   storeCoreMap.set("eventType", Symbol("storeListenerSymbol"));
@@ -245,8 +245,8 @@ export function createStore<S extends State>(
         taskDataMapPrivate,
         taskQueueMapPrivate,
       );
-    } else if (_DEV_ && refDataCache) {
-      throw new Error(
+    } else if (refDataCache) {
+      errorHandle(
         "The property of the current update data contains the refData reference attribute," +
         " RefData is only a reference, so update is prohibited."
       );
@@ -283,18 +283,26 @@ export function createStore<S extends State>(
    * 同步更新
    * @description todo 更多意义上是为了解决input无法输入非英文语言bug的无奈，后续待优化setState与单次更新
    */
-  function syncUpdate(syncStateParams: Partial<S> | S) {
+  function syncUpdate(stateParams: Partial<S> | StateFunc<S>) {
+    updateDataErrorHandle(
+      stateParams,
+      "The state parameter of syncUpdate is either an object or a function that returns an object!"
+    );
+    let stateParamsTemp = stateParams as Partial<S>;
+    if (typeof stateParams === "function") {
+      stateParamsTemp = (stateParams as StateFunc<S>)();
+    }
     const prevState = new Map(stateMap);
     batchUpdate(() => {
-      Object.keys(syncStateParams).forEach(key => {
+      Object.keys(stateParamsTemp).forEach(key => {
         if(!refDataCache || !Object.prototype.hasOwnProperty.call(refDataCache, key)) {
           (
             (
               initialValueConnectStore(key).get(key) as StoreMapValue<S>
             ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
-          )((syncStateParams as Partial<S> | S)[key]);
-        } else if (_DEV_ && refDataCache) {
-          throw new Error(
+          )((stateParamsTemp as Partial<S> | S)[key]);
+        } else if (refDataCache) {
+          errorHandle(
             "The property of the current update data contains the refData reference attribute," +
             " RefData is only a reference, so update is prohibited."
           );
@@ -302,20 +310,12 @@ export function createStore<S extends State>(
       });
     });
     if ((storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"]).size) {
-      batchDispatchListener(prevState, new Map(Object.entries(syncStateParams)));
+      batchDispatchListener(prevState, new Map(Object.entries(stateParamsTemp)));
     }
   }
   
   // 批量更新函数入栈
   function updater(stateParams: Partial<S> | StateFunc<S> = {}) {
-    if (
-      _DEV_ && (
-        Object.prototype.toString.call(stateParams) !== "[object Object]"
-        || Object.prototype.toString.call(stateParams) !== "[object Function]"
-      )
-    ) {
-      throw new Error("The state parameter of setState is either an object or a function that returns an object!");
-    }
     if (typeof stateParams !== "function") {
       // 对象方式更新直接走单次直接更新的添加入栈，后续统一批次合并更新
       Object.keys(stateParams).forEach(key => {
@@ -356,6 +356,10 @@ export function createStore<S extends State>(
   
   // 批量更新函数
   function setState(stateParams: Partial<S> | StateFunc<S> = {}, callback?: (nextState: S) => void) {
+    updateDataErrorHandle(
+      stateParams,
+      "The state parameter of setState is either an object or a function that returns an object!",
+    );
     updater(stateParams);
     if (!scheduler.get("isOn")) {
       scheduler.set("isOn", Promise.resolve().then(() => {

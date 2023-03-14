@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useMemo, useState } from "react";
-import type { State, StoreCoreMapType, StoreCoreMapValue, MapStateToProps, Store, PS } from "./model";
 import { STORE_CORE_MAP_KEY } from "./static";
 import { getLatestStateMap, mapToObject, proxyStateHandler, storeErrorHandle } from "./utils";
+import type { State, StoreCoreMapType, StoreCoreMapValue, MapStateToProps, Store, PS } from "./model";
 
 /**
  * 自动memo与SCU的高阶HOC

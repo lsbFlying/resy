@@ -1,5 +1,5 @@
-import type { State, Store, StoreCoreMapType, StoreCoreMapValue } from "./model";
 import { _DEV_, STORE_CORE_MAP_KEY, USE_STORE_KEY } from "./static";
+import type { State, Store, StoreCoreMapType, StoreCoreMapValue } from "./model";
 
 /**
  * 给Comp组件的props上挂载的state属性数据做一层引用代理
@@ -37,5 +37,24 @@ export function getLatestStateMap<S extends State = {}>(store: Store<S>) {
 export function storeErrorHandle<S extends State>(store: S) {
   if (_DEV_ && !store[USE_STORE_KEY as keyof S]) {
     throw new Error("The store parameter is not created by resty's createStore！");
+  }
+}
+
+// 数据更新参数报错处理
+export function updateDataErrorHandle<S extends State>(stateParams: S, errMsg: string) {
+  if (
+    _DEV_ && (
+      Object.prototype.toString.call(stateParams) !== "[object Object]"
+      || Object.prototype.toString.call(stateParams) !== "[object Function]"
+    )
+  ) {
+    throw new Error(errMsg);
+  }
+}
+
+// 抛出错误处理
+export function errorHandle(errMsg: string) {
+  if (_DEV_) {
+    throw new Error(errMsg);
   }
 }

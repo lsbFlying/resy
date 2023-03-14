@@ -13,8 +13,8 @@ import { updateDataErrorHandle, mapToObject, errorHandle } from "./utils";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType,
   StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe,
-  Scheduler, CustomEventListener, Listener, CreateStoreOptions, Store,
-  ConciseExternalMapType, ConciseExternalMapValue, AnyFn, EventsType,
+  Scheduler, CustomEventListener, Listener, CreateStoreOptions, Store, AnyFn,
+  ConciseExternalMapType, ConciseExternalMapValue, EventsType, SetStateCallback,
 } from "./model";
 
 /**
@@ -76,6 +76,9 @@ export function createStore<S extends State>(
    * 如stateMap、storeMap、storeCoreMap、storeChangeSet等
    */
   const stateMap: Map<keyof S, S[keyof S]> = new Map(Object.entries(state));
+  
+  // setState的回调函数执行栈
+  const setStateCallbackStack = new Set<Callback>();
   
   // 挂载引用缓存，没有使用Map是考虑到refInStore函数处理中使用来对象的合并，可能对象更方便一些
   let refDataCache: Partial<S> | undefined;
@@ -312,7 +315,7 @@ export function createStore<S extends State>(
   }
   
   // 批量更新函数入栈
-  function updater(stateParams: Partial<S> | StateFunc<S> = {}) {
+  function updater(stateParams: Partial<S> | StateFunc<S>) {
     if (typeof stateParams !== "function") {
       // 对象方式更新直接走单次直接更新的添加入栈，后续统一批次合并更新
       Object.keys(stateParams).forEach(key => {
@@ -352,18 +355,18 @@ export function createStore<S extends State>(
   }
   
   // 批量更新函数
-  function setState(stateParams: Partial<S> | StateFunc<S>, callback?: (nextState: S) => void) {
+  function setState(stateParams: Partial<S> | StateFunc<S>, callback?: SetStateCallback<S>) {
     updateDataErrorHandle(stateParams, "setState");
     updater(stateParams);
+    const nextState = Object.assign({}, mapToObject(stateMap), stateParams);
+    callback && setStateCallbackStack.add(() => callback(nextState));
     if (!scheduler.get("isOn")) {
       scheduler.set("isOn", Promise.resolve().then(() => {
         scheduler.set("isOn", undefined);
         finallyBatchHandle();
+        setStateCallbackStack.forEach(callbackItem => callbackItem());
       }));
     }
-    callback && Promise.resolve().then(() => {
-      callback(Object.assign({}, mapToObject(stateMap), stateParams));
-    });
   }
   
   // 订阅函数

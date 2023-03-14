@@ -4,10 +4,10 @@ import { createStore, useStore } from "../src";
 import { fireEvent, render } from "@testing-library/react";
 
 test("resy-syncUpdate", async () => {
-  const store = createStore({ text: "qwe" });
+  const store = createStore({ text: "qwe", count: 0 });
   let textRes = "";
   const App = () => {
-    const { text } = useStore(store);
+    const { text, count } = useStore(store);
     
     function inputChange(event: React.ChangeEvent<HTMLInputElement>) {
       store.syncUpdate({
@@ -18,13 +18,28 @@ test("resy-syncUpdate", async () => {
     }
     
     return (
-      <>
-        <input placeholder="请输入" value={text} onChange={inputChange}/>
-      </>
+      <div>
+        <div>
+          <input placeholder="请输入" value={text} onChange={inputChange}/>
+        </div>
+        <div>
+          <p>count:{count}</p>
+          <div>
+            <button onClick={() =>{
+              store.syncUpdate(() => {
+                return {
+                  count: count + 1,
+                  text: `hello-${count}`,
+                };
+              });
+            }}>btn</button>
+          </div>
+        </div>
+      </div>
     );
   };
   
-  const { getByPlaceholderText } = render(<App/>);
+  const { getByPlaceholderText, getByText } = render(<App/>);
   
   fireEvent.change(getByPlaceholderText("请输入"), {
     target: {
@@ -33,6 +48,10 @@ test("resy-syncUpdate", async () => {
   });
   expect(textRes === store.text).toBeTruthy();
   expect("ASDZXC" === store.text).toBeTruthy();
+  
+  fireEvent.click(getByText("btn"));
+  getByText("count:1");
+  expect("hello-0" === store.text).toBeTruthy();
   
   // @ts-ignore
   expect(() => store.syncUpdate(null)).toThrowError();

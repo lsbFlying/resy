@@ -191,7 +191,7 @@ export type StateFunc<S extends State> = () => Partial<S>;
  */
 export type SyncUpdate<S extends State> = Readonly<{
   syncUpdate(
-    state: Partial<S> | S,
+    state: Partial<S> | StateFunc<S>,
   ): void;
 }>;
 

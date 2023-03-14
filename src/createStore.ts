@@ -266,19 +266,31 @@ export function createStore<S extends State>(
    * 但好在setState的回调弥补了同步获取最新数据的问题
    */
   function finallyBatchHandle() {
-    const { taskDataMap, taskQueueMap } = (scheduler.get("getTask") as Scheduler<S>["getTask"])(
-      taskDataMapPrivate,
-      taskQueueMapPrivate,
-    );
-    // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
-    (scheduler.get("flush") as Scheduler<S>["flush"])(taskDataMapPrivate, taskQueueMapPrivate);
-    if (taskDataMap.size !== 0) {
-      // 更新之前的数据
-      const prevState = new Map(stateMap);
-      batchUpdate(() => taskQueueMap.forEach(task => task()));
-      if ((storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"]).size) {
-        batchDispatchListener(prevState, taskDataMap);
-      }
+    if (!scheduler.get("isOn")) {
+      /**
+       * @description 采用微任务结合开关标志控制的方式达到批量更新的效果，
+       * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
+       */
+      scheduler.set("isOn", Promise.resolve().then(() => {
+        scheduler.set("isOn", undefined);
+  
+        const { taskDataMap, taskQueueMap } = (scheduler.get("getTask") as Scheduler<S>["getTask"])(
+          taskDataMapPrivate,
+          taskQueueMapPrivate,
+        );
+        // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
+        (scheduler.get("flush") as Scheduler<S>["flush"])(taskDataMapPrivate, taskQueueMapPrivate);
+        if (taskDataMap.size !== 0) {
+          // 更新之前的数据
+          const prevState = new Map(stateMap);
+          batchUpdate(() => taskQueueMap.forEach(task => task()));
+          if ((storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"]).size) {
+            batchDispatchListener(prevState, taskDataMap);
+          }
+        }
+        
+        setStateCallbackStack.forEach(callbackItem => callbackItem());
+      }));
     }
   }
   
@@ -360,13 +372,7 @@ export function createStore<S extends State>(
     updater(stateParams);
     const nextState = Object.assign({}, mapToObject(stateMap), stateParams);
     callback && setStateCallbackStack.add(() => callback(nextState));
-    if (!scheduler.get("isOn")) {
-      scheduler.set("isOn", Promise.resolve().then(() => {
-        scheduler.set("isOn", undefined);
-        finallyBatchHandle();
-        setStateCallbackStack.forEach(callbackItem => callbackItem());
-      }));
-    }
+    finallyBatchHandle();
   }
   
   // 订阅函数
@@ -407,16 +413,7 @@ export function createStore<S extends State>(
   // 单个属性数据更新
   function singlePropUpdate(_: S, key: keyof S, val: S[keyof S]) {
     taskPush(key, val);
-    if (!scheduler.get("isOn")) {
-      /**
-       * @description 采用微任务结合开关标志控制的方式达到批量更新的效果，
-       * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
-       */
-      scheduler.set("isOn", Promise.resolve().then(() => {
-        scheduler.set("isOn", undefined);
-        finallyBatchHandle();
-      }));
-    }
+    finallyBatchHandle();
     return true;
   }
   

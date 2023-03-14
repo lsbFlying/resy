@@ -377,7 +377,7 @@ function App() {
     // store.setState(() => {
     //   store.count++;
     //   store.text = "C-Way-setState-with-function";
-    //  return {};
+    //   return {};
     // });
   }
   

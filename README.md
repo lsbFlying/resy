@@ -1,7 +1,7 @@
 <div align="center">
 <img src="./resy-logo.svg" alt="resy">
 <h3>A simple react state manager</h3>
-<h4>Support React Native、SSR、Mini Apps (such as taro, rax, remax etc)</h4>
+<h4>Support React Native、Mini Apps (such as taro, rax, remax etc)</h4>
 
 [![GitHub license](https://img.shields.io/github/license/lsbFlying/resy?style=flat-square)](https://github.com/lsbFlying/resy/blob/master/LICENSE)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lsbFlying/resy/test.yml?branch=master&color=blue&style=flat-square)](https://github.com/lsbFlying/resy/actions/workflows/test.yml)
@@ -366,6 +366,19 @@ function App() {
     // }, (nextState) => {
     //   console.log(nextState.count, nextState.text);
     // });
+    /**
+     * @example C
+     * @description Although you can write your code in this way,
+     * it is not recommended because this is not the trigger point for
+     * the creation of setState's function arguments.
+     * In fact, if you have business logic for circular updates,
+     * you can also directly use "store.x = y" for a single update.
+     */
+    // store.setState(() => {
+    //   store.count++;
+    //   store.text = "C-Way-setState-with-function";
+    //  return {};
+    // });
   }
   
   return (
@@ -388,25 +401,25 @@ function App() {
   
   function inputChange(event: React.ChangeEvent<HTMLInputElement>) {
     /**
-      * be careful：The update of this controlled input/textarea needs to be updated synchronously,
-      * otherwise, due to asynchronous updates such as "store.setState" or "store[key] = newValue",
-      * it will cause input/textarea unable to input characters in languages other than English.
-      * be careful："syncUpdate" is a helpless solution to the conflict between
-      * resy update scheduling mechanism and react's update execution mechanism for text input.
-      *
-      * be careful：react itself, even the version of react V18,
-      * There is a problem that asynchronous updates make it impossible to input text in languages other than English.
-      * eg: (xxxpromise).then(() => { setState(xxx); });
-      *
-      * be careful：At the same time, "syncUpdate" can also be used by development partners
-      * who do not like to use callbacks to get the latest data.
-      * Because after it is executed, it can get the latest data through store
-      * for the next step of business logic processing.
-      */
+     * be careful：The update of this controlled input/textarea needs to be updated synchronously,
+     * otherwise, due to asynchronous updates such as "store.setState" or "store[key] = newValue",
+     * it will cause input/textarea unable to input characters in languages other than English.
+     * be careful："syncUpdate" is a helpless solution to the conflict between
+     * resy update scheduling mechanism and react's update execution mechanism for text input.
+     *
+     * be careful：react itself, even the version of react V18,
+     * There is a problem that asynchronous updates make it impossible to input text in languages other than English.
+     * eg: (xxxpromise).then(() => { setState(xxx); });
+     *
+     * be careful：At the same time, "syncUpdate" can also be used by development partners
+     * who do not like to use callbacks to get the latest data.
+     * Because after it is executed, it can get the latest data through store
+     * for the next step of business logic processing.
+     */
     store.syncUpdate({
       inputValue: event.target.value,
     });
-    // @exampleB:
+    // @example B:
     // store.syncUpdate(() => {
     //   return {
     //     inputValue: event.target.value,
@@ -415,6 +428,19 @@ function App() {
     // be careful: you can get the latest data by read store.
     // this is different from setState
     // console.log(store.inputValue);
+    /**
+     * @example C
+     * @description Although you can write your code in this way,
+     * it is not recommended because this is not the trigger point for
+     * the creation of syncUpdate's function arguments.
+     * In fact, if you have business logic for circular updates,
+     * you can also directly use "store.x = y" for a single update.
+     */
+     // @example C:
+     // store.syncUpdate(() => {
+     //   store.inputValue = event.target.value;
+     //   return {};
+     // });
   }
   
   return (

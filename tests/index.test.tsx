@@ -15,7 +15,7 @@ test("resy-basic", async () => {
     testFun2(): void;
     sex?: "man" | "woman" | string;
   };
-
+  
   // 生成的这个store可以全局共享，直接引入store即可
   const store = createStore<Store>(
     {
@@ -43,9 +43,9 @@ test("resy-basic", async () => {
      */
     // false,
   );
-
+  
   let index = 0;
-
+  
   const App = () => {
     const { count, text, testFun, testObj, testArr, sex } = useStore(store);
     index++;
@@ -76,7 +76,7 @@ test("resy-basic", async () => {
         // 同时可以做一些其他的解除或者释放的操作
       };
     }, []);
-
+    
     return (
       <>
         <p>{count}</p>
@@ -150,46 +150,46 @@ test("resy-basic", async () => {
       </>
     );
   };
-
+  
   const { getByText, queryByText } = render(<App/>);
-
+  
   fireEvent.click(getByText("btn1"));
   await waitFor(async () => {
     getByText("1");
   });
-
+  
   fireEvent.click(getByText("btn2"));
   await waitFor(async () => {
     getByText("2");
     getByText("456asd");
   });
-
+  
   fireEvent.click(getByText("btn3"));
   await waitFor(() => {
     getByText("2");
     getByText("Jack");
   });
-
+  
   fireEvent.click(getByText("btn4"));
   await waitFor(() => {
     getByText("1");
     getByText("Alen：11");
     getByText("man");
   });
-
+  
   fireEvent.click(getByText("btn5"));
   await waitFor(() => {
     console.log(queryByText("Forrest Gump"), queryByText("Forrest Gump：7"));
     expect(queryByText("Forrest Gump")).toBeNull();
     expect(queryByText("Forrest Gump：7")).toBeNull();
   });
-
+  
   fireEvent.click(getByText("btn6"));
   await waitFor(() => {
     getByText("no-sex");
     console.log("btn6", index); // btn6, 6
   });
-
+  
   fireEvent.click(getByText("btn7"));
   await waitFor(() => {
     getByText("batch-forEach");
@@ -203,13 +203,13 @@ test("resy-basic", async () => {
     getByText("999");
     console.log("btn8", index); // btn8, 10
   });
-
+  
   fireEvent.click(getByText("btn9"));
   await waitFor(() => {
     getByText("999666");
     console.log("btn9", index); // btn9, 12
   });
-
+  
   fireEvent.click(getByText("btn10"));
   await waitFor(() => {
     console.log("btn10", index); // btn10, 12

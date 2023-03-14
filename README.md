@@ -406,6 +406,12 @@ function App() {
     store.syncUpdate({
       inputValue: event.target.value,
     });
+    // @exampleB:
+    // store.syncUpdate(() => {
+    //   return {
+    //     inputValue: event.target.value,
+    //   };
+    // });
     // be careful: you can get the latest data by read store.
     // this is different from setState
     // console.log(store.inputValue);

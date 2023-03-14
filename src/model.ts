@@ -19,7 +19,7 @@ export type State = Record<string, any>;
 export type StoreMapValueType<S extends State> = {
   subscribe: (onStoreChange: Callback) => Callback;
   getSnapshot: () => S[keyof S];
-  setSnapshot: (val: S[keyof S]) => void;
+  setSnapshot: (val: S[keyof S], callback?: (nextState: S) => void) => void;
   useSnapshot: () => S[keyof S];
   // 存储onStoreChange的set容器，共view内部重置逻辑使用
   storeChangeSet: Set<Callback>;
@@ -238,6 +238,8 @@ export type MapStateToProps<S extends State, P extends State = {}> = P & {
  * @description 调度类型
  */
 export interface Scheduler<S extends State = {}> {
+  // 更新进行中
+  isOn?: Promise<void>;
   // 新增直接更新数据的key/value以及相应的任务函数
   add(
     task: Callback,

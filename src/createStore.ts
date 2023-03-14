@@ -173,7 +173,7 @@ export function createStore<S extends State>(
     
     storeMapValue.set("getSnapshot", () => stateMap.get(key));
     
-    storeMapValue.set("setSnapshot", (val: S[keyof S]) => {
+    storeMapValue.set("setSnapshot", (val: S[keyof S], callback?: (nextState: S) => void) => {
       /**
        * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
        * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
@@ -184,6 +184,7 @@ export function createStore<S extends State>(
         // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
         storeChangeSet.forEach(storeChange => storeChange());
       }
+      callback?.(mapToObject(stateMap));
     });
     
     storeMapValue.set("useSnapshot", () => useSyncExternalStore(
@@ -228,22 +229,18 @@ export function createStore<S extends State>(
   }
   
   /**
-   * 更新任务添加入栈
-   * @description 采用微任务的方式达到批量更新的效果，
-   * 以达到与reactV18一样的批处理更新效果，
-   * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
-   *
+   * @description 更新任务添加入栈
    * be careful：因为考虑到不知道什么情况的业务逻辑需要函数作为数据属性来进行更新
    * 所以这里没有阻止函数作为数据属性的更新
    */
-  async function taskPush(key: keyof S, val: S[keyof S]) {
+  function taskPush(key: keyof S, val: S[keyof S], callback?: (nextState: S) => void) {
     if (!refDataCache || !Object.prototype.hasOwnProperty.call(refDataCache, key)) {
       (scheduler.get("add") as Scheduler<S>["add"])(
         () => (
           (
             initialValueConnectStore(key).get(key) as StoreMapValue<S>
           ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
-        )(val),
+        )(val, callback),
         key,
         val,
         taskDataMapPrivate,
@@ -257,12 +254,12 @@ export function createStore<S extends State>(
     }
   }
   
-  // 批量异步更新函数
-  async function updater(stateParams: Partial<S> | S | StateFunc = {}) {
+  // 批量更新函数任务入栈，主要是为了更新任务的入栈
+  function updater(stateParams: Partial<S> | S | StateFunc = {}, callback?: (nextState: S) => void) {
     if (typeof stateParams !== "function") {
       // 对象方式更新直接走单次直接更新的添加入栈，后续统一批次合并更新
       Object.keys(stateParams).forEach(key => {
-        taskPush(key, (stateParams as Partial<S> | S)[key]);
+        taskPush(key, (stateParams as Partial<S> | S)[key], callback);
       });
     } else {
       /**
@@ -361,10 +358,13 @@ export function createStore<S extends State>(
    * 但有时候我就不想多此一步操作就想这样简单的写法，所以自身多次调用的场景合并也是很有必要的
    */
   function setState(stateParams: Partial<S> | S | StateFunc = {}, callback?: (nextState: S) => void) {
-    updater(stateParams).then(() => {
-      finallyBatchHandle();
-      callback?.(mapToObject(stateMap));
-    });
+    updater(stateParams, callback);
+    if (!scheduler.get("isOn")) {
+      scheduler.set("isOn", Promise.resolve().then(() => {
+        scheduler.set("isOn", undefined);
+        finallyBatchHandle();
+      }));
+    }
   }
   
   // 订阅函数
@@ -404,9 +404,18 @@ export function createStore<S extends State>(
   
   // 单个属性数据更新
   const singlePropUpdate = (_: S, key: keyof S, val: S[keyof S]) => {
-    taskPush(key, val).then(() => {
-      finallyBatchHandle();
-    });
+    taskPush(key, val);
+    if (!scheduler.get("isOn")) {
+      scheduler.set("isOn", Promise.resolve().then(() => {
+        scheduler.set("isOn", undefined);
+        /**
+         * @description 采用微任务的方式达到批量更新的效果，
+         * 以达到与reactV18一样的批处理更新效果，
+         * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
+         */
+        finallyBatchHandle();
+      }));
+    }
     return true;
   };
   

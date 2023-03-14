@@ -11,10 +11,10 @@ import EventDispatcher from "./listener";
 import { batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_ } from "./static";
 import { updateDataErrorHandle, mapToObject, errorHandle } from "./utils";
 import type {
-  Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType,
-  StoreCoreMapValue, StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe,
-  Scheduler, CustomEventListener, Listener, CreateStoreOptions, Store, AnyFn,
-  ConciseExternalMapType, ConciseExternalMapValue, EventsType, SetStateCallback,
+  Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType, StoreCoreMapValue,
+  StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe, Scheduler, CustomEventListener, Listener,
+  CreateStoreOptions, Store, AnyFn, ConciseExternalMapType, ConciseExternalMapValue, EventsType,
+  SetStateCallback, SetStateCallbackItem,
 } from "./model";
 
 /**
@@ -77,8 +77,8 @@ export function createStore<S extends State>(
    */
   const stateMap: Map<keyof S, S[keyof S]> = new Map(Object.entries(state));
   
-  // setState的回调函数执行栈
-  const setStateCallbackStack = new Set<Callback>();
+  // setState的回调函数执行栈数组
+  const setStateCallbackStackArray: SetStateCallbackItem<S>[] = [];
   
   // 挂载引用缓存，没有使用Map是考虑到refInStore函数处理中使用来对象的合并，可能对象更方便一些
   let refDataCache: Partial<S> | undefined;
@@ -288,10 +288,15 @@ export function createStore<S extends State>(
             batchDispatchListener(prevState, taskDataMap);
           }
         }
-        
-        setStateCallbackStack.forEach(callbackItem => callbackItem());
+  
+        setStateCallbackStackArray.forEach((
+          {callback, stateCache: { params, state }}, index, array
+        ) => {
+          // 结合上一轮的回调进行上一轮更新参数的合并得到最新的回调数据参数
+          callback(Object.assign({}, state, index !== 0 ? array[index - 1].stateCache.params : params));
+        });
         // 执行完之后清空回调执行栈，否则回调中如果有更新则形成死循环
-        setStateCallbackStack.clear();
+        setStateCallbackStackArray.splice(0);
       }));
     }
   }
@@ -328,13 +333,14 @@ export function createStore<S extends State>(
     }
   }
   
-  // 批量更新函数入栈
+  // 更新函数入栈
   function updater(stateParams: Partial<S> | StateFunc<S>) {
     if (typeof stateParams !== "function") {
       // 对象方式更新直接走单次直接更新的添加入栈，后续统一批次合并更新
       Object.keys(stateParams).forEach(key => {
         taskPush(key, (stateParams as Partial<S> | S)[key]);
       });
+      return stateParams;
     } else {
       /**
        * @description
@@ -365,15 +371,22 @@ export function createStore<S extends State>(
       Object.keys(stateParamsTemp).forEach(key => {
         taskPush(key, (stateParamsTemp as S)[key]);
       });
+      return stateParamsTemp;
     }
   }
   
-  // 批量更新函数
+  // 可对象数据更新的函数
   function setState(stateParams: Partial<S> | StateFunc<S>, callback?: SetStateCallback<S>) {
     updateDataErrorHandle(stateParams, "setState");
-    updater(stateParams);
-    const nextState = Object.assign({}, mapToObject(stateMap), stateParams);
-    callback && setStateCallbackStack.add(() => callback(nextState));
+    const stateParamsTemp = updater(stateParams);
+    const nextStateTemp = Object.assign({}, mapToObject(stateMap), stateParams);
+    callback && setStateCallbackStackArray.push({
+      stateCache: {
+        params: stateParamsTemp,
+        state: nextStateTemp,
+      },
+      callback: (nextState) => callback(nextState),
+    });
     finallyBatchHandle();
   }
   

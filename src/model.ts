@@ -174,6 +174,15 @@ export type StateFunc<S extends State> = () => Partial<S>;
 // setState的回调函数的类型
 export type SetStateCallback<S extends State> = (nextState: S) => void;
 
+// setState的回调执行栈的元素类型
+export type SetStateCallbackItem<S extends State> = {
+  stateCache: {
+    params: Partial<S>,
+    state: S,
+  };
+  callback: SetStateCallback<S>;
+};
+
 /**
  * @description 非异步更新，强制同步更新
  * A：为了react的更新机制不适应在异步中执行的场景

@@ -33,4 +33,29 @@ test("resy-syncUpdate", async () => {
   });
   expect(textRes === store.text).toBeTruthy();
   expect("ASDZXC" === store.text).toBeTruthy();
+  
+  // @ts-ignore
+  expect(() => store.syncUpdate(null)).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(0)).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate("")).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(NaN)).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(Symbol("not object"))).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate([])).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(() => {})).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(true)).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(false)).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(new Map())).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(new Set())).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(undefined)).toThrowError();
 });

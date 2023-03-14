@@ -1,5 +1,5 @@
 import { _DEV_, STORE_CORE_MAP_KEY, USE_STORE_KEY } from "./static";
-import type { State, Store, StoreCoreMapType, StoreCoreMapValue } from "./model";
+import type {State, StateFunc, Store, StoreCoreMapType, StoreCoreMapValue} from "./model";
 
 /**
  * 给Comp组件的props上挂载的state属性数据做一层引用代理
@@ -41,14 +41,19 @@ export function storeErrorHandle<S extends State>(store: S) {
 }
 
 // 数据更新参数报错处理
-export function updateDataErrorHandle<S extends State>(stateParams: S, errMsg: string) {
+export function updateDataErrorHandle<S extends State>(stateParams: Partial<S> | StateFunc<S>, errName: string) {
   if (
     _DEV_ && (
-      Object.prototype.toString.call(stateParams) !== "[object Object]"
-      || Object.prototype.toString.call(stateParams) !== "[object Function]"
+      (
+        Object.prototype.toString.call(stateParams) !== "[object Object]"
+        && Object.prototype.toString.call(stateParams) !== "[object Function]"
+      ) || (
+        Object.prototype.toString.call(stateParams) === "[object Function]"
+        && Object.prototype.toString.call((stateParams as StateFunc<S>)()) !== "[object Object]"
+      )
     )
   ) {
-    throw new Error(errMsg);
+    throw new Error(`The state parameter of ${errName} is either an object or a function that returns an object!`);
   }
 }
 

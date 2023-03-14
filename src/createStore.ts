@@ -284,10 +284,7 @@ export function createStore<S extends State>(
    * @description todo 更多意义上是为了解决input无法输入非英文语言bug的无奈，后续待优化setState与单次更新
    */
   function syncUpdate(stateParams: Partial<S> | StateFunc<S>) {
-    updateDataErrorHandle(
-      stateParams,
-      "The state parameter of syncUpdate is either an object or a function that returns an object!"
-    );
+    updateDataErrorHandle(stateParams, "syncUpdate");
     let stateParamsTemp = stateParams as Partial<S>;
     if (typeof stateParams === "function") {
       stateParamsTemp = (stateParams as StateFunc<S>)();
@@ -347,7 +344,7 @@ export function createStore<S extends State>(
        * be careful：当然这里的特性是在react-V18中才有的，因为react-V18的unstable_batchedUpdates做了优化
        * 如果是react-V18以下的版本，则还是分两个批次渲染更新。
        */
-      const stateParamsTemp = (stateParams as StateFunc<S>)();
+      const stateParamsTemp = (stateParams as StateFunc<S>)?.();
       Object.keys(stateParamsTemp).forEach(key => {
         taskPush(key, (stateParamsTemp as S)[key]);
       });
@@ -355,11 +352,8 @@ export function createStore<S extends State>(
   }
   
   // 批量更新函数
-  function setState(stateParams: Partial<S> | StateFunc<S> = {}, callback?: (nextState: S) => void) {
-    updateDataErrorHandle(
-      stateParams,
-      "The state parameter of setState is either an object or a function that returns an object!",
-    );
+  function setState(stateParams: Partial<S> | StateFunc<S>, callback?: (nextState: S) => void) {
+    updateDataErrorHandle(stateParams, "setState");
     updater(stateParams);
     if (!scheduler.get("isOn")) {
       scheduler.set("isOn", Promise.resolve().then(() => {

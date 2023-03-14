@@ -116,16 +116,7 @@ test("resy-useStoreWithRef", async () => {
     getByText("count:1");
   });
   
-  // todo I haven't found a good test method to test internal errors. To be optimized
-  // await expect(() => {
-  //   return new Promise(function (_, reject) {
-  //     try {
-  //       store.refName = "newRefName";
-  //     } catch (e) {
-  //       return reject(e);
-  //     }
-  //   });
-  // }).rejects.toThrowError();
-  // expect(() => store.setState({ refName: "newRefName" })).toThrowError();
+  expect(() => store.refName = "newRefName").toThrowError();
+  expect(() => store.setState({ refName: "newRefName" })).toThrowError();
   expect(() => store.syncUpdate({ refName: "newRefName" })).toThrowError();
 });

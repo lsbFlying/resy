@@ -348,8 +348,20 @@ function App() {
       console.log(nextState.count, nextState.text);
       /**
        * be careful, you can also read store to get the latest data.
-       * But unlike nextState, nextState acquires the current round of update data,
-       * while store acquires the final round of update data.
+       * 🌟🌟🌟🌟🌟: But this is not recommended.
+       * This will cause code execution to be synchronized if multiple setState.
+       * when the subsequent callback is executed,
+       * the data is read through store in the first callback
+       * and the latest data value of the subsequent update can also be obtained.
+       * if setState is nested in the callback of setState,
+       * the internally nested setState has an executable callback again.
+       * it is also logical that the first callback
+       * cannot get the latest data value of the second round of updates.
+       * at the same time, these two points are consistent
+       * with the callback effect of the this.setState of the class component.
+       * while the parameter nextState of callback callback of setState exists.
+       * it is to solve the problem that store reads data
+       * to generate the latest data values in the execution of multiple setState synchronous codes.
        */
       // console.log(store.count, store.text);
     });

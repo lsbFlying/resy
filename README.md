@@ -20,6 +20,7 @@
 1. Fixed bug that did not correspond to the latest data parameters of setState's callback function.
 2. Optimized scheduling adjustment for update batches of scheduler.
 3. Improved the use of function types of the state parameter of setState.
+4. Added useStoreWithRef support for not passing refData parameters.
 
 🌟`v7.1.0`：<br/>
 1. Added a new api for useStoreWithRef.

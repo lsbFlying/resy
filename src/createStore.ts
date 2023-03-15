@@ -80,6 +80,17 @@ export function createStore<S extends State>(
   // setState的回调函数执行栈数组
   const setStateCallbackStackArray: SetStateCallbackItem<S>[] = [];
   
+  // setState的回调函数添加入栈
+  function setStateCallbackStackAdd(updateParams: Partial<S>, cycleState: S, callback: SetStateCallback<S>) {
+    setStateCallbackStackArray.push({
+      cycleData: {
+        updateParams,
+        cycleState,
+      },
+      callback: (nextState) => callback(nextState),
+    })
+  }
+  
   // 挂载引用缓存，没有使用Map是考虑到refInStore函数处理中使用来对象的合并，可能对象更方便一些
   let refDataCache: Partial<S> | undefined;
   
@@ -266,13 +277,13 @@ export function createStore<S extends State>(
    * 但好在setState的回调弥补了同步获取最新数据的问题
    */
   function finallyBatchHandle() {
-    if (!scheduler.get("isOn")) {
+    if (!scheduler.get("updateIsOn")) {
       /**
        * @description 采用微任务结合开关标志控制的方式达到批量更新的效果，
        * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
        */
-      scheduler.set("isOn", Promise.resolve().then(() => {
-        scheduler.set("isOn", undefined);
+      scheduler.set("updateIsOn", Promise.resolve().then(() => {
+        scheduler.set("updateIsOn", undefined);
   
         const { taskDataMap, taskQueueMap } = (scheduler.get("getTask") as Scheduler<S>["getTask"])(
           taskDataMapPrivate,
@@ -288,14 +299,15 @@ export function createStore<S extends State>(
             batchDispatchListener(prevState, taskDataMap);
           }
         }
-  
         setStateCallbackStackArray.forEach((
-          {callback, stateCache: { params, state }}, index, array
+          {callback, cycleData: { updateParams, cycleState }}, index, array,
         ) => {
+          scheduler.set("callbackIsOn", true);
           // 结合上一轮的回调进行上一轮更新参数的合并得到最新的回调数据参数
-          callback(Object.assign({}, state, index !== 0 ? array[index - 1].stateCache.params : params));
+          callback(Object.assign({}, cycleState, index === 0 ? updateParams : array[index - 1].cycleData.updateParams));
+          if (index === array.length - 1) scheduler.set("callbackIsOn", undefined);
         });
-        // 执行完之后清空回调执行栈，否则回调中如果有更新则形成死循环
+        // 清空回调执行栈，否则回调中如果有更新则形成死循环
         setStateCallbackStackArray.splice(0);
       }));
     }
@@ -305,21 +317,21 @@ export function createStore<S extends State>(
    * 同步更新
    * @description todo 更多意义上是为了解决input无法输入非英文语言bug的无奈，后续待优化setState与单次更新
    */
-  function syncUpdate(stateParams: Partial<S> | StateFunc<S>) {
-    updateDataErrorHandle(stateParams, "syncUpdate");
-    let stateParamsTemp = stateParams as Partial<S>;
-    if (typeof stateParams === "function") {
-      stateParamsTemp = (stateParams as StateFunc<S>)();
+  function syncUpdate(updateParams: Partial<S> | StateFunc<S>) {
+    updateDataErrorHandle(updateParams, "syncUpdate");
+    let updateParamsTemp = updateParams as Partial<S>;
+    if (typeof updateParams === "function") {
+      updateParamsTemp = (updateParams as StateFunc<S>)();
     }
     const prevState = new Map(stateMap);
     batchUpdate(() => {
-      Object.keys(stateParamsTemp).forEach(key => {
+      Object.keys(updateParamsTemp).forEach(key => {
         if(!refDataCache || !Object.prototype.hasOwnProperty.call(refDataCache, key)) {
           (
             (
               initialValueConnectStore(key).get(key) as StoreMapValue<S>
             ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
-          )((stateParamsTemp as Partial<S> | S)[key]);
+          )((updateParamsTemp as Partial<S> | S)[key]);
         } else if (refDataCache) {
           errorHandle(
             "The property of the current update data contains the refData reference attribute," +
@@ -329,18 +341,18 @@ export function createStore<S extends State>(
       });
     });
     if ((storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"]).size) {
-      batchDispatchListener(prevState, new Map(Object.entries(stateParamsTemp)));
+      batchDispatchListener(prevState, new Map(Object.entries(updateParamsTemp)));
     }
   }
   
   // 更新函数入栈
-  function updater(stateParams: Partial<S> | StateFunc<S>) {
-    if (typeof stateParams !== "function") {
+  function updater(updateParams: Partial<S> | StateFunc<S>) {
+    if (typeof updateParams !== "function") {
       // 对象方式更新直接走单次直接更新的添加入栈，后续统一批次合并更新
-      Object.keys(stateParams).forEach(key => {
-        taskPush(key, (stateParams as Partial<S> | S)[key]);
+      Object.keys(updateParams).forEach(key => {
+        taskPush(key, (updateParams as Partial<S> | S)[key]);
       });
-      return stateParams;
+      return updateParams;
     } else {
       /**
        * @description
@@ -367,26 +379,27 @@ export function createStore<S extends State>(
        * be careful：当然这里的特性是在react-V18中才有的，因为react-V18的unstable_batchedUpdates做了优化
        * 如果是react-V18以下的版本，则还是分两个批次渲染更新。
        */
-      const stateParamsTemp = (stateParams as StateFunc<S>)?.();
-      Object.keys(stateParamsTemp).forEach(key => {
-        taskPush(key, (stateParamsTemp as S)[key]);
+      const updateParamsTemp = (updateParams as StateFunc<S>)?.();
+      Object.keys(updateParamsTemp).forEach(key => {
+        taskPush(key, (updateParamsTemp as S)[key]);
       });
-      return stateParamsTemp;
+      return updateParamsTemp;
     }
   }
   
-  // 可对象数据更新的函数
-  function setState(stateParams: Partial<S> | StateFunc<S>, callback?: SetStateCallback<S>) {
-    updateDataErrorHandle(stateParams, "setState");
-    const stateParamsTemp = updater(stateParams);
-    const nextStateTemp = Object.assign({}, mapToObject(stateMap), stateParams);
-    callback && setStateCallbackStackArray.push({
-      stateCache: {
-        params: stateParamsTemp,
-        state: nextStateTemp,
-      },
-      callback: (nextState) => callback(nextState),
-    });
+  // 可对象数据更新的函数（可理解为class组件中的this.setState函数）
+  function setState(updateParams: Partial<S> | StateFunc<S>, callback?: SetStateCallback<S>) {
+    updateDataErrorHandle(updateParams, "setState");
+    const updateParamsTemp = updater(updateParams);
+    const nextStateTemp = Object.assign({}, mapToObject(stateMap), updateParams);
+    // 异步回调添加入栈
+    if (callback) {
+      scheduler.get("callbackIsOn")
+        ? Promise.resolve().then(() => {
+          setStateCallbackStackAdd(updateParamsTemp, nextStateTemp, callback);
+        })
+        : setStateCallbackStackAdd(updateParamsTemp, nextStateTemp, callback);
+    }
     finallyBatchHandle();
   }
   

@@ -176,9 +176,12 @@ export type SetStateCallback<S extends State> = (nextState: S) => void;
 
 // setState的回调执行栈的元素类型
 export type SetStateCallbackItem<S extends State> = {
-  stateCache: {
-    params: Partial<S>,
-    state: S,
+  // 当前一轮更新的相关数据
+  cycleData: {
+    // 更新的参数
+    updateParams: Partial<S>,
+    // 当前轮的state状态数据
+    cycleState: S,
   };
   callback: SetStateCallback<S>;
 };
@@ -250,8 +253,10 @@ export type MapStateToProps<S extends State, P extends State = {}> = P & {
  * @description 调度类型
  */
 export interface Scheduler<S extends State = {}> {
+  // setState的回调函数callback的任务执行中
+  callbackIsOn?: true;
   // 更新进行中
-  isOn?: Promise<void>;
+  updateIsOn?: Promise<void>;
   // 新增直接更新数据的key/value以及相应的任务函数
   add(
     task: Callback,

@@ -4,9 +4,9 @@ import { createStore, useStore } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 
 test("resy-set-and-sub1", async () => {
-  const store = createStore({ count: 0, text: "poiu" });
+  const store = createStore({ count: 0, text: "poiu", text2: "hello" });
   const App = () => {
-    const { count, text } = useStore(store);
+    const { count, text, text2 } = useStore(store);
     useEffect(() => {
       return store.subscribe((effectState) => {
         console.log(effectState.count);
@@ -18,7 +18,41 @@ test("resy-set-and-sub1", async () => {
       <>
         <p>{count}</p>
         <p>{text}</p>
+        <p>text2:{text2}</p>
         <button onClick={() => store.setState({ count: count + 1 })}>inc-btn</button>
+        <button onClick={() => {
+          store.setState({ count: count + 1 }, (nextState) => {
+            expect(nextState.count === store.count).toBeTruthy();
+            expect(nextState.count === 2).toBeTruthy();
+            expect(nextState.text2 !== store.text2).toBeTruthy();
+            expect(nextState.text2 === "hello").toBeTruthy();
+            expect(store.text2 === "hello-sync").toBeTruthy();
+          });
+          store.setState({ text2: "hello-sync" }, (nextState) => {
+            expect(nextState.count === store.count).toBeTruthy();
+            expect(nextState.count === 2).toBeTruthy();
+            expect(nextState.text2 === store.text2).toBeTruthy();
+            expect(nextState.text2 === "hello-sync").toBeTruthy();
+          });
+        }}>sync-btn</button>
+        <button onClick={() => {
+          store.setState({ count: count + 1 }, (nextState) => {
+            console.log(nextState.count, store.count, nextState.text2, store.text2);
+            
+            expect(nextState.count === store.count).toBeTruthy();
+            expect(nextState.count === 3).toBeTruthy();
+            expect(nextState.text2 === store.text2).toBeTruthy();
+            expect(nextState.text2 === "hello-sync").toBeTruthy();
+            
+            store.setState({ text2: "hello-inner" }, () => {
+              // console.log(nextState.count, store.count, nextState.text, store.text);
+              expect(nextState.count === store.count).toBeTruthy();
+              expect(nextState.count === 3).toBeTruthy();
+              expect(nextState.text2 === store.text2).toBeTruthy();
+              expect(nextState.text2 === "hello-inner").toBeTruthy();
+            });
+          });
+        }}>inner-btn</button>
       </>
     );
   };
@@ -29,6 +63,18 @@ test("resy-set-and-sub1", async () => {
   await waitFor(() => {
     getByText("1");
     getByText("Arosy");
+  });
+  
+  fireEvent.click(getByText("sync-btn"));
+  await waitFor(() => {
+    getByText("2");
+    getByText("text2:hello-sync");
+  });
+  
+  fireEvent.click(getByText("inner-btn"));
+  await waitFor(() => {
+    getByText("3");
+    getByText("text2:hello-inner");
   });
   
   // @ts-ignore

@@ -8,7 +8,7 @@ type State = {
   refName?: string;
 };
 
-test("resy-useStoreWithRef", async () => {
+test("resy-useStoreWithRef-1", async () => {
   const store = createStore<State>({
     count: 0,
   });
@@ -63,29 +63,10 @@ test("resy-useStoreWithRef", async () => {
   expect(() => useStore(NaN)).toThrowError();
   // @ts-ignore
   expect(() => useStore(true)).toThrowError();
-  /** 测试store类型报错 end */
-  
-  /** 测试store类型报错 start */
   // @ts-ignore
-  expect(() => useStoreWithRef(123)).toThrowError();
+  expect(() => useStore(new Map())).toThrowError();
   // @ts-ignore
-  expect(() => useStoreWithRef("123")).toThrowError();
-  // @ts-ignore
-  expect(() => useStoreWithRef({})).toThrowError();
-  // @ts-ignore
-  expect(() => useStoreWithRef(() => {})).toThrowError();
-  // @ts-ignore
-  expect(() => useStoreWithRef([])).toThrowError();
-  // @ts-ignore
-  expect(() => useStoreWithRef(null)).toThrowError();
-  // @ts-ignore
-  expect(() => useStoreWithRef(undefined)).toThrowError();
-  // @ts-ignore
-  expect(() => useStoreWithRef(new Symbol())).toThrowError();
-  // @ts-ignore
-  expect(() => useStoreWithRef(NaN)).toThrowError();
-  // @ts-ignore
-  expect(() => useStoreWithRef(true)).toThrowError();
+  expect(() => useStore(new Set())).toThrowError();
   /** 测试store类型报错 end */
   
   /** 测试store类型报错 start */
@@ -109,6 +90,10 @@ test("resy-useStoreWithRef", async () => {
   expect(() => useConciseState(NaN)).toThrowError();
   // @ts-ignore
   expect(() => useConciseState(true)).toThrowError();
+  // @ts-ignore
+  expect(() => useConciseState(new Map())).toThrowError();
+  // @ts-ignore
+  expect(() => useConciseState(new Set())).toThrowError();
   /** 测试store类型报错 end */
   
   fireEvent.click(getByText("btn"));

@@ -58,13 +58,13 @@ export function useConciseState<S extends State>(initialState?: S): ConciseStore
  * 除此之外，也可以将某些不方便修改到全局的组件内部的数据引用挂载到全局的store上，
  * 从而便于私有数据的全局化使用。
  */
-export function useStoreWithRef<S extends State>(store: S, refData: Readonly<Partial<S>>): S {
+export function useStoreWithRef<S extends State>(store: S, refData?: Readonly<Partial<S>>): S {
   storeErrorHandle(store);
   const ref = useRef(refData);
   
   // 先执行重置
   useMemo(() => (
-    (
+    ref?.current !== undefined && (
       (
         store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
       ).get("refInStore") as StoreCoreMapValue<S>["refInStore"]
@@ -72,7 +72,7 @@ export function useStoreWithRef<S extends State>(store: S, refData: Readonly<Par
     // eslint-disable-next-line react-hooks/exhaustive-deps
   ), []);
   
-  (
+  ref?.current !== undefined && (
     (
       store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
     ).get("refInStore") as StoreCoreMapValue<S>["refInStore"]

@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { expect, test } from "vitest";
-import { createStore, useStoreWithRef } from "../src";
-import { render } from "@testing-library/react";
+import { createStore, useStore, useStoreWithRef } from "../src";
+import {fireEvent, render, waitFor} from "@testing-library/react";
 
 type State = {
   count: number;
@@ -13,9 +13,23 @@ test("resy-useStoreWithRef-2", async () => {
     count: 0,
   });
   
-  function App() {
-    const { refName } = useStoreWithRef(store);
+  function RefApp() {
+    const { refName } = useStoreWithRef(store, {
+      refName: "ref-name-test",
+    });
+    
+    useEffect(() => {
+      console.log(store.refName, refName);
+      expect(store.refName === refName).toBeTruthy();
+    }, []);
+    
+    return (
+      <p>ref-com-refName:{refName}</p>
+    );
+  }
   
+  function App() {
+    const { count } = useStore(store);
     /** 测试store、refData类型报错 start */
     // @ts-ignore
     expect(() => useStoreWithRef(store, 123)).toThrowError();
@@ -63,15 +77,24 @@ test("resy-useStoreWithRef-2", async () => {
     expect(() => useStoreWithRef(store, new Set())).toThrowError();
     /** 测试store、refData类型报错 end */
     
-    useEffect(() => {
-      console.log(store.refName, refName);
-      expect(store.refName === refName).toBeTruthy();
-    }, []);
-    
     return (
-      <p>ref-com-refName:{refName}</p>
+      <>
+        <p>{count}</p>
+        <button onClick={() => store.count++}>ref-btn1</button>
+        <button onClick={() => store.count = 999}>ref-btn2</button>
+        {(count === 0 || count === 999) && <RefApp/>}
+      </>
     );
   }
   
-  render(<App/>);
+  const { getByText } = render(<App/>);
+  
+  fireEvent.click(getByText("ref-btn1"));
+  await waitFor(() => {
+    getByText("1");
+  });
+  fireEvent.click(getByText("ref-btn2"));
+  await waitFor(() => {
+    getByText("999");
+  });
 });

@@ -505,7 +505,7 @@ export function createStore<S extends State>(
       // 这里要考虑到refData的引用数据，避免从useSyncExternalStore中产生
       return externalMap.get(key as keyof ExternalMapValue<S>)
         // 防止refDataAssign中有些数据就是undefined
-        || (Object.prototype.hasOwnProperty.call(refDataAssign, key) && refDataAssign?.[key])
+        || (refDataAssign && Object.prototype.hasOwnProperty.call(refDataAssign, key) && refDataAssign[key])
         || (
         (
           (

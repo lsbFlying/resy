@@ -62,17 +62,7 @@ export function useStoreWithRef<S extends State>(store: S, refData?: Readonly<Pa
   storeErrorHandle(store);
   const ref = useRef(refData);
   
-  // 先执行重置
-  useMemo(() => (
-    ref?.current !== undefined && (
-      (
-        store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-      ).get("refInStore") as StoreCoreMapValue<S>["refInStore"]
-    )(ref.current, true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  ), []);
-  
-  ref?.current !== undefined && (
+  (
     (
       store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
     ).get("refInStore") as StoreCoreMapValue<S>["refInStore"]

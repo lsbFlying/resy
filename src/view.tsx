@@ -48,7 +48,7 @@ export function view<P extends State = {}, S extends State = {}>(
   // any用于防范某些HOC导致的类型不合一问题，比如withRouter(低版本的react-router还是存在该HOC)
   // tslint:disable-next-line:variable-name
   Comp: React.ComponentType<MapStateToProps<S, P> | any>,
-  isDeepEqual?: (prev: PS<P, S>, next: PS<P, S>) => boolean,
+  isDeepEqual?: (next: PS<P, S>, prev: PS<P, S>) => boolean,
 ) {
   storeErrorHandle(store);
   return memo((props: P) => {
@@ -84,15 +84,15 @@ export function view<P extends State = {}, S extends State = {}>(
       // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
       const unsubscribe = store.subscribe((
         effectState,
-        prevState,
         nextState,
+        prevState,
       ) => {
         const effectStateFields = Object.keys(effectState);
         
         if (
           // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
           Array.from(innerUseStateSet).some(key => effectStateFields.includes(key as string))
-          && (!isDeepEqual || !isDeepEqual({ props, state: prevState }, { props, state: nextState }))
+          && (!isDeepEqual || !isDeepEqual({ props, state: nextState }, { props, state: prevState }))
         ) {
           /**
            * // innerUseStateSet.clear();
@@ -124,8 +124,8 @@ export function view<P extends State = {}, S extends State = {}>(
     // props与state的变化可能存在同时变化的情况，但不影响isDeepEqual的执行
     const latestState = mapToObject(getLatestStateMap(store));
     return isDeepEqual(
-      { props: prevProps, state: latestState },
       { props: nextProps, state: latestState },
+      { props: prevProps, state: latestState },
     );
   } : undefined);
 }

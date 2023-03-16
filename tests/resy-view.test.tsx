@@ -107,9 +107,9 @@ const TestCom = (props: MapStateToProps<Store, TestComProps>) => {
 const PureTestCom = view<TestComProps, Store>(
   store,
   TestCom,
-  (prev, next) => {
-  const { props: prevProps, state: prevState } = prev;
+  (next, prev) => {
   const { props: nextProps, state: nextState } = next;
+  const { props: prevProps, state: prevState } = prev;
   if (
     prevProps.testObj.name === nextProps.testObj.name
     || (

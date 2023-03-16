@@ -18,8 +18,10 @@ test("resy-useStoreWithRef-2", async () => {
       refName: "ref-name-test",
     });
     
+    console.log("run", store.refName, refName);
+    
     useEffect(() => {
-      console.log(store.refName, refName);
+      console.log("useEffect", store.refName, refName);
       expect(store.refName === refName).toBeTruthy();
     }, []);
     

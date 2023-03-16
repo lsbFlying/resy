@@ -63,11 +63,3 @@ export function errorHandle(errMsg: string) {
     throw new Error(errMsg);
   }
 }
-
-// 判断空对象（已知是纯对象的前提）
-export function isEmpty(obj: Record<any, any>) {
-  for(const _ in obj) {
-    return false;
-  }
-  return true
-}

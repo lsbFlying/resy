@@ -9,7 +9,7 @@ import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
 import { batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_ } from "./static";
-import {updateDataErrorHandle, mapToObject, errorHandle, isEmpty} from "./utils";
+import { updateDataErrorHandle, mapToObject, errorHandle } from "./utils";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType, StoreCoreMapValue,
   StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe, Scheduler, CustomEventListener, Listener,
@@ -99,11 +99,11 @@ export function createStore<S extends State>(
   }
   
   /**
-   * 挂载引用数据合并对象，没有使用Map是考虑到refInStore函数处理中使用来对象的合并，可能对象更方便一些
+   * @description 挂载引用数据
    * 理论上同一个store上不应该出现同名引用，所以通过refDataAssign来判断是否是同名引用
-   * 同时需要refDataAssign来判断与状态数据的区分，是过是引用数据的属性就不使用useSyncExternalStore
+   * 同时需要refDataMap来判断与状态数据的区分，是过是引用数据的属性就不使用useSyncExternalStore
    */
-  let refDataAssign: Partial<S> | null;
+  let refDataMap: Map<keyof S, S[keyof S]> | null = null;
   
   // 处理store的监听订阅、ref数据引用关联、view初始化重置以及获取最新state数据的相关核心处理Map
   const storeCoreMap: StoreCoreMapType<S> = new Map();
@@ -129,22 +129,22 @@ export function createStore<S extends State>(
       }
     });
   });
-  storeCoreMap.set("refInStore", (refData: Partial<S>, lookInitialReset?: boolean) => {
-    if (Object.prototype.toString.call(refData) === "[object Object]") {
-      if (!lookInitialReset) {
-        // 合并ref引用缓存保持更新
-        refDataAssign = Object.assign({}, refDataAssign, refData);
-        Object.keys(refData).forEach(key => {
-          stateMap.set(key, refData[key] as S[keyof S]);
-        });
-      } else if (initialReset) {
-        Object.keys(refData).forEach(key => {
-          resetStateMap(key);
-          refDataAssign && delete refDataAssign[key];
-          if (refDataAssign && isEmpty(refDataAssign)) refDataAssign = null;
-        });
-      }
-    } else {
+  storeCoreMap.set("refInStore", (refData?: Partial<S>) => {
+    if (refData !== undefined && Object.prototype.toString.call(refData) === "[object Object]") {
+      Object.keys(refData as Partial<S>).forEach(key => {
+        /**
+         * 禁止同一个store上的同名引用导致错误代码的值被覆盖
+         * 也就是说useStoreWithRef第一个执行到的ref引用属性是不会被后续覆盖的
+         */
+        if (!refDataMap?.has(key)) {
+          !refDataMap
+            ? refDataMap = new Map(Object.entries(refData as Partial<S>))
+            : refDataMap.set(key, (refData as S)[key]);
+          
+          stateMap.set(key, (refData as S)[key]);
+        }
+      });
+    } else if (refData !== undefined) {
       errorHandle("The refData parameter of useStoreWithRef is not an object!");
     }
   });
@@ -189,7 +189,16 @@ export function createStore<S extends State>(
        * 因为当前还在业务逻辑中，不属于完整的卸载
        */
       if (initialReset && !storeChangeSet.size) {
-        resetStateMap(key);
+        if (!refDataMap || !refDataMap.has(key)) {
+          resetStateMap(key);
+        } else {
+          /**
+           * refData的引用必须使用useSyncExternalStore，但是无法setValue
+           * 通过useSyncExternalStore产生的引用个数来作为与initialReset同样原理的数据重置
+           */
+          refDataMap.delete(key);
+          if (!refDataMap.size) refDataMap = null;
+        }
       }
       storeChangeSet.add(storeChange);
       return () => {
@@ -249,7 +258,7 @@ export function createStore<S extends State>(
       
       (
         storeCoreMap.get("dispatchStoreEffect") as StoreCoreMapValue<S>["dispatchStoreEffect"]
-      )(effectState, mapToObject(prevState), mapToObject(stateMap));
+      )(effectState, mapToObject(stateMap), mapToObject(prevState));
     }
   }
   
@@ -259,7 +268,7 @@ export function createStore<S extends State>(
    * 所以这里没有阻止函数作为数据属性的更新
    */
   function taskPush(key: keyof S, val: S[keyof S]) {
-    if (!refDataAssign || !Object.prototype.hasOwnProperty.call(refDataAssign, key)) {
+    if (!refDataMap || !refDataMap.has(key)) {
       (scheduler.get("add") as Scheduler<S>["add"])(
         () => (
           (
@@ -271,7 +280,7 @@ export function createStore<S extends State>(
         taskDataMapPrivate,
         taskQueueMapPrivate,
       );
-    } else if (refDataAssign) {
+    } else if (refDataMap) {
       errorHandle(
         "The property of the current update data contains the refData reference attribute," +
         " RefData is only a reference, so update is prohibited."
@@ -350,13 +359,13 @@ export function createStore<S extends State>(
     const prevState = new Map(stateMap);
     batchUpdate(() => {
       Object.keys(updateParamsTemp).forEach(key => {
-        if(!refDataAssign || !Object.prototype.hasOwnProperty.call(refDataAssign, key)) {
+        if(!refDataMap || !refDataMap.has(key)) {
           (
             (
               initialValueConnectStore(key).get(key) as StoreMapValue<S>
             ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
           )((updateParamsTemp as Partial<S> | S)[key]);
-        } else if (refDataAssign) {
+        } else if (refDataMap) {
           errorHandle(
             "The property of the current update data contains the refData reference attribute," +
             " RefData is only a reference, so update is prohibited."
@@ -439,11 +448,7 @@ export function createStore<S extends State>(
        * 这里取一个实例类型常量反而方便节省内存、增加代码执行效率
        */
       storeCoreMap.get("eventType") as EventsType,
-      (
-        effectState: Partial<S>,
-        prevState: S,
-        nextState: S,
-      ) => {
+      (effectState, nextState, prevState) => {
         let includesFlag = false;
         const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
         if (!listenerKeysIsEmpty && Object.keys(effectState).some(key => stateKeys.includes(key))) includesFlag = true;
@@ -451,7 +456,7 @@ export function createStore<S extends State>(
          * 事实上最终订阅触发时，每一个订阅的这个外层listener都被触发了，
          * 只是这里在最终执行内层listener的时候做了数据变化的判断才实现了subscribe中的listener的是否执行
          */
-        if (listenerKeysIsEmpty || (!listenerKeysIsEmpty && includesFlag)) listener(effectState, prevState, nextState);
+        if (listenerKeysIsEmpty || (!listenerKeysIsEmpty && includesFlag)) listener(effectState, nextState, prevState);
       },
     );
     
@@ -508,10 +513,7 @@ export function createStore<S extends State>(
         return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
       }
       // 这里要考虑到refData的引用数据，避免从useSyncExternalStore中产生
-      return externalMap.get(key as keyof ExternalMapValue<S>)
-        // 防止refDataAssign中有些数据就是undefined
-        || (refDataAssign && Object.prototype.hasOwnProperty.call(refDataAssign, key) && refDataAssign[key])
-        || (
+      return externalMap.get(key as keyof ExternalMapValue<S>) || (
         (
           (
             initialValueConnectStore(key) as StoreMap<S>

@@ -16,8 +16,10 @@
 <strong>changed logs - releases what's Changed</strong>
 </summary>
 
-🌟`v7.1.2`：<br/>
+🌟`v8.0.0`：<br/>
 1. Optimized the undefined situation when there may be some data in refData.
+2. Adjust the parameter position of the isDeepEqual function of "view",
+   and adjust the position of the listener function parameter of the "subscribe" listening callback.
 
 🌟`v7.1.1`：<br/>
 1. Fixed bug that did not correspond to the latest data parameters of setState's callback function.
@@ -698,9 +700,9 @@ const TestView = view(
   store,
   ClassCom,
   // You can customize the contrast function to control whether to update the rendering
-  // (prev, next) => {
-  //   const { props: prevProps, state: prevState } = prev;
+  // (next, prev) => {
   //   const { props: nextProps, state: nextState } = next;
+  //   const { props: prevProps, state: prevState } = prev;
   //   // some conditon
   //   if (xxx) {
   //     return true;

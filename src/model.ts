@@ -35,8 +35,8 @@ export type StoreMap<S extends State> = Map<keyof S, StoreMapValue<S>>;
 // 订阅事件的监听回调函数类型
 export type Listener<S extends State> = (
   effectState: Partial<S>,
-  prevState: S,
   nextState: S,
+  prevState: S,
 ) => void;
 
 // 监听事件的key类型
@@ -50,8 +50,8 @@ export interface CustomEventListener<S extends State> {
   dispatchEvent(
     type: EventsType,
     effectState: Partial<S>,
-    prevState: S,
     nextState: S,
+    prevState: S,
   ): void;
   /**
    * @description resy销毁监听订阅的时候尽管实际上是移除了监听Set中的监听实例
@@ -78,18 +78,14 @@ export interface StoreCoreMapValue<S extends State> {
   stateMap: Map<keyof S, S[keyof S]>;
   // 重置(恢复)初始化数据（供view使用）
   viewInitialReset: (stateFields: (keyof S)[]) => void;
-  /**
-   * 将某些数据引用挂载到store全局储存容器上
-   * @param refData 引用的数据
-   * @param lookInitialReset 根据createStore中的options配置的initialReset来同步决定是否重置
-   */
-  refInStore: (refData: Partial<S>, lookInitialReset?: boolean) => void;
+  // 将某些数据引用挂载到store全局储存容器上
+  refInStore: (refData?: Partial<S>) => void;
   // 订阅监听的事件类型
   eventType: EventsType;
   // 触发订阅监听影响的Set容器
   listenerStoreSet: Set<CustomEventListener<S>>;
   // 触发订阅监听的变动影响（即循环遍历执行listenerStoreSet中的监听函数）
-  dispatchStoreEffect: (effectState: Partial<S>, prevState: S, nextState: S) => void;
+  dispatchStoreEffect: (effectState: Partial<S>, nextState: S, prevState: S) => void;
 }
 
 // 每一个resy生成的store的监听订阅对象、内部stateMap数据以及重置初始化数据的方法

@@ -9,7 +9,7 @@ import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
 import { batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_ } from "./static";
-import { updateDataErrorHandle, mapToObject, errorHandle } from "./utils";
+import {updateDataErrorHandle, mapToObject, errorHandle, isEmpty} from "./utils";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType, StoreCoreMapValue,
   StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe, Scheduler, CustomEventListener, Listener,
@@ -137,6 +137,7 @@ export function createStore<S extends State>(
         Object.keys(refData).forEach(key => {
           resetStateMap(key);
           refDataAssign && delete refDataAssign[key];
+          if (refDataAssign && isEmpty(refDataAssign)) refDataAssign = null;
         });
       }
     } else {

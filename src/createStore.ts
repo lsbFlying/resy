@@ -98,7 +98,11 @@ export function createStore<S extends State>(
     })
   }
   
-  // 挂载引用数据合并对象，没有使用Map是考虑到refInStore函数处理中使用来对象的合并，可能对象更方便一些
+  /**
+   * 挂载引用数据合并对象，没有使用Map是考虑到refInStore函数处理中使用来对象的合并，可能对象更方便一些
+   * 理论上同一个store上不应该出现同名引用，所以通过refDataAssign来判断是否是同名引用
+   * 同时需要refDataAssign来判断与状态数据的区分，是过是引用数据的属性就不使用useSyncExternalStore
+   */
   let refDataAssign: Partial<S> | null;
   
   // 处理store的监听订阅、ref数据引用关联、view初始化重置以及获取最新state数据的相关核心处理Map

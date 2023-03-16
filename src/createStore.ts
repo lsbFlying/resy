@@ -95,7 +95,7 @@ export function createStore<S extends State>(
         cycleState,
       },
       callback: (nextState) => callback(nextState),
-    })
+    });
   }
   
   /**

@@ -496,7 +496,10 @@ export function createStore<S extends State>(
         return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
       }
       // 这里要考虑到refData的引用数据，避免从useSyncExternalStore中产生
-      return externalMap.get(key as keyof ExternalMapValue<S>) || refDataAssign?.[key] || (
+      return externalMap.get(key as keyof ExternalMapValue<S>)
+        // 防止refDataAssign中有些数据就是undefined
+        || (Object.prototype.hasOwnProperty.call(refDataAssign, key) && refDataAssign?.[key])
+        || (
         (
           (
             initialValueConnectStore(key) as StoreMap<S>

@@ -16,6 +16,9 @@
 <strong>changed logs - releases what's Changed</strong>
 </summary>
 
+🌟`v7.1.2`：<br/>
+1. Optimized the undefined situation when there may be some data in refData.
+
 🌟`v7.1.1`：<br/>
 1. Fixed bug that did not correspond to the latest data parameters of setState's callback function.
 2. Optimized scheduling adjustment for update batches of scheduler.

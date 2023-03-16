@@ -91,8 +91,8 @@ export function createStore<S extends State>(
     })
   }
   
-  // 挂载引用缓存，没有使用Map是考虑到refInStore函数处理中使用来对象的合并，可能对象更方便一些
-  let refDataCache: Partial<S> | null;
+  // 挂载引用数据合并对象，没有使用Map是考虑到refInStore函数处理中使用来对象的合并，可能对象更方便一些
+  let refDataAssign: Partial<S> | null;
   
   // 处理store的监听订阅、ref数据引用关联、view初始化重置以及获取最新state数据的相关核心处理Map
   const storeCoreMap: StoreCoreMapType<S> = new Map();
@@ -122,14 +122,14 @@ export function createStore<S extends State>(
     if (Object.prototype.toString.call(refData) === "[object Object]") {
       if (!lookInitialReset) {
         // 合并ref引用缓存保持更新
-        refDataCache = Object.assign({}, refDataCache, refData);
+        refDataAssign = Object.assign({}, refDataAssign, refData);
         Object.keys(refData).forEach(key => {
           stateMap.set(key, refData[key] as S[keyof S]);
         });
       } else if (initialReset) {
         Object.keys(refData).forEach(key => {
           stateMap.set(key, state[key]);
-          refDataCache && delete refDataCache[key];
+          refDataAssign && delete refDataAssign[key];
         });
       }
     } else {
@@ -247,7 +247,7 @@ export function createStore<S extends State>(
    * 所以这里没有阻止函数作为数据属性的更新
    */
   function taskPush(key: keyof S, val: S[keyof S]) {
-    if (!refDataCache || !Object.prototype.hasOwnProperty.call(refDataCache, key)) {
+    if (!refDataAssign || !Object.prototype.hasOwnProperty.call(refDataAssign, key)) {
       (scheduler.get("add") as Scheduler<S>["add"])(
         () => (
           (
@@ -259,7 +259,7 @@ export function createStore<S extends State>(
         taskDataMapPrivate,
         taskQueueMapPrivate,
       );
-    } else if (refDataCache) {
+    } else if (refDataAssign) {
       errorHandle(
         "The property of the current update data contains the refData reference attribute," +
         " RefData is only a reference, so update is prohibited."
@@ -338,13 +338,13 @@ export function createStore<S extends State>(
     const prevState = new Map(stateMap);
     batchUpdate(() => {
       Object.keys(updateParamsTemp).forEach(key => {
-        if(!refDataCache || !Object.prototype.hasOwnProperty.call(refDataCache, key)) {
+        if(!refDataAssign || !Object.prototype.hasOwnProperty.call(refDataAssign, key)) {
           (
             (
               initialValueConnectStore(key).get(key) as StoreMapValue<S>
             ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
           )((updateParamsTemp as Partial<S> | S)[key]);
-        } else if (refDataCache) {
+        } else if (refDataAssign) {
           errorHandle(
             "The property of the current update data contains the refData reference attribute," +
             " RefData is only a reference, so update is prohibited."
@@ -496,7 +496,7 @@ export function createStore<S extends State>(
         return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
       }
       // 这里要考虑到refData的引用数据，避免从useSyncExternalStore中产生
-      return externalMap.get(key as keyof ExternalMapValue<S>) || refDataCache?.[key] || (
+      return externalMap.get(key as keyof ExternalMapValue<S>) || refDataAssign?.[key] || (
         (
           (
             initialValueConnectStore(key) as StoreMap<S>

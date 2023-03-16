@@ -254,26 +254,26 @@ export type MapStateToProps<S extends State, P extends State = {}> = P & {
  */
 export interface Scheduler<S extends State = {}> {
   // setState的回调函数callback的任务执行中
-  callbackIsOn?: true;
+  callbackIsOn: true | null;
   // 更新进行中
-  updateIsOn?: Promise<void>;
+  updateIsOn: Promise<void> | null;
   // 新增直接更新数据的key/value以及相应的任务函数
   add(
     task: Callback,
     key: keyof S,
     val: S[keyof S],
-    taskDataMap?: Map<keyof S, S[keyof S]>,
-    taskQueueMap?: Map<keyof S, Callback>
+    taskDataMap: Map<keyof S, S[keyof S]> | null,
+    taskQueueMap: Map<keyof S, Callback> | null,
   ): void;
   // 冲刷任务数据与任务队列
   flush(
-    taskDataMap?: Map<keyof S, S[keyof S]>,
-    taskQueueMap?: Map<keyof S, Callback>
+    taskDataMap: Map<keyof S, S[keyof S]> | null,
+    taskQueueMap: Map<keyof S, Callback> | null,
   ): void;
   // 获取任务数据与任务队列
   getTask(
-    taskDataMap?: Map<keyof S, S[keyof S]>,
-    taskQueueMap?: Map<keyof S, Callback>
+    taskDataMap: Map<keyof S, S[keyof S]> | null,
+    taskQueueMap: Map<keyof S, Callback> | null,
   ): {
     taskDataMap: Map<keyof S, S[keyof S]>,
     taskQueueMap: Map<keyof S, Callback>,

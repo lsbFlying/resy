@@ -19,8 +19,8 @@ scheduler.set(
     task: Callback,
     key: never,
     val: any,
-    taskDataMapParam?: Map<never, any>,
-    taskQueueMapParam?: Map<never, Callback>,
+    taskDataMapParam: Map<never, any> | null,
+    taskQueueMapParam: Map<never, Callback> | null,
   ) => {
     (taskDataMapParam || taskDataMap).set(key, val);
     (taskQueueMapParam || taskQueueMap).set(key, task);
@@ -30,8 +30,8 @@ scheduler.set(
 scheduler.set(
   "flush",
   (
-    taskDataMapParam?: Map<never, any>,
-    taskQueueMapParam?: Map<never, Callback>,
+    taskDataMapParam: Map<never, any> | null,
+    taskQueueMapParam: Map<never, Callback> | null,
   ) => {
     (taskDataMapParam || taskDataMap).clear();
     (taskQueueMapParam || taskQueueMap).clear();
@@ -41,8 +41,8 @@ scheduler.set(
 scheduler.set(
   "getTask",
   (
-    taskDataMapParam?: Map<never, any>,
-    taskQueueMapParam?: Map<never, Callback>,
+    taskDataMapParam: Map<never, any> | null,
+    taskQueueMapParam: Map<never, Callback> | null,
   ) => {
     return {
       taskDataMap: new Map(taskDataMapParam || taskDataMap),

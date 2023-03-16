@@ -68,8 +68,8 @@ export function createStore<S extends State>(
    * 这就需要私有的 "更新的任务队列（私有化）" 与 "更新的任务数据（私有化）"
    * 来解决每一个私有状态容器的有效更新的任务或者更新数据Map中的key不会因为相同而冲突的问题
    */
-  const taskQueueMapPrivate = __privatization__ ? new Map<keyof S, Callback>() : undefined;
-  const taskDataMapPrivate = __privatization__ ? new Map<keyof S, S[keyof S]>() : undefined;
+  const taskQueueMapPrivate = __privatization__ ? new Map<keyof S, Callback>() : null;
+  const taskDataMapPrivate = __privatization__ ? new Map<keyof S, S[keyof S]>() : null;
   
   /**
    * @description 不改变传参state，同时resy使用Map与Set提升性能
@@ -92,7 +92,7 @@ export function createStore<S extends State>(
   }
   
   // 挂载引用缓存，没有使用Map是考虑到refInStore函数处理中使用来对象的合并，可能对象更方便一些
-  let refDataCache: Partial<S> | undefined;
+  let refDataCache: Partial<S> | null;
   
   // 处理store的监听订阅、ref数据引用关联、view初始化重置以及获取最新state数据的相关核心处理Map
   const storeCoreMap: StoreCoreMapType<S> = new Map();
@@ -213,8 +213,8 @@ export function createStore<S extends State>(
   
   // 为每一个数据字段储存连接到store容器中
   function initialValueConnectStore(key: keyof S) {
-    // 解决初始化属性泛型有?判断符导致store[key]为undefined的问题
-    if (storeMap.get(key) !== undefined) return storeMap;
+    // 解决初始化属性泛型有?判断符，即一开始没有初始化的数据属性
+    if (storeMap.has(key)) return storeMap;
     genStoreMapKeyValue(key);
     return storeMap;
   }
@@ -283,7 +283,7 @@ export function createStore<S extends State>(
        * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
        */
       scheduler.set("updateIsOn", Promise.resolve().then(() => {
-        scheduler.set("updateIsOn", undefined);
+        scheduler.set("updateIsOn", null);
         
         const { taskDataMap, taskQueueMap } = (scheduler.get("getTask") as Scheduler<S>["getTask"])(
           taskDataMapPrivate,
@@ -317,7 +317,7 @@ export function createStore<S extends State>(
           scheduler.set("callbackIsOn", true);
           // 结合上一轮的回调进行上一轮更新参数的合并得到最新的回调数据参数
           callback(Object.assign({}, cycleState, index === 0 ? updateParams : array[index - 1].cycleData.updateParams));
-          if (index === array.length - 1) scheduler.set("callbackIsOn", undefined);
+          if (index === array.length - 1) scheduler.set("callbackIsOn", null);
         });
         // 清空回调执行栈，否则回调中如果有更新则形成死循环
         setStateCallbackStackArray.splice(0);

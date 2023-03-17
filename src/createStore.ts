@@ -79,9 +79,18 @@ export function createStore<S extends State>(
   
   // 重置初始化stateMap状态
   function resetStateMap(key: keyof S) {
-    Object.prototype.hasOwnProperty.call(state, key)
-      ? stateMap.set(key, state[key])
-      : stateMap.delete(key);
+    if (!refDataMap || !refDataMap.has(key)) {
+      Object.prototype.hasOwnProperty.call(state, key)
+        ? stateMap.set(key, state[key])
+        : stateMap.delete(key);
+    } else {
+      /**
+       * refData的引用必须使用useSyncExternalStore，但是无法setValue
+       * 通过useSyncExternalStore产生的引用个数来作为与initialReset同样原理的数据重置
+       */
+      refDataMap.delete(key);
+      if (!refDataMap.size) refDataMap = null;
+    }
   }
   
   // setState的回调函数执行栈数组
@@ -190,16 +199,7 @@ export function createStore<S extends State>(
        * 因为当前还在业务逻辑中，不属于完整的卸载
        */
       if (initialReset && !storeChangeSet.size) {
-        if (!refDataMap || !refDataMap.has(key)) {
-          resetStateMap(key);
-        } else {
-          /**
-           * refData的引用必须使用useSyncExternalStore，但是无法setValue
-           * 通过useSyncExternalStore产生的引用个数来作为与initialReset同样原理的数据重置
-           */
-          refDataMap.delete(key);
-          if (!refDataMap.size) refDataMap = null;
-        }
+        resetStateMap(key);
       }
       storeChangeSet.add(storeChange);
       return () => {

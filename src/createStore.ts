@@ -130,7 +130,8 @@ export function createStore<S extends State>(
     });
   });
   storeCoreMap.set("refInStore", (refData?: Partial<S>) => {
-    if (refData !== undefined && Object.prototype.toString.call(refData) === "[object Object]") {
+    const notUndefined = refData !== undefined;
+    if (notUndefined && Object.prototype.toString.call(refData) === "[object Object]") {
       Object.keys(refData as Partial<S>).forEach(key => {
         /**
          * 禁止同一个store上的同名引用导致错误代码的值被覆盖
@@ -144,7 +145,7 @@ export function createStore<S extends State>(
           stateMap.set(key, (refData as S)[key]);
         }
       });
-    } else if (refData !== undefined) {
+    } else if (notUndefined) {
       errorHandle("The refData parameter of useStoreWithRef is not an object!");
     }
   });

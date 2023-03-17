@@ -14,7 +14,27 @@ test("resy-useStoreWithRef-1", async () => {
     count: 0,
   });
   
-  function RefCom() {
+  function RefCom0() {
+    const { refName } = useStore(store);
+    
+    useEffect(() => {
+      /**
+       * useEffect是异步滞后执行，而refName在最开始解构得到的是undefined，
+       * 因为挂载refName的useStoreWithRef是在组件App0中，但是RefCom0组件的渲染是要先于App0的
+       * 所以在执行到RefCom0组件的时候由于App0的useStoreWithRef还没有执行所以refName是undefined
+       */
+      console.log(store.refName, refName);
+      expect(store.refName === refName).toBeFalsy();
+      expect(store.refName === "useStoreWithRefUnitTest").toBeTruthy();
+      expect(refName === undefined).toBeTruthy();
+    }, []);
+    
+    return (
+      <p>ref-com0-refName:{refName}</p>
+    );
+  }
+  
+  function RefCom1() {
     const { refName } = useStore(store);
     
     useEffect(() => {
@@ -22,7 +42,7 @@ test("resy-useStoreWithRef-1", async () => {
     }, []);
     
     return (
-      <p>ref-com-refName:{refName}</p>
+      <p>ref-com1-refName:{refName}</p>
     );
   }
   
@@ -53,9 +73,10 @@ test("resy-useStoreWithRef-1", async () => {
     const { count, refName } = useStore(store);
     return (
       <>
+        <RefCom0/>
         {count <= 1 && <App0/>}
         {count <= 2 && <App1/>}
-        <RefCom/>
+        <RefCom1/>
         <p>count:{count}</p>
         <p>refName:{refName}</p>
         <button onClick={() => {

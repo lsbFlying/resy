@@ -20,6 +20,7 @@
 1. Optimized the undefined situation when there may be some data in refData.
 2. Adjust the parameter position of the isDeepEqual function of "view",
    and adjust the position of the listener function parameter of the "subscribe" listening callback.
+3. Optimized the useStoreWithRef api.
 
 🌟`v7.1.1`：<br/>
 1. Fixed bug that did not correspond to the latest data parameters of setState's callback function.
@@ -265,12 +266,17 @@ import { Form, Input } from "antd";
 
 function NameTemp() {
   /**
-   * be careful: Because it is a reference, the data of refData in useStoreWithRef cannot be updated.
+   * A、be careful: Because it is a reference, the data of refData in useStoreWithRef cannot be updated.
    * That is, you cannot write
    * "store.form = "newFormStr";",
    * "store.setState({ form: "newFormStr" });",
    * or "store.syncUpdate({ form: "newFormStr" })".
    * These updates are invalid and will throw an error.
+   *
+   * B、be careful: In addition, because reference data can be written in any component,
+   * you may need to add "?." when referencing in other components.
+   * so generally speaking, this type of reference data is marked with "?" data type,
+   * that is it maybe undefined.
    */
   const { form } = useStore(store);
   

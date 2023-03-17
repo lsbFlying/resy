@@ -72,14 +72,16 @@ export function view<P extends State = {}, S extends State = {}>(
        * 因为它本身是订阅监听执行的，不属于组件的生命周期发生
        * 所以这里需要特定的数据恢复，同时重置恢复内部注意关联到initialReset的逻辑处理
        */
-      (
+      if (
         (
-          store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-        ).get("viewInitialReset") as StoreCoreMapValue<S>["viewInitialReset"]
-      )(Array.from(innerUseStateSet));
-      
-      // 重置之后需要更新一下重置后的数据生效
-      setState(proxyStateHandler(stateMap, innerUseStateSet));
+          (
+            store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
+          ).get("viewInitialReset") as StoreCoreMapValue<S>["viewInitialReset"]
+        )(Array.from(innerUseStateSet))
+      ) {
+        // 重置之后需要更新一下重置后的数据生效
+        setState(proxyStateHandler(stateMap, innerUseStateSet));
+      }
       
       // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
       const unsubscribe = store.subscribe((

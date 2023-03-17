@@ -9,13 +9,20 @@ export function proxyStateHandler<S extends State>(
   stateMap: Map<keyof S, S[keyof S]>,
   innerUseStateSet: Set<keyof S>,
 ) {
-  return new Proxy(stateMap, {
-    get: (target: Map<keyof S, S[keyof S]>, key: keyof S) => {
+  const store = new Proxy(stateMap, {
+    get: (target: Map<keyof S, S[keyof S]>, key: keyof S, receiver) => {
       innerUseStateSet.add(key);
-      // stateMap(即最新的状态数据Map-latestState)给出了resy生成的store内部数据的引用，这里始终能获取到最新数据
-      return target.get(key);
+      /**
+       * stateMap(即最新的状态数据Map-latestState)给出了resy生成的store内部数据的引用，
+       * 这里始终能获取到最新数据
+       * 同时兼容考虑Reflect的bug兼容写法
+       */
+      return receiver === store
+        ? target.get(key)
+        : Reflect.get(target, key, receiver);
     },
   } as ProxyHandler<Map<keyof S, S[keyof S]>>) as object as S;
+  return store;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import {useEffect, useMemo, useRef} from "react";
 import { USE_STORE_KEY, USE_CONCISE_STORE_KEY, STORE_CORE_MAP_KEY } from "./static";
 import { createStore } from "./createStore";
 import { storeErrorHandle } from "./utils";
@@ -67,6 +67,16 @@ export function useStoreWithRef<S extends State>(store: S, refData?: Readonly<Pa
       store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
     ).get("refInStore") as StoreCoreMapValue<S>["refInStore"]
   )(ref.current);
+  
+  useEffect(() => {
+    return () => {
+      (
+        (
+          store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
+        ).get("refInStore") as StoreCoreMapValue<S>["refInStore"]
+      )(ref.current, true);
+    };
+  }, []);
   
   return store[USE_STORE_KEY as keyof S];
 }

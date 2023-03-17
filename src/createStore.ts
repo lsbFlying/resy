@@ -77,20 +77,20 @@ export function createStore<S extends State>(
    */
   const stateMap: Map<keyof S, S[keyof S]> = new Map(Object.entries(state));
   
+  /**
+   * @description 挂载引用数据
+   * 理论上同一个store上不应该出现同名引用，所以通过refDataAssign来判断是否是同名引用
+   * 同时需要refDataMap来判断与状态数据的区分，是过是引用数据的属性就不使用useSyncExternalStore
+   */
+  let refDataMap: Map<keyof S, S[keyof S]> | null = null;
+  
+  const viewPropsUseWayInnerFieldsSet = new Set<keyof S>();
+  
   // 重置初始化stateMap状态
   function resetStateMap(key: keyof S) {
-    if (!refDataMap || !refDataMap.has(key)) {
-      Object.prototype.hasOwnProperty.call(state, key)
-        ? stateMap.set(key, state[key])
-        : stateMap.delete(key);
-    } else {
-      /**
-       * refData的引用必须使用useSyncExternalStore，但是无法setValue
-       * 通过useSyncExternalStore产生的引用个数来作为与initialReset同样原理的数据重置
-       */
-      refDataMap.delete(key);
-      if (!refDataMap.size) refDataMap = null;
-    }
+    Object.prototype.hasOwnProperty.call(state, key)
+      ? stateMap.set(key, state[key])
+      : stateMap.delete(key);
   }
   
   // setState的回调函数执行栈数组
@@ -107,18 +107,13 @@ export function createStore<S extends State>(
     });
   }
   
-  /**
-   * @description 挂载引用数据
-   * 理论上同一个store上不应该出现同名引用，所以通过refDataAssign来判断是否是同名引用
-   * 同时需要refDataMap来判断与状态数据的区分，是过是引用数据的属性就不使用useSyncExternalStore
-   */
-  let refDataMap: Map<keyof S, S[keyof S]> | null = null;
-  
   // 处理store的监听订阅、ref数据引用关联、view初始化重置以及获取最新state数据的相关核心处理Map
   const storeCoreMap: StoreCoreMapType<S> = new Map();
   storeCoreMap.set("stateMap", stateMap);
   storeCoreMap.set("viewInitialReset", (linkStateFields: (keyof S)[]) => {
+    let resetExecFlag: true | null = null;
     linkStateFields.forEach(key => {
+      viewPropsUseWayInnerFieldsSet.add(key);
       /**
        * 与subscribe中的重置逻辑一样，只要还有组件引用当前数据，就仍然在业务逻辑当中不需要卸载重置
        * 多一层?.get("storeChangeSet")是为了判断当前数据是否有引用，
@@ -128,6 +123,10 @@ export function createStore<S extends State>(
        * 而它没有storeMap核心键值对恰巧说明这个数据自始自终都没有变化
        * 与多一层判断不执行resetStateMap相比相差无几，
        * 所以这里直接通过?.size来多一层兼容也简化判断
+       *
+       * 这里storeChangeSet.size为0的判断主要是为了兼容view对于class组件的处理，
+       * 如果view包裹的class组件使用的数据没有在别的地方使用到，那么它的size使用肯定是0，清空也没问题
+       * 如果反之，则不为0，那么则不能清空
        */
       if (
         initialReset && (
@@ -135,13 +134,26 @@ export function createStore<S extends State>(
         )?.size === 0
       ) {
         resetStateMap(key);
+        resetExecFlag = true;
       }
     });
+    return resetExecFlag;
   });
-  storeCoreMap.set("refInStore", (refData?: Partial<S>) => {
+  storeCoreMap.set("refInStore", (refData?: Partial<S>, reset?: boolean) => {
     const notUndefined = refData !== undefined;
     if (notUndefined && Object.prototype.toString.call(refData) === "[object Object]") {
       Object.keys(refData as Partial<S>).forEach(key => {
+        if (reset) {
+          /**
+           * todo 当resetStateMap函数处理的key与state里面的key完全一样的时候就代表整个store数据的驱动更新的引用全部卸载，
+           * 则可以执行refDateMap的卸载，并且要在微任务中执行，防止外部接口仍然有refData的引用
+           */
+          if (refDataMap && refDataMap.has(key)) {
+            refDataMap.delete(key);
+            stateMap.delete(key);
+          }
+          return;
+        }
         /**
          * 禁止同一个store上的同名引用导致错误代码的值被覆盖
          * 也就是说useStoreWithRef第一个执行到的ref引用属性是不会被后续覆盖的
@@ -197,8 +209,13 @@ export function createStore<S extends State>(
        * @description 通过storeChangeSet判断当前数据是否还有组件引用
        * 只要还有一个组件在引用当前数据，都不会重置数据，
        * 因为当前还在业务逻辑中，不属于完整的卸载
+       *
+       * 如果是view包裹的class组件使用了别的组件都没有使用的数据
+       * 那么这里好像很难通过storeChangeSet.size得到是否属于一个完整卸载周期的判断条件
+       * 此时就需要结合viewPropsUseWayInnerFieldsSet内部的属性看是否存在使用，
+       * 存在则还在周期内不能清除
        */
-      if (initialReset && !storeChangeSet.size) {
+      if (initialReset && !viewPropsUseWayInnerFieldsSet.size && !storeChangeSet.size) {
         resetStateMap(key);
       }
       storeChangeSet.add(storeChange);
@@ -518,7 +535,14 @@ export function createStore<S extends State>(
         return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
       }
       // 这里要考虑到refData的引用数据，避免从useSyncExternalStore中产生
-      return externalMap.get(key as keyof ExternalMapValue<S>) || (
+      return externalMap.get(key as keyof ExternalMapValue<S>)
+        /**
+         * 防止refDataAssign中有些数据就是undefined，并且这里也摒除了ref作为state状态数据使用的能力
+         * 因为考虑到ref数据仅仅作为引用，
+         * 既不能作为状态数据使用也不能进行更新不仅配合了refData的reset还在名称以及使用上合理化
+         */
+        || (refDataMap && refDataMap.has(key) && refDataMap.get(key))
+        || (
         (
           (
             initialValueConnectStore(key) as StoreMap<S>

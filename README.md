@@ -21,6 +21,7 @@
 2. Adjust the parameter position of the isDeepEqual function of "view",
    and adjust the position of the listener function parameter of the "subscribe" listening callback.
 3. Optimized the useStoreWithRef api.
+4. 优化了viewInitialReset的执行效率
 
 🌟`v7.1.1`：<br/>
 1. Fixed bug that did not correspond to the latest data parameters of setState's callback function.

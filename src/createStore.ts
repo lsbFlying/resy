@@ -338,7 +338,11 @@ export function createStore<S extends State>(
         ) => {
           scheduler.set("callbackIsOn", true);
           // 结合上一轮的回调进行上一轮更新参数的合并得到最新的回调数据参数
-          callback(Object.assign({}, cycleState, index === 0 ? updateParams : array[index - 1].cycleData.updateParams));
+          callback(Object.assign(
+            {},
+            cycleState,
+            index === 0 ? updateParams : array[index - 1].cycleData.updateParams,
+          ));
           if (index === array.length - 1) scheduler.set("callbackIsOn", null);
         });
         // 清空回调执行栈，否则回调中如果有更新则形成死循环

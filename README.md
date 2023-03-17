@@ -167,6 +167,8 @@ type StateType = {
   testArr: { age: number }[];
   testFun(): void;
   form?: FormInstance;
+  testCount: 0,
+  testText: "Hello-World",
 };
 
 // The generated store can be shared globally
@@ -360,20 +362,32 @@ function App() {
       console.log(nextState.count, nextState.text);
       /**
        * be careful, you can also read store to get the latest data.
-       * 🌟🌟🌟🌟🌟: But this is not recommended.
-       * This will cause code execution to be synchronized if multiple setState.
-       * when the subsequent callback is executed,
-       * the data is read through store in the first callback
-       * and the latest data value of the subsequent update can also be obtained.
-       * if setState is nested in the callback of setState,
-       * the internally nested setState has an executable callback again.
-       * it is also logical that the first callback
-       * cannot get the latest data value of the second round of updates.
-       * at the same time, these two points are consistent
-       * with the callback effect of the this.setState of the class component.
-       * while the parameter nextState of callback callback of setState exists.
-       * it is to solve the problem that store reads data
-       * to generate the latest data values in the execution of multiple setState synchronous codes.
+       * 🌟🌟🌟🌟🌟: For "store." There are different opinions on the use of.
+       * for example:
+       * store.setState({
+       *   testCount: 999,
+       * }, (nextState) => {
+       *   console.log("first", nextState.testCount, nextState.testText, store.testCount, store.testText);
+       *   // first 999 Hello-World 999 Fine-World
+       *   // 🌟🌟🌟🌟🌟
+       *   // You can see that the store.testText prints the data Fine-World in the next round of updates,
+       *   // while the testText in the callback function nextState of this update is still Hello-World,
+       *   // which is the same as the this.setState in react's class component.
+       *   // Whether reading data using nextState or store may not generate bug in the code of developers
+       *   // who are not familiar with these features, which requires us to know enough about our own measurement.
+       *   // 🌟🌟🌟🌟🌟
+       *   // From the above description,
+       *   // we can more deeply understand that reading data through store can always get the latest values,
+       *   // so generally speaking,
+       *   // we use useStore (store) and useStoreWithRef (store) to drive components to update rendering,
+       *   // and read data through store ("store." Or deconstructing store) are all operations for business logic.
+       * });
+       * store.setState({
+       *   testText: "Fine-World",
+       * }, (nextState) => {
+       *   console.log("second", nextState.testCount, nextState.testText, store.testCount, store.testText);
+       *   // second 999 Fine-World 999 Fine-World
+       * });
        */
       // console.log(store.count, store.text);
     });

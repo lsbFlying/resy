@@ -13,6 +13,9 @@ const taskDataMap = new Map();
  */
 const scheduler = new Map<keyof Scheduler, Scheduler[keyof Scheduler]>();
 
+scheduler.set("callbackIsOn", null);
+scheduler.set("updateIsOn", null);
+
 scheduler.set(
   "add",
   (

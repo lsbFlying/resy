@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useMemo, useState } from "react";
+import React, { memo, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { STORE_CORE_MAP_KEY } from "./static";
 import { getLatestStateMap, mapToObject, proxyStateHandler, storeErrorHandle } from "./utils";
 import type {State, StoreCoreMapType, StoreCoreMapValue, MapStateToProps, Store, PS, AnyFn} from "./model";
@@ -66,6 +66,15 @@ export function view<P extends State = {}, S extends State = {}>(
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
     const [state, setState] = useState<S>(() => proxyStateHandler(stateMap, innerUseStateSet));
+    
+    // 防止更新撕裂，做一个useLayoutEffect兼容处理
+    useLayoutEffect(() => {
+      const innerUseStateSetLayout: Set<keyof S> = new Set();
+      const stateLayout = proxyStateHandler(getLatestStateMap(store), innerUseStateSetLayout);
+      if (innerUseStateSetLayout.size !== innerUseStateSet.size) {
+        setState(stateLayout);
+      }
+    }, []);
     
     useEffect(() => {
       const viewConnectStoreSet = new Set<AnyFn>();

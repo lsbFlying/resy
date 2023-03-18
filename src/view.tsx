@@ -51,13 +51,14 @@ export function view<P extends State = {}, S extends State = {}>(
   isDeepEqual?: (next: PS<P, S>, prev: PS<P, S>) => boolean,
 ) {
   storeErrorHandle(store);
+  
+  // 引用数据的代理Set
+  const innerUseStateSet: Set<keyof S> = new Set();
+  
+  // 需要使用getState获取store内部的即时最新数据值
+  const stateMap = getLatestStateMap(store);
+  
   return memo((props: P) => {
-    // 引用数据的代理Set
-    const innerUseStateSet: Set<keyof S> = new Set();
-    
-    // 需要使用getState获取store内部的即时最新数据值
-    const stateMap = getLatestStateMap(store);
-    
     /**
      * @description 给state数据做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
      * 恰巧由于这里的proxy代理，导致在挂载属性数据的时候不能使用扩展运算符，

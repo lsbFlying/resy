@@ -5,6 +5,7 @@
  * @date 2022-05-05
  * @name createStore
  */
+import { useMemo } from "react";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
@@ -84,8 +85,6 @@ export function createStore<S extends State>(
    */
   let refDataMap: Map<keyof S, S[keyof S]> | null = null;
   
-  const viewPropsUseWayInnerFieldsSet = new Set<keyof S>();
-  
   // 重置初始化stateMap状态
   function resetStateMap(key: keyof S) {
     Object.prototype.hasOwnProperty.call(state, key)
@@ -107,50 +106,32 @@ export function createStore<S extends State>(
     });
   }
   
-  // 处理store的监听订阅、ref数据引用关联、view初始化重置以及获取最新state数据的相关核心处理Map
+  // 处理store的监听订阅、ref数据引用关联、view数据关联以及获取最新state数据的相关核心处理Map
   const storeCoreMap: StoreCoreMapType<S> = new Map();
   storeCoreMap.set("stateMap", stateMap);
-  storeCoreMap.set("viewInitialReset", (linkStateFields: (keyof S)[]) => {
-    let resetExecFlag: true | null = null;
-    linkStateFields.forEach(key => {
-      viewPropsUseWayInnerFieldsSet.add(key);
-      /**
-       * 与subscribe中的重置逻辑一样，只要还有组件引用当前数据，就仍然在业务逻辑当中不需要卸载重置
-       * 多一层?.get("storeChangeSet")是为了判断当前数据是否有引用，
-       * 多一层?.size是为了兼容如果无当前数据变化的情况，这样其实本可以不执行resetStateMap
-       * 核心原因是但凡有数据改变都会在createStore内部生成storeMap核心键值对
-       * 而有storeMap核心键值对就意味着有数据通过useStore引用或者通过store来更新数据
-       * 而它没有storeMap核心键值对恰巧说明这个数据自始自终都没有变化
-       * 与多一层判断不执行resetStateMap相比相差无几，
-       * 所以这里直接通过?.size来多一层兼容也简化判断
-       *
-       * 这里storeChangeSet.size为0的判断主要是为了兼容view对于class组件的处理，
-       * 如果view包裹的class组件使用的数据没有在别的地方使用到，那么它的size使用肯定是0，清空也没问题
-       * 如果反之，则不为0，那么则不能清空
-       */
-      if (
-        initialReset && (
-          (storeMap.get(key) as StoreMapValue<S>)?.get("storeChangeSet") as StoreMapValueType<S>["storeChangeSet"]
-        )?.size === 0
-      ) {
-        resetStateMap(key);
-        resetExecFlag = true;
-      }
-    });
-    return resetExecFlag;
+  storeCoreMap.set("viewConnectStore", (key: keyof S) => {
+    // 做一个引用占位符，表示有一处引用，便于最后初始化逻辑执行的size判别
+    (
+      (storeMap.get(key) as StoreMapValue<S>)?.get("storeChangeSet") as StoreMapValueType<S>["storeChangeSet"]
+    )?.add(null);
+    return () => {
+      (
+        (storeMap.get(key) as StoreMapValue<S>)?.get("storeChangeSet") as StoreMapValueType<S>["storeChangeSet"]
+      )?.delete(null);
+    };
   });
-  storeCoreMap.set("refInStore", (refData?: Partial<S>, reset?: boolean) => {
+  storeCoreMap.set("refInStore", (refData?: Partial<S>, assignmentReset?: boolean) => {
     const notUndefined = refData !== undefined;
     if (notUndefined && Object.prototype.toString.call(refData) === "[object Object]") {
       Object.keys(refData as Partial<S>).forEach(key => {
-        if (reset) {
+        if (assignmentReset) {
           /**
-           * todo 当resetStateMap函数处理的key与state里面的key完全一样的时候就代表整个store数据的驱动更新的引用全部卸载，
-           * 则可以执行refDateMap的卸载，并且要在微任务中执行，防止外部接口仍然有refData的引用
+           * 注意refData的使用逻辑上是不需要像state一样具有清除重置需求的，
+           * 它本身是引用数据，下次再次进入依然是最新的引用数据，所以它只需要重新赋值重置
            */
           if (refDataMap && refDataMap.has(key)) {
-            refDataMap.delete(key);
-            stateMap.delete(key);
+            refDataMap.set(key, (refData as S)[key]);
+            stateMap.set(key, (refData as S)[key]);
           }
           return;
         }
@@ -205,19 +186,6 @@ export function createStore<S extends State>(
     
     const storeMapValue: StoreMapValue<S> = new Map();
     storeMapValue.set("subscribe", (storeChange: Callback) => {
-      /**
-       * @description 通过storeChangeSet判断当前数据是否还有组件引用
-       * 只要还有一个组件在引用当前数据，都不会重置数据，
-       * 因为当前还在业务逻辑中，不属于完整的卸载
-       *
-       * 如果是view包裹的class组件使用了别的组件都没有使用的数据
-       * 那么这里好像很难通过storeChangeSet.size得到是否属于一个完整卸载周期的判断条件
-       * 此时就需要结合viewPropsUseWayInnerFieldsSet内部的属性看是否存在使用，
-       * 存在则还在周期内不能清除
-       */
-      if (initialReset && !viewPropsUseWayInnerFieldsSet.size && !storeChangeSet.size) {
-        resetStateMap(key);
-      }
       storeChangeSet.add(storeChange);
       return () => {
         storeChangeSet.delete(storeChange);
@@ -235,15 +203,31 @@ export function createStore<S extends State>(
         // 这一步是为了配合getSnapshot，使得getSnapshot可以获得最新值
         stateMap.set(key, val);
         // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
-        storeChangeSet.forEach(storeChange => storeChange());
+        storeChangeSet.forEach(storeChange => storeChange?.());
       }
     });
     
-    storeMapValue.set("useSnapshot", () => useSyncExternalStore(
-      (storeMap.get(key) as StoreMapValue<S>).get("subscribe") as StoreMapValueType<S>["subscribe"],
-      (storeMap.get(key) as StoreMapValue<S>).get("getSnapshot") as StoreMapValueType<S>["getSnapshot"],
-      (storeMap.get(key) as StoreMapValue<S>).get("getSnapshot") as StoreMapValueType<S>["getSnapshot"],
-    ));
+    storeMapValue.set("useSnapshot", () => {
+      /**
+       * 原本将初始化重置放在subscribe中不稳定，
+       * 可能形成数据更新的撕裂，放在useSnapshot中使用useMemo同步执行一次安全温度
+       */
+      useMemo(() => {
+        /**
+         * @description 通过storeChangeSet判断当前数据是否还有组件引用
+         * 只要还有一个组件在引用当前数据，都不会重置数据，
+         * 因为当前还在业务逻辑中，不属于完整的卸载
+         */
+        if (initialReset && !storeChangeSet.size) {
+          resetStateMap(key);
+        }
+      }, []);
+      return useSyncExternalStore(
+        (storeMap.get(key) as StoreMapValue<S>).get("subscribe") as StoreMapValueType<S>["subscribe"],
+        (storeMap.get(key) as StoreMapValue<S>).get("getSnapshot") as StoreMapValueType<S>["getSnapshot"],
+        (storeMap.get(key) as StoreMapValue<S>).get("getSnapshot") as StoreMapValueType<S>["getSnapshot"],
+      );
+    });
     
     storeMapValue.set("storeChangeSet", storeChangeSet);
     

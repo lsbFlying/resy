@@ -1,5 +1,5 @@
 import { _DEV_, STORE_CORE_MAP_KEY, USE_STORE_KEY } from "./static";
-import type {State, StateFunc, Store, StoreCoreMapType, StoreCoreMapValue} from "./model";
+import type { State, StateFunc, Store, StoreCoreMapType, StoreCoreMapValue } from "./model";
 
 /**
  * 给Comp组件的props上挂载的state属性数据做一层引用代理

@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { STORE_CORE_MAP_KEY } from "./static";
 import { getLatestStateMap, mapToObject, proxyStateHandler, storeErrorHandle } from "./utils";
-import type { State, StoreCoreMapType, StoreCoreMapValue, MapStateToProps, Store, PS } from "./model";
+import type {State, StoreCoreMapType, StoreCoreMapValue, MapStateToProps, Store, PS, AnyFn} from "./model";
 
 /**
  * 自动memo与SCU的高阶HOC
@@ -67,21 +67,18 @@ export function view<P extends State = {}, S extends State = {}>(
     const [state, setState] = useState<S>(() => proxyStateHandler(stateMap, innerUseStateSet));
     
     useEffect(() => {
-      /**
-       * @description view会使得组件销毁时不执行StoreMap里的subscribe，就无法恢复重置数据
-       * 因为它本身是订阅监听执行的，不属于组件的生命周期发生
-       * 所以这里需要特定的数据恢复，同时重置恢复内部注意关联到initialReset的逻辑处理
-       */
-      if (
-        (
+      const viewConnectStoreSet = new Set<AnyFn>();
+  
+      innerUseStateSet.forEach(key => {
+        // 将view关联到store内部的subscribe，进行数据生命周期的同步
+        viewConnectStoreSet.add(
           (
-            store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-          ).get("viewInitialReset") as StoreCoreMapValue<S>["viewInitialReset"]
-        )(Array.from(innerUseStateSet))
-      ) {
-        // 重置之后需要更新一下重置后的数据生效
-        setState(proxyStateHandler(stateMap, innerUseStateSet));
-      }
+            (
+              store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
+            ).get("viewConnectStore") as StoreCoreMapValue<S>["viewConnectStore"]
+          )(key)
+        );
+      });
       
       // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
       const unsubscribe = store.subscribe((
@@ -114,8 +111,10 @@ export function view<P extends State = {}, S extends State = {}>(
           setState(proxyStateHandler(new Map(Object.entries(nextState)), innerUseStateSet));
         }
       });
+      
       return () => {
         unsubscribe();
+        viewConnectStoreSet.forEach(item => item());
         innerUseStateSet.clear();
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps

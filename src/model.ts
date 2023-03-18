@@ -22,7 +22,7 @@ export type StoreMapValueType<S extends State> = {
   setSnapshot: (val: S[keyof S]) => void;
   useSnapshot: () => S[keyof S];
   // 存储onStoreChange的set容器，共view内部重置逻辑使用
-  storeChangeSet: Set<Callback>;
+  storeChangeSet: Set<Callback | null>;
 };
 
 export type StoreMapValue<S extends State> = Map<
@@ -76,10 +76,10 @@ export interface CustomEventListenerConstructor<S extends State> {
 export interface StoreCoreMapValue<S extends State> {
   // store内部的stateMap数据对象
   stateMap: Map<keyof S, S[keyof S]>;
-  // 重置(恢复)初始化数据（供view使用）
-  viewInitialReset: (stateFields: (keyof S)[]) => true | null;
+  // view的props数据使用方式的数据生命周期与store关联同步
+  viewConnectStore: (key: keyof S) => AnyFn;
   // 将某些数据引用挂载到store全局储存容器上
-  refInStore: (refData?: Partial<S>, reset?: boolean) => void;
+  refInStore: (refData?: Partial<S>, assignmentReset?: boolean) => void;
   // 订阅监听的事件类型
   eventType: EventsType;
   // 触发订阅监听影响的Set容器

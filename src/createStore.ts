@@ -83,7 +83,7 @@ export function createStore<S extends State>(
    * 理论上同一个store上不应该出现同名引用，所以通过refDataAssign来判断是否是同名引用
    * 同时需要refDataMap来判断与状态数据的区分，是过是引用数据的属性就不使用useSyncExternalStore
    */
-  let refDataMap: Map<keyof S, S[keyof S]> | null = null;
+  let refDataMap: Map<keyof S, S[keyof S]> = new Map();
   
   // 重置初始化stateMap状态
   function resetStateMap(key: keyof S) {
@@ -124,15 +124,13 @@ export function createStore<S extends State>(
     const notUndefined = refData !== undefined;
     if (notUndefined && Object.prototype.toString.call(refData) === "[object Object]") {
       Object.keys(refData as Partial<S>).forEach(key => {
+        /**
+         * 注意refData的使用逻辑上是不需要像state一样具有清除重置需求的，
+         * 它本身是引用数据，下次再次进入依然是最新的引用数据，所以它只需要重新赋值重置
+         */
         if (assignmentReset) {
-          /**
-           * 注意refData的使用逻辑上是不需要像state一样具有清除重置需求的，
-           * 它本身是引用数据，下次再次进入依然是最新的引用数据，所以它只需要重新赋值重置
-           */
-          if (refDataMap && refDataMap.has(key)) {
-            refDataMap.set(key, (refData as S)[key]);
-            stateMap.set(key, (refData as S)[key]);
-          }
+          refDataMap.set(key, (refData as S)[key]);
+          stateMap.set(key, (refData as S)[key]);
           return;
         }
         /**
@@ -143,7 +141,6 @@ export function createStore<S extends State>(
           !refDataMap
             ? refDataMap = new Map(Object.entries(refData as Partial<S>))
             : refDataMap.set(key, (refData as S)[key]);
-          
           stateMap.set(key, (refData as S)[key]);
         }
       });

@@ -67,21 +67,10 @@ export function view<P extends State = {}, S extends State = {}>(
      */
     const [state, setState] = useState<S>(() => proxyStateHandler(stateMap, innerUseStateSet));
     
-    // 防止更新撕裂，做一个useLayoutEffect兼容处理
-    useLayoutEffect(() => {
-      const innerUseStateSetLayout: Set<keyof S> = new Set();
-      const stateLayout = proxyStateHandler(getLatestStateMap(store), innerUseStateSetLayout);
-      if (innerUseStateSetLayout.size !== innerUseStateSet.size) {
-        setState(stateLayout);
-      }
-    }, []);
-    
-    useEffect(() => {
-      const viewConnectStoreSet = new Set<AnyFn>();
-  
-      innerUseStateSet.forEach(key => {
+    function viewConnectHandle(vcs: Set<AnyFn>, ius?: Set<keyof S>) {
+      (ius || innerUseStateSet).forEach(key => {
         // 将view关联到store内部的subscribe，进行数据生命周期的同步
-        viewConnectStoreSet.add(
+        vcs.add(
           (
             (
               store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
@@ -89,6 +78,23 @@ export function view<P extends State = {}, S extends State = {}>(
           )(key)
         );
       });
+    }
+    
+    // 防止更新撕裂，做一个useLayoutEffect兼容处理
+    useLayoutEffect(() => {
+      const innerUseStateSetLayout: Set<keyof S> = new Set();
+      const stateLayout = proxyStateHandler(getLatestStateMap(store), innerUseStateSetLayout);
+      const viewConnectStoreSet = new Set<AnyFn>();
+      if (innerUseStateSetLayout.size !== innerUseStateSet.size) {
+        viewConnectHandle(viewConnectStoreSet, innerUseStateSetLayout);
+        setState(stateLayout);
+      }
+      return () => viewConnectStoreSet.forEach(item => item());
+    }, []);
+    
+    useEffect(() => {
+      const viewConnectStoreSet = new Set<AnyFn>();
+      viewConnectHandle(viewConnectStoreSet);
       
       // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
       const unsubscribe = store.subscribe((

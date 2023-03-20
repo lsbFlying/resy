@@ -21,8 +21,8 @@
 2. Adjust the parameter position of the isDeepEqual function of "view",
    and adjust the position of the listener function parameter of the "subscribe" listening callback.
 3. Optimized the execution efficiency of view initial reset.
-4. Added useConciseState and useStoreWithRef
-   initialization parameter object laziness to create expensive object usage scene.
+4. Added useConciseState initialization parameter object laziness to create expensive object usage scene.
+5. Removed useStoreWithRef and added a new api named ref.
 
 🌟`v7.1.1`：<br/>
 1. Fixed bug that did not correspond to the latest data parameters of setState's callback function.

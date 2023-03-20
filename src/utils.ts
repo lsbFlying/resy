@@ -63,10 +63,3 @@ export function updateDataErrorHandle<S extends State>(stateParams: Partial<S> |
     throw new Error(`The state parameter of ${errName} is either an object or a function that returns an object!`);
   }
 }
-
-// 抛出错误处理
-export function errorHandle(errMsg: string) {
-  if (_DEV_) {
-    throw new Error(errMsg);
-  }
-}

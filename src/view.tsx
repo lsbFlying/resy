@@ -89,7 +89,7 @@ export function view<P extends State = {}, S extends State = {}>(
         viewConnectHandle(viewConnectStoreSet, innerUseStateSetLayout);
         setState(stateLayout);
       }
-      return () => viewConnectStoreSet.forEach(item => item());
+      return () => viewConnectStoreSet.forEach(unsubscribe => unsubscribe());
     }, []);
     
     useEffect(() => {
@@ -130,7 +130,7 @@ export function view<P extends State = {}, S extends State = {}>(
       
       return () => {
         unsubscribe();
-        viewConnectStoreSet.forEach(item => item());
+        viewConnectStoreSet.forEach(unsubscribe => unsubscribe());
         innerUseStateSet.clear();
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps

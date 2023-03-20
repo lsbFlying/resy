@@ -10,7 +10,7 @@ import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
 import { batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_ } from "./static";
-import { updateDataErrorHandle, mapToObject, errorHandle } from "./utils";
+import { updateDataErrorHandle, mapToObject } from "./utils";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType, StoreCoreMapValue,
   StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe, Scheduler, CustomEventListener, Listener,
@@ -78,13 +78,6 @@ export function createStore<S extends State>(
    */
   const stateMap: Map<keyof S, S[keyof S]> = new Map(Object.entries(state));
   
-  /**
-   * @description 挂载引用数据
-   * 理论上同一个store上不应该出现同名引用，所以通过refDataAssign来判断是否是同名引用
-   * 同时需要refDataMap来判断与状态数据的区分，是过是引用数据的属性就不使用useSyncExternalStore
-   */
-  let refDataMap: Map<keyof S, S[keyof S]> = new Map();
-  
   // 重置初始化stateMap状态
   function resetStateMap(key: keyof S) {
     Object.prototype.hasOwnProperty.call(state, key)
@@ -119,34 +112,6 @@ export function createStore<S extends State>(
         (storeMap.get(key) as StoreMapValue<S>)?.get("storeChangeSet") as StoreMapValueType<S>["storeChangeSet"]
       )?.delete(null);
     };
-  });
-  storeCoreMap.set("refInStore", (refData?: Partial<S>, assignmentReset?: boolean) => {
-    const notUndefined = refData !== undefined;
-    if (notUndefined && Object.prototype.toString.call(refData) === "[object Object]") {
-      Object.keys(refData as Partial<S>).forEach(key => {
-        /**
-         * 注意refData的使用逻辑上是不需要像state一样具有清除重置需求的，
-         * 它本身是引用数据，下次再次进入依然是最新的引用数据，所以它只需要重新赋值重置
-         */
-        if (assignmentReset) {
-          refDataMap.set(key, (refData as S)[key]);
-          stateMap.set(key, (refData as S)[key]);
-          return;
-        }
-        /**
-         * 禁止同一个store上的同名引用导致错误代码的值被覆盖
-         * 也就是说useStoreWithRef第一个执行到的ref引用属性是不会被后续覆盖的
-         */
-        if (!refDataMap?.has(key)) {
-          !refDataMap
-            ? refDataMap = new Map(Object.entries(refData as Partial<S>))
-            : refDataMap.set(key, (refData as S)[key]);
-          stateMap.set(key, (refData as S)[key]);
-        }
-      });
-    } else if (notUndefined) {
-      errorHandle("The refData parameter of useStoreWithRef is not an object!");
-    }
   });
   storeCoreMap.set("eventType", Symbol("storeListenerSymbol"));
   storeCoreMap.set("listenerStoreSet", new Set<CustomEventListener<S>>());
@@ -267,24 +232,17 @@ export function createStore<S extends State>(
    * 所以这里没有阻止函数作为数据属性的更新
    */
   function taskPush(key: keyof S, val: S[keyof S]) {
-    if (!refDataMap || !refDataMap.has(key)) {
-      (scheduler.get("add") as Scheduler<S>["add"])(
-        () => (
-          (
-            initialValueConnectStore(key).get(key) as StoreMapValue<S>
-          ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
-        )(val),
-        key,
-        val,
-        taskDataMapPrivate,
-        taskQueueMapPrivate,
-      );
-    } else if (refDataMap) {
-      errorHandle(
-        "The property of the current update data contains the refData reference attribute," +
-        " RefData is only a reference, so update is prohibited."
-      );
-    }
+    (scheduler.get("add") as Scheduler<S>["add"])(
+      () => (
+        (
+          initialValueConnectStore(key).get(key) as StoreMapValue<S>
+        ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
+      )(val),
+      key,
+      val,
+      taskDataMapPrivate,
+      taskQueueMapPrivate,
+    );
   }
   
   /**
@@ -362,18 +320,11 @@ export function createStore<S extends State>(
     const prevState = new Map(stateMap);
     batchUpdate(() => {
       Object.keys(updateParamsTemp).forEach(key => {
-        if(!refDataMap || !refDataMap.has(key)) {
+        (
           (
-            (
-              initialValueConnectStore(key).get(key) as StoreMapValue<S>
-            ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
-          )((updateParamsTemp as Partial<S> | S)[key]);
-        } else if (refDataMap) {
-          errorHandle(
-            "The property of the current update data contains the refData reference attribute," +
-            " RefData is only a reference, so update is prohibited."
-          );
-        }
+            initialValueConnectStore(key).get(key) as StoreMapValue<S>
+          ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
+        )((updateParamsTemp as Partial<S> | S)[key]);
       });
     });
     if ((storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"]).size) {
@@ -515,15 +466,7 @@ export function createStore<S extends State>(
       if (typeof stateMap.get(key) === "function") {
         return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
       }
-      // 这里要考虑到refData的引用数据，避免从useSyncExternalStore中产生
-      return externalMap.get(key as keyof ExternalMapValue<S>)
-        /**
-         * 防止refDataAssign中有些数据就是undefined，并且这里也摒除了ref作为state状态数据使用的能力
-         * 因为考虑到ref数据仅仅作为引用，
-         * 既不能作为状态数据使用也不能进行更新不仅配合了refData的reset还在名称以及使用上合理化
-         */
-        || (refDataMap && refDataMap.has(key) && refDataMap.get(key))
-        || (
+      return externalMap.get(key as keyof ExternalMapValue<S>) || (
         (
           (
             initialValueConnectStore(key) as StoreMap<S>

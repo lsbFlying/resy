@@ -77,9 +77,7 @@ export interface StoreCoreMapValue<S extends State> {
   // store内部的stateMap数据对象
   stateMap: Map<keyof S, S[keyof S]>;
   // view的props数据使用方式的数据生命周期与store关联同步
-  viewConnectStore: (key: keyof S) => AnyFn;
-  // 将某些数据引用挂载到store全局储存容器上
-  refInStore: (refData?: Partial<S>, assignmentReset?: boolean) => void;
+  viewConnectStore: (key: keyof S) => Unsubscribe;
   // 订阅监听的事件类型
   eventType: EventsType;
   // 触发订阅监听影响的Set容器

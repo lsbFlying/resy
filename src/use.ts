@@ -1,8 +1,8 @@
-import { useMemo, useRef } from "react";
-import { USE_STORE_KEY, USE_CONCISE_STORE_KEY, STORE_CORE_MAP_KEY } from "./static";
+import { useEffect, useMemo } from "react";
+import { USE_STORE_KEY, USE_CONCISE_STORE_KEY } from "./static";
 import { createStore } from "./createStore";
 import { storeErrorHandle } from "./utils";
-import type { State, ConciseStore, StoreCoreMapType, StoreCoreMapValue } from "./model";
+import type { State, ConciseStore } from "./model";
 
 /**
  * 驱动组件更新
@@ -45,42 +45,33 @@ export function useConciseState<S extends State>(initialState?: S | (() => S)): 
  * useStore的升级版，它可以完全兼容useStore
  * 它可以将某些数据引用到store全局储存容器上，
  * 更多更主要地是为了将某些hook产生的值即不方便全局使用的数据值引用挂载到全局的store上方便使用
- * 即通过useStoreWithRef将refData引用挂载到全局store上一次即可，
  * 然后通过useStore或者直接用"store."来读取refData中的数据即可方便使用
- * 正因为是引用，所以useStoreWithRef中的refData的数据是不能更新的
- * 比如下面的例子中
- * 不能store.form = "newFormStr"; 不能store.setState({ form: "newFormStr" });
- * 也不能store.syncUpdate({ form: "newFormStr" })
- * 更新是无效的且会在浏览器控制台报错提示。
+ * 为了方式代码实现，于是简化了refData的数据也是可以更新的，但是一般而言可能没有这个逻辑必要
  * @description 比如可以将antd的useForm的form引用映射到store上，方便后续在别的地方通过store读取form
- * @example A：
- * const { form } = useStoreWithRef(store, { form: useForm()[0] });
- * next:
+ *
+ * @example：
+ * const [formInstance] = useForm();
+ * const { form } = useStoreWithRef(store, { form: formInstance });
  * ...some code start...
  * const { form } = store;
- * // 方便form的读取使用
  * const formValues = form?.getFieldsValue();
  * ...some code end...
- * 除此之外，也可以将某些不方便修改到全局的组件内部的数据引用挂载到全局的store上，
- * 从而便于私有数据的全局化使用。
  */
-export function useStoreWithRef<S extends State>(store: S, refData?: Readonly<Partial<S>>): S {
+export function useStoreWithRef<S extends State>(store: S, refData?: Readonly<Partial<S> | (() => Partial<S>)>): S {
   storeErrorHandle(store);
-  const ref = useRef(refData);
   
-  useMemo(() => {
-    (
-      (
-        store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-      ).get("refInStore") as StoreCoreMapValue<S>["refInStore"]
-    )(ref.current, true);
+  const refDataTemp = useMemo(() => {
+    if (typeof refData !== "function") {
+      return refData;
+    }
+    return refData();
   }, []);
   
-  (
-    (
-      store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-    ).get("refInStore") as StoreCoreMapValue<S>["refInStore"]
-  )(ref.current);
+  useEffect(() => {
+    Object.keys(refDataTemp).forEach(key => {
+      store[key as keyof S] = refDataTemp[key];
+    });
+  }, []);
   
   return store[USE_STORE_KEY as keyof S];
 }

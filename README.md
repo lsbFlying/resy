@@ -22,6 +22,7 @@
    and adjust the position of the listener function parameter of the "subscribe" listening callback.
 3. Optimized the useStoreWithRef api.
 4. Optimized the execution efficiency of viewInitialReset.
+5. Added useConciseState initialization parameter object laziness to create expensive object usage scene.
 
 🌟`v7.1.1`：<br/>
 1. Fixed bug that did not correspond to the latest data parameters of setState's callback function.

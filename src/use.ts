@@ -28,11 +28,17 @@ export function useStore<S extends State>(store: S): S {
  * 🌟:同时 useConciseState中可以解析出store属性，通过store可以读取各个数据的最新数据值
  * 弥补了useState中无法读取属性数据的最新值的不足，这是最核心的关键点
  */
-export function useConciseState<S extends State>(initialState?: S): ConciseStore<S> {
-  const ref = useRef(initialState);
+export function useConciseState<S extends State>(initialState?: S | (() => S)): ConciseStore<S> {
+  const state = useMemo(() => {
+    if (typeof initialState !== "function") {
+      return initialState;
+    }
+    return initialState();
+  }, []);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const store = useMemo(() => createStore<S>(ref.current, { __privatization__: true }), []);
-  return store[USE_CONCISE_STORE_KEY as keyof S];
+  return useMemo(() => createStore<S>(state, {
+    __privatization__: true,
+  }), [])[USE_CONCISE_STORE_KEY as keyof S];
 }
 
 /**

@@ -66,6 +66,25 @@ export function view<P extends State = {}, S extends State = {}>(
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
     const [state, setState] = useState<S>(() => proxyStateHandler(stateMap, innerUseStateSet));
+  
+    /**
+     * 不能简单地使用 sort，使用 sort 并不靠谱。因为 Set 里面的内容可能有很多种类
+     * 字符串、对象、数字，不同类型之间是不可对比的，所以排序结果并不会一致
+     * 最好的方式是按照数学上集合相等的定义：* A = B 当且仅当 A 是 B 的子集并且 B 是 A 的子集
+     */
+    function isContentSameSet(s1: Set<keyof S>, s2: Set<keyof S>) {
+      // 获取一个集合所有的值，判断另外一个集合是否全部包含该这些值
+      const innerSame = (a: Set<keyof S>, b: Set<keyof S>) => {
+        const values = [...a]
+        for (let val of values) {
+          // 及时跳出循环，降低复杂度
+          if (!b.has(val)) return false
+        }
+        return true
+      }
+      // a 包含 b，b 包含 a，那么两个集合相同
+      return innerSame(s1, s2) && innerSame(s2, s1)
+    }
     
     function viewConnectHandle(vcs: Set<AnyFn>, ius?: Set<keyof S>) {
       (ius || innerUseStateSet).forEach(key => {
@@ -85,7 +104,11 @@ export function view<P extends State = {}, S extends State = {}>(
       const innerUseStateSetLayout: Set<keyof S> = new Set();
       const stateLayout = proxyStateHandler(getLatestStateMap(store), innerUseStateSetLayout);
       const viewConnectStoreSet = new Set<AnyFn>();
-      if (innerUseStateSetLayout.size !== innerUseStateSet.size) {
+      // 有可能因为自身的数据属性使用变化但是size没有变，所以需要多一个内容判断
+      if (
+        innerUseStateSetLayout.size !== innerUseStateSet.size
+        || !isContentSameSet(innerUseStateSetLayout, innerUseStateSet)
+      ) {
         viewConnectHandle(viewConnectStoreSet, innerUseStateSetLayout);
         setState(stateLayout);
       }

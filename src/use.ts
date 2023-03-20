@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { USE_STORE_KEY, USE_CONCISE_STORE_KEY } from "./static";
 import { createStore } from "./createStore";
 import { storeErrorHandle } from "./utils";
@@ -39,39 +39,4 @@ export function useConciseState<S extends State>(initialState?: S | (() => S)): 
   return useMemo(() => createStore<S>(state, {
     __privatization__: true,
   }), [])[USE_CONCISE_STORE_KEY as keyof S];
-}
-
-/**
- * useStore的升级版，它可以完全兼容useStore
- * 它可以将某些数据引用到store全局储存容器上，
- * 更多更主要地是为了将某些hook产生的值即不方便全局使用的数据值引用挂载到全局的store上方便使用
- * 然后通过useStore或者直接用"store."来读取refData中的数据即可方便使用
- * 为了方式代码实现，于是简化了refData的数据也是可以更新的，但是一般而言可能没有这个逻辑必要
- * @description 比如可以将antd的useForm的form引用映射到store上，方便后续在别的地方通过store读取form
- *
- * @example：
- * const [formInstance] = useForm();
- * const { form } = useStoreWithRef(store, { form: formInstance });
- * ...some code start...
- * const { form } = store;
- * const formValues = form?.getFieldsValue();
- * ...some code end...
- */
-export function useStoreWithRef<S extends State>(store: S, refData?: Readonly<Partial<S> | (() => Partial<S>)>): S {
-  storeErrorHandle(store);
-  
-  const refDataTemp = useMemo(() => {
-    if (typeof refData !== "function") {
-      return refData;
-    }
-    return refData();
-  }, []);
-  
-  useEffect(() => {
-    Object.keys(refDataTemp).forEach(key => {
-      store[key as keyof S] = refDataTemp[key];
-    });
-  }, []);
-  
-  return store[USE_STORE_KEY as keyof S];
 }

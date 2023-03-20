@@ -66,7 +66,7 @@ export function view<P extends State = {}, S extends State = {}>(
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
     const [state, setState] = useState<S>(() => proxyStateHandler(stateMap, innerUseStateSet));
-  
+    
     /**
      * 不能简单地使用 sort，使用 sort 并不靠谱。因为 Set 里面的内容可能有很多种类
      * 字符串、对象、数字，不同类型之间是不可对比的，所以排序结果并不会一致

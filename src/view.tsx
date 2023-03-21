@@ -1,7 +1,7 @@
-import React, { memo, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import React, { memo, useEffect, useMemo, useState } from "react";
 import { STORE_CORE_MAP_KEY } from "./static";
 import { getLatestStateMap, mapToObject, proxyStateHandler, storeErrorHandle } from "./utils";
-import type {State, StoreCoreMapType, StoreCoreMapValue, MapStateToProps, Store, PS, AnyFn} from "./model";
+import type { State, StoreCoreMapType, StoreCoreMapValue, MapStateToProps, Store, PS, AnyFn } from "./model";
 
 /**
  * 自动memo与SCU的高阶HOC
@@ -52,13 +52,13 @@ export function view<P extends State = {}, S extends State = {}>(
 ) {
   storeErrorHandle(store);
   
-  // 引用数据的代理Set
-  let innerUseStateSet: Set<keyof S> = new Set();
-  
-  // 需要使用getState获取store内部的即时最新数据值
-  const stateMap = getLatestStateMap(store);
-  
   return memo((props: P) => {
+    /** 需要将innerUseStateSet与stateMap放在内部执行，这样每次更新的时候可以得到最新的数据引用与数据stateMap */
+    // 引用数据的代理Set
+    const innerUseStateSet: Set<keyof S> = new Set();
+    // 需要使用getState获取store内部的即时最新数据值
+    const stateMap = getLatestStateMap(store);
+    
     /**
      * @description 给state数据做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
      * 恰巧由于这里的proxy代理，导致在挂载属性数据的时候不能使用扩展运算符，
@@ -66,25 +66,6 @@ export function view<P extends State = {}, S extends State = {}>(
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
     const [state, setState] = useState<S>(() => proxyStateHandler(stateMap, innerUseStateSet));
-    
-    /**
-     * 不能简单地使用 sort，使用 sort 并不靠谱。因为 Set 里面的内容可能有很多种类
-     * 字符串、对象、数字，不同类型之间是不可对比的，所以排序结果并不会一致
-     * 最好的方式是按照数学上集合相等的定义：* A = B 当且仅当 A 是 B 的子集并且 B 是 A 的子集
-     */
-    function isContentSameSet(s1: Set<keyof S>, s2: Set<keyof S>) {
-      // 获取一个集合所有的值，判断另外一个集合是否全部包含该这些值
-      const innerSame = (a: Set<keyof S>, b: Set<keyof S>) => {
-        const values = [...a]
-        for (let val of values) {
-          // 及时跳出循环，降低复杂度
-          if (!b.has(val)) return false
-        }
-        return true
-      }
-      // a 包含 b，b 包含 a，那么两个集合相同
-      return innerSame(s1, s2) && innerSame(s2, s1)
-    }
     
     function viewConnectHandle(vcs: Set<AnyFn>, ius?: Set<keyof S>) {
       (ius || innerUseStateSet).forEach(key => {
@@ -98,29 +79,6 @@ export function view<P extends State = {}, S extends State = {}>(
         );
       });
     }
-    
-    /**
-     * 防止撕裂检查时更新，做一个useLayoutEffect兼容处理
-     * use-sync-external-store里面做了一个撕裂检查时的更新
-     * 所以这里对于view的props使用的方式也需要做一个对应更新后的
-     * 撕裂检查的属性更新同步，再更新一下内部数据引用，保证数据的更新同步
-     */
-    useLayoutEffect(() => {
-      const innerUseStateSetLayout: Set<keyof S> = new Set();
-      const stateLayout = proxyStateHandler(getLatestStateMap(store), innerUseStateSetLayout);
-      const viewConnectStoreSet = new Set<AnyFn>();
-      // 有可能因为自身的数据属性使用变化但是size没有变，所以需要多一个内容判断
-      if (
-        innerUseStateSetLayout.size !== innerUseStateSet.size
-        || !isContentSameSet(innerUseStateSetLayout, innerUseStateSet)
-      ) {
-        // 同步更新内部数据引用
-        innerUseStateSet = innerUseStateSetLayout;
-        viewConnectHandle(viewConnectStoreSet, innerUseStateSetLayout);
-        setState(stateLayout);
-      }
-      return () => viewConnectStoreSet.forEach(unsubscribe => unsubscribe());
-    }, []);
     
     useEffect(() => {
       const viewConnectStoreSet = new Set<AnyFn>();
@@ -139,21 +97,6 @@ export function view<P extends State = {}, S extends State = {}>(
           Array.from(innerUseStateSet).some(key => effectStateFields.includes(key as string))
           && (!isDeepEqual || !isDeepEqual({ props, state: nextState }, { props, state: prevState }))
         ) {
-          /**
-           * // innerUseStateSet.clear();
-           * @description 保持代理数据的更新从而保持内部引用的最新化
-           * 这里暂时不在最新化之前执行 innerUseStateSet.clear();
-           * 因为有时候view包裹的组件在因为自身引用数据导致的更新同时又卸载
-           * 会使得下面这句setState因为卸载而失效，innerUseStateSet暂时变成了空的
-           * 所以这里对于这种情况复杂的需要不采取"预清空"
-           * 虽然"预清空"在组件的更新使用效率上更好些，但因为此问题也需要避免
-           * 这样一来会把没有完成"预清空"优势的转给当前if的判断条件的执行压力上来
-           * 即some循环可能会多走一些，但至少保证innerUseStateSet有使用的数据字段
-           * 可以给viewInitialReset逻辑执行使用，但实际上"预清空"优势需要建立在view包裹的组件内部
-           * 有为真显示加载组件的情况才会有优势，而实际上这种场景并不多见
-           * 所以它的优势是有，但不多不明显，相对而言转嫁给if判断里的some循环的压力也是存在，但并不多不明显
-           * 所以这里还是选择移除 innerUseStateSet.clear(); 即可
-           */
           setState(proxyStateHandler(new Map(Object.entries(nextState)), innerUseStateSet));
         }
       });

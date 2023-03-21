@@ -67,10 +67,11 @@ export function view<P extends State = {}, S extends State = {}>(
      */
     const [state, setState] = useState<S>(() => proxyStateHandler(stateMap, innerUseStateSet));
     
-    function viewConnectHandle(vcs: Set<AnyFn>, ius?: Set<keyof S>) {
-      (ius || innerUseStateSet).forEach(key => {
+    useEffect(() => {
+      const viewConnectStoreSet = new Set<AnyFn>();
+      innerUseStateSet.forEach(key => {
         // 将view关联到store内部的subscribe，进行数据生命周期的同步
-        vcs.add(
+        viewConnectStoreSet.add(
           (
             (
               store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
@@ -78,11 +79,6 @@ export function view<P extends State = {}, S extends State = {}>(
           )(key)
         );
       });
-    }
-    
-    useEffect(() => {
-      const viewConnectStoreSet = new Set<AnyFn>();
-      viewConnectHandle(viewConnectStoreSet);
       
       // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
       const unsubscribe = store.subscribe((

@@ -53,7 +53,7 @@ export function view<P extends State = {}, S extends State = {}>(
   storeErrorHandle(store);
   
   // 引用数据的代理Set
-  const innerUseStateSet: Set<keyof S> = new Set();
+  let innerUseStateSet: Set<keyof S> = new Set();
   
   // 需要使用getState获取store内部的即时最新数据值
   const stateMap = getLatestStateMap(store);
@@ -99,7 +99,12 @@ export function view<P extends State = {}, S extends State = {}>(
       });
     }
     
-    // 防止更新撕裂，做一个useLayoutEffect兼容处理
+    /**
+     * 防止撕裂检查时更新，做一个useLayoutEffect兼容处理
+     * use-sync-external-store里面做了一个撕裂检查时的更新
+     * 所以这里对于view的props使用的方式也需要做一个对应更新后的
+     * 撕裂检查的属性更新同步，再更新一下内部数据引用，保证数据的更新同步
+     */
     useLayoutEffect(() => {
       const innerUseStateSetLayout: Set<keyof S> = new Set();
       const stateLayout = proxyStateHandler(getLatestStateMap(store), innerUseStateSetLayout);
@@ -109,6 +114,8 @@ export function view<P extends State = {}, S extends State = {}>(
         innerUseStateSetLayout.size !== innerUseStateSet.size
         || !isContentSameSet(innerUseStateSetLayout, innerUseStateSet)
       ) {
+        // 同步更新内部数据引用
+        innerUseStateSet = innerUseStateSetLayout;
         viewConnectHandle(viewConnectStoreSet, innerUseStateSetLayout);
         setState(stateLayout);
       }

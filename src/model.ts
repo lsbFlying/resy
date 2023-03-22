@@ -72,14 +72,13 @@ export interface CustomEventListenerConstructor<S extends State> {
  * 具备处理store的监听订阅、重置数据、以及获取最新state数据等相关处理功能的核心Map
  */
 export interface StoreCoreMapValue<S extends State> {
-  // store内部的stateMap数据对象
-  stateMap: Map<keyof S, S[keyof S]>;
+  /**
+   * store内部的stateMap数据对象
+   * 使用函数执行得到最新值，类似于useSyncExternalStore的getSnapshot
+   */
+  getStateMap: () => Map<keyof S, S[keyof S]>;
   // view的props数据使用方式的数据生命周期与store关联同步
   viewConnectStore: () => Unsubscribe;
-  // 订阅监听的事件类型
-  eventType: EventsType;
-  // 触发订阅监听影响的Set容器
-  listenerStoreSet: Set<CustomEventListener<S>>;
   // 触发订阅监听的变动影响（即循环遍历执行listenerStoreSet中的监听函数）
   dispatchStoreEffect: (effectState: Partial<S>, nextState: S, prevState: S) => void;
 }

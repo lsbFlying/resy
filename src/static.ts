@@ -18,6 +18,9 @@ export const batchUpdate = unstable_batchedUpdates || batchUpdateShimRun;
 // 每一个resy生成的store具有的监听订阅处理的唯一标识key值
 export const STORE_CORE_MAP_KEY = Symbol("storeCoreMapKey");
 
+// 订阅监听事件类型
+export const EVENT_TYPE = Symbol("eventType");
+
 // useStore的key值，获取storeMap的代理key值
 export const USE_STORE_KEY = Symbol("useStoreKey");
 

@@ -8,12 +8,12 @@
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
-import { batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_ } from "./static";
+import {batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_, EVENT_TYPE} from "./static";
 import { updateDataErrorHandle, mapToObject } from "./utils";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType, StoreCoreMapValue,
   StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe, Scheduler, CustomEventListener, Listener,
-  CreateStoreOptions, Store, AnyFn, ConciseExternalMapType, ConciseExternalMapValue, EventsType,
+  CreateStoreOptions, Store, AnyFn, ConciseExternalMapType, ConciseExternalMapValue,
   SetStateCallback, SetStateCallbackItem,
 } from "./model";
 
@@ -91,8 +91,10 @@ export function createStore<S extends State>(
   let stateMap: Map<keyof S, S[keyof S]> = new Map(Object.entries(state));
   
   // 重置初始化stateMap状态
-  function resetStateMap() {
-    stateMap = new Map(Object.entries(state));
+  function resetStateMap(key: keyof S) {
+    Object.prototype.hasOwnProperty.call(state, key)
+      ? stateMap.set(key, state[key])
+      : stateMap.delete(key);
   }
   
   // setState的回调函数执行栈数组
@@ -109,17 +111,25 @@ export function createStore<S extends State>(
     });
   }
   
+  // 订阅监听Set容器
+  const listenerStoreSet = new Set<CustomEventListener<S>>();
+  
   // 处理store的监听订阅、ref数据引用关联、view数据关联以及获取最新state数据的相关核心处理Map
   const storeCoreMap: StoreCoreMapType<S> = new Map();
-  storeCoreMap.set("stateMap", stateMap);
+  storeCoreMap.set("getStateMap", () => stateMap);
   storeCoreMap.set("viewConnectStore", () => {
     const storeRefIncreaseItem = storeRefSetSelfIncreasing();
     return () => {
       storeRefSet.delete(storeRefIncreaseItem);
+      if (initialReset && !storeRefSet.size) {
+        /**
+         * view卸载的时候执行直接一次性覆盖即可，
+         * 而如果是在useSyncExternalStore的初始化中执行需要按key逐个执行初始化重置
+         */
+        stateMap = new Map(Object.entries(state));
+      }
     };
   });
-  storeCoreMap.set("eventType", Symbol("storeListenerSymbol"));
-  storeCoreMap.set("listenerStoreSet", new Set<CustomEventListener<S>>());
   storeCoreMap.set("dispatchStoreEffect", (effectData: Partial<S>, prevState: S, nextState: S) => {
     /**
      * 这里虽然addEventListener监听的listener每一个都触发执行了，
@@ -128,10 +138,8 @@ export function createStore<S extends State>(
      * 但实际上可能存在不同组件多次监听同一个数据变化但是处理不同的业务逻辑的可能
      * 所以使用Set相对于Map而言是必要的，可以满足这种复杂的业务场景
      */
-    (
-      storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"]
-    ).forEach(item => item.dispatchEvent(
-      storeCoreMap.get("eventType") as string | symbol,
+    listenerStoreSet.forEach(item => item.dispatchEvent(
+      EVENT_TYPE,
       effectData,
       prevState,
       nextState,
@@ -188,7 +196,7 @@ export function createStore<S extends State>(
        * 完整的卸载周期对应表达的是整个store的
        */
       if (initialReset && !storeRefSet.size) {
-        resetStateMap();
+        resetStateMap(key);
       }
       return useSyncExternalStore(
         (storeMap.get(key) as StoreMapValue<S>).get("subscribe") as StoreMapValueType<S>["subscribe"],
@@ -210,7 +218,7 @@ export function createStore<S extends State>(
   
   // 批量触发订阅监听的数据变动
   function batchDispatchListener(prevState: Map<keyof S, S[keyof S]>, changedData: Map<keyof S, S[keyof S]>) {
-    if (changedData.size > 0 && (storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"]).size > 0) {
+    if (changedData.size > 0 && listenerStoreSet.size > 0) {
       /**
        * @description effectState：实际真正影响变化的数据
        * changedData是给予更新变化的数据，但是不是真正会产生变化影响的数据，
@@ -277,7 +285,7 @@ export function createStore<S extends State>(
           // 未更新之前的数据
           const prevState = new Map(stateMap);
           batchUpdate(() => taskQueueMap.forEach(task => task()));
-          if ((storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"]).size) {
+          if (listenerStoreSet.size) {
             batchDispatchListener(prevState, taskDataMap);
           }
         }
@@ -331,7 +339,7 @@ export function createStore<S extends State>(
         )((updateParamsTemp as Partial<S> | S)[key]);
       });
     });
-    if ((storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"]).size) {
+    if (listenerStoreSet.size) {
       batchDispatchListener(prevState, new Map(Object.entries(updateParamsTemp)));
     }
   }
@@ -397,15 +405,13 @@ export function createStore<S extends State>(
   
   // 订阅函数
   function subscribe(listener: Listener<S>, stateKeys?: (keyof S)[]): Unsubscribe {
-    const listenerStoreSetTemp = storeCoreMap.get("listenerStoreSet") as StoreCoreMapValue<S>["listenerStoreSet"];
-    
     const customEventDispatcher: CustomEventListener<S> = new EventDispatcher();
     customEventDispatcher.addEventListener(
       /**
        * @description 每一个订阅监听实例有相同的event-type不要紧，因为实例不同所以不会影响
        * 这里取一个实例类型常量反而方便节省内存、增加代码执行效率
        */
-      storeCoreMap.get("eventType") as EventsType,
+      EVENT_TYPE,
       (effectState, nextState, prevState) => {
         let includesFlag = false;
         const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
@@ -418,11 +424,11 @@ export function createStore<S extends State>(
       },
     );
     
-    listenerStoreSetTemp.add(customEventDispatcher);
+    listenerStoreSet.add(customEventDispatcher);
     
     return () => {
-      customEventDispatcher.removeEventListener(storeCoreMap.get("eventType") as EventsType)
-      listenerStoreSetTemp.delete(customEventDispatcher);
+      customEventDispatcher.removeEventListener(EVENT_TYPE)
+      listenerStoreSet.delete(customEventDispatcher);
     };
   }
   

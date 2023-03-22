@@ -36,8 +36,10 @@ export function mapToObject<S extends State>(map: Map<keyof S, S[keyof S]>): S {
 // 获取最新数据Map对象
 export function getLatestStateMap<S extends State = {}>(store: Store<S>) {
   return (
-    store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-  ).get("stateMap") as StoreCoreMapValue<S>["stateMap"];
+    (
+      store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
+    ).get("getStateMap") as StoreCoreMapValue<S>["getStateMap"]
+  )();
 }
 
 // store传的不是由resy本身的createStore创建产生的store的错误处理

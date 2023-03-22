@@ -1,7 +1,9 @@
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { STORE_CORE_MAP_KEY } from "./static";
 import { getLatestStateMap, mapToObject, proxyStateHandler, storeErrorHandle } from "./utils";
-import type { State, StoreCoreMapType, StoreCoreMapValue, MapStateToProps, Store, PS, AnyFn } from "./model";
+import type {
+  State, StoreCoreMapType, StoreCoreMapValue, MapStateToProps, Store, PS, Unsubscribe,
+} from "./model";
 
 /**
  * 自动memo与SCU的高阶HOC
@@ -68,15 +70,16 @@ export function view<P extends State = {}, S extends State = {}>(
     const [state, setState] = useState<S>(() => proxyStateHandler(stateMap, innerUseStateSet));
     
     useEffect(() => {
-      const viewConnectStoreSet = new Set<AnyFn>();
-      innerUseStateSet.forEach(key => {
-        // 将view关联到store内部的subscribe，进行数据生命周期的同步
+      // 因为useEffect是异步的，所以这里执行innerUseStateSet时会有数据而不是空
+      const viewConnectStoreSet = new Set<Unsubscribe>();
+      innerUseStateSet.forEach(() => {
+        // 将view关联到store内部的storeRefSet，进行数据生命周期的同步
         viewConnectStoreSet.add(
           (
             (
               store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
             ).get("viewConnectStore") as StoreCoreMapValue<S>["viewConnectStore"]
-          )(key)
+          )()
         );
       });
       

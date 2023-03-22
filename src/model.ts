@@ -21,8 +21,6 @@ export type StoreMapValueType<S extends State> = {
   getSnapshot: () => S[keyof S];
   setSnapshot: (val: S[keyof S]) => void;
   useSnapshot: () => S[keyof S];
-  // 存储onStoreChange的set容器，共view内部重置逻辑使用
-  storeChangeSet: Set<Callback | null>;
 };
 
 export type StoreMapValue<S extends State> = Map<
@@ -77,7 +75,7 @@ export interface StoreCoreMapValue<S extends State> {
   // store内部的stateMap数据对象
   stateMap: Map<keyof S, S[keyof S]>;
   // view的props数据使用方式的数据生命周期与store关联同步
-  viewConnectStore: (key: keyof S) => Unsubscribe;
+  viewConnectStore: () => Unsubscribe;
   // 订阅监听的事件类型
   eventType: EventsType;
   // 触发订阅监听影响的Set容器
@@ -248,9 +246,9 @@ export type MapStateToProps<S extends State, P extends State = {}> = P & {
  */
 export interface Scheduler<S extends State = {}> {
   // setState的回调函数callback的任务执行中
-  callbackIsOn: true | null;
+  isCalling: true | null;
   // 更新进行中
-  updateIsOn: Promise<void> | null;
+  isUpdating: Promise<void> | null;
   // 新增直接更新数据的key/value以及相应的任务函数
   add(
     task: Callback,

@@ -5,7 +5,6 @@
  * @date 2022-05-05
  * @name createStore
  */
-import { useMemo } from "react";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
@@ -72,17 +71,28 @@ export function createStore<S extends State>(
   const taskQueueMapPrivate = __privatization__ ? new Map<keyof S, Callback>() : null;
   const taskDataMapPrivate = __privatization__ ? new Map<keyof S, S[keyof S]>() : null;
   
+  // 对应整个store的数据引用标记的set集合
+  const storeRefSet = new Set<number>();
+  
+  // storeRefSet自增处理
+  function storeRefSetSelfIncreasing() {
+    const lastTemp = [...storeRefSet].at(-1);
+    // 索引自增
+    const lastItem = typeof lastTemp === "number" ? lastTemp + 1 : 0;
+    // 做一个引用占位符，表示有一处引用，便于最后初始化逻辑执行的size判别
+    storeRefSet.add(lastItem);
+    return lastItem;
+  }
+  
   /**
    * @description 不改变传参state，同时resy使用Map与Set提升性能
    * 如stateMap、storeMap、storeCoreMap、storeChangeSet等
    */
-  const stateMap: Map<keyof S, S[keyof S]> = new Map(Object.entries(state));
+  let stateMap: Map<keyof S, S[keyof S]> = new Map(Object.entries(state));
   
   // 重置初始化stateMap状态
-  function resetStateMap(key: keyof S) {
-    Object.prototype.hasOwnProperty.call(state, key)
-      ? stateMap.set(key, state[key])
-      : stateMap.delete(key);
+  function resetStateMap() {
+    stateMap = new Map(Object.entries(state));
   }
   
   // setState的回调函数执行栈数组
@@ -102,15 +112,10 @@ export function createStore<S extends State>(
   // 处理store的监听订阅、ref数据引用关联、view数据关联以及获取最新state数据的相关核心处理Map
   const storeCoreMap: StoreCoreMapType<S> = new Map();
   storeCoreMap.set("stateMap", stateMap);
-  storeCoreMap.set("viewConnectStore", (key: keyof S) => {
-    // 做一个引用占位符，表示有一处引用，便于最后初始化逻辑执行的size判别
-    (
-      (storeMap.get(key) as StoreMapValue<S>)?.get("storeChangeSet") as StoreMapValueType<S>["storeChangeSet"]
-    )?.add(null);
+  storeCoreMap.set("viewConnectStore", () => {
+    const storeRefIncreaseItem = storeRefSetSelfIncreasing();
     return () => {
-      (
-        (storeMap.get(key) as StoreMapValue<S>)?.get("storeChangeSet") as StoreMapValueType<S>["storeChangeSet"]
-      )?.delete(null);
+      storeRefSet.delete(storeRefIncreaseItem);
     };
   });
   storeCoreMap.set("eventType", Symbol("storeListenerSymbol"));
@@ -149,8 +154,10 @@ export function createStore<S extends State>(
     const storeMapValue: StoreMapValue<S> = new Map();
     storeMapValue.set("subscribe", (storeChange: Callback) => {
       storeChangeSet.add(storeChange);
+      const storeRefIncreaseItem = storeRefSetSelfIncreasing();
       return () => {
         storeChangeSet.delete(storeChange);
+        storeRefSet.delete(storeRefIncreaseItem);
       };
     });
     
@@ -174,24 +181,21 @@ export function createStore<S extends State>(
        * 原本将初始化重置放在subscribe中不稳定，
        * 可能形成数据更新的撕裂，放在useSnapshot中使用useMemo同步执行一次安全温度
        */
-      useMemo(() => {
-        /**
-         * @description 通过storeChangeSet判断当前数据是否还有组件引用
-         * 只要还有一个组件在引用当前数据，都不会重置数据，
-         * 因为当前还在业务逻辑中，不属于完整的卸载
-         */
-        if (initialReset && !storeChangeSet.size) {
-          resetStateMap(key);
-        }
-      }, []);
+      /**
+       * @description 通过storeRefSet判断当前数据是否还有组件引用
+       * 只要还有一个组件在引用当前数据，都不会重置数据，
+       * 因为当前还在业务逻辑中，不属于完整的卸载
+       * 完整的卸载周期对应表达的是整个store的
+       */
+      if (initialReset && !storeRefSet.size) {
+        resetStateMap();
+      }
       return useSyncExternalStore(
         (storeMap.get(key) as StoreMapValue<S>).get("subscribe") as StoreMapValueType<S>["subscribe"],
         (storeMap.get(key) as StoreMapValue<S>).get("getSnapshot") as StoreMapValueType<S>["getSnapshot"],
         (storeMap.get(key) as StoreMapValue<S>).get("getSnapshot") as StoreMapValueType<S>["getSnapshot"],
       );
     });
-    
-    storeMapValue.set("storeChangeSet", storeChangeSet);
     
     storeMap.set(key, storeMapValue);
   }
@@ -255,13 +259,13 @@ export function createStore<S extends State>(
    * 但好在setState的回调弥补了同步获取最新数据的问题
    */
   function finallyBatchHandle() {
-    if (!scheduler.get("updateIsOn")) {
+    if (!scheduler.get("isUpdating")) {
       /**
        * @description 采用微任务结合开关标志控制的方式达到批量更新的效果，
        * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
        */
-      scheduler.set("updateIsOn", Promise.resolve().then(() => {
-        scheduler.set("updateIsOn", null);
+      scheduler.set("isUpdating", Promise.resolve().then(() => {
+        scheduler.set("isUpdating", null);
         
         const { taskDataMap, taskQueueMap } = (scheduler.get("getTask") as Scheduler<S>["getTask"])(
           taskDataMapPrivate,
@@ -292,14 +296,14 @@ export function createStore<S extends State>(
         setStateCallbackStackArray.forEach((
           {callback, cycleData: { updateParams, cycleState }}, index, array,
         ) => {
-          scheduler.set("callbackIsOn", true);
+          scheduler.set("isCalling", true);
           // 结合上一轮的回调进行上一轮更新参数的合并得到最新的回调数据参数
           callback(Object.assign(
             {},
             cycleState,
             index === 0 ? updateParams : array[index - 1].cycleData.updateParams,
           ));
-          if (index === array.length - 1) scheduler.set("callbackIsOn", null);
+          if (index === array.length - 1) scheduler.set("isCalling", null);
         });
         // 清空回调执行栈，否则回调中如果有更新则形成死循环
         setStateCallbackStackArray.splice(0);
@@ -382,7 +386,7 @@ export function createStore<S extends State>(
     // 异步回调添加入栈
     if (callback) {
       // 如果是回调在执行时发现回调中有更setState并且有回调，此时回调进入下一个微任务循环中添加入栈，不影响这一轮的回调执行栈的执行
-      scheduler.get("callbackIsOn")
+      scheduler.get("isCalling")
         ? Promise.resolve().then(() => {
           setStateCallbackStackAdd(updateParamsTemp, nextStateTemp, callback);
         })

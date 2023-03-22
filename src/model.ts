@@ -81,7 +81,11 @@ export interface StoreCoreMapValue<S extends State> {
   viewConnectStore: () => Unsubscribe;
   // 触发订阅监听的变动影响（即循环遍历执行listenerStoreSet中的监听函数）
   dispatchStoreEffect: (effectState: Partial<S>, nextState: S, prevState: S) => void;
+  // store上挂载ref引用数据
+  storeMountRef: (ref?: WithRefType<S>) => Unsubscribe;
 }
+
+export type WithRefType<S extends State> = Map<keyof Partial<S>, Partial<S>[keyof Partial<S>]>;
 
 // 每一个resy生成的store的监听订阅对象、内部stateMap数据以及重置初始化数据的方法
 export type StoreCoreMapType<S extends State> = Map<

@@ -1,4 +1,6 @@
 export * from "./createStore";
 export * from "./use";
 export * from "./view";
-export type { MapStateToProps, Store } from "./model";
+export type {
+  CreateStoreOptions, MapStateToProps, Store, ConciseStore, WithRefType, PS, State,
+} from "./model";

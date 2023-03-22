@@ -17,12 +17,12 @@
 </summary>
 
 🌟`v8.0.0`：<br/>
-1. Optimized the undefined situation when there may be some data in refData.
-2. Adjust the parameter position of the isDeepEqual function of "view",
+1. Adjust the parameter position of the isDeepEqual function of "view",
    and adjust the position of the listener function parameter of the "subscribe" listening callback.
-3. Optimized the execution efficiency of view initial reset.
-4. Added useConciseState initialization parameter object laziness to create expensive object usage scene.
-5. Removed useStoreWithRef and added a new api named ref.
+2. Added useConciseState initialization parameter object laziness to create expensive object usage scene.
+3. Adjust and optimize the use of useStoreWithRef.
+4. Adjust and optimize the execution time of initialReset
+   to make the reset logic more in line with intuitive expectations.
 
 🌟`v7.1.1`：<br/>
 1. Fixed bug that did not correspond to the latest data parameters of setState's callback function.

@@ -8,13 +8,15 @@
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
-import {batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_, EVENT_TYPE} from "./static";
+import {
+  batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_, EVENT_TYPE,
+} from "./static";
 import { updateDataErrorHandle, mapToObject } from "./utils";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType, StoreCoreMapValue,
   StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe, Scheduler, CustomEventListener, Listener,
   CreateStoreOptions, Store, AnyFn, ConciseExternalMapType, ConciseExternalMapValue,
-  SetStateCallback, SetStateCallbackItem,
+  SetStateCallback, SetStateCallbackItem, WithRefType,
 } from "./model";
 
 /**
@@ -114,6 +116,9 @@ export function createStore<S extends State>(
   // 订阅监听Set容器
   const listenerStoreSet = new Set<CustomEventListener<S>>();
   
+  // 挂载引用Map
+  let refMap: WithRefType<S> | undefined | null = null;
+  
   // 处理store的监听订阅、ref数据引用关联、view数据关联以及获取最新state数据的相关核心处理Map
   const storeCoreMap: StoreCoreMapType<S> = new Map();
   storeCoreMap.set("getStateMap", () => stateMap);
@@ -127,6 +132,8 @@ export function createStore<S extends State>(
          * 而如果是在useSyncExternalStore的初始化中执行需要按key逐个执行初始化重置
          */
         stateMap = new Map(Object.entries(state));
+        // refMap与整体数据一起重置
+        refMap = null;
       }
     };
   });
@@ -144,6 +151,14 @@ export function createStore<S extends State>(
       prevState,
       nextState,
     ));
+  });
+  storeCoreMap.set("storeMountRef", (ref?: WithRefType<S>) => {
+    // 因为每次的ref都是由useRef产生的ref.current，是稳定的数据引用，所以这里只有重新覆盖即可
+    refMap = ref;
+    return () => {
+      // refMap重置
+      if (initialReset && !storeRefSet.size) refMap = null;
+    };
   });
   
   // 数据存储容器storeMap
@@ -186,14 +201,15 @@ export function createStore<S extends State>(
     
     storeMapValue.set("useSnapshot", () => {
       /**
-       * 原本将初始化重置放在subscribe中不稳定，
-       * 可能形成数据更新的撕裂，放在useSnapshot中使用useMemo同步执行一次安全温度
-       */
-      /**
        * @description 通过storeRefSet判断当前数据是否还有组件引用
        * 只要还有一个组件在引用当前数据，都不会重置数据，
        * 因为当前还在业务逻辑中，不属于完整的卸载
        * 完整的卸载周期对应表达的是整个store的
+       *
+       * 原本将初始化重置放在subscribe中不稳定，
+       * 可能形成数据更新的撕裂，放在useSnapshot中使用useMemo同步执行一次安全温度
+       *
+       * 且也不能放在subscribe的return回调中卸载执行，以防止外部接口调用数据导致的数据不统一
        */
       if (initialReset && !storeRefSet.size) {
         resetStateMap(key);
@@ -451,7 +467,9 @@ export function createStore<S extends State>(
    */
   function proxyReceiverThisHandle(proxyReceiver: any, proxyStore: any, target: S, key: keyof S) {
     return proxyStore === proxyReceiver
-      ? stateMap.get(key)
+      ? refMap && refMap.has(key)
+        ? refMap.get(key)
+        : stateMap.get(key)
       : Reflect.get(target, key, proxyReceiver);
   }
   
@@ -476,13 +494,14 @@ export function createStore<S extends State>(
       if (typeof stateMap.get(key) === "function") {
         return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
       }
-      return externalMap.get(key as keyof ExternalMapValue<S>) || (
-        (
+      return externalMap.get(key as keyof ExternalMapValue<S>)
+        || (
           (
-            initialValueConnectStore(key) as StoreMap<S>
-          ).get(key) as StoreMapValue<S>
-        ).get("useSnapshot") as StoreMapValueType<S>["useSnapshot"]
-      )();
+            (
+              initialValueConnectStore(key) as StoreMap<S>
+            ).get(key) as StoreMapValue<S>
+          ).get("useSnapshot") as StoreMapValueType<S>["useSnapshot"]
+        )();
     },
   } as ProxyHandler<StoreMap<S>>);
   

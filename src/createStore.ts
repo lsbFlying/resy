@@ -111,7 +111,7 @@ export function createStore<S extends State>(
   const setStateCallbackStackArray: SetStateCallbackItem<S>[] = [];
   
   // setState的回调函数添加入栈
-  function setStateCallbackStackAdd(updateParams: Partial<S>, cycleState: S, callback: SetStateCallback<S>) {
+  function setStateCallbackStackPush(updateParams: Partial<S>, cycleState: S, callback: SetStateCallback<S>) {
     setStateCallbackStackArray.push({
       cycleData: {
         updateParams,
@@ -414,9 +414,9 @@ export function createStore<S extends State>(
       // 如果是回调在执行时发现回调中有更setState并且有回调，此时回调进入下一个微任务循环中添加入栈，不影响这一轮的回调执行栈的执行
       scheduler.get("isCalling")
         ? Promise.resolve().then(() => {
-          setStateCallbackStackAdd(updateParamsTemp, nextStateTemp, callback);
+          setStateCallbackStackPush(updateParamsTemp, nextStateTemp, callback);
         })
-        : setStateCallbackStackAdd(updateParamsTemp, nextStateTemp, callback);
+        : setStateCallbackStackPush(updateParamsTemp, nextStateTemp, callback);
     }
     finallyBatchHandle();
   }

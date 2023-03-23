@@ -72,6 +72,8 @@ export function view<P extends State = {}, S extends State = {}>(
      * 恰巧由于这里的proxy代理，导致在挂载属性数据的时候不能使用扩展运算符，
      * 扩展运算符...会读取所有的属性数据，导致内部关联使用数据属性失去准确性
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
+     *
+     * be careful: state是一个proxy，这里如果外部数据对象将state作为原型链继承将是无效继承
      */
     const [state, setState] = useState<S>(() => proxyStateHandler(stateMap, innerUseStateSet));
     

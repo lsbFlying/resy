@@ -10,7 +10,7 @@ export function proxyStateHandler<S extends State>(
   innerUseStateSet: Set<keyof S>,
 ) {
   const store = new Proxy(stateMap, {
-    get: (target: Map<keyof S, S[keyof S]>, key: keyof S, receiver) => {
+    get: (target: Map<keyof S, S[keyof S]>, key: keyof S, receiver: any) => {
       innerUseStateSet.add(key);
       /**
        * stateMap(即最新的状态数据Map-latestState)给出了resy生成的store内部数据的引用，

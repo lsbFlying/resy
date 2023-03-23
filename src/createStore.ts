@@ -91,6 +91,14 @@ export function createStore<S extends State>(
    * 如stateMap、storeMap、storeCoreMap、storeChangeSet等
    */
   let stateMap: Map<keyof S, S[keyof S]> = new Map(Object.entries(state));
+  // stateMap是否在view中整体重置过的的标记
+  let stateMapViewResetFlag: boolean | undefined;
+  // 复位stateMapViewResetFlag标记
+  function stateMapViewResetHandled() {
+    if (initialReset && stateMapViewResetFlag && !storeRefSet.size) {
+      stateMapViewResetFlag = false;
+    }
+  }
   
   // 重置初始化stateMap状态
   function resetStateMap(key: keyof S) {
@@ -120,7 +128,8 @@ export function createStore<S extends State>(
   const storeCoreMap: StoreCoreMapType<S> = new Map();
   storeCoreMap.set("getStateMap", () => stateMap);
   storeCoreMap.set("viewInitialReset", () => {
-    if (initialReset && !storeRefSet.size) {
+    if (initialReset && !stateMapViewResetFlag && !storeRefSet.size) {
+      stateMapViewResetFlag = true;
       /**
        * view初始化的时候执行直接一次性覆盖即可，
        * 而如果是在useSyncExternalStore的初始化中执行则按key逐个执行初始化重置
@@ -134,6 +143,7 @@ export function createStore<S extends State>(
     const storeRefIncreaseItem = storeRefSetSelfIncreasing();
     return () => {
       storeRefSet.delete(storeRefIncreaseItem);
+      stateMapViewResetHandled();
     }
   });
   storeCoreMap.set("dispatchStoreEffect", (effectData: Partial<S>, prevState: S, nextState: S) => {
@@ -172,6 +182,7 @@ export function createStore<S extends State>(
       return () => {
         storeChangeSet.delete(storeChange);
         storeRefSet.delete(storeRefIncreaseItem);
+        stateMapViewResetHandled();
       };
     });
     
@@ -202,7 +213,7 @@ export function createStore<S extends State>(
        *
        * 且也不能放在subscribe的return回调中卸载执行，以防止外部接口调用数据导致的数据不统一
        */
-      if (initialReset && !storeRefSet.size) {
+      if (initialReset && !stateMapViewResetFlag && !storeRefSet.size) {
         resetStateMap(key);
       }
       return useSyncExternalStore(

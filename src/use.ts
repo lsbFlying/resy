@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef } from "react";
-import { USE_STORE_KEY, USE_CONCISE_STORE_KEY, STORE_CORE_MAP_KEY } from "./static";
+import { useMemo } from "react";
+import { USE_STORE_KEY, USE_CONCISE_STORE_KEY } from "./static";
 import { createStore } from "./createStore";
 import { storeErrorHandle } from "./utils";
-import type { State, ConciseStore, StoreCoreMapType, StoreCoreMapValue } from "./model";
+import type { State, ConciseStore } from "./model";
 
 /**
  * 驱动组件更新
@@ -36,27 +36,4 @@ export function useConciseState<S extends State>(initialState?: S | (() => S)): 
       { __privatization__: true },
     );
   }, [])[USE_CONCISE_STORE_KEY as keyof S];
-}
-
-/**
- * useStore的升级加强版本，可以挂载ref引用数据在store上
- * 自上而下兼容useStore的使用
- * 它只是将ref引用数据挂载到store内部的refMap中
- * 处于结合react中useRef的current变化不引起页面更新渲染的规则逻辑
- * 这里的withRef也仅仅是作为一个数据引用，而不作为驱动更新的数据
- * 所以它无法从useStore、useStoreWithRef中读取到
- * 只能从store上去读取，表现出与驱动更新无关的特性
- */
-export function useStoreWithRef<S extends State>(store: S, ref?: Partial<S>): S {
-  const refTemp = useRef(ref);
-  
-  const unsubscribeRefMap = useMemo(() => (
-    (
-      store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-    ).get("storeMountRef") as StoreCoreMapValue<S>["storeMountRef"]
-  )(refTemp.current && new Map(Object.entries(refTemp.current))), []);
-  
-  useEffect(() => unsubscribeRefMap, []);
-  
-  return store[USE_STORE_KEY as keyof S];
 }

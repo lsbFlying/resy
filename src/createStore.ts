@@ -16,7 +16,7 @@ import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType, StoreCoreMapValue,
   StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe, Scheduler, CustomEventListener, Listener,
   CreateStoreOptions, Store, AnyFn, ConciseExternalMapType, ConciseExternalMapValue,
-  SetStateCallback, SetStateCallbackItem, WithRefType,
+  SetStateCallback, SetStateCallbackItem,
 } from "./model";
 
 /**
@@ -116,26 +116,25 @@ export function createStore<S extends State>(
   // 订阅监听Set容器
   const listenerStoreSet = new Set<CustomEventListener<S>>();
   
-  // 挂载引用Map
-  let refMap: WithRefType<S> | undefined | null = null;
-  
   // 处理store的监听订阅、ref数据引用关联、view数据关联以及获取最新state数据的相关核心处理Map
   const storeCoreMap: StoreCoreMapType<S> = new Map();
   storeCoreMap.set("getStateMap", () => stateMap);
+  storeCoreMap.set("viewInitialReset", () => {
+    if (initialReset && !storeRefSet.size) {
+      /**
+       * view初始化的时候执行直接一次性覆盖即可，
+       * 而如果是在useSyncExternalStore的初始化中执行则按key逐个执行初始化重置
+       * 主要是view初始化一开始拿不到全部的数据引用，
+       * 而useSyncExternalStore使用的时候可以拿到具体的数据引用
+       */
+      stateMap = new Map(Object.entries(state));
+    }
+  });
   storeCoreMap.set("viewConnectStore", () => {
     const storeRefIncreaseItem = storeRefSetSelfIncreasing();
     return () => {
       storeRefSet.delete(storeRefIncreaseItem);
-      if (initialReset && !storeRefSet.size) {
-        /**
-         * view卸载的时候执行直接一次性覆盖即可，
-         * 而如果是在useSyncExternalStore的初始化中执行需要按key逐个执行初始化重置
-         */
-        stateMap = new Map(Object.entries(state));
-        // refMap与整体数据一起重置
-        refMap = null;
-      }
-    };
+    }
   });
   storeCoreMap.set("dispatchStoreEffect", (effectData: Partial<S>, prevState: S, nextState: S) => {
     /**
@@ -151,14 +150,6 @@ export function createStore<S extends State>(
       prevState,
       nextState,
     ));
-  });
-  storeCoreMap.set("storeMountRef", (ref?: WithRefType<S>) => {
-    // 因为每次的ref都是由useRef产生的ref.current，是稳定的数据引用，所以这里只有重新覆盖即可
-    refMap = ref;
-    return () => {
-      // refMap重置
-      if (initialReset && !storeRefSet.size) refMap = null;
-    };
   });
   
   // 数据存储容器storeMap
@@ -467,9 +458,7 @@ export function createStore<S extends State>(
    */
   function proxyReceiverThisHandle(proxyReceiver: any, proxyStore: any, target: S, key: keyof S) {
     return proxyStore === proxyReceiver
-      ? refMap && refMap.has(key)
-        ? refMap.get(key)
-        : stateMap.get(key)
+      ? stateMap.get(key)
       : Reflect.get(target, key, proxyReceiver);
   }
   

@@ -55,6 +55,13 @@ export function view<P extends State = {}, S extends State = {}>(
   storeErrorHandle(store);
   
   return memo((props: P) => {
+    // 先行初始化执行逻辑，并且每次生命周期中只同步执行一次
+    useMemo(() => (
+      (
+        store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
+      ).get("viewInitialReset") as StoreCoreMapValue<S>["viewInitialReset"]
+    )(), []);
+    
     /** 需要将innerUseStateSet与stateMap放在内部执行，这样每次更新的时候可以得到最新的数据引用与数据stateMap */
     // 引用数据的代理Set
     const innerUseStateSet: Set<keyof S> = new Set();

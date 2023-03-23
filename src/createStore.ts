@@ -16,7 +16,7 @@ import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType, StoreCoreMapValue,
   StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe, Scheduler, CustomEventListener, Listener,
   CreateStoreOptions, Store, AnyFn, ConciseExternalMapType, ConciseExternalMapValue,
-  SetStateCallback, SetStateCallbackItem,
+  SetStateCallback, SetStateCallbackItem, MapPartial,
 } from "./model";
 
 /**
@@ -235,7 +235,7 @@ export function createStore<S extends State>(
   }
   
   // 批量触发订阅监听的数据变动
-  function batchDispatchListener(prevState: Map<keyof S, S[keyof S]>, changedData: Map<keyof S, S[keyof S]>) {
+  function batchDispatchListener(prevState: Map<keyof S, S[keyof S]>, changedData: MapPartial<S>) {
     if (changedData.size > 0 && listenerStoreSet.size > 0) {
       /**
        * @description effectState：实际真正影响变化的数据
@@ -358,7 +358,7 @@ export function createStore<S extends State>(
       });
     });
     if (listenerStoreSet.size) {
-      batchDispatchListener(prevState, new Map(Object.entries(updateParamsTemp)));
+      batchDispatchListener(prevState, new Map(Object.entries(updateParamsTemp)) as MapPartial<S>);
     }
   }
   
@@ -396,7 +396,7 @@ export function createStore<S extends State>(
        * be careful：当然这里的特性是在react-V18中才有的，因为react-V18的unstable_batchedUpdates做了优化
        * 如果是react-V18以下的版本，则还是分两个批次渲染更新。
        */
-      const updateParamsTemp = (updateParams as StateFunc<S>)?.();
+      const updateParamsTemp = (updateParams as StateFunc<S>)();
       Object.keys(updateParamsTemp).forEach(key => {
         taskPush(key, (updateParamsTemp as S)[key]);
       });

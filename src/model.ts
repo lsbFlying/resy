@@ -310,3 +310,6 @@ export type PS<P extends State = {}, S extends State = {}> = Readonly<{
 
 // 函数类型，Function的替代类型
 export type AnyFn = (...args: unknown[]) => unknown;
+
+// 部分Map
+export type MapPartial<S extends State> = Map<keyof Partial<S>, Partial<S>[keyof Partial<S>]>;

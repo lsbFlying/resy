@@ -19,9 +19,8 @@
 🌟`v8.0.0`：<br/>
 1. Adjust the parameter position of the isDeepEqual function of "view",
    and adjust the position of the listener function parameter of the "subscribe" listening callback.
-2. Added useConciseState initialization parameter object laziness to create expensive object usage scene.
-3. Due to the unfriendly usage of the useStoreWithRef API, it was removed.
-4. Adjust and optimize the execution time of initialReset
+2. Due to the unfriendly usage of the useStoreWithRef API, it was removed.
+3. Adjust and optimize the execution time of initialReset
    to make the reset logic more in line with intuitive expectations.
 
 🌟`v7.1.1`：<br/>

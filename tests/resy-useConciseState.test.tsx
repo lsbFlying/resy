@@ -75,21 +75,6 @@ test("resy-useConciseState", async () => {
     );
   }
   
-  function FunctionInitial() {
-    const { count, setState, store } = useConciseState<{count: number}>(() => {
-      return {
-        count: 999,
-      };
-    });
-    console.log("FunctionInitial-store", store.count);
-    return (
-      <>
-        <span>FunctionInitialCount：{count}</span><br/>
-        <button onClick={() => { setState({ count: count + 1, }) }}>FunctionInitialBtn+</button>
-      </>
-    );
-  }
-  
   function TestCom() {
     const { count, store, name, age, sex, setState } = useConciseState({
       count: 0, name: "Alen", age: 14, sex: "womam",
@@ -142,7 +127,6 @@ test("resy-useConciseState", async () => {
         <InnerApp name="app2"/>
         <InnerTest/>
         <NoInitial/>
-        <FunctionInitial/>
         <TestCom/>
       </>
     );
@@ -184,11 +168,6 @@ test("resy-useConciseState", async () => {
   fireEvent.click(getByText("btn+"));
   await waitFor(() => {
     getByText("count：1");
-  });
-  
-  fireEvent.click(getByText("FunctionInitialBtn+"));
-  await waitFor(() => {
-    getByText("FunctionInitialCount：1000");
   });
   
   fireEvent.click(getByText("TestComBtn+"));

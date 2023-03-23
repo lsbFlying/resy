@@ -54,7 +54,10 @@ test("resy-func-prop-inner-this", async () => {
   }
   
   function Count4() {
-    const { name, changeName } = useConciseState({ name: "Jack", changeName() { this.name = "Arosy"; }, });
+    const { name, changeName } = useConciseState<{name: string; changeName(): void}>({
+      name: "Jack",
+      changeName() { this.name = "Arosy"; },
+    });
     return (
       <div>
         <p>name:{name}</p>
@@ -64,7 +67,10 @@ test("resy-func-prop-inner-this", async () => {
   }
   
   function Count5() {
-    const { age, store } = useConciseState({ age: 15, changeAge() { this.age = 24; }, });
+    const { age, store } = useConciseState<{age: number; changeAge(): void}>({
+      age: 15,
+      changeAge() { this.age = 24; },
+    });
     return (
       <div>
         <p>age:{age}</p>

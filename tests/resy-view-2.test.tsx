@@ -1,5 +1,5 @@
 import React from "react";
-import {expect, test} from "vitest";
+import { expect, test } from "vitest";
 import { createStore, useStore, MapStateToProps, view } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 

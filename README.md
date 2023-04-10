@@ -22,6 +22,7 @@
 2. Due to the unfriendly usage of the useStoreWithRef API, it was removed.
 3. Adjust and optimize the execution time of initialReset
    to make the reset logic more in line with intuitive expectations.
+4. The use mode of "view" is changed to the use mode of currying to optimize the freedom of the use scene.
 
 🌟`v7.1.1`：<br/>
 1. Fixed bug that did not correspond to the latest data parameters of setState's callback function.

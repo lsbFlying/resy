@@ -51,7 +51,7 @@ class ClassCom extends React.PureComponent<MapStateToProps<Store>> {
   }
 }
 
-const PureClassCom = view(store, ClassCom);
+const PureClassCom = view(ClassCom)(store);
 
 const HookCom = (props: MapStateToProps<Store>) => {
   // view会将store数据挂载到props上新增的state属性上
@@ -78,7 +78,7 @@ const HookCom = (props: MapStateToProps<Store>) => {
   );
 }
 
-const PureHookCom = view(store, HookCom);
+const PureHookCom = view(HookCom)(store);
 
 interface TestComProps { testObj: { name: string } }
 // 该组件测试view的深度对比功能
@@ -105,7 +105,6 @@ const TestCom = (props: MapStateToProps<Store, TestComProps>) => {
 }
 
 const PureTestCom = view<TestComProps, Store>(
-  store,
   TestCom,
   (next, prev) => {
   const { props: nextProps, state: nextState } = next;
@@ -122,7 +121,7 @@ const PureTestCom = view<TestComProps, Store>(
   }
   console.log(456);
   return false;
-});
+})(store);
 
 const TestCom2 = (props: MapStateToProps<Store, TestComProps>) => {
   // view会将store数据挂载到props上新增的state属性上
@@ -146,7 +145,7 @@ const TestCom2 = (props: MapStateToProps<Store, TestComProps>) => {
   );
 }
 
-const PureTestCom2 = view<TestComProps, Store>(store, TestCom2);
+const PureTestCom2 = view<TestComProps, Store>(TestCom2)(store);
 
 // count数据状态的变化不会引起Text的re-render
 function Text() {

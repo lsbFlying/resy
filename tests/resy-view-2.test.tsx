@@ -43,7 +43,7 @@ test("resy-view", async () => {
     }
   }
   
-  const ClassComView = view(store, ClassCom);
+  const ClassComView = view(ClassCom)(store);
   
   const App = () => {
     const { text } = useStore(store);

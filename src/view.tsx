@@ -21,6 +21,8 @@ import type {
  * 即如果view包裹的Comp组件即使在其父组件更新渲染了
  * 只要内部使用的数据没有更新，那么它本身不会渲染而产生额外re-render
  *
+ * D: 变换柯里化使用方式，优化使用场景的自由度
+ *
  * @param store resy生成的store数据状态储存容器
  * @param Comp 被包裹的组件
  * @param isDeepEqual 深度对比自定义函数
@@ -46,15 +48,25 @@ import type {
  * ... some code end ...
  */
 export function view<P extends State = {}, S extends State = {}>(
-  store: Store<S>,
   // any用于防范某些HOC导致的类型不合一问题，比如withRouter(低版本的react-router还是存在该HOC)
   // tslint:disable-next-line:variable-name
   Comp: React.ComponentType<MapStateToProps<S, P> | any>,
   isDeepEqual?: (next: PS<P, S>, prev: PS<P, S>) => boolean,
 ) {
-  storeErrorHandle(store);
-  
-  return memo((props: P) => {
+  return (store?: Store<S>) => memo((props: P) => {
+    /**
+     * 如果没有store则直接返回组件的props使用方式
+     * 这种使用方式的情况如果在函数组件内部仍然可以直接使用useStore进行数据渲染
+     * 且同样具备memo效果，只是不依赖与props上挂载的state数据属性
+     */
+    if (!store) return <Comp {...props}/>;
+    
+    /**
+     * 如果是有store的情况则可以通过props.state的方式进行数据渲染及操作
+     * 且props.state的方式兼容于函数组件与class组件
+     * 但是如果是在class组件中则必须使用props.state的方式
+     * 而函数组件则两种方式都可以
+     */
     // 先行初始化执行逻辑，并且每次生命周期中只同步执行一次
     (
       (
@@ -63,7 +75,7 @@ export function view<P extends State = {}, S extends State = {}>(
     )();
     
     /** 需要将innerUseStateSet与stateMap放在内部执行，这样每次更新的时候可以得到最新的数据引用与数据stateMap */
-    // 引用数据的代理Set
+      // 引用数据的代理Set
     const innerUseStateSet: Set<keyof S> = new Set();
     // 需要使用getState获取store内部的即时最新数据值
     const stateMap = getLatestStateMap(store);
@@ -78,6 +90,9 @@ export function view<P extends State = {}, S extends State = {}>(
     const [state, setState] = useState<S>(() => proxyStateHandler(stateMap, innerUseStateSet));
     
     useEffect(() => {
+      // 在mounted进行一次的store校验
+      storeErrorHandle(store);
+      
       // 因为useEffect是异步的，所以这里执行innerUseStateSet时会有数据而不是空
       const viewConnectStoreSet = new Set<Unsubscribe>();
       innerUseStateSet.forEach(() => {
@@ -119,7 +134,7 @@ export function view<P extends State = {}, S extends State = {}>(
     return useMemo(() => <Comp {...props} state={state}/>, [state, props]);
   }, isDeepEqual ? (prevProps: P, nextProps: P) => {
     // props与state的变化可能存在同时变化的情况，但不影响isDeepEqual的执行
-    const latestState = mapToObject(getLatestStateMap(store));
+    const latestState = store ? mapToObject(getLatestStateMap(store)) : ({} as S);
     return isDeepEqual(
       { props: nextProps, state: latestState },
       { props: prevProps, state: latestState },

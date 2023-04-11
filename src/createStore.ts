@@ -58,20 +58,7 @@ export function createStore<S extends State>(
     throw new Error("The initialization parameter result of createStore needs to be an object!");
   }
   
-  const { initialReset = true, __privatization__ } = options || {};
-  
-  /**
-   * @description 更新的任务队列（私有化）、更新的任务数据（私有化）
-   * 配合usePrivateStore该hook api的使用
-   * 因为 "scheduler" 全局统一调度在如果作为私有状态的情况下
-   * 会使得状态数据的更新针对每一个私有数据而失效
-   * 只会对最后一个私有状态容器产生更新效果
-   *
-   * 这就需要私有的 "更新的任务队列（私有化）" 与 "更新的任务数据（私有化）"
-   * 来解决每一个私有状态容器的有效更新的任务或者更新数据Map中的key不会因为相同而冲突的问题
-   */
-  const taskQueueMapPrivate = __privatization__ ? new Map<keyof S, Callback>() : null;
-  const taskDataMapPrivate = __privatization__ ? new Map<keyof S, S[keyof S]>() : null;
+  const { initialReset = true } = options || {};
   
   // 当前store的调度处理器
   const schedulerProcessor = scheduler();
@@ -273,8 +260,6 @@ export function createStore<S extends State>(
       )(val),
       key,
       val,
-      taskDataMapPrivate,
-      taskQueueMapPrivate,
     );
   }
   
@@ -296,12 +281,9 @@ export function createStore<S extends State>(
       schedulerProcessor.set("isUpdating", Promise.resolve().then(() => {
         schedulerProcessor.set("isUpdating", null);
         
-        const { taskDataMap, taskQueueMap } = (schedulerProcessor.get("getTask") as Scheduler<S>["getTask"])(
-          taskDataMapPrivate,
-          taskQueueMapPrivate,
-        );
+        const { taskDataMap, taskQueueMap } = (schedulerProcessor.get("getTask") as Scheduler<S>["getTask"])();
         // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
-        (schedulerProcessor.get("flush") as Scheduler<S>["flush"])(taskDataMapPrivate, taskQueueMapPrivate);
+        (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
         if (taskDataMap.size !== 0) {
           // 未更新之前的数据
           const prevState = new Map(stateMap);

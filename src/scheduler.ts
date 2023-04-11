@@ -27,36 +27,23 @@ export default function scheduler() {
       task: Callback,
       key: never,
       val: any,
-      taskDataMapParam: Map<never, any> | null,
-      taskQueueMapParam: Map<never, Callback> | null,
     ) => {
-      (taskDataMapParam || taskDataMap).set(key, val);
-      (taskQueueMapParam || taskQueueMap).set(key, task);
+      taskDataMap.set(key, val);
+      taskQueueMap.set(key, task);
     },
   );
   
   schedulerProcessor.set(
     "flush",
-    (
-      taskDataMapParam: Map<never, any> | null,
-      taskQueueMapParam: Map<never, Callback> | null,
-    ) => {
-      (taskDataMapParam || taskDataMap).clear();
-      (taskQueueMapParam || taskQueueMap).clear();
+    () => {
+      taskDataMap.clear();
+      taskQueueMap.clear();
     },
   );
   
   schedulerProcessor.set(
     "getTask",
-    (
-      taskDataMapParam: Map<never, any> | null,
-      taskQueueMapParam: Map<never, Callback> | null,
-    ) => {
-      return {
-        taskDataMap: new Map(taskDataMapParam || taskDataMap),
-        taskQueueMap: new Map(taskQueueMapParam || taskQueueMap),
-      };
-    },
+    () => ({ taskDataMap: new Map(taskDataMap), taskQueueMap: new Map(taskQueueMap) }),
   );
   
   return schedulerProcessor;

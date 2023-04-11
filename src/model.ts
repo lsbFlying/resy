@@ -255,19 +255,11 @@ export interface Scheduler<S extends State = {}> {
     task: Callback,
     key: keyof S,
     val: S[keyof S],
-    taskDataMap: Map<keyof S, S[keyof S]> | null,
-    taskQueueMap: Map<keyof S, Callback> | null,
   ): void;
   // 冲刷任务数据与任务队列
-  flush(
-    taskDataMap: Map<keyof S, S[keyof S]> | null,
-    taskQueueMap: Map<keyof S, Callback> | null,
-  ): void;
+  flush(): void;
   // 获取任务数据与任务队列
-  getTask(
-    taskDataMap: Map<keyof S, S[keyof S]> | null,
-    taskQueueMap: Map<keyof S, Callback> | null,
-  ): {
+  getTask(): {
     taskDataMap: Map<keyof S, S[keyof S]>,
     taskQueueMap: Map<keyof S, Callback>,
   };
@@ -282,24 +274,6 @@ export type CreateStoreOptions = {
    * @default true
    */
   initialReset?: boolean;
-  /**
-   * be careful: 内部属性，请勿使用！！！
-   * @description 该参数主要是为了使得createStore创建的store成为局部(非全局)数据状态容器
-   * 一般而言如果我们使用createStore的时候是不需要设置该参数的，如果特殊需要局部数据状态容器
-   * 可以使用useConciseState来获取局部数据状态，而useConciseState就是使用改参数进行实现的
-   * 即该参数是相对而言库的内部使用参数
-   * 如果真的想用createStore且用该参数也可以，使用方式如下：
-   * function AppCom() {
-   *   const {
-   *      ..., store, setState, syncUpdate, subscribe,
-   *   } = useMemo(() => createStore({...}, { __privatization__: true }), []);
-   *
-   *   return (
-   *     <>{...}</>
-   *   );
-   * }
-   */
-  __privatization__?: boolean;
 };
 
 // view中isDeepEqual函数的参数类型，props与state的类型合集

@@ -6,7 +6,7 @@
  * @name createStore
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import schedulerProcessor from "./scheduler";
+import scheduler from "./scheduler";
 import EventDispatcher from "./listener";
 import {
   batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_, EVENT_TYPE,
@@ -74,7 +74,7 @@ export function createStore<S extends State>(
   const taskDataMapPrivate = __privatization__ ? new Map<keyof S, S[keyof S]>() : null;
   
   // 当前store的调度处理器
-  const scheduler = schedulerProcessor();
+  const schedulerProcessor = scheduler();
   
   // 对应整个store的数据引用标记的set集合
   const storeRefSet = new Set<number>();
@@ -265,7 +265,7 @@ export function createStore<S extends State>(
    * 所以这里没有阻止函数作为数据属性的更新
    */
   function taskPush(key: keyof S, val: S[keyof S]) {
-    (scheduler.get("add") as Scheduler<S>["add"])(
+    (schedulerProcessor.get("add") as Scheduler<S>["add"])(
       () => (
         (
           initialValueConnectStore(key).get(key) as StoreMapValue<S>
@@ -288,20 +288,20 @@ export function createStore<S extends State>(
    * 但好在setState的回调弥补了同步获取最新数据的问题
    */
   function finallyBatchHandle() {
-    if (!scheduler.get("isUpdating")) {
+    if (!schedulerProcessor.get("isUpdating")) {
       /**
        * @description 采用微任务结合开关标志控制的方式达到批量更新的效果，
        * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
        */
-      scheduler.set("isUpdating", Promise.resolve().then(() => {
-        scheduler.set("isUpdating", null);
+      schedulerProcessor.set("isUpdating", Promise.resolve().then(() => {
+        schedulerProcessor.set("isUpdating", null);
         
-        const { taskDataMap, taskQueueMap } = (scheduler.get("getTask") as Scheduler<S>["getTask"])(
+        const { taskDataMap, taskQueueMap } = (schedulerProcessor.get("getTask") as Scheduler<S>["getTask"])(
           taskDataMapPrivate,
           taskQueueMapPrivate,
         );
         // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
-        (scheduler.get("flush") as Scheduler<S>["flush"])(taskDataMapPrivate, taskQueueMapPrivate);
+        (schedulerProcessor.get("flush") as Scheduler<S>["flush"])(taskDataMapPrivate, taskQueueMapPrivate);
         if (taskDataMap.size !== 0) {
           // 未更新之前的数据
           const prevState = new Map(stateMap);
@@ -325,14 +325,14 @@ export function createStore<S extends State>(
         setStateCallbackStackArray.forEach((
           {callback, cycleData: { updateParams, cycleState }}, index, array,
         ) => {
-          scheduler.set("isCalling", true);
+          schedulerProcessor.set("isCalling", true);
           // 结合上一轮的回调进行上一轮更新参数的合并得到最新的回调数据参数
           callback(Object.assign(
             {},
             cycleState,
             index === 0 ? updateParams : array[index - 1].cycleData.updateParams,
           ));
-          if (index === array.length - 1) scheduler.set("isCalling", null);
+          if (index === array.length - 1) schedulerProcessor.set("isCalling", null);
         });
         // 清空回调执行栈，否则回调中如果有更新则形成死循环
         setStateCallbackStackArray.splice(0);
@@ -415,7 +415,7 @@ export function createStore<S extends State>(
     if (callback) {
       const nextStateTemp = Object.assign({}, mapToObject(stateMap), updateParamsTemp);
       // 如果是回调在执行时发现回调中有更setState并且有回调，此时回调进入下一个微任务循环中添加入栈，不影响这一轮的回调执行栈的执行
-      scheduler.get("isCalling")
+      schedulerProcessor.get("isCalling")
         ? Promise.resolve().then(() => {
           setStateCallbackStackPush(updateParamsTemp, nextStateTemp, callback);
         })

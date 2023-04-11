@@ -5,7 +5,7 @@ import type { Callback, Scheduler } from "./model";
  * 便于与useConciseState的store的调度处理分离开来
  * 避免了更新调度的交叉不协调问题产生的数据更新问题
  */
-export default function schedulerProcessor() {
+export default function scheduler() {
   // 更新的任务队列
   const taskQueueMap = new Map();
   // 更新的任务数据
@@ -16,12 +16,12 @@ export default function schedulerProcessor() {
    * 主要是为了resy的直接单次更新的批量合并
    * 同时完成react18以下的非管理领域的批处理更新的调度协调性
    */
-  const scheduler = new Map<keyof Scheduler, Scheduler[keyof Scheduler]>();
+  const schedulerProcessor = new Map<keyof Scheduler, Scheduler[keyof Scheduler]>();
   
-  scheduler.set("isCalling", null);
-  scheduler.set("isUpdating", null);
+  schedulerProcessor.set("isCalling", null);
+  schedulerProcessor.set("isUpdating", null);
   
-  scheduler.set(
+  schedulerProcessor.set(
     "add",
     (
       task: Callback,
@@ -35,7 +35,7 @@ export default function schedulerProcessor() {
     },
   );
   
-  scheduler.set(
+  schedulerProcessor.set(
     "flush",
     (
       taskDataMapParam: Map<never, any> | null,
@@ -46,7 +46,7 @@ export default function schedulerProcessor() {
     },
   );
   
-  scheduler.set(
+  schedulerProcessor.set(
     "getTask",
     (
       taskDataMapParam: Map<never, any> | null,
@@ -59,5 +59,5 @@ export default function schedulerProcessor() {
     },
   );
   
-  return scheduler;
-};
+  return schedulerProcessor;
+}

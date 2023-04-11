@@ -6,7 +6,7 @@
  * @name createStore
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import scheduler from "./scheduler";
+import schedulerProcessor from "./scheduler";
 import EventDispatcher from "./listener";
 import {
   batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_, EVENT_TYPE,
@@ -72,6 +72,9 @@ export function createStore<S extends State>(
    */
   const taskQueueMapPrivate = __privatization__ ? new Map<keyof S, Callback>() : null;
   const taskDataMapPrivate = __privatization__ ? new Map<keyof S, S[keyof S]>() : null;
+  
+  // 当前store的调度处理器
+  const scheduler = schedulerProcessor();
   
   // 对应整个store的数据引用标记的set集合
   const storeRefSet = new Set<number>();

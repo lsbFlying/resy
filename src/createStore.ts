@@ -411,9 +411,9 @@ export function createStore<S extends State>(
   function setState(updateParams: Partial<S> | StateFunc<S>, callback?: SetStateCallback<S>) {
     updateDataErrorHandle(updateParams, "setState");
     const updateParamsTemp = updater(updateParams);
-    const nextStateTemp = Object.assign({}, mapToObject(stateMap), updateParamsTemp);
     // 异步回调添加入栈
     if (callback) {
+      const nextStateTemp = Object.assign({}, mapToObject(stateMap), updateParamsTemp);
       // 如果是回调在执行时发现回调中有更setState并且有回调，此时回调进入下一个微任务循环中添加入栈，不影响这一轮的回调执行栈的执行
       scheduler.get("isCalling")
         ? Promise.resolve().then(() => {

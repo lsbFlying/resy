@@ -24,6 +24,7 @@
    to make the reset logic more in line with intuitive expectations.
 4. The use mode of "view" is changed to the use mode of currying to optimize the freedom of the use scene.
 5. Adjusted and optimized the modularity of the scheduling system, making scheduling more coordinated.
+   At the same time, removed the "\_\_privatization\_\_" internal configuration properties.
 
 🌟`v7.1.1`：<br/>
 1. Fixed bug that did not correspond to the latest data parameters of setState's callback function.

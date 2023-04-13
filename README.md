@@ -665,13 +665,13 @@ const TestView = view(
   // }
 )(store);
 
+/**
+ * 1、name data update, will not cause TestView re-render
+ * 2、name data update, will not cause TestView2 re-render
+ */
 function App() {
   const { countAddFun, name } = useStore(store);
   
-  /**
-   * 1、name data update, will not cause TestView re-render
-   * 2、name data update, will not cause TestView2 re-render
-   */
   return (
     <>
       <Text/>

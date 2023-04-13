@@ -668,13 +668,15 @@ const TestView = view(
 function App() {
   const { countAddFun, name } = useStore(store);
   
+  /**
+   * 1、name data update, will not cause TestView re-render
+   * 2、name data update, will not cause TestView2 re-render
+   */
   return (
     <>
       <Text/>
       <Count/>
-      {/* name data update, will not cause TestView re-render */}
       <TestView/>
-      {/* name data update, will not cause TestView2 re-render */}
       <TestView2/>
       <div>{name}</div>
       <button onClick={() => { store.name = "app"; }}>btn-name</button>

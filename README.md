@@ -681,7 +681,7 @@ function App() {
       <button onClick={countAddFun}>btn+</button>
       <button
         onClick={() => {
-        	store.count--;
+          store.count--;
         }}
       >
         btn-

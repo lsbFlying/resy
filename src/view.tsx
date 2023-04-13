@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useMemo, useState } from "react";
+import React, { memo, useEffect, useState } from "react";
 import { STORE_CORE_MAP_KEY } from "./static";
 import { getLatestStateMap, mapToObject, proxyStateHandler, storeErrorHandle } from "./utils";
 import type {
@@ -56,13 +56,6 @@ export function view<P extends State = {}, S extends State = {}>(
 ) {
   return (store?: Store<S>) => memo((props: P) => {
     /**
-     * 如果没有store则直接返回组件的props使用方式
-     * 这种使用方式的情况如果在函数组件内部仍然可以直接使用useStore进行数据渲染
-     * 且同样具备memo效果，只是不依赖与props上挂载的state数据属性
-     */
-    if (!store) return <Comp {...props}/>;
-    
-    /**
      * 如果是有store的情况则可以通过props.state的方式进行数据渲染及操作
      * 且props.state的方式兼容于函数组件与class组件
      * 但是如果是在class组件中则必须使用props.state的方式
@@ -71,9 +64,9 @@ export function view<P extends State = {}, S extends State = {}>(
     // 先行初始化执行逻辑，并且每次生命周期中只同步执行一次
     (
       (
-        store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-      ).get("viewInitialReset") as StoreCoreMapValue<S>["viewInitialReset"]
-    )();
+        store?.[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
+      )?.get("viewInitialReset") as StoreCoreMapValue<S>["viewInitialReset"]
+    )?.();
     
     /** 需要将innerUseStateSet与stateMap放在内部执行，这样每次更新的时候可以得到最新的数据引用与数据stateMap */
       // 引用数据的代理Set
@@ -91,6 +84,8 @@ export function view<P extends State = {}, S extends State = {}>(
     const [state, setState] = useState<S>(() => proxyStateHandler(stateMap, innerUseStateSet));
     
     useEffect(() => {
+      if (!store) return;
+      
       // 在mounted进行一次的store校验
       storeErrorHandle(store);
       
@@ -132,7 +127,7 @@ export function view<P extends State = {}, S extends State = {}>(
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     
-    return useMemo(() => <Comp {...props} state={state}/>, [state, props]);
+    return <Comp {...props} state={state}/>;
   }, isDeepEqual ? (prevProps: P, nextProps: P) => {
     // props与state的变化可能存在同时变化的情况，但不影响isDeepEqual的执行
     const latestState = store ? mapToObject(getLatestStateMap(store)) : ({} as S);

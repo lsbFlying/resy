@@ -34,7 +34,8 @@ export function mapToObject<S extends State>(map: Map<keyof S, S[keyof S]>): S {
 }
 
 // 获取最新数据Map对象
-export function getLatestStateMap<S extends State = {}>(store: Store<S>) {
+export function getLatestStateMap<S extends State = {}>(store?: Store<S>) {
+  if (!store) return new Map<keyof S, S[keyof S]>();
   return (
     (
       store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>

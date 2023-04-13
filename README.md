@@ -629,7 +629,7 @@ function HookCom() {
     <div>{count}{text}</div>
   );
 }
-// const TestView = view(HookCom)();
+const TestView2 = view(HookCom)();
 
 /**
  * view
@@ -674,6 +674,8 @@ function App() {
       <Count/>
       {/* name data update, will not cause TestView re-render */}
       <TestView/>
+      {/* name data update, will not cause TestView2 re-render */}
+      <TestView2/>
       <div>{name}</div>
       <button onClick={() => { store.name = "app"; }}>btn-name</button>
       <button onClick={countAddFun}>btn+</button>

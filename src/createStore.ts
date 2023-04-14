@@ -166,32 +166,26 @@ export function createStore<S extends State>(
     const storeChangeSet = new Set<Callback>();
     
     const storeMapValue: StoreMapValue<S> = new Map();
-    storeMapValue.set("subscribe", (storeChange: Callback) => {
-      storeChangeSet.add(storeChange);
+    storeMapValue.set("atomStateSubscribe", (onAtomStateChange: Callback) => {
+      storeChangeSet.add(onAtomStateChange);
       const storeRefIncreaseItem = storeRefSetSelfIncreasing();
       return () => {
-        storeChangeSet.delete(storeChange);
+        storeChangeSet.delete(onAtomStateChange);
         storeRefSet.delete(storeRefIncreaseItem);
         stateMapViewResetHandled();
       };
     });
     
-    storeMapValue.set("getSnapshot", () => stateMap.get(key));
+    storeMapValue.set("getAtomState", () => stateMap.get(key));
     
-    storeMapValue.set("setSnapshot", (val: S[keyof S]) => {
-      /**
-       * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
-       * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
-       */
-      if (!Object.is(val, stateMap.get(key))) {
-        // 这一步是为了配合getSnapshot，使得getSnapshot可以获得最新值
-        stateMap.set(key, val);
+    storeMapValue.set("update", () => {
+      if (schedulerProcessor.get("cycleUpdateFlag")) {
         // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
         storeChangeSet.forEach(storeChange => storeChange?.());
       }
     });
     
-    storeMapValue.set("useSnapshot", () => {
+    storeMapValue.set("useAtomState", () => {
       /**
        * @description 通过storeRefSet判断当前数据是否还有组件引用
        * 只要还有一个组件在引用当前数据，都不会重置数据，
@@ -199,7 +193,7 @@ export function createStore<S extends State>(
        * 完整的卸载周期对应表达的是整个store的
        *
        * 原本将初始化重置放在subscribe中不稳定，
-       * 可能形成数据更新的撕裂，放在useSnapshot中使用useMemo同步执行一次安全温度
+       * 可能形成数据更新的撕裂，放在useAtomState中同步执行一次解决数据撕裂的安全问题
        *
        * 且也不能放在subscribe的return回调中卸载执行，以防止外部接口调用数据导致的数据不统一
        */
@@ -207,9 +201,9 @@ export function createStore<S extends State>(
         resetStateMap(key);
       }
       return useSyncExternalStore(
-        (storeMap.get(key) as StoreMapValue<S>).get("subscribe") as StoreMapValueType<S>["subscribe"],
-        (storeMap.get(key) as StoreMapValue<S>).get("getSnapshot") as StoreMapValueType<S>["getSnapshot"],
-        (storeMap.get(key) as StoreMapValue<S>).get("getSnapshot") as StoreMapValueType<S>["getSnapshot"],
+        (storeMap.get(key) as StoreMapValue<S>).get("atomStateSubscribe") as StoreMapValueType<S>["atomStateSubscribe"],
+        (storeMap.get(key) as StoreMapValue<S>).get("getAtomState") as StoreMapValueType<S>["getAtomState"],
+        (storeMap.get(key) as StoreMapValue<S>).get("getAtomState") as StoreMapValueType<S>["getAtomState"],
       );
     });
     
@@ -252,15 +246,37 @@ export function createStore<S extends State>(
    * 所以这里没有阻止函数作为数据属性的更新
    */
   function taskPush(key: keyof S, val: S[keyof S]) {
-    (schedulerProcessor.get("add") as Scheduler<S>["add"])(
-      () => (
-        (
-          initialValueConnectStore(key).get(key) as StoreMapValue<S>
-        ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
-      )(val),
-      key,
-      val,
-    );
+    /**
+     * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
+     * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
+     */
+    if (!Object.is(val, stateMap.get(key))) {
+      /**
+       * 需要在入栈前就将每一步结果累计出来
+       * 比如遇到连续的数据操作就需要如此
+       * @example
+       * store.count++;
+       * store.count++;
+       * store.count++;
+       * 加了三次，如果count初始化值是0，那么理论上结果需要是3
+       *
+       * 同时这一步也是为了配合getAtomState，使得getAtomState可以获得最新值
+       */
+      stateMap.set(key, val);
+      
+      // 打开当前轮更新可执行标识开关
+      schedulerProcessor.set("cycleUpdateFlag", true);
+      
+      (schedulerProcessor.get("add") as Scheduler<S>["add"])(
+        () => (
+          (
+            initialValueConnectStore(key).get(key) as StoreMapValue<S>
+          ).get("update") as StoreMapValueType<S>["update"]
+        )(),
+        key,
+        val,
+      );
+    }
   }
   
   /**
@@ -288,6 +304,10 @@ export function createStore<S extends State>(
           // 未更新之前的数据
           const prevState = new Map(stateMap);
           batchUpdate(() => taskQueueMap.forEach(task => task()));
+          
+          // 重置当前轮更新可执行标识
+          schedulerProcessor.set("cycleUpdateFlag", null);
+          
           if (listenerStoreSet.size) {
             batchDispatchListener(prevState, taskDataMap);
           }
@@ -335,11 +355,16 @@ export function createStore<S extends State>(
     const prevState = new Map(stateMap);
     batchUpdate(() => {
       Object.keys(updateParamsTemp).forEach(key => {
-        (
+        const val = (updateParamsTemp as Partial<S> | S)[key];
+        if (!Object.is(val, stateMap.get(key))) {
+          stateMap.set(key, val);
+          schedulerProcessor.set("cycleUpdateFlag", true);
           (
-            initialValueConnectStore(key).get(key) as StoreMapValue<S>
-          ).get("setSnapshot") as StoreMapValueType<S>["setSnapshot"]
-        )((updateParamsTemp as Partial<S> | S)[key]);
+            (
+              initialValueConnectStore(key).get(key) as StoreMapValue<S>
+            ).get("update") as StoreMapValueType<S>["update"]
+          )();
+        }
       });
     });
     if (listenerStoreSet.size) {
@@ -485,7 +510,7 @@ export function createStore<S extends State>(
             (
               initialValueConnectStore(key) as StoreMap<S>
             ).get(key) as StoreMapValue<S>
-          ).get("useSnapshot") as StoreMapValueType<S>["useSnapshot"]
+          ).get("useAtomState") as StoreMapValueType<S>["useAtomState"]
         )();
     },
   } as ProxyHandler<StoreMap<S>>);
@@ -529,7 +554,7 @@ export function createStore<S extends State>(
           (
             initialValueConnectStore(key) as StoreMap<S>
           ).get(key) as StoreMapValue<S>
-        ).get("useSnapshot") as StoreMapValueType<S>["useSnapshot"]
+        ).get("useAtomState") as StoreMapValueType<S>["useAtomState"]
       )();
     },
   } as ProxyHandler<StoreMap<S>>);

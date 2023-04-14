@@ -25,6 +25,8 @@
 4. The use mode of "view" is changed to the use mode of currying to optimize the freedom of the use scene.
 5. Adjusted and optimized the modularity of the scheduling system, making scheduling more coordinated.
    At the same time, removed the "\_\_privatization\_\_" internal configuration properties.
+6. Improved the coordination of updates,
+   and increased the absolute advantage of reading the latest value of data through the store.
 
 🌟`v7.1.1`：<br/>
 1. Fixed bug that did not correspond to the latest data parameters of setState's callback function.
@@ -181,14 +183,14 @@ const store = createStore<StateType>(
     text: "hello",
     testObj: { name: "Jack" },
     testArr: [{age: 12}, { age: 16 }],
-    testFun() {
+    testFunc() {
       /**
        * You can use this inside the function to get the latest data values
        * Be careful: if it is an arrow function, this points to undefined.
        * You can also obtain data attributes through store.
        * eg: console.log(store.count);
        */
-      console.log("testFunCount:", this.count === store.count);
+      console.log("testFuncCount:", this.count === store.count);
       store.count++;
       // or:
       // this.count++;
@@ -225,7 +227,7 @@ function App() {
    * Only simple data will be obtained, which has no update effect
    */
   const {
-    count, text, testObj: { name }, testArr, testFun, inputValue,
+    count, text, testObj: { name }, testArr, testFunc, inputValue,
   } = useStore(store);
   
   // Or: const state = useStore(store);
@@ -254,7 +256,7 @@ function App() {
       <p>{count}</p>
       <p>{text}</p>
       <p>{name}</p>
-      <button onClick={testFun}>btn1</button>
+      <button onClick={testFunc}>btn1</button>
       <br/>
       {testArr.map(item => `Age：${item}`)}<br/>
       <button onClick={btn2}>btn2</button>
@@ -278,14 +280,11 @@ function App() {
   
   function btnClick() {
     /**
-     * A: setState and a single direct update are asynchronous,
+     * setState and a single direct update are asynchronous,
      * the callback function of setState can obtain the latest data.
-     * setState uses objects as the data update method to have more robust coding capabilities.
-     * The update method of function input parameters makes setState more robust.
      *
-     * B: Resy has the effect of automatic batch updating.
-     * It can make up for the effect of batch updating of versions below react v18
-     * for promises or setTimeout that cannot be managed by react.
+     * setState use objects as the data update method to have more robust coding capabilities.
+     * The update method of function input parameters makes setState more robust.
      */
     // @example A
     store.setState({
@@ -293,37 +292,11 @@ function App() {
       text: "BNM",
     }, (nextState) => {
       // nextState：The latest data
-      console.log(nextState.count, nextState.text);
-      /**
-       * be careful, you can also read store to get the latest data.
-       * 🌟🌟🌟🌟🌟: For "store." There are different opinions on the use of.
-       * for example:
-       * store.setState({
-       *   testCount: 999,
-       * }, (nextState) => {
-       *   console.log("first", nextState.testCount, nextState.testText, store.testCount, store.testText);
-       *   // first 999 Hello-World 999 Fine-World
-       *   // 🌟🌟🌟🌟🌟
-       *   // You can see that the store.testText prints the data Fine-World in the next round of updates,
-       *   // while the testText in the callback function nextState of this update is still Hello-World,
-       *   // which is the same as the this.setState in react's class component.
-       *   // Whether reading data using nextState or store may not generate bug in the code of developers
-       *   // who are not familiar with these features, which requires us to know enough about our own measurement.
-       *   // 🌟🌟🌟🌟🌟
-       *   // From the above description,
-       *   // we can more deeply understand that reading data through store can always get the latest values,
-       *   // so generally speaking,
-       *   // we use useStore(store) to drive components to update rendering,
-       *   // and read data through store ("store." Or deconstructing store) are all operations for business logic.
-       * });
-       * store.setState({
-       *   testText: "Fine-World",
-       * }, (nextState) => {
-       *   console.log("second", nextState.testCount, nextState.testText, store.testCount, store.testText);
-       *   // second 999 Fine-World 999 Fine-World
-       * });
-       */
-      // console.log(store.count, store.text);
+       Promise.resolve().then(() => {
+         // The parameter of the callback function of setState is the latest data updated in the current round
+         console.log(nextState.count, nextState.text);
+         // console.log(store.count, store.text);
+       });
     });
     // The B way can write circular updates in the callback function
     // to facilitate the handling of some more complex business logic.
@@ -361,6 +334,16 @@ function App() {
     </>
   );
 }
+```
+
+```markdown
+Summary:
+    Resy has the effect of automatic batch updating.
+    Both single direct updates and setState updates have the effect of batch updates,
+    It can make up for the effect of batch updating of versions below react v18
+    for promises or setTimeout that cannot be managed by react.
+    However, syncUpdate synchronous updates do not have the effect of batch updates.
+    because it is synchronous.
 ```
 
 ### syncUpdate

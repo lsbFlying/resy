@@ -7,20 +7,24 @@ export type State = Record<string, any>;
 
 /**
  * @description resy的storeMap接口类型
- * subscribe与getSnapshot是useSyncExternalStore参数接口
+ * atomStateSubscribe与getAtomState是useSyncExternalStore参数接口
  *
- * 其中subscribe的onStoreChange参数回调包含数据更新操作
+ * 其中atomStateSubscribe的onAtomStateChange参数回调包含数据更新操作
  * 将这些数据更新操作的函数储存在某个Set中
- * 然后在setSnapshot中去进行forEach循环更新，结合setState可以批量更新处理
+ * 然后在update中去进行forEach循环更新
  *
- * getSnapshot单纯是获取内部静态数据值的函数
- * 刚好与useSnapshot以及subscribe组件一个两参一方的三角挂钩
+ * getAtomState单纯是获取内部静态数据值的函数
+ * 刚好与useAtomState以及subscribe组件一个两参一方的三角挂钩
  */
 export type StoreMapValueType<S extends State> = {
-  subscribe: (onStoreChange: Callback) => Callback;
-  getSnapshot: () => S[keyof S];
-  setSnapshot: (val: S[keyof S]) => void;
-  useSnapshot: () => S[keyof S];
+  // 当前元数据的状态变化事件的订阅，useSyncExternalStore的订阅
+  atomStateSubscribe: (onAtomStateChange: Callback) => Callback;
+  // 获取当前元数据(独立单独的数据状态)
+  getAtomState: () => S[keyof S];
+  // 更新数据执行
+  update: () => void;
+  // 使用当前元数据，即useSyncExternalStore的useSnapshot
+  useAtomState: () => S[keyof S];
 };
 
 export type StoreMapValue<S extends State> = Map<
@@ -112,46 +116,31 @@ export type ConciseExternalMapType<S extends State> = Map<
 >;
 
 /**
- * @description setState —————— 更新数据的函数，主要是为了批量更新
+ * @description setState —————— 更新数据的函数
  *
- * 1、resy需要setState最主要的原因是setState本身的使用方式在编码的时候具备很好的读写能力，
+ * A: resy需要setState最主要的原因是setState本身的使用方式在编码的时候具备很好的读写能力，
  * 支持扩展运算符的对象数据更新的便捷、函数入参的循环更新的宽泛，都让setState具备更强的生命力
  *
- * 2、setState的批量更新是同步的，执行完之后通过store读取数据可立即获取到更新后的最新数据
- * 常规而言我们不需要回调函数callback就可以通过直接读取store即可获取最新数据
- * 但是有特殊情况下我们是需要通过回调函数获取最新数据的，入下所述 3👇 的情况
- *
- * 3、setState的批量更新的同步与异步的抉择设置是有考量的
- * 我们假设如果要设置为同步更新方式，那么我们似乎不需要回调函数的功能，
- * 就能直接在下一行代码通过读取store就可以获取更新后的最新数据，但是我们考虑到复杂的业务逻辑场景
- * 如果批量更新setState的入参如果是函数，并在函数中写一个setTimeout或者Promise等的延时/异步操作更新代码的情况
- * 此时即使批量更新setState的入参如果是函数，并在函数中写一个setTimeout或者Promise等的延时/异步操作更新代码
- * 那么即使setState的回调callback是再次通过setTimeout延时0ms执行也无法解决其回调的入参立即就是更新后的最新数据
- * 所以setState还是决定设置为异步更新，这样我们一不阻塞代码，可以加速代码的执行效率，二可以是的callback回调很适当的作为第二入参
- * 与此同时，改为异步后可以更完善直接更新与setState更新混用场景下的进一步完善合并批量更新
- * 并且直接更新本身是异步，这样在与setState更新混用即使因为某些复杂的场景而没有完成合并，那么也不会影响更新的顺序
- * 逻辑感知上是正常代码执行的更新顺序，是符合逻辑直觉的
- *
- * 4、大多数情况下setState与单次直接更新都是异步的，
- * 但是有些极端少数情况会在中间某一批次的更新中变成同步更新，
- * 这样做是为了保证更新的流畅性与协调度。
+ * B: 尽管resy的每一次更新过后都可以通过store来读取最新数据，但是setState具备回调函数的功能依然是必要的
+ * 因为有这样的场景：比如我更新了数据之后想要用当前这一轮更新的数据的最新结果，如果是同步代码中我们当然可以通过store获取
+ * 但是如果是在异步代码中，我们依然想使用当前这一轮更新的数据的最新结果的话，就不能再通过store来获取了
+ * 因为此时store可能因为在当前异步代码之外的地方有了别的更新改动，所以这时候我们需要一个回调函数，
+ * 该函数的参数就是当前这一轮更新的数据最新结果，这样就可以解决同步异步导致的数据同步差异问题
+ * 所以setState具备当前更新结果参数的回调函数的功能依然是必要的。
  *
  * @example A
  * store.setState({
  *   count: 123,
  *   text: "updateText",
- * }, (nextState) => {
- *   // nextState：最新的数据
- *   console.log(nextState);
  * });
  *
- * @description 函数入参方式主要是为了某些复杂的更新逻辑，比如在循环中更新的批量化
+ * @description 函数入参方式主要是为了某些复杂的更新逻辑
  * @example B
  * store.setState(() => {
- *   store.count = 123;
- *   store.text = "updateText";
- * }, (nextState) => {
- *   console.log(nextState);
+ *   return {
+ *     count: 123,
+ *     text: "updateText",
+ *   };
  * });
  */
 export type SetState<S extends State> = Readonly<{
@@ -185,17 +174,10 @@ export type SetStateCallbackItem<S extends State> = {
  * 该场景为在异步中更新受控input类输入框的value值
  * 会导致输入不了英文以外的语言文字
  *
- * B：因为是同步更新，所以没有回调函数机制
- * 它可以在同步更新函数执行完之后直接读取store的各个属性而获取最新值
- * 且不允许是函数参数，因为函数参数里可以写直接的单次更新
- * 而直接的单次更新是异步的，同步内嵌套异步会让代码变得更复杂而难以维护
- * 也不符合同步更新的本质逻辑，所以是单纯的对象数据更新即可
+ * B："syncUpdate" 算是resy更新调度机制与react本身针对文本输入的
+ * 更新执行机制冲突的一个无奈的解决办法
  *
- * C："syncUpdate" 算是resy更新调度机制与react本身针对文本输入的
- * 更新执行机制冲突的一个无奈的解决办法吧
- *
- * D：同时，同步更新也可以供给不喜欢用回调回去最新数据值的开发小伙伴使用
- * 因为它执行完之后可以通过store拿到最新的数据值进行下一步的业务逻辑处理
+ * C：同时，同步更新也可以供给不喜欢用回调回去最新数据值的开发小伙伴使用
  */
 export type SyncUpdate<S extends State> = Readonly<{
   syncUpdate(
@@ -250,6 +232,8 @@ export interface Scheduler<S extends State = {}> {
   isCalling: true | null;
   // 更新进行中
   isUpdating: Promise<void> | null;
+  // 当前这一轮的更新是否可执行的标识
+  cycleUpdateFlag: true | null;
   // 新增直接更新数据的key/value以及相应的任务函数
   add(
     task: Callback,

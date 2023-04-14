@@ -20,7 +20,8 @@ export default function scheduler() {
   
   schedulerProcessor.set("isCalling", null);
   schedulerProcessor.set("isUpdating", null);
-  schedulerProcessor.set("cycleUpdateFlag", null);
+  schedulerProcessor.set("needCycleUpdate", null);
+  schedulerProcessor.set("willUpdating", null);
   
   schedulerProcessor.set(
     "add",

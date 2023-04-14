@@ -81,6 +81,8 @@ export function createStore<S extends State>(
    * 如stateMap、storeMap、storeCoreMap、storeChangeSet等
    */
   let stateMap: Map<keyof S, S[keyof S]> = new Map(Object.entries(state));
+  let prevState: Map<keyof S, S[keyof S]> | null = null;
+  
   // stateMap是否在view中整体重置过的的标记
   let stateMapViewResetFlag: boolean | undefined;
   // 复位stateMapViewResetFlag标记
@@ -179,7 +181,7 @@ export function createStore<S extends State>(
     storeMapValue.set("getAtomState", () => stateMap.get(key));
     
     storeMapValue.set("update", () => {
-      if (schedulerProcessor.get("cycleUpdateFlag")) {
+      if (schedulerProcessor.get("needCycleUpdate")) {
         // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
         storeChangeSet.forEach(storeChange => storeChange?.());
       }
@@ -265,7 +267,7 @@ export function createStore<S extends State>(
       stateMap.set(key, val);
       
       // 打开当前轮更新可执行标识开关
-      schedulerProcessor.set("cycleUpdateFlag", true);
+      schedulerProcessor.set("needCycleUpdate", true);
       
       (schedulerProcessor.get("add") as Scheduler<S>["add"])(
         () => (
@@ -301,14 +303,13 @@ export function createStore<S extends State>(
         // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
         (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
         if (taskDataMap.size !== 0) {
-          // 未更新之前的数据
-          const prevState = new Map(stateMap);
           batchUpdate(() => taskQueueMap.forEach(task => task()));
           
           // 重置当前轮更新可执行标识
-          schedulerProcessor.set("cycleUpdateFlag", null);
-          
-          if (listenerStoreSet.size) {
+          schedulerProcessor.set("needCycleUpdate", null);
+          // 重置当前轮的即将更新的标识
+          schedulerProcessor.set("willUpdating", null);
+          if (listenerStoreSet.size && prevState) {
             batchDispatchListener(prevState, taskDataMap);
           }
         }
@@ -339,13 +340,13 @@ export function createStore<S extends State>(
     if (typeof updateParams === "function") {
       updateParamsTemp = (updateParams as StateFunc<S>)();
     }
-    const prevState = new Map(stateMap);
+    const syncPrevState = new Map(stateMap);
     batchUpdate(() => {
       Object.keys(updateParamsTemp).forEach(key => {
         const val = (updateParamsTemp as Partial<S> | S)[key];
         if (!Object.is(val, stateMap.get(key))) {
           stateMap.set(key, val);
-          schedulerProcessor.set("cycleUpdateFlag", true);
+          schedulerProcessor.set("needCycleUpdate", true);
           (
             (
               initialValueConnectStore(key).get(key) as StoreMapValue<S>
@@ -355,7 +356,7 @@ export function createStore<S extends State>(
       });
     });
     if (listenerStoreSet.size) {
-      batchDispatchListener(prevState, new Map(Object.entries(updateParamsTemp)) as MapPartial<S>);
+      batchDispatchListener(syncPrevState, new Map(Object.entries(updateParamsTemp)) as MapPartial<S>);
     }
   }
   
@@ -401,9 +402,19 @@ export function createStore<S extends State>(
     }
   }
   
+  // 异步更新之前的处理
+  function handleWillUpdating() {
+    if (!schedulerProcessor.get("willUpdating")) {
+      schedulerProcessor.set("willUpdating", true);
+      // 在更新执行将更新之前的数据状态缓存下拉，以便于subscribe触发监听使用
+      prevState = new Map(stateMap);
+    }
+  }
+  
   // 可对象数据更新的函数（可理解为class组件中的this.setState函数）
   function setState(updateParams: Partial<S> | StateFunc<S>, callback?: SetStateCallback<S>) {
     updateDataErrorHandle(updateParams, "setState");
+    handleWillUpdating();
     const updateParamsTemp = updater(updateParams);
     // 异步回调添加入栈
     if (callback) {
@@ -452,6 +463,7 @@ export function createStore<S extends State>(
   
   // 单个属性数据更新
   function singlePropUpdate(_: S, key: keyof S, val: S[keyof S]) {
+    handleWillUpdating();
     taskPush(key, val);
     finallyBatchHandle();
     return true;

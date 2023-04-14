@@ -55,8 +55,8 @@ test("resy-basic", async () => {
       
       const unsubscribe = store.subscribe((
         effectState,
-        prevState,
         nextState,
+        prevState,
       ) => {
         if (effectState.sex === "no-sex-subscribe") {
           console.log(prevState.sex, nextState.sex);

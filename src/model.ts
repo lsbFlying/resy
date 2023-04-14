@@ -23,7 +23,10 @@ export type StoreMapValueType<S extends State> = {
   getAtomState: () => S[keyof S];
   // 更新数据执行
   update: () => void;
-  // 使用当前元数据，即useSyncExternalStore的useSnapshot
+  /**
+   * 使用当前元数据，即useSyncExternalStore的useSnapshot，
+   * 可以简单理解为useState的效果，具备驱动页面更新渲染的能力。
+   */
   useAtomState: () => S[keyof S];
 };
 

@@ -97,17 +97,17 @@ export function createStore<S extends State>(
       : stateMap.delete(key);
   }
   
-  // setState的回调函数执行栈数组
+  /**
+   * setState的回调函数执行栈数组
+   * 用Array没有用Set或者Map是因为内部需要用索引index
+   */
   const setStateCallbackStackArray: SetStateCallbackItem<S>[] = [];
   
   // setState的回调函数添加入栈
-  function setStateCallbackStackPush(updateParams: Partial<S>, cycleState: S, callback: SetStateCallback<S>) {
+  function setStateCallbackStackPush(cycleState: S, callback: SetStateCallback<S>) {
     setStateCallbackStackArray.push({
-      cycleData: {
-        updateParams,
-        cycleState,
-      },
-      callback: (nextState) => callback(nextState),
+      cycleState,
+      callback,
     });
   }
   
@@ -313,31 +313,18 @@ export function createStore<S extends State>(
           }
         }
         
-        /**
-         * 先更新，再执行回调
-         * 这样会导致如果是多个setState同步代码执行，
-         * 则后续回调执行的时候第一个回调内通过store读取数据也可以获取后续更新的数据最新值
-         * 而如果是setState的回调中嵌套执行了setState，内部嵌套的setState再次有可执行回调
-         * 则第一轮回调无法获取第二轮更新的数据最新值，这也是符合逻辑的
-         * 与此同时，这两点与class组件的this.setState的回调效果是一致的，
-         * 而setState的回调callback的参数nextState的存在
-         * 就是为了解决事实上多个setState同步代码执行存在store读取数据产生最新数据值的问题
-         * 可见react中的class组件的this.setState的回调函数也是通过大致执行入栈出栈的思路完成的
-         */
-        setStateCallbackStackArray.forEach((
-          {callback, cycleData: { updateParams, cycleState }}, index, array,
-        ) => {
+        if (setStateCallbackStackArray.length) {
           schedulerProcessor.set("isCalling", true);
-          // 结合上一轮的回调进行上一轮更新参数的合并得到最新的回调数据参数
-          callback(Object.assign(
-            {},
-            cycleState,
-            index === 0 ? updateParams : array[index - 1].cycleData.updateParams,
-          ));
-          if (index === array.length - 1) schedulerProcessor.set("isCalling", null);
-        });
-        // 清空回调执行栈，否则回调中如果有更新则形成死循环
-        setStateCallbackStackArray.splice(0);
+          // 先更新，再执行回调，循环调用回调
+          setStateCallbackStackArray.forEach((
+            {callback, cycleState}, index, array,
+          ) => {
+            callback(cycleState);
+            if (index === array.length - 1) schedulerProcessor.set("isCalling", null);
+          });
+          // 清空回调执行栈，否则回调中如果有更新则形成死循环
+          setStateCallbackStackArray.splice(0);
+        }
       }));
     }
   }
@@ -420,13 +407,16 @@ export function createStore<S extends State>(
     const updateParamsTemp = updater(updateParams);
     // 异步回调添加入栈
     if (callback) {
-      const nextStateTemp = Object.assign({}, mapToObject(stateMap), updateParamsTemp);
-      // 如果是回调在执行时发现回调中有更setState并且有回调，此时回调进入下一个微任务循环中添加入栈，不影响这一轮的回调执行栈的执行
+      const nextState = Object.assign({}, mapToObject(stateMap), updateParamsTemp);
+      /**
+       * 如果是回调在执行时发现回调中有更setState并且有回调，
+       * 此时回调进入下一个微任务循环中添加入栈，不影响这一轮的回调执行栈的执行
+       */
       schedulerProcessor.get("isCalling")
         ? Promise.resolve().then(() => {
-          setStateCallbackStackPush(updateParamsTemp, nextStateTemp, callback);
+          setStateCallbackStackPush(nextState, callback);
         })
-        : setStateCallbackStackPush(updateParamsTemp, nextStateTemp, callback);
+        : setStateCallbackStackPush(nextState, callback);
     }
     finallyBatchHandle();
   }

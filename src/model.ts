@@ -158,13 +158,8 @@ export type SetStateCallback<S extends State> = (nextState: S) => void;
 
 // setState的回调执行栈的元素类型
 export type SetStateCallbackItem<S extends State> = {
-  // 当前一轮更新的相关数据
-  cycleData: {
-    // 更新的参数
-    updateParams: Partial<S>,
-    // 当前轮的state状态数据
-    cycleState: S,
-  };
+  // 当前这一轮的state状态数据
+  cycleState: S;
   callback: SetStateCallback<S>;
 };
 

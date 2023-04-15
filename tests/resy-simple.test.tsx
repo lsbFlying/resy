@@ -1,6 +1,6 @@
 import React from "react";
 import { expect, test } from "vitest";
-import {createStore, useConciseState, useStore} from "../src";
+import { createStore, useConciseState, useStore } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 
 type State = {

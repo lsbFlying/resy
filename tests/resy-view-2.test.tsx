@@ -45,6 +45,19 @@ test("resy-view", async () => {
   
   const ClassComView = view(ClassCom)(store);
   
+  function HookCom() {
+    const { count } = useStore(store);
+    return (
+      <div>
+        HookCom-count:{count}
+      </div>
+    );
+  }
+  
+  const HookComView = view(HookCom, () => {
+    return false;
+  })();
+  
   const App = () => {
     const { text } = useStore(store);
     
@@ -52,11 +65,15 @@ test("resy-view", async () => {
       <div>
         <div>AppText:{text}</div>
         <ClassComView/>
+        <HookComView/>
         <div>
           <button onClick={() => {
             store.count++;
             store.text = "OK";
-          }}>btn</button>
+          }}>btn1</button>
+          <button onClick={() => {
+            store.text = "Hello";
+          }}>btn2</button>
         </div>
       </div>
     );
@@ -64,9 +81,16 @@ test("resy-view", async () => {
   
   const { getByText } = render(<App/>);
   
-  fireEvent.click(getByText("btn"));
+  fireEvent.click(getByText("btn1"));
   await waitFor(() => {
     getByText("AppText:OK");
     getByText("ViewClassComCount:1");
+    getByText("HookCom-count:1");
+  });
+  
+  fireEvent.click(getByText("btn2"));
+  await waitFor(() => {
+    getByText("AppText:Hello");
+    getByText("HookCom-count:1");
   });
 });

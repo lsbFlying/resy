@@ -86,7 +86,7 @@ export function createStore<S extends State>(
   // stateMap是否在view中整体重置过的的标记
   let stateMapViewResetFlag: boolean | undefined;
   // 复位stateMapViewResetFlag标记
-  function stateMapViewResetHandled() {
+  function stateMapViewResetHandle() {
     if (initialReset && stateMapViewResetFlag && !storeRefSet.size) {
       stateMapViewResetFlag = false;
     }
@@ -135,7 +135,7 @@ export function createStore<S extends State>(
     const storeRefIncreaseItem = storeRefSetSelfIncreasing();
     return () => {
       storeRefSet.delete(storeRefIncreaseItem);
-      stateMapViewResetHandled();
+      stateMapViewResetHandle();
     }
   });
   storeCoreMap.set("dispatchStoreEffect", (effectData: Partial<S>, prevState: S, nextState: S) => {
@@ -174,7 +174,7 @@ export function createStore<S extends State>(
       return () => {
         storeChangeSet.delete(onAtomStateChange);
         storeRefSet.delete(storeRefIncreaseItem);
-        stateMapViewResetHandled();
+        stateMapViewResetHandle();
       };
     });
     

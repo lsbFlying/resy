@@ -145,42 +145,83 @@ test("resy-set-and-sub4", async () => {
   fireEvent.click(getByText("btn-6"));
   await waitFor(() => {
     console.log("btn-6", gCount);
-    expect(gCount === 8).toBeTruthy();
+    /**
+     * 如果是react version V >= 18.0.0，那么它会优化批次更新处理，内部更新调度更加完备
+     * 所以这里预计期望值特殊注释说明！！！
+     */
+    // react V >= 18.0.0
+    expect(gCount === 7).toBeTruthy();
+    // react V < 18.0.0
+    // expect(gCount === 8).toBeTruthy();
   });
   
   fireEvent.click(getByText("btn-7"));
   await waitFor(() => {
-    console.log("btn-7", gCount);
-    expect(gCount === 9).toBeTruthy();
+    // react V >= 18.0.0
+    console.log("btn-7", gCount); // 8
+    // react V >= 18.0.0
+    expect(gCount === 8).toBeTruthy();
+    // react V < 18.0.0
+    // console.log("btn-7", gCount); // 9
+    // react V < 18.0.0
+    // expect(gCount === 9).toBeTruthy();
   });
   
   fireEvent.click(getByText("btn-8"));
   await waitFor(() => {
-    console.log("btn-8", gCount);
-    expect(gCount === 11).toBeTruthy();
+    // react V >= 18.0.0
+    console.log("btn-8", gCount); // 10
+    // react V >= 18.0.0
+    expect(gCount === 10).toBeTruthy();
+  
+    // react V < 18.0.0
+    // console.log("btn-8", gCount); // 11
+    // react V < 18.0.0
+    // expect(gCount === 11).toBeTruthy();
   });
   
   fireEvent.click(getByText("btn-9"));
   await waitFor(() => {
-    console.log("btn-9", gCount);
-    expect(gCount === 13).toBeTruthy();
+    // react V >= 18.0.0
+    console.log("btn-9", gCount); // 12
+    // react V >= 18.0.0
+    expect(gCount === 12).toBeTruthy();
+  
+    // react V < 18.0.0
+    // console.log("btn-9", gCount);
+    // react V < 18.0.0
+    // expect(gCount === 13).toBeTruthy();
   });
   
   fireEvent.click(getByText("btn-10"));
   await waitFor(() => {
+    // react V >= 18.0.0
     console.log("btn-10-gCount", gCount, "btn-10-count", store.count);
-    // btn-10-gCount 13 btn-10-count 568
-    // btn-10-gCount 14 btn-10-count 568
-    // btn-10-gCount 15 btn-10-count 569
-    
-    expect(gCount === 15).toBeTruthy();
+    // btn-10-gCount 12 btn-10-count 569
+    // btn-10-gCount 13 btn-10-count 569
+    expect(gCount === 13).toBeTruthy();
     expect(store.count === 569).toBeTruthy();
+    
+    // react V < 18.0.0
+    // console.log("btn-10-gCount", gCount, "btn-10-count", store.count);
+    // // btn-10-gCount 13 btn-10-count 568
+    // // btn-10-gCount 14 btn-10-count 568
+    // // btn-10-gCount 15 btn-10-count 569
+    // expect(gCount === 15).toBeTruthy();
+    // expect(store.count === 569).toBeTruthy();
   });
   
   // 按钮10可以看出，resy甚至可以合并处理useEffect中的更新
   fireEvent.click(getByText("btn-11"));
   await waitFor(() => {
-    expect(gCount === 17).toBeTruthy();
+    // react V >= 18.0.0
+    console.log("last", gCount);  // 15
+    expect(gCount === 15).toBeTruthy();
     getByText("destroy");
+    
+    // react V < 18.0.0
+    // console.log("last", gCount);  // 17
+    // expect(gCount === 17).toBeTruthy();
+    // getByText("destroy");
   });
 });

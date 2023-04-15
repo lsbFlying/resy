@@ -194,25 +194,48 @@ test("resy-basic", async () => {
   await waitFor(() => {
     getByText("batch-forEach");
     getByText("testObj-age:12");
-    console.log("btn7", index, store.testObj); // btn7, 8
+    /**
+     * 如果是react version V >= 18.0.0，那么它会优化批次更新处理，内部更新调度更加完备
+     * 这里本应该两次的更新会被合并成一次，但是如果是 V < 18.0.0 的版本，则会是两次更新
+     * 那么这里的gCount就会是8，而不是7，本测试用例是内部依赖 V >=18.0.0 的版本
+     * 所以这里预计期望值特殊注释说明！！！
+     */
+    // react V >= 18.0.0
+    console.log("btn7", index, store.testObj); // btn7, 7
+    // react V < 18.0.0
+    // console.log("btn7", index, store.testObj); // btn7, 8
   });
-  console.log("btn7-btn8", index);  // btn7-btn8 8
+  // react V >= 18.0.0
+  console.log("btn7-btn8", index);  // btn7-btn8 7
+  // react V < 18.0.0
+  // console.log("btn7-btn8", index);  // btn7-btn8 8
   
   fireEvent.click(getByText("btn8"));
   await waitFor(() => {
     getByText("999");
-    console.log("btn8", index); // btn8, 10
+    // react V >= 18.0.0
+    console.log("btn8", index); // btn8, 8
+    // react V < 18.0.0
+    // console.log("btn8", index); // btn8, 10
   });
   
   fireEvent.click(getByText("btn9"));
   await waitFor(() => {
     getByText("999666");
-    console.log("btn9", index); // btn9, 12
+    // react V >= 18.0.0
+    console.log("btn9", index); // btn9, 9
+    // react V < 18.0.0
+    // console.log("btn9", index); // btn9, 12
   });
   
   fireEvent.click(getByText("btn10"));
   await waitFor(() => {
-    console.log("btn10", index); // btn10, 12
-    expect(index === 12).toBeTruthy();
+    // react V >= 18.0.0
+    console.log("btn10", index); // btn10, 9
+    // react V < 18.0.0
+    // console.log("btn10", index); // btn10, 12
+    expect(index === 9).toBeTruthy();
+    // react V < 18.0.0
+    // expect(index === 12).toBeTruthy();
   });
 });

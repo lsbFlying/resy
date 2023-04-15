@@ -145,7 +145,8 @@ test("resy-basic", async () => {
         }}>btn9</button>
         <button onClick={() => {
           // 不产生更新
-          store.setState(store);
+          store.setState({});
+          // store.setState(() => ({}));
         }}>btn10</button>
       </>
     );

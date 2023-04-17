@@ -81,6 +81,7 @@ export function createStore<S extends State>(
    * 如stateMap、storeMap、storeCoreMap、storeChangeSet等
    */
   let stateMap: Map<keyof S, S[keyof S]> = new Map(Object.entries(state));
+  // 由于stateMap的设置前置了，优化了同步数据的获取，但是对于之前的数据状态也会需要前处理
   let prevState: Map<keyof S, S[keyof S]> | null = null;
   
   // stateMap是否在view中整体重置过的的标记
@@ -138,7 +139,7 @@ export function createStore<S extends State>(
       stateMapViewResetHandle();
     }
   });
-  storeCoreMap.set("dispatchStoreEffect", (effectData: Partial<S>, prevState: S, nextState: S) => {
+  storeCoreMap.set("dispatchStoreEffect", (effectData: Partial<S>, nextState: S, prevState: S) => {
     /**
      * 这里虽然addEventListener监听的listener每一个都触发执行了，
      * 但是内部的内层listener会有数据变化的判断来实现进一步的精准定位变化执行
@@ -149,8 +150,8 @@ export function createStore<S extends State>(
     listenerStoreSet.forEach(item => item.dispatchEvent(
       EVENT_TYPE,
       effectData,
-      prevState,
       nextState,
+      prevState,
     ));
   });
   
@@ -181,17 +182,8 @@ export function createStore<S extends State>(
     storeMapValue.set("getAtomState", () => stateMap.get(key));
     
     storeMapValue.set("update", () => {
-      if (schedulerProcessor.get("needCycleUpdate")) {
-        // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
-        storeChangeSet.forEach(storeChange => storeChange?.());
-        /**
-         * 重置操作必须放在这里，因为batchUpdate不是完全的同步代码
-         * 它可能会有自身的调度处理，导致如果在batchUpdate执行完下一句执行
-         * 可能会先行将条件重置，使得数据在这里无法得到更新
-         */
-        // 重置当前轮更新可执行标识
-        schedulerProcessor.set("needCycleUpdate", null);
-      }
+      // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
+      storeChangeSet.forEach(storeChange => storeChange?.());
     });
     
     storeMapValue.set("useAtomState", () => {
@@ -229,7 +221,7 @@ export function createStore<S extends State>(
   
   // 批量触发订阅监听的数据变动
   function batchDispatchListener(prevState: Map<keyof S, S[keyof S]>, changedData: MapPartial<S>) {
-    if (changedData.size > 0 && listenerStoreSet.size > 0) {
+    if (listenerStoreSet.size > 0 && changedData.size > 0) {
       /**
        * @description effectState：实际真正影响变化的数据
        * changedData是给予更新变化的数据，但是不是真正会产生变化影响的数据，
@@ -273,9 +265,6 @@ export function createStore<S extends State>(
        */
       stateMap.set(key, val);
       
-      // 打开当前轮更新可执行标识开关
-      schedulerProcessor.set("needCycleUpdate", true);
-      
       (schedulerProcessor.get("add") as Scheduler<S>["add"])(
         () => (
           (
@@ -304,24 +293,21 @@ export function createStore<S extends State>(
        * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
        */
       schedulerProcessor.set("isUpdating", Promise.resolve().then(() => {
+        // 重置更新进行标识
         schedulerProcessor.set("isUpdating", null);
+        // 重置当前轮的即将更新的标识
+        schedulerProcessor.set("willUpdating", null);
+        
+        // 防止之前的数据被别的更新改动，这里及时取出保证之前的数据的阶段状态的对应
+        const prevStateTemp = new Map(prevState);
         
         const { taskDataMap, taskQueueMap } = (schedulerProcessor.get("getTask") as Scheduler<S>["getTask"])();
         // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
         (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
+        
         if (taskDataMap.size !== 0) {
           batchUpdate(() => taskQueueMap.forEach(task => task()));
-          /**
-           * 重置当前轮的即将更新的标识
-           * willUpdating 标识不需要想needCycleUpdate一样需要区分batchUpdate的同步异步执行时机
-           * 所以这里可以直接重置 willUpdating
-           */
-          schedulerProcessor.set("willUpdating", null);
-          // 防止被后续的更新变动了prevState，这里及时做一个缓存
-          const prevStateTemp = prevState && new Map(prevState);
-          if (listenerStoreSet.size && prevStateTemp) {
-            batchDispatchListener(prevStateTemp, taskDataMap);
-          }
+          batchDispatchListener(prevStateTemp, taskDataMap);
         }
         
         if (setStateCallbackStackArray.length) {
@@ -350,13 +336,12 @@ export function createStore<S extends State>(
     if (typeof updateParams === "function") {
       updateParamsTemp = (updateParams as StateFunc<S>)();
     }
-    const syncPrevState = new Map(stateMap);
+    const prevStateTemp = new Map(stateMap);
     batchUpdate(() => {
       Object.keys(updateParamsTemp).forEach(key => {
         const val = (updateParamsTemp as Partial<S> | S)[key];
         if (!Object.is(val, stateMap.get(key))) {
           stateMap.set(key, val);
-          schedulerProcessor.set("needCycleUpdate", true);
           (
             (
               initialValueConnectStore(key).get(key) as StoreMapValue<S>
@@ -365,9 +350,7 @@ export function createStore<S extends State>(
         }
       });
     });
-    if (listenerStoreSet.size) {
-      batchDispatchListener(syncPrevState, new Map(Object.entries(updateParamsTemp)) as MapPartial<S>);
-    }
+    batchDispatchListener(prevStateTemp, new Map(Object.entries(updateParamsTemp)) as MapPartial<S>);
   }
   
   // 更新函数入栈

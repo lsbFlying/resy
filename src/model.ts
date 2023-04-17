@@ -230,8 +230,6 @@ export interface Scheduler<S extends State = {}> {
   isCalling: true | null;
   // 更新进行中
   isUpdating: Promise<void> | null;
-  // 当前这一轮的更新是否可执行的标识
-  needCycleUpdate: true | null;
   // 将要更新执行的标识
   willUpdating: true | null;
   // 新增直接更新数据的key/value以及相应的任务函数

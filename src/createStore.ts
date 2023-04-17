@@ -191,8 +191,6 @@ export function createStore<S extends State>(
          */
         // 重置当前轮更新可执行标识
         schedulerProcessor.set("needCycleUpdate", null);
-        // 重置当前轮的即将更新的标识
-        schedulerProcessor.set("willUpdating", null);
       }
     });
     
@@ -313,8 +311,16 @@ export function createStore<S extends State>(
         (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
         if (taskDataMap.size !== 0) {
           batchUpdate(() => taskQueueMap.forEach(task => task()));
-          if (listenerStoreSet.size && prevState) {
-            batchDispatchListener(prevState, taskDataMap);
+          /**
+           * 重置当前轮的即将更新的标识
+           * willUpdating 标识不需要想needCycleUpdate一样需要区分batchUpdate的同步异步执行时机
+           * 所以这里可以直接重置 willUpdating
+           */
+          schedulerProcessor.set("willUpdating", null);
+          // 防止被后续的更新变动了prevState，这里及时做一个缓存
+          const prevStateTemp = prevState && new Map(prevState);
+          if (listenerStoreSet.size && prevStateTemp) {
+            batchDispatchListener(prevStateTemp, taskDataMap);
           }
         }
         

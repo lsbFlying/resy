@@ -12,6 +12,9 @@ export function batchUpdateShimRun(fn: Callback) { fn() }
  * 批处理更新
  * @description React-v18中所有的更新以及是自动化批处理的了，但是unstable_batchedUpdates这个API它目前还仍然在18的版本中可以使用，
  * 但不保证未来会有去除这个非正式API的可能性，所以做一个垫片保证代码的安全稳健性，保证代码不出错
+ *
+ * 🌟legacy模式下：命中 unstable_batchedUpdates 时是异步，未命中 unstable_batchedUpdates 时是同步的
+ * 🌟concurrent模式下：都是异步的
  */
 export const batchUpdate = unstable_batchedUpdates || batchUpdateShimRun;
 

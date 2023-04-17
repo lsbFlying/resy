@@ -184,6 +184,15 @@ export function createStore<S extends State>(
       if (schedulerProcessor.get("needCycleUpdate")) {
         // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
         storeChangeSet.forEach(storeChange => storeChange?.());
+        /**
+         * 重置操作必须放在这里，因为batchUpdate不是完全的同步代码
+         * 它可能会有自身的调度处理，导致如果在batchUpdate执行完下一句执行
+         * 可能会先行将条件重置，使得数据在这里无法得到更新
+         */
+        // 重置当前轮更新可执行标识
+        schedulerProcessor.set("needCycleUpdate", null);
+        // 重置当前轮的即将更新的标识
+        schedulerProcessor.set("willUpdating", null);
       }
     });
     
@@ -304,11 +313,6 @@ export function createStore<S extends State>(
         (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
         if (taskDataMap.size !== 0) {
           batchUpdate(() => taskQueueMap.forEach(task => task()));
-          
-          // 重置当前轮更新可执行标识
-          schedulerProcessor.set("needCycleUpdate", null);
-          // 重置当前轮的即将更新的标识
-          schedulerProcessor.set("willUpdating", null);
           if (listenerStoreSet.size && prevState) {
             batchDispatchListener(prevState, taskDataMap);
           }

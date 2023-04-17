@@ -43,10 +43,10 @@ import type {
  *   const { ... } = useStore(store);
  *   ...
  * }
- *
  * ... some code start ...
  * {useMemo(() => <SomeHookCom/>, [])}
  * ... some code end ...
+ * 这种用法等价于 view(HookCom)() 这样不绑定store的用法
  */
 export function view<P extends State = {}, S extends State = {}>(
   // any用于防范某些HOC导致的类型不合一问题，比如withRouter(低版本的react-router还是存在该HOC)

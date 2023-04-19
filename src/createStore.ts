@@ -11,7 +11,7 @@ import EventDispatcher from "./listener";
 import {
   batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_, EVENT_TYPE,
 } from "./static";
-import { updateDataErrorHandle, mapToObject } from "./utils";
+import { updateDataErrorHandle, mapToObject, objectToMap } from "./utils";
 import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType, StoreCoreMapValue,
   StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe, Scheduler, CustomEventListener, Listener,
@@ -80,7 +80,7 @@ export function createStore<S extends State>(
    * @description 不改变传参state，同时resy使用Map与Set提升性能
    * 如stateMap、storeMap、storeCoreMap、storeChangeSet等
    */
-  let stateMap: Map<keyof S, S[keyof S]> = new Map(Object.entries(state));
+  let stateMap: Map<keyof S, S[keyof S]> = objectToMap(state);
   // 由于stateMap的设置前置了，优化了同步数据的获取，但是对于之前的数据状态也会需要前处理
   let prevState: Map<keyof S, S[keyof S]> | null = null;
   
@@ -129,7 +129,7 @@ export function createStore<S extends State>(
        * 主要是view初始化一开始拿不到全部的数据引用，
        * 而useSyncExternalStore使用的时候可以拿到具体的数据引用
        */
-      stateMap = new Map(Object.entries(state));
+      stateMap = objectToMap(state);
     }
   });
   storeCoreMap.set("viewConnectStore", () => {
@@ -350,7 +350,7 @@ export function createStore<S extends State>(
         }
       });
     });
-    batchDispatchListener(prevStateTemp, new Map(Object.entries(updateParamsTemp)) as MapPartial<S>);
+    batchDispatchListener(prevStateTemp, objectToMap(updateParamsTemp) as MapPartial<S>);
   }
   
   // 更新函数入栈

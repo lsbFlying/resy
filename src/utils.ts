@@ -33,6 +33,20 @@ export function mapToObject<S extends State>(map: Map<keyof S, S[keyof S]>): S {
   return [...map.entries()].reduce((obj, [key, value]) => ((obj as S)[key] = value, obj), {}) as S;
 }
 
+/**
+ * object转map
+ * @description 相较于简洁的object.entries方式效率更高
+ */
+export function objectToMap<S extends State>(obj: S) {
+  const map = new Map<keyof S, S[keyof S]>();
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      map.set(key, obj[key]);
+    }
+  }
+  return map;
+}
+
 // 获取最新数据Map对象
 export function getLatestStateMap<S extends State = {}>(store?: Store<S>) {
   if (!store) return new Map<keyof S, S[keyof S]>();

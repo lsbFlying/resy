@@ -40,7 +40,7 @@ export function mapToObject<S extends State>(map: Map<keyof S, S[keyof S]>): S {
 export function objectToMap<S extends State>(obj: S) {
   const map = new Map<keyof S, S[keyof S]>();
   for (const key in obj) {
-    if (obj.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       map.set(key, obj[key]);
     }
   }

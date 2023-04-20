@@ -49,7 +49,7 @@ import type {
  * 这种用法等价于 view(HookCom)() 这样不绑定store的用法
  */
 export function view<P extends State = {}, S extends State = {}>(
-  // any用于防范某些HOC导致的类型不合一问题，比如withRouter(低版本的react-router还是存在该HOC)
+  // any用于兼容某些HOC导致的类型不合一问题，比如withRouter(低版本的react-router还是存在该HOC)
   // tslint:disable-next-line:variable-name
   Comp: React.ComponentType<MapStateToProps<S, P> | any>,
   equal?: (next: PS<P, S>, prev: PS<P, S>) => boolean,
@@ -69,7 +69,7 @@ export function view<P extends State = {}, S extends State = {}>(
     )?.();
     
     /** 需要将innerUseStateSet与stateMap放在内部执行，这样每次更新的时候可以得到最新的数据引用与数据stateMap */
-      // 引用数据的代理Set
+    // 引用数据的代理Set
     const innerUseStateSet: Set<keyof S> = new Set();
     // 需要使用getState获取store内部的即时最新数据值
     const stateMap = getLatestStateMap(store);

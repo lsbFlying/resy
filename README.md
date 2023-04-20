@@ -114,6 +114,16 @@ At the same time, the code tends to be stable and strengthened.<br/>
 
 </details>
 
+<details>
+<summary>The reason for naming resy</summary>
+First of all,the original meaning of "resy" is "react state easy",
+and secondly,the internal data sharing of "resy" is not the transfer of data,
+but the acquisition of atomized data from a unified store container for data regeneration,
+more like a regeneration system,
+which happens to take the name "resy"
+formed by the combination of the first and last letters of the two letters.
+</details>
+
 ### Features
 - 😎 Create simple
 - 😎 Sharing freedom

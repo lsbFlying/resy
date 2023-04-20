@@ -33,7 +33,7 @@ import type {
  * be careful: resy 本身的数据更新在"避免额外冗余的re-render方面"已经做得较为完备了
  * 剩下的就是需要深对比来进一步优化了，但是深对比所获取的效益需要开发人员自行衡量
  * 如果遇到嵌套较深的大型数据对象，一般不建议深对比，
- * 与此同时，如上所说，resy本身即使不使用isDeepEqual函数参数来优化
+ * 与此同时，如上所说，resy本身即使不使用equal函数参数来优化
  * 也可以取得相当不错的渲染、数据共享等使用效益了
  *
  * 🌟：view更多的是为了兼容class组件，
@@ -129,7 +129,7 @@ export function view<P extends State = {}, S extends State = {}>(
     
     return <Comp {...props} state={state}/>;
   }, equal ? (prevProps: P, nextProps: P) => {
-    // props与state的变化可能存在同时变化的情况，但不影响isDeepEqual的执行
+    // props与state的变化可能存在同时变化的情况，但不影响equal的执行
     const latestState = store ? mapToObject(getLatestStateMap(store)) : ({} as S);
     return equal(
       { props: nextProps, state: latestState },

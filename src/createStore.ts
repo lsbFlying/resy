@@ -16,7 +16,7 @@ import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType, StoreCoreMapValue,
   StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe, Scheduler, CustomEventListener, Listener,
   CreateStoreOptions, Store, AnyFn, ConciseExternalMapType, ConciseExternalMapValue,
-  SetStateCallback, SetStateCallbackItem, MapPartial,
+  SetStateCallback, SetStateCallbackItem,
 } from "./model";
 
 /**
@@ -220,12 +220,12 @@ export function createStore<S extends State>(
   }
   
   // 批量触发订阅监听的数据变动
-  function batchDispatchListener(prevState: Map<keyof S, S[keyof S]>, changedData: MapPartial<S>) {
-    if (listenerStoreSet.size > 0 && changedData.size > 0) {
+  function batchDispatchListener(prevState: Map<keyof S, S[keyof S]>, changedData: Partial<S>) {
+    if (listenerStoreSet.size > 0) {
       (
         storeCoreMap.get("dispatchStoreEffect") as StoreCoreMapValue<S>["dispatchStoreEffect"]
       )(
-        mapToObject<Partial<S>>(changedData),
+        changedData,
         mapToObject(stateMap),
         mapToObject(prevState),
       );
@@ -290,15 +290,17 @@ export function createStore<S extends State>(
         schedulerProcessor.set("willUpdating", null);
         
         // 防止之前的数据被别的更新改动，这里及时取出保证之前的数据的阶段状态的对应
-        const prevStateTemp = new Map(prevState);
+        const prevStateTemp = new Map(prevState as Map<keyof S, S[keyof S]>);
         
         const { taskDataMap, taskQueueMap } = (schedulerProcessor.get("getTask") as Scheduler<S>["getTask"])();
         // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
         (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
         
         if (taskDataMap.size !== 0) {
-          batchUpdate(() => taskQueueMap.forEach(task => task()));
-          batchDispatchListener(prevStateTemp, taskDataMap);
+          batchUpdate(() => {
+            taskQueueMap.forEach(task => task());
+            batchDispatchListener(prevStateTemp, mapToObject(taskDataMap));
+          });
         }
         
         if (setStateCallbackStackArray.length) {
@@ -329,10 +331,13 @@ export function createStore<S extends State>(
     }
     const prevStateTemp = new Map(stateMap);
     batchUpdate(() => {
+      let effectState: Partial<S> | null = null;
       Object.keys(updateParamsTemp).forEach(key => {
         const val = (updateParamsTemp as Partial<S> | S)[key];
         if (!Object.is(val, stateMap.get(key))) {
           stateMap.set(key, val);
+          !effectState && (effectState = {});
+          effectState[key as keyof S] = val;
           (
             (
               initialValueConnectStore(key).get(key) as StoreMapValue<S>
@@ -340,8 +345,9 @@ export function createStore<S extends State>(
           )();
         }
       });
+      // 不管batchUpdate是在何种模式下，同步还是异步，这里也顺便统一更新订阅中的更新了
+      effectState && batchDispatchListener(prevStateTemp, effectState);
     });
-    batchDispatchListener(prevStateTemp, objectToMap(updateParamsTemp) as MapPartial<S>);
   }
   
   // 更新函数入栈

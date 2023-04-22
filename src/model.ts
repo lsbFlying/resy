@@ -39,20 +39,8 @@ export type StoreMap<S extends State> = Map<keyof S, StoreMapValue<S>>;
 
 // 订阅事件的监听回调函数类型
 export type Listener<S extends State> = (
-  /**
-   * @description 产生作用影响的数据
-   * 实际真正影响变化的数据
-   * @example 比如我有一批要更新的数据是{ name: "sub", count: 0 }
-   * 但是之前的数据是{ name: "add", count: 0 }
-   * 所以这一批的数据里effectState就是{ name: "sub" }
-   * 而不是{ name: "sub", count: 0 }
-   * 简单来说，effectState就是那一批更新里真正对更新渲染产生作用与效果的数据
-   * 而不是那些在一批次数据里滥竽充数的数据
-   */
   effectState: Partial<S>,
-  // 当前这一批次更新后的数据
   nextState: S,
-  // 当前这一批次更新前的数据
   prevState: S,
 ) => void;
 

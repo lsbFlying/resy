@@ -222,18 +222,13 @@ export function createStore<S extends State>(
   // 批量触发订阅监听的数据变动
   function batchDispatchListener(prevState: Map<keyof S, S[keyof S]>, changedData: MapPartial<S>) {
     if (listenerStoreSet.size > 0 && changedData.size > 0) {
-      // 找出实际真正影响变化的数据
-      const effectState = {} as Partial<S>;
-      
-      [...changedData.entries()].forEach(([key, value]) => {
-        if (!Object.is(value, prevState.get(key))) {
-          effectState[key as keyof S] = stateMap.get(key);
-        }
-      });
-      
       (
         storeCoreMap.get("dispatchStoreEffect") as StoreCoreMapValue<S>["dispatchStoreEffect"]
-      )(effectState, mapToObject(stateMap), mapToObject(prevState));
+      )(
+        mapToObject<Partial<S>>(changedData),
+        mapToObject(stateMap),
+        mapToObject(prevState),
+      );
     }
   }
   

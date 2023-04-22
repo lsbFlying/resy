@@ -224,8 +224,15 @@ export function createStore<S extends State>(
     if (listenerStoreSet.size > 0 && changedData.size > 0) {
       /**
        * @description effectState：实际真正影响变化的数据
-       * changedData是给予更新变化的数据，但是不是真正会产生变化影响的数据，
+       * changedData是给予更新变化的数据，但却不是真正会产生变化影响的数据，
        * 就好比setState中的参数对象可以写与原数据一样数据，但是不产生更新
+       *
+       * @example 比如我有一批要更新的数据是{ name: "sub", count: 0 }
+       * 但是之前的数据是{ name: "add", count: 0 }
+       * 所以这一批的数据里effectState就是{ name: "sub" }
+       * 而不是{ name: "sub", count: 0 }
+       * 简单来说，effectState就是那一批更新里真正对更新渲染产生作用与效果的数据
+       * 而不是那些在一批次数据里滥竽充数的数据
        */
       const effectState = {} as Partial<S>;
       

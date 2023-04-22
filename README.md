@@ -29,6 +29,7 @@
    At the same time, removed the "\_\_privatization\_\_" internal configuration properties.
 6. Improved the coordination of updates,
    and increased the absolute advantage of reading the latest value of data through the store.
+7. Optimized scheduling batch processing for rendering.
 
 🌟`v7.1.1`：<br/>
 1. Fixed bug that did not correspond to the latest data parameters of setState's callback function.

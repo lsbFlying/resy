@@ -66,7 +66,10 @@ export function createStore<S extends State>(
   // 对应整个store的数据引用标记的set集合
   const storeRefSet = new Set<number>();
   
-  // storeRefSet自增处理
+  /**
+   * @description storeRefSet自增处理
+   * view连接store内部数据引用的自增指针处理
+   */
   function storeRefSetSelfIncreasing() {
     const lastTemp = [...storeRefSet].at(-1);
     // 索引自增

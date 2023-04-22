@@ -2,8 +2,10 @@ import type { Callback, Scheduler } from "./model";
 
 /**
  * @description 调度处理器针对每一个store的私有化
- * 便于与useConciseState的store的调度处理分离开来
+ * 便于不同的store的调度处理分离开来
  * 避免了更新调度的交叉不协调问题产生的数据更新问题
+ *
+ * 核心是使得调度与任务数据/队列并行统一
  */
 export default function scheduler() {
   // 更新的任务队列

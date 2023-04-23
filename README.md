@@ -349,23 +349,6 @@ function App() {
 }
 ```
 
-```markdown
-Summary:
-    1、Resy has the effect of automatic batch updating.
-    Both single direct updates and setState updates have the effect of batch updates,
-    It can make up for the effect of batch updating of versions below react v18
-    for promises or setTimeout that cannot be managed by react.
-    ------
-    2、However, Whether "syncUpdate" has the effect of batch updates depends on the fact itself,
-    as it uses the batch update method of "unstable_batchedUpdates" internally.
-    That is, the batch update effect of "syncUpdate" completely
-    depends on the batch update scheduling system of the fact itself.
-    ------
-    3、SyncUpdate has another feature, which is that because it is a synchronous update,
-    it will process subsequent single updates or setState updates in the same batch,
-    optimizing the number of updates.
-```
-
 ### syncUpdate
 ```tsx
 import React from "react";

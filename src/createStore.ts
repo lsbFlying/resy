@@ -478,7 +478,13 @@ export function createStore<S extends State>(
       : Reflect.get(target, key, proxyReceiver);
   }
   
-  // 代理函数内部的this指向对象的proxy代理对象
+  /**
+   * 代理函数内部的this指向对象的proxy代理对象
+   * 函数的调用有必要绑定代理对象，因为如果是先解构后调用函数，
+   * 则原函数的this指向会是undefined
+   * 如果是有store.xxFunc调用还会有调用的上下文可以找到this指向就是store
+   * 所以这里有必要兼容一下先解构后调用的情况
+   */
   const funcInnerThisProxyStore = new Proxy(state, {
     get(target: S, key: keyof S, receiver: any) {
       /**

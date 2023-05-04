@@ -454,6 +454,35 @@ export function createStore<S extends State>(
     };
   }
   
+  // 重置恢复初始化状态数据
+  function reStore() {
+    const prevStateTemp = new Map(stateMap);
+    batchUpdate(() => {
+      let effectState: Partial<S> | null = null;
+      prevStateTemp.forEach((_, key) => {
+        const val = state[key];
+        if (!Object.is(val, stateMap.get(key))) {
+          if (Object.prototype.hasOwnProperty.call(state, key)) {
+            stateMap.set(key, val);
+          } else {
+            stateMap.delete(key);
+          }
+          
+          !effectState && (effectState = {});
+          effectState[key as keyof S] = val;
+          
+          (
+            (
+              initialValueConnectStore(key).get(key) as StoreMapValue<S>
+            ).get("update") as StoreMapValueType<S>["update"]
+          )();
+        }
+      });
+      
+      effectState && batchDispatchListener(prevStateTemp, effectState);
+    });
+  }
+  
   // 单个属性数据更新
   function singlePropUpdate(_: S, key: keyof S, val: S[keyof S]) {
     handleWillUpdating();
@@ -519,6 +548,7 @@ export function createStore<S extends State>(
   externalMap.set("setState", setState);
   externalMap.set("syncUpdate", syncUpdate);
   externalMap.set("subscribe", subscribe);
+  externalMap.set("reStore", reStore);
   
   const conciseExternalMap = new Map(externalMap) as ConciseExternalMapType<S>;
   

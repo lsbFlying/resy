@@ -98,7 +98,7 @@ export type StoreCoreMapType<S extends State> = Map<
   StoreCoreMapValue<S>[keyof StoreCoreMapValue<S>]
 >;
 
-export type ExternalMapValue<S extends State> = SetState<S> & Subscribe<S> & SyncUpdate<S> & {
+export type ExternalMapValue<S extends State> = StoreFuncUtils<S> & {
   [STORE_CORE_MAP_KEY]: StoreCoreMapType<S>;
   [USE_STORE_KEY]: object;
   [USE_CONCISE_STORE_KEY]: object;
@@ -109,7 +109,7 @@ export type ExternalMapType<S extends State> = Map<
   ExternalMapValue<S>[keyof ExternalMapValue<S>]
 >;
 
-export type ConciseExternalMapValue<S extends State> = SetState<S> & Subscribe<S> & SyncUpdate<S> & {
+export type ConciseExternalMapValue<S extends State> = StoreFuncUtils<S> & {
   readonly store: Store<S>;
 }
 
@@ -205,7 +205,16 @@ export type Subscribe<S extends State> = Readonly<{
   ): Unsubscribe;
 }>;
 
-export type Store<S extends State> = S & SetState<S> & Subscribe<S> & SyncUpdate<S>;
+/**
+ * @description 重置、恢复初始化状态，具备更新渲染效应，有一定的业务需求必要性
+ */
+export type ReStore = Readonly<{
+  reStore(): void;
+}>;
+
+export type StoreFuncUtils<S extends State> = SetState<S> & Subscribe<S> & SyncUpdate<S> & ReStore;
+
+export type Store<S extends State> = S & StoreFuncUtils<S>;
 
 /**
  * @description useConciseState的Store返回类型

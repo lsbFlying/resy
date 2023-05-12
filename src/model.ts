@@ -1,4 +1,4 @@
-import { STORE_CORE_MAP_KEY, USE_CONCISE_STORE_KEY, USE_STORE_KEY } from "./static";
+import { STORE_VIEW_MAP_KEY, USE_CONCISE_STORE_KEY, USE_STORE_KEY } from "./static";
 
 export type Callback = () => void;
 
@@ -7,9 +7,9 @@ export type State = Record<string, any>;
 
 /**
  * @description resy的storeMap接口类型
- * atomStateSubscribe与getAtomState是useSyncExternalStore参数接口
+ * subscribeAtomState与getAtomState是useSyncExternalStore参数接口
  *
- * 其中atomStateSubscribe的onAtomStateChange参数回调包含数据更新操作
+ * 其中subscribeAtomState的onAtomStateChange参数回调包含数据更新操作
  * 将这些数据更新操作的函数储存在某个Set中
  * 然后在update中去进行forEach循环更新
  *
@@ -18,11 +18,11 @@ export type State = Record<string, any>;
  */
 export type StoreMapValueType<S extends State> = {
   // 当前元数据的状态变化事件的订阅，useSyncExternalStore的订阅
-  atomStateSubscribe: (onAtomStateChange: Callback) => Callback;
+  subscribeAtomState: (onAtomStateChange: Callback) => Callback;
   // 获取当前元数据(独立单独的数据状态)
   getAtomState: () => S[keyof S];
-  // 更新数据执行
-  update: () => void;
+  // 更新元数据的更新器
+  updater: () => void;
   /**
    * 使用当前元数据，即useSyncExternalStore的useSnapshot，
    * 可以简单理解为useState的效果，具备驱动页面更新渲染的能力。
@@ -44,41 +44,11 @@ export type Listener<S extends State> = (
   prevState: S,
 ) => void;
 
-// 监听事件的key类型
-export type EventsType = number | string | symbol;
-
-// 自定义订阅监听函数接口类型
-export interface CustomEventListener<S extends State> {
-  // 监听事件的合集对象
-  events: Map<EventsType, Listener<S>>;
-  addEventListener(type: EventsType, listener: Listener<S>): void;
-  dispatchEvent(
-    type: EventsType,
-    effectState: Partial<S>,
-    nextState: S,
-    prevState: S,
-  ): void;
-  /**
-   * @description resy销毁监听订阅的时候尽管实际上是移除了监听Set中的监听实例
-   * 但是这里仍然建议移除监听的事件，即removeEventListener仍然需要
-   * 是为了删除后腾出内存空间不占内存，避免"内存释放"的心智负担
-   */
-  removeEventListener(type: EventsType): void;
-}
-
-// 自定义监听事件的构造函数接口类型
-export interface CustomEventListenerConstructor<S extends State> {
-  // 声明可以作为构造函数调用
-  new (): CustomEventListener<S>;
-  // 声明prototype，支持后续修改prototype（这里主要是构造函数时定义了原型链上面的方法，后续不需要更改）
-  prototype: CustomEventListener<S>;
-}
-
 /**
- * @description StoreCoreMap的数据值类型，作为createStore的核心Map接口类型
- * 具备处理store的监听订阅、重置数据、以及获取最新state数据等相关处理功能的核心Map
+ * @description StoreViewMap的数据值类型，作为view这个api的核心Map接口类型
+ * 具备处理store的重置数据、以及获取最新state数据等相关处理功能
  */
-export interface StoreCoreMapValue<S extends State> {
+export interface StoreViewMapValue<S extends State> {
   /**
    * store内部的stateMap数据对象
    * 使用函数执行得到最新值，类似于useSyncExternalStore的getSnapshot
@@ -88,18 +58,16 @@ export interface StoreCoreMapValue<S extends State> {
   viewInitialReset: Callback;
   // view的props数据使用方式的数据生命周期与store关联同步
   viewConnectStore: () => Unsubscribe;
-  // 触发订阅监听的变动影响（即循环遍历执行listenerStoreSet中的监听函数）
-  dispatchStoreEffect: (effectState: Partial<S>, nextState: S, prevState: S) => void;
 }
 
-// 每一个resy生成的store的监听订阅对象、内部stateMap数据以及重置初始化数据的方法
-export type StoreCoreMapType<S extends State> = Map<
-  keyof StoreCoreMapValue<S>,
-  StoreCoreMapValue<S>[keyof StoreCoreMapValue<S>]
+// 供view使用的核心连接容器Map，包括处理内部stateMap数据以及重置初始化数据的方法
+export type StoreViewMapType<S extends State> = Map<
+  keyof StoreViewMapValue<S>,
+  StoreViewMapValue<S>[keyof StoreViewMapValue<S>]
 >;
 
 export type ExternalMapValue<S extends State> = StoreFuncUtils<S> & {
-  [STORE_CORE_MAP_KEY]: StoreCoreMapType<S>;
+  [STORE_VIEW_MAP_KEY]: StoreViewMapType<S>;
   [USE_STORE_KEY]: object;
   [USE_CONCISE_STORE_KEY]: object;
 }

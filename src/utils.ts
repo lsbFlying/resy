@@ -1,5 +1,5 @@
-import { _DEV_, STORE_CORE_MAP_KEY, USE_STORE_KEY } from "./static";
-import type { State, StateFunc, Store, StoreCoreMapType, StoreCoreMapValue } from "./model";
+import { _DEV_, STORE_VIEW_MAP_KEY, USE_STORE_KEY } from "./static";
+import type { State, StateFunc, Store, StoreViewMapType, StoreViewMapValue } from "./model";
 
 /**
  * 给Comp组件的props上挂载的state属性数据做一层引用代理
@@ -52,8 +52,8 @@ export function getLatestStateMap<S extends State = {}>(store?: Store<S>) {
   if (!store) return new Map<keyof S, S[keyof S]>();
   return (
     (
-      store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-    ).get("getStateMap") as StoreCoreMapValue<S>["getStateMap"]
+      store[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
+    ).get("getStateMap") as StoreViewMapValue<S>["getStateMap"]
   )();
 }
 

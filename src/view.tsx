@@ -1,8 +1,8 @@
 import React, { memo, useEffect, useState } from "react";
-import { STORE_CORE_MAP_KEY } from "./static";
+import { STORE_VIEW_MAP_KEY } from "./static";
 import { getLatestStateMap, mapToObject, proxyStateHandler, storeErrorHandle } from "./utils";
 import type {
-  State, StoreCoreMapType, StoreCoreMapValue, MapStateToProps, Store, PS, Unsubscribe,
+  State, StoreViewMapType, StoreViewMapValue, MapStateToProps, Store, PS, Unsubscribe,
 } from "./model";
 
 /**
@@ -64,8 +64,8 @@ export function view<P extends State = {}, S extends State = {}>(
     // 先行初始化执行逻辑，并且每次生命周期中只同步执行一次
     (
       (
-        store?.[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-      )?.get("viewInitialReset") as StoreCoreMapValue<S>["viewInitialReset"]
+        store?.[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
+      )?.get("viewInitialReset") as StoreViewMapValue<S>["viewInitialReset"]
     )?.();
     
     /** 需要将innerUseStateSet与stateMap放在内部执行，这样每次更新的时候可以得到最新的数据引用与数据stateMap */
@@ -96,8 +96,8 @@ export function view<P extends State = {}, S extends State = {}>(
         viewConnectStoreSet.add(
           (
             (
-              store[STORE_CORE_MAP_KEY as keyof S] as StoreCoreMapType<S>
-            ).get("viewConnectStore") as StoreCoreMapValue<S>["viewConnectStore"]
+              store[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
+            ).get("viewConnectStore") as StoreViewMapValue<S>["viewConnectStore"]
           )()
         );
       });

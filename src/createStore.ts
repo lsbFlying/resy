@@ -7,14 +7,13 @@
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
-import EventDispatcher from "./listener";
 import {
-  batchUpdate, STORE_CORE_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_, EVENT_TYPE,
+  batchUpdate, STORE_VIEW_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_,
 } from "./static";
 import { updateDataErrorHandle, mapToObject, objectToMap } from "./utils";
 import type {
-  Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreCoreMapType, StoreCoreMapValue,
-  StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe, Scheduler, CustomEventListener, Listener,
+  Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreViewMapType,
+  StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe, Scheduler, Listener,
   CreateStoreOptions, Store, AnyFn, ConciseExternalMapType, ConciseExternalMapValue,
   SetStateCallback, SetStateCallbackItem,
 } from "./model";
@@ -81,7 +80,7 @@ export function createStore<S extends State>(
   
   /**
    * @description 不改变传参state，同时resy使用Map与Set提升性能
-   * 如stateMap、storeMap、storeCoreMap、storeChangeSet等
+   * 如stateMap、storeMap、storeViewMap、storeChangeSet等
    */
   let stateMap: Map<keyof S, S[keyof S]> = objectToMap(state);
   // 由于stateMap的设置前置了，优化了同步数据的获取，但是对于之前的数据状态也会需要前处理
@@ -118,12 +117,12 @@ export function createStore<S extends State>(
   }
   
   // 订阅监听Set容器
-  const listenerStoreSet = new Set<CustomEventListener<S>>();
+  const listenerSet = new Set<Listener<S>>();
   
-  // 处理store的监听订阅、ref数据引用关联、view数据关联以及获取最新state数据的相关核心处理Map
-  const storeCoreMap: StoreCoreMapType<S> = new Map();
-  storeCoreMap.set("getStateMap", () => stateMap);
-  storeCoreMap.set("viewInitialReset", () => {
+  // 处理view连接store、以及获取最新state数据的相关处理Map
+  const storeViewMap: StoreViewMapType<S> = new Map();
+  storeViewMap.set("getStateMap", () => stateMap);
+  storeViewMap.set("viewInitialReset", () => {
     if (initialReset && !stateMapViewResetFlag && !storeRefSet.size) {
       stateMapViewResetFlag = true;
       /**
@@ -135,27 +134,12 @@ export function createStore<S extends State>(
       stateMap = objectToMap(state);
     }
   });
-  storeCoreMap.set("viewConnectStore", () => {
+  storeViewMap.set("viewConnectStore", () => {
     const storeRefIncreaseItem = storeRefSetSelfIncreasing();
     return () => {
       storeRefSet.delete(storeRefIncreaseItem);
       stateMapViewResetHandle();
     }
-  });
-  storeCoreMap.set("dispatchStoreEffect", (effectData: Partial<S>, nextState: S, prevState: S) => {
-    /**
-     * 这里虽然addEventListener监听的listener每一个都触发执行了，
-     * 但是内部的内层listener会有数据变化的判断来实现进一步的精准定位变化执行
-     * 表面上好像使用Map进行优化，避免全部循环在内层判断，尝试直接在外层判断精准执行一次
-     * 但实际上可能存在不同组件多次监听同一个数据变化但是处理不同的业务逻辑的可能
-     * 所以使用Set相对于Map而言是必要的，可以满足这种复杂的业务场景
-     */
-    listenerStoreSet.forEach(item => item.dispatchEvent(
-      EVENT_TYPE,
-      effectData,
-      nextState,
-      prevState,
-    ));
   });
   
   // 数据存储容器storeMap
@@ -172,7 +156,7 @@ export function createStore<S extends State>(
     const storeChangeSet = new Set<Callback>();
     
     const storeMapValue: StoreMapValue<S> = new Map();
-    storeMapValue.set("atomStateSubscribe", (onAtomStateChange: Callback) => {
+    storeMapValue.set("subscribeAtomState", (onAtomStateChange: Callback) => {
       storeChangeSet.add(onAtomStateChange);
       const storeRefIncreaseItem = storeRefSetSelfIncreasing();
       return () => {
@@ -184,7 +168,7 @@ export function createStore<S extends State>(
     
     storeMapValue.set("getAtomState", () => stateMap.get(key));
     
-    storeMapValue.set("update", () => {
+    storeMapValue.set("updater", () => {
       // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
       storeChangeSet.forEach(storeChange => storeChange?.());
     });
@@ -205,7 +189,7 @@ export function createStore<S extends State>(
         resetStateMap(key);
       }
       return useSyncExternalStore(
-        (storeMap.get(key) as StoreMapValue<S>).get("atomStateSubscribe") as StoreMapValueType<S>["atomStateSubscribe"],
+        (storeMap.get(key) as StoreMapValue<S>).get("subscribeAtomState") as StoreMapValueType<S>["subscribeAtomState"],
         (storeMap.get(key) as StoreMapValue<S>).get("getAtomState") as StoreMapValueType<S>["getAtomState"],
         (storeMap.get(key) as StoreMapValue<S>).get("getAtomState") as StoreMapValueType<S>["getAtomState"],
       );
@@ -224,14 +208,14 @@ export function createStore<S extends State>(
   
   // 批量触发订阅监听的数据变动
   function batchDispatchListener(prevState: Map<keyof S, S[keyof S]>, changedData: Partial<S>) {
-    if (listenerStoreSet.size > 0) {
-      (
-        storeCoreMap.get("dispatchStoreEffect") as StoreCoreMapValue<S>["dispatchStoreEffect"]
-      )(
+    if (listenerSet.size > 0) {
+      const nextStateTemp = mapToObject(stateMap);
+      const prevStateTemp = mapToObject(prevState);
+      listenerSet.forEach(item => item(
         changedData,
-        mapToObject(stateMap),
-        mapToObject(prevState),
-      );
+        nextStateTemp,
+        prevStateTemp,
+      ));
     }
   }
   
@@ -263,7 +247,7 @@ export function createStore<S extends State>(
         () => (
           (
             initialValueConnectStore(key).get(key) as StoreMapValue<S>
-          ).get("update") as StoreMapValueType<S>["update"]
+          ).get("updater") as StoreMapValueType<S>["updater"]
         )(),
         key,
         val,
@@ -344,7 +328,7 @@ export function createStore<S extends State>(
           (
             (
               initialValueConnectStore(key).get(key) as StoreMapValue<S>
-            ).get("update") as StoreMapValueType<S>["update"]
+            ).get("updater") as StoreMapValueType<S>["updater"]
           )();
         }
       });
@@ -427,30 +411,22 @@ export function createStore<S extends State>(
   
   // 订阅函数
   function subscribe(listener: Listener<S>, stateKeys?: (keyof S)[]): Unsubscribe {
-    const customEventDispatcher: CustomEventListener<S> = new EventDispatcher();
-    customEventDispatcher.addEventListener(
+    const listenerWrap: Listener<S> = (effectState, nextState, prevState) => {
+      let includesFlag = false;
+      const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
+      if (!listenerKeysIsEmpty && Object.keys(effectState).some(key => stateKeys.includes(key))) includesFlag = true;
       /**
-       * @description 每一个订阅监听实例有相同的event-type不要紧，因为实例不同所以不会影响
-       * 这里取一个实例类型常量反而方便节省内存、增加代码执行效率
+       * 事实上最终订阅触发时，每一个订阅的这个外层listener都被触发了，
+       * 只是这里在最终执行内层listener的时候做了数据变化的判断才实现了subscribe中的listener的是否执行
        */
-      EVENT_TYPE,
-      (effectState, nextState, prevState) => {
-        let includesFlag = false;
-        const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
-        if (!listenerKeysIsEmpty && Object.keys(effectState).some(key => stateKeys.includes(key))) includesFlag = true;
-        /**
-         * 事实上最终订阅触发时，每一个订阅的这个外层listener都被触发了，
-         * 只是这里在最终执行内层listener的时候做了数据变化的判断才实现了subscribe中的listener的是否执行
-         */
-        if (listenerKeysIsEmpty || (!listenerKeysIsEmpty && includesFlag)) listener(effectState, nextState, prevState);
-      },
-    );
+      if (listenerKeysIsEmpty || (!listenerKeysIsEmpty && includesFlag)) listener(effectState, nextState, prevState);
+    };
     
-    listenerStoreSet.add(customEventDispatcher);
+    listenerSet.add(listenerWrap);
     
+    // 显示返回解除订阅函数供用户自行选择是否解除订阅，因为也有可能用户想要一个订阅一直生效
     return () => {
-      customEventDispatcher.removeEventListener(EVENT_TYPE)
-      listenerStoreSet.delete(customEventDispatcher);
+      listenerSet.delete(listenerWrap);
     };
   }
   
@@ -474,7 +450,7 @@ export function createStore<S extends State>(
           (
             (
               initialValueConnectStore(key).get(key) as StoreMapValue<S>
-            ).get("update") as StoreMapValueType<S>["update"]
+            ).get("updater") as StoreMapValueType<S>["updater"]
           )();
         }
       });
@@ -590,7 +566,7 @@ export function createStore<S extends State>(
     },
   } as ProxyHandler<StoreMap<S>>);
   
-  externalMap.set(STORE_CORE_MAP_KEY, storeCoreMap);
+  externalMap.set(STORE_VIEW_MAP_KEY, storeViewMap);
   externalMap.set(USE_STORE_KEY, storeProxy);
   externalMap.set(USE_CONCISE_STORE_KEY, conciseStoreProxy);
   

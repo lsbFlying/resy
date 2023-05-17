@@ -176,11 +176,11 @@ export type Subscribe<S extends State> = Readonly<{
 /**
  * @description 重置、恢复初始化状态，具备更新渲染效应，有一定的业务需求必要性
  */
-export type ReStore = Readonly<{
-  reStore(): void;
+export type Restore = Readonly<{
+  restore(): void;
 }>;
 
-export type StoreFuncUtils<S extends State> = SetState<S> & Subscribe<S> & SyncUpdate<S> & ReStore;
+export type StoreFuncUtils<S extends State> = SetState<S> & Subscribe<S> & SyncUpdate<S> & Restore;
 
 export type Store<S extends State> = S & StoreFuncUtils<S>;
 

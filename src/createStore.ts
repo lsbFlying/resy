@@ -33,11 +33,11 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * 虽然resy会有类型自动推断，但是对于数据状态类型可能变化的情况下还是不够准确的
  * @author liushanbao
  * @date 2022-05-05
- * @param initialState 初始化状态数据
+ * @param initialState 初始化状态数据（在有足够复杂的初始化数据逻辑场景下，函数化参数功能更能满足完善这种场景需求的写法）
  * @param options 状态容器配置项
  */
 export function createStore<S extends State>(
-  initialState?: S,
+  initialState?: S | (() => S),
   options?: CreateStoreOptions,
 ): Store<S> {
   /**
@@ -51,7 +51,11 @@ export function createStore<S extends State>(
    * 但同样除了undefined其他的假值可能是开发者的代码bug，如果都兼容了不太好
    */
   // 所以在这里的Object判断中只对undefined特殊处理
-  const state = initialState === undefined ? ({} as S) : initialState;
+  const state = initialState === undefined
+    ? ({} as S)
+    : typeof initialState === "function"
+      ? initialState()
+      : initialState;
   
   if (_DEV_ && Object.prototype.toString.call(state) !== "[object Object]") {
     throw new Error("The initialization parameter result of createStore needs to be an object!");
@@ -431,7 +435,7 @@ export function createStore<S extends State>(
   }
   
   // 重置恢复初始化状态数据
-  function reStore() {
+  function restore() {
     const prevStateTemp = new Map(stateMap);
     batchUpdate(() => {
       let effectState: Partial<S> | null = null;
@@ -524,7 +528,7 @@ export function createStore<S extends State>(
   externalMap.set("setState", setState);
   externalMap.set("syncUpdate", syncUpdate);
   externalMap.set("subscribe", subscribe);
-  externalMap.set("reStore", reStore);
+  externalMap.set("restore", restore);
   
   const conciseExternalMap = new Map(externalMap) as ConciseExternalMapType<S>;
   

@@ -1,5 +1,5 @@
 import { _DEV_, STORE_VIEW_MAP_KEY, USE_STORE_KEY } from "./static";
-import type { State, StateFunc, Store, StoreViewMapType, StoreViewMapValue } from "./model";
+import type { State, StateFunc, Store, StoreViewMapType, StoreViewMapValue, Stores } from "./model";
 
 /**
  * 给Comp组件的props上挂载的state属性数据做一层引用代理
@@ -23,6 +23,33 @@ export function proxyStateHandler<S extends State>(
     },
   } as ProxyHandler<Map<keyof S, S[keyof S]>>) as object as S;
   return store;
+}
+
+// view的多store的最新数据的处理
+export function viewStoresToLatestState<S extends State>(stores: Stores<S>) {
+  const latestStateTemp: { [key in keyof Stores<S>]: S } = {};
+  for (const storesKey in stores) {
+    if (Object.prototype.hasOwnProperty.call(stores, storesKey)) {
+      latestStateTemp[storesKey] = mapToObject(getLatestStateMap(stores[storesKey]));
+    }
+  }
+  return latestStateTemp;
+}
+
+// view的多个store的state更新处理
+export function viewStoresStateUpdateHandle<S extends State>(
+  state: { [key in keyof Stores<S>]: S },
+  innerUseStateSet: Set<keyof S>,
+  nextState: S,
+  storesKey?: keyof Stores<S>,
+) {
+  const stateTemp: { [key in keyof Stores<S>]: S } = Object.assign({}, state);
+  Object.keys(state).forEach(storesKeyItem => {
+    if (storesKey === storesKeyItem) {
+      stateTemp[storesKey] = proxyStateHandler(new Map(Object.entries(nextState)), innerUseStateSet)
+    }
+  });
+  return stateTemp;
 }
 
 /**

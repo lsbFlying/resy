@@ -184,6 +184,9 @@ export type StoreFuncUtils<S extends State> = SetState<S> & Subscribe<S> & SyncU
 
 export type Store<S extends State> = S & StoreFuncUtils<S>;
 
+// 多个store
+export type Stores<S extends State> = { [key: string]: Store<S> };
+
 /**
  * @description useConciseState的Store返回类型
  * 增加了store的属性调用，为了完善最新数据值的获取，
@@ -238,8 +241,15 @@ export type CreateStoreOptions = {
 // view中equal函数的参数类型，props与state的类型合集
 export type PS<P extends State = {}, S extends State = {}> = Readonly<{
   props: P;
-  state: S;
+  state: EqualStateType<S>;
 }>;
+
+export type EqualStateType<S extends State> = S | { [key in keyof Stores<S>]: S };
 
 // 函数类型，Function的替代类型
 export type AnyFn = (...args: unknown[]) => unknown;
+
+// view内部的stateMap的数据类型，根据是否是多store连接使用会有变化
+export type ViewStateMapType<S extends State> = Map<keyof S, S[keyof S]> | ViewStateMapObjectType<S>;
+
+export type ViewStateMapObjectType<S extends State> = { [key in keyof Stores<S>]: Map<keyof S, S[keyof S]> };

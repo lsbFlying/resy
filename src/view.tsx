@@ -1,8 +1,12 @@
 import React, { memo, useEffect, useState } from "react";
-import { STORE_VIEW_MAP_KEY } from "./static";
-import { getLatestStateMap, mapToObject, proxyStateHandler, storeErrorHandle } from "./utils";
+import { STORE_VIEW_MAP_KEY, USE_STORE_KEY } from "./static";
+import {
+  getLatestStateMap, mapToObject, proxyStateHandler, storeErrorHandle,
+  viewStoresStateUpdateHandle, viewStoresToLatestState,
+} from "./utils";
 import type {
-  State, StoreViewMapType, StoreViewMapValue, MapStateToProps, Store, PS, Unsubscribe,
+  State, StoreViewMapType, StoreViewMapValue, MapStateToProps, Store, PS,
+  Unsubscribe, Stores, EqualStateType, ViewStateMapObjectType, ViewStateMapType,
 } from "./model";
 
 /**
@@ -37,7 +41,6 @@ import type {
  * 也可以取得相当不错的渲染、数据共享等使用效益了
  *
  * 🌟：view更多的是为了兼容class组件，
- * todo: 但是暂时无法做到class组件使用多个store数据，后续待优化更进
  * 如果是hook组件，直接使用原生的useMemo然后内部仍然继续使用useStore也是可以的，如下：
  * function SomeHookCom() {
  *   const { ... } = useStore(store);
@@ -54,25 +57,11 @@ export function view<P extends State = {}, S extends State = {}>(
   Comp: React.ComponentType<MapStateToProps<S, P> | any>,
   equal?: (next: PS<P, S>, prev: PS<P, S>) => boolean,
 ) {
-  return (store?: Store<S>) => memo((props: P) => {
-    /**
-     * 如果是有store的情况则可以通过props.state的方式进行数据渲染及操作
-     * 且props.state的方式兼容于函数组件与class组件
-     * 但是如果是在class组件中则必须使用props.state的方式
-     * 而函数组件则两种方式都可以
-     */
-    // 先行初始化执行逻辑，并且每次生命周期中只同步执行一次
-    (
-      (
-        store?.[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
-      )?.get("viewInitialReset") as StoreViewMapValue<S>["viewInitialReset"]
-    )?.();
+  return (stores?: Store<S> | Stores<S>) => memo((props: P) => {
+    /** 需要将innerUseStateMapSet与stateMap放在内部执行，这样每次更新的时候可以得到最新的数据引用与数据stateMap */
+    // 引用数据的代理Set（默认无store）
+    let innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>> = new Set();
     
-    /** 需要将innerUseStateSet与stateMap放在内部执行，这样每次更新的时候可以得到最新的数据引用与数据stateMap */
-    // 引用数据的代理Set
-    const innerUseStateSet: Set<keyof S> = new Set();
-    // 需要使用getState获取store内部的即时最新数据值
-    const stateMap = getLatestStateMap(store);
     /**
      * @description 给state数据做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
      * 恰巧由于这里的proxy代理，导致在挂载属性数据的时候不能使用扩展运算符，
@@ -81,48 +70,151 @@ export function view<P extends State = {}, S extends State = {}>(
      *
      * be careful: state是一个proxy，这里如果外部数据对象将state作为原型链继承将是无效继承
      */
-    const [state, setState] = useState<S>(() => proxyStateHandler(stateMap, innerUseStateSet));
+    const [state, setState] = useState<S | { [key in keyof Stores<S>]: S }>(() => {
+      // 需要使用getState获取store内部的即时最新数据值（默认无store）
+      let stateMap: ViewStateMapType<S> = new Map<keyof S, S[keyof S]>();
+      
+      /**
+       * 如果是有store的情况则可以通过props.state的方式进行数据渲染及操作
+       * 且props.state的方式兼容于函数组件与class组件
+       * 但是如果是在class组件中则必须使用props.state的方式
+       * 而函数组件则两种方式都可以
+       */
+      // 先行初始化执行逻辑，并且每次生命周期中只同步执行一次
+      if (stores) {
+        // 单个Store
+        if ((stores as Store<S>)[USE_STORE_KEY as keyof S]) {
+          (
+            (
+              (stores as Store<S>)?.[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
+            )?.get("viewInitialReset") as StoreViewMapValue<S>["viewInitialReset"]
+          )?.();
+          
+          stateMap = getLatestStateMap(stores as Store<S>);
+        } else {
+          innerUseStateMapSet = new Map<keyof Stores<S>, Set<keyof S>>();
+          // 多个store
+          Object.keys(stores).forEach(storesKey => {
+            (
+              (
+                (stores[storesKey] as Store<S>)?.[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
+              )?.get("viewInitialReset") as StoreViewMapValue<S>["viewInitialReset"]
+            )?.();
+            
+            (stateMap as any as ViewStateMapObjectType<S>)[storesKey as keyof ViewStateMapObjectType<S>]
+              = getLatestStateMap(stores[storesKey] as Store<S>);
+            
+            (innerUseStateMapSet as Map<keyof Stores<S>, Set<keyof S>>).set(storesKey, new Set<keyof S>());
+          });
+        }
+      }
+      
+      if (!stores || (stores as Store<S>)[USE_STORE_KEY as keyof S]) {
+        return proxyStateHandler(stateMap as Map<keyof S, S[keyof S]>, innerUseStateMapSet as Set<keyof S>);
+      }
+      const stateTemp: { [key in keyof Stores<S>]: S } = {} as { [key in keyof Stores<S>]: S };
+      Object.keys(stateMap).forEach(stateMapKey => {
+        stateTemp[stateMapKey as keyof typeof stores] = proxyStateHandler(
+          (stateMap as any as ViewStateMapObjectType<S>)[stateMapKey as keyof Stores<S>] as Map<keyof S, S[keyof S]>,
+          (innerUseStateMapSet as Map<keyof Stores<S>, Set<keyof S>>).get(stateMapKey as keyof Stores<S>) as Set<keyof S>,
+        );
+      });
+      return stateTemp;
+    });
     
     useEffect(() => {
-      if (!store) return;
-      
-      // 在mounted进行一次的store校验
-      storeErrorHandle(store);
+      if (!stores) return;
       
       // 因为useEffect是异步的，所以这里执行innerUseStateSet时会有数据而不是空
       const viewConnectStoreSet = new Set<Unsubscribe>();
-      innerUseStateSet.forEach(() => {
-        // 将view关联到store内部的storeRefSet，进行数据生命周期的同步
-        viewConnectStoreSet.add(
-          (
-            (
-              store[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
-            ).get("viewConnectStore") as StoreViewMapValue<S>["viewConnectStore"]
-          )()
-        );
-      });
       
-      // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
-      const unsubscribe = store.subscribe((
-        effectState,
-        nextState,
-        prevState,
-      ) => {
-        const effectStateFields = Object.keys(effectState);
+      function handleStoreSubscribe(store: Store<S>, singleStore?: boolean, storesKeyTemp?: keyof Stores<S>) {
+        // 在mounted进行一次的store校验
+        storeErrorHandle(store);
         
-        if (
-          // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
-          Array.from(innerUseStateSet).some(key => effectStateFields.includes(key as string))
-          && (!equal || !equal({ props, state: nextState }, { props, state: prevState }))
-        ) {
-          setState(proxyStateHandler(new Map(Object.entries(nextState)), innerUseStateSet));
+        if (singleStore) {
+          innerUseStateMapSet.forEach(() => {
+            // 将view关联到store内部的storeRefSet，进行数据生命周期的同步
+            viewConnectStoreSet.add(
+              (
+                (
+                  store[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
+                ).get("viewConnectStore") as StoreViewMapValue<S>["viewConnectStore"]
+              )()
+            );
+          });
+          
+          // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
+          return store.subscribe((
+            effectState,
+            nextState,
+            prevState,
+          ) => {
+            const effectStateFields = Object.keys(effectState);
+            
+            if (
+              // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
+              Array.from(innerUseStateMapSet as Set<keyof S>).some(key => effectStateFields.includes(key as string))
+              && (!equal || !equal({ props, state: nextState }, { props, state: prevState }))
+            ) {
+              setState(proxyStateHandler(new Map(Object.entries(nextState)), innerUseStateMapSet as Set<keyof S>));
+            }
+          });
+        } else {
+          (innerUseStateMapSet as Map<keyof Stores<S>, Set<keyof S>>).forEach((
+            _,
+            storesKey,
+            map,
+          ) => {
+            (map.get(storesKey) as Set<keyof S>).forEach(() => {
+              // 将view关联到每一个store内部的storeRefSet，进行数据生命周期的同步
+              viewConnectStoreSet.add(
+                (
+                  (
+                    store[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
+                  ).get("viewConnectStore") as StoreViewMapValue<S>["viewConnectStore"]
+                )()
+              );
+            });
+          });
+          
+          return store.subscribe((
+            effectState,
+            nextState,
+            prevState,
+          ) => {
+            const effectStateFields = Object.keys(effectState);
+            const innerUseStateSet = (
+              innerUseStateMapSet as Map<keyof Stores<S>, Set<keyof S>>
+            ).get(storesKeyTemp as keyof Stores<S>) as Set<keyof S>;
+            
+            if (
+              // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
+              Array.from(innerUseStateSet).some(key => effectStateFields.includes(key as string))
+              && (!equal || !equal({ props, state: nextState }, { props, state: prevState }))
+            ) {
+              setState(viewStoresStateUpdateHandle(state, innerUseStateSet, nextState, storesKeyTemp));
+            }
+          });
         }
-      });
+      }
+      
+      let unsubscribe: Unsubscribe | Unsubscribe[];
+      if ((stores as Store<S>)[USE_STORE_KEY as keyof S]) {
+        unsubscribe = handleStoreSubscribe(stores as Store<S>, true);
+      } else {
+        unsubscribe = [];
+        Object.keys(stores).forEach(storesKey => {
+          (unsubscribe as Unsubscribe[]).push(handleStoreSubscribe(stores[storesKey], false, storesKey));
+        });
+      }
       
       return () => {
-        unsubscribe();
+        typeof unsubscribe === "function"
+          ? unsubscribe()
+          : unsubscribe.forEach(item => item());
         viewConnectStoreSet.forEach(unsubscribe => unsubscribe());
-        innerUseStateSet.clear();
+        innerUseStateMapSet.clear();
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
@@ -130,7 +222,11 @@ export function view<P extends State = {}, S extends State = {}>(
     return <Comp {...props} state={state}/>;
   }, equal ? (prevProps: P, nextProps: P) => {
     // props与state的变化可能存在同时变化的情况，但不影响equal的执行
-    const latestState = store ? mapToObject(getLatestStateMap(store)) : ({} as S);
+    const latestState = stores
+      ? (stores as Store<S>)[USE_STORE_KEY as keyof S]
+        ? mapToObject(getLatestStateMap(stores as Store<S>))
+        : viewStoresToLatestState(stores)
+      : ({} as EqualStateType<S>);
     return equal(
       { props: nextProps, state: latestState },
       { props: prevProps, state: latestState },

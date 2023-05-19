@@ -28,4 +28,4 @@ export const USE_STORE_KEY = Symbol("useStoreKey");
 export const USE_CONCISE_STORE_KEY = Symbol("useConciseStoreKey");
 
 // develop environment
-export const _DEV_ = process.env.NODE_ENV !== "production";
+export const _RE_DEV_SY_ = process.env.NODE_ENV !== "production";

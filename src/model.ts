@@ -221,18 +221,27 @@ export interface Scheduler<S extends State = {}> {
   // 冲刷任务数据与任务队列
   flush(): void;
   // 获取任务数据与任务队列
-  getTask(): {
+  getTasks(): {
     taskDataMap: Map<keyof S, S[keyof S]>,
     taskQueueMap: Map<keyof S, Callback>,
   };
 }
 
-// createStore该API第二个参数配置项
-export type CreateStoreOptions = {
+/**
+ * @description createStore该API第二个参数配置项
+ * 目前配置项不多，且常用主要配置也是initialReset
+ * 所以简化兼容支持布尔值类型:
+ * 为true则等价于{ initialReset: true }
+ * 为false则等价于{ initialReset: false }
+ */
+export type CreateStoreOptions = boolean | {
   /**
-   * @description 该参数主要是为了在某模块mount初始化阶段自动重置数据的，
+   * @description 1、 该参数主要是为了在某模块mount初始化阶段自动重置数据的，
    * 如遇到登录信息、主题等这样的全局数据而言才会设置为false，
    * 这样可以使得生成的loginStore或者themeStore系统的全局生效
+   *
+   * 2、对象接口式的写法是为了兼容未来可能的未知的配置功能的增加
+   *
    * @default true
    */
   initialReset?: boolean;
@@ -252,4 +261,4 @@ export type AnyFn = (...args: unknown[]) => unknown;
 // view内部的stateMap的数据类型，根据是否是多store连接使用会有变化
 export type ViewStateMapType<S extends State> = Map<keyof S, S[keyof S]> | ViewStateMapObjectType<S>;
 
-export type ViewStateMapObjectType<S extends State> = { [key in keyof Stores<S>]: Map<keyof S, S[keyof S]> };
+export type ViewStateMapObjectType<S extends State> = { [key: string]: Map<keyof S, S[keyof S]> };

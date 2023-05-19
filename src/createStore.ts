@@ -8,7 +8,7 @@
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import scheduler from "./scheduler";
 import {
-  batchUpdate, STORE_VIEW_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _DEV_,
+  batchUpdate, STORE_VIEW_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _RE_DEV_SY_,
 } from "./static";
 import { updateDataErrorHandle, mapToObject, objectToMap } from "./utils";
 import type {
@@ -51,17 +51,21 @@ export function createStore<S extends State>(
    * 但同样除了undefined其他的假值可能是开发者的代码bug，如果都兼容了不太好
    */
   // 所以在这里的Object判断中只对undefined特殊处理
-  const state = initialState === undefined
+  let state = initialState === undefined
     ? ({} as S)
     : typeof initialState === "function"
       ? initialState()
       : initialState;
   
-  if (_DEV_ && Object.prototype.toString.call(state) !== "[object Object]") {
+  if (_RE_DEV_SY_ && Object.prototype.toString.call(state) !== "[object Object]") {
     throw new Error("The initialization parameter result of createStore needs to be an object!");
   }
   
-  const { initialReset = true } = options || {};
+  const { initialReset = true } = typeof options === "boolean"
+    ? options
+      ? {}
+      : { initialReset: false }
+    : (options || {});
   
   // 当前store的调度处理器
   const schedulerProcessor = scheduler();
@@ -283,7 +287,7 @@ export function createStore<S extends State>(
         // 防止之前的数据被别的更新改动，这里及时取出保证之前的数据的阶段状态的对应
         const prevStateTemp = new Map(prevState as Map<keyof S, S[keyof S]>);
         
-        const { taskDataMap, taskQueueMap } = (schedulerProcessor.get("getTask") as Scheduler<S>["getTask"])();
+        const { taskDataMap, taskQueueMap } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
         // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
         (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
         
@@ -416,14 +420,18 @@ export function createStore<S extends State>(
   // 订阅函数
   function subscribe(listener: Listener<S>, stateKeys?: (keyof S)[]): Unsubscribe {
     const listenerWrap: Listener<S> = (effectState, nextState, prevState) => {
-      let includesFlag = false;
       const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
-      if (!listenerKeysIsEmpty && Object.keys(effectState).some(key => stateKeys.includes(key))) includesFlag = true;
       /**
        * 事实上最终订阅触发时，每一个订阅的这个外层listener都被触发了，
        * 只是这里在最终执行内层listener的时候做了数据变化的判断才实现了subscribe中的listener的是否执行
        */
-      if (listenerKeysIsEmpty || (!listenerKeysIsEmpty && includesFlag)) listener(effectState, nextState, prevState);
+      if (
+        listenerKeysIsEmpty
+        || (
+          !listenerKeysIsEmpty
+          && Object.keys(effectState).some(key => stateKeys.includes(key))
+        )
+      ) listener(effectState, nextState, prevState);
     };
     
     listenerSet.add(listenerWrap);
@@ -437,16 +445,18 @@ export function createStore<S extends State>(
   // 重置恢复初始化状态数据
   function restore() {
     const prevStateTemp = new Map(stateMap);
+    /**
+     * 如果是函数返回的初始化状态数据，则需要再次执行初始化函数来获取内部初始化的逻辑数据
+     * 防止因为初始化函数的内部逻辑导致重置恢复的数据不符合初始化的数据逻辑
+     */
+    if (typeof initialState === "function") state = initialState();
+    
     batchUpdate(() => {
       let effectState: Partial<S> | null = null;
       prevStateTemp.forEach((_, key) => {
         const val = state[key];
         if (!Object.is(val, stateMap.get(key))) {
-          if (Object.prototype.hasOwnProperty.call(state, key)) {
-            stateMap.set(key, val);
-          } else {
-            stateMap.delete(key);
-          }
+          resetStateMap(key);
           
           !effectState && (effectState = {});
           effectState[key as keyof S] = val;

@@ -45,8 +45,11 @@ export default function scheduler() {
   );
   
   schedulerProcessor.set(
-    "getTask",
-    () => ({ taskDataMap: new Map(taskDataMap), taskQueueMap: new Map(taskQueueMap) }),
+    "getTasks",
+    () => ({
+      taskDataMap: new Map(taskDataMap),
+      taskQueueMap: new Map(taskQueueMap),
+    }),
   );
   
   return schedulerProcessor;

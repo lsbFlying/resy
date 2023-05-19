@@ -1,4 +1,4 @@
-import { _DEV_, STORE_VIEW_MAP_KEY, USE_STORE_KEY } from "./static";
+import { _RE_DEV_SY_, STORE_VIEW_MAP_KEY, USE_STORE_KEY } from "./static";
 import type { State, StateFunc, Store, StoreViewMapType, StoreViewMapValue, Stores } from "./model";
 
 /**
@@ -86,7 +86,7 @@ export function getLatestStateMap<S extends State = {}>(store?: Store<S>) {
 
 // store传的不是由resy本身的createStore创建产生的store的错误处理
 export function storeErrorHandle<S extends State>(store: S) {
-  if (_DEV_ && !store[USE_STORE_KEY as keyof S]) {
+  if (_RE_DEV_SY_ && !store[USE_STORE_KEY as keyof S]) {
     throw new Error("The store parameter is not created by resty's createStore！");
   }
 }
@@ -94,7 +94,7 @@ export function storeErrorHandle<S extends State>(store: S) {
 // 数据更新参数报错处理
 export function updateDataErrorHandle<S extends State>(stateParams: Partial<S> | StateFunc<S>, funcName: string) {
   if (
-    _DEV_ && (
+    _RE_DEV_SY_ && (
       (
         Object.prototype.toString.call(stateParams) !== "[object Object]"
         && Object.prototype.toString.call(stateParams) !== "[object Function]"
@@ -107,7 +107,7 @@ export function updateDataErrorHandle<S extends State>(stateParams: Partial<S> |
     throw new Error(`The state parameter of ${funcName} is either an object or a function that returns an object!`);
   }
   if (
-    _DEV_
+    _RE_DEV_SY_
     && Object.prototype.toString.call(stateParams) === "[object Object]"
     && (stateParams as Partial<S>)[USE_STORE_KEY as keyof S]
   ) {

@@ -522,7 +522,7 @@ export function createStore<S extends State>(
   const storeProxy = new Proxy(storeMap, {
     get(_, key: keyof S) {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
+        return (stateMap.get(key) as AnyFn).bind(null);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>)
         || (
@@ -554,7 +554,7 @@ export function createStore<S extends State>(
   const conciseExtraStoreProxy = new Proxy(state, {
     get(target, key: keyof S, receiver: any) {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
+        return (stateMap.get(key) as AnyFn).bind(null);
       }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, conciseExtraStoreProxy, target, key);
@@ -568,7 +568,7 @@ export function createStore<S extends State>(
   const conciseStoreProxy = new Proxy(storeMap, {
     get(_, key: keyof S) {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
+        return (stateMap.get(key) as AnyFn).bind(null);
       }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || (
         (
@@ -587,12 +587,31 @@ export function createStore<S extends State>(
   const store = new Proxy(state, {
     get(target, key: keyof S, receiver: any) {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as AnyFn).bind(funcInnerThisProxyStore);
+        // 出于js中this指向的复杂不唯一性的考量，将this指向禁用，一律改为this指向null
+        return (stateMap.get(key) as AnyFn).bind(null);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, store, target, key);
     },
     set: singlePropUpdate,
+    setPrototypeOf: (target: S) => {
+      console.error(
+        new Error(
+          "Store is not recommended to be set as a prototype chain object for a certain object!" +
+          " Resy will default the prototype object of the store to null."
+        )
+      );
+      Object.setPrototypeOf(target, null);
+      return true;
+    },
+    getPrototypeOf: () => {
+      console.error(
+        new Error(
+          "Resy will default the prototype object of the store to null."
+        )
+      );
+      return null;
+    },
   } as ProxyHandler<S>) as Store<S>;
   
   return store;

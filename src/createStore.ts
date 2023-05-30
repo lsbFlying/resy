@@ -233,13 +233,11 @@ export function createStore<S extends State>(
    * 所以这里没有阻止函数作为数据属性的更新
    */
   function taskPush(key: keyof S, val: S[keyof S]) {
-    let changed;
     /**
      * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
      * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
      */
     if (!Object.is(val, stateMap.get(key))) {
-      changed = true;
       /**
        * 需要在入栈前就将每一步结果累计出来
        * 比如遇到连续的数据操作就需要如此
@@ -263,7 +261,6 @@ export function createStore<S extends State>(
         val,
       );
     }
-    return changed;
   }
   
   /**
@@ -352,17 +349,12 @@ export function createStore<S extends State>(
   
   // 更新函数入栈
   function updater(updateParams: Partial<S> | StateFunc<S>) {
-    let changed;
     if (typeof updateParams !== "function") {
       // 对象方式更新直接走单次直接更新的添加入栈，后续统一批次合并更新
       Object.keys(updateParams).forEach(key => {
-        const changedTemp = taskPush(key, (updateParams as Partial<S> | S)[key]);
-        if (changedTemp) changed = true;
+        taskPush(key, (updateParams as Partial<S> | S)[key]);
       });
-      return {
-        updateParams,
-        changed,
-      };
+      return updateParams;
     } else {
       /**
        * @description
@@ -391,27 +383,15 @@ export function createStore<S extends State>(
        */
       const updateParamsTemp = (updateParams as StateFunc<S>)();
       Object.keys(updateParamsTemp).forEach(key => {
-        const changedTemp = taskPush(key, (updateParamsTemp as S)[key]);
-        if (changedTemp) changed = true;
+        taskPush(key, (updateParamsTemp as S)[key]);
       });
-      return {
-        updateParams: updateParamsTemp,
-        changed,
-      };
+      return updateParamsTemp;
     }
   }
   
   // 异步更新之前的处理
-  function handleWillUpdating(params?: { changed?: boolean, keyVal?: { key: keyof S, val: S[keyof S] } }) {
-    const { changed, keyVal } = params ?? {};
-    if (
-      (
-        changed || (
-          keyVal && !Object.is(keyVal.val, stateMap.get(keyVal.key))
-        )
-      )
-      && !schedulerProcessor.get("willUpdating")
-    ) {
+  function handleWillUpdating() {
+    if (!schedulerProcessor.get("willUpdating")) {
       schedulerProcessor.set("willUpdating", true);
       // 在更新执行将更新之前的数据状态缓存下拉，以便于subscribe触发监听使用
       prevState = new Map(stateMap);
@@ -421,8 +401,9 @@ export function createStore<S extends State>(
   // 可对象数据更新的函数
   function setState(updateParams: Partial<S> | StateFunc<S>, callback?: SetStateCallback<S>) {
     updateDataErrorHandle(updateParams, "setState");
-    const { updateParams: updateParamsTemp, changed } = updater(updateParams);
-    handleWillUpdating({ changed });
+    // willUpdating需要在更新之前开启，这里不管是否有变化需要更新，先打开缓存一下prevState方便后续订阅事件的触发执行
+    handleWillUpdating();
+    const updateParamsTemp = updater(updateParams);
     // 异步回调添加入栈
     if (callback) {
       const nextState = Object.assign({}, mapToObject(stateMap), updateParamsTemp);
@@ -497,7 +478,7 @@ export function createStore<S extends State>(
   
   // 单个属性数据更新
   function singlePropUpdate(_: S, key: keyof S, val: S[keyof S]) {
-    handleWillUpdating({ keyVal: { key, val } });
+    handleWillUpdating();
     taskPush(key, val);
     finallyBatchHandle();
     return true;
@@ -618,7 +599,7 @@ export function createStore<S extends State>(
     },
     // delete 也会起到更新作用
     deleteProperty(_: S, key: keyof S) {
-      handleWillUpdating({ keyVal: { key, val: undefined as S[keyof S] } });
+      handleWillUpdating();
       taskPush(key, undefined as S[keyof S]);
       finallyBatchHandle();
       return true;

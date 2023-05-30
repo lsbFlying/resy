@@ -37,7 +37,7 @@ test("resy-set-and-sub1", async () => {
         }}>sync-btn</button>
         <button onClick={() => {
           store.setState({ count: count + 1 }, (nextState) => {
-            console.log(nextState.count, store.count, nextState.text2, store.text2);
+            console.log("step1", nextState.count, store.count, nextState.text2, store.text2);
             
             expect(nextState.count === store.count).toBeTruthy();
             expect(nextState.count === 3).toBeTruthy();
@@ -45,11 +45,11 @@ test("resy-set-and-sub1", async () => {
             expect(nextState.text2 === "hello-sync").toBeTruthy();
             
             store.setState({ text2: "hello-inner" }, () => {
-              // console.log(nextState.count, store.count, nextState.text, store.text);
+              console.log("step2", nextState.count, store.count, nextState.text, store.text);
               expect(nextState.count === store.count).toBeTruthy();
               expect(nextState.count === 3).toBeTruthy();
-              expect(nextState.text2 === store.text2).toBeTruthy();
-              expect(nextState.text2 === "hello-inner").toBeTruthy();
+              expect(nextState.text2 === store.text2).toBeFalsy();
+              expect(store.text2 === "hello-inner").toBeTruthy();
             });
           });
         }}>inner-btn</button>

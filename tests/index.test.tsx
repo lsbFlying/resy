@@ -30,7 +30,7 @@ test("resy-basic", async () => {
       },
       testFun2() {
         store.testCount++;
-        console.log("testFun: 'store.count === this.count'", store.testCount === this.testCount);
+        console.log("testFun: 'store.count === this.count'");
       },
     },
     /**

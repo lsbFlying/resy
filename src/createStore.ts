@@ -233,11 +233,13 @@ export function createStore<S extends State>(
    * 所以这里没有阻止函数作为数据属性的更新
    */
   function taskPush(key: keyof S, val: S[keyof S]) {
+    let changed;
     /**
      * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
      * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
      */
     if (!Object.is(val, stateMap.get(key))) {
+      changed = true;
       /**
        * 需要在入栈前就将每一步结果累计出来
        * 比如遇到连续的数据操作就需要如此
@@ -261,6 +263,7 @@ export function createStore<S extends State>(
         val,
       );
     }
+    return changed;
   }
   
   /**
@@ -273,7 +276,9 @@ export function createStore<S extends State>(
    * 但好在setState的回调弥补了同步获取最新数据的问题
    */
   function finallyBatchHandle() {
-    if (!schedulerProcessor.get("isUpdating")) {
+    // 如果当前这一条更新没有变化也就没有任务队列入栈，则不需要更新就没有必要再往下执行多余的代码了
+    const { taskQueueMap } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
+    if (taskQueueMap.size && !schedulerProcessor.get("isUpdating")) {
       /**
        * @description 采用微任务结合开关标志控制的方式达到批量更新的效果，
        * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
@@ -347,12 +352,17 @@ export function createStore<S extends State>(
   
   // 更新函数入栈
   function updater(updateParams: Partial<S> | StateFunc<S>) {
+    let changed;
     if (typeof updateParams !== "function") {
       // 对象方式更新直接走单次直接更新的添加入栈，后续统一批次合并更新
       Object.keys(updateParams).forEach(key => {
-        taskPush(key, (updateParams as Partial<S> | S)[key]);
+        const changedTemp = taskPush(key, (updateParams as Partial<S> | S)[key]);
+        if (changedTemp) changed = true;
       });
-      return updateParams;
+      return {
+        updateParams,
+        changed,
+      };
     } else {
       /**
        * @description
@@ -381,26 +391,38 @@ export function createStore<S extends State>(
        */
       const updateParamsTemp = (updateParams as StateFunc<S>)();
       Object.keys(updateParamsTemp).forEach(key => {
-        taskPush(key, (updateParamsTemp as S)[key]);
+        const changedTemp = taskPush(key, (updateParamsTemp as S)[key]);
+        if (changedTemp) changed = true;
       });
-      return updateParamsTemp;
+      return {
+        updateParams: updateParamsTemp,
+        changed,
+      };
     }
   }
   
   // 异步更新之前的处理
-  function handleWillUpdating() {
-    if (!schedulerProcessor.get("willUpdating")) {
+  function handleWillUpdating(params?: { changed?: boolean, keyVal?: { key: keyof S, val: S[keyof S] } }) {
+    const { changed, keyVal } = params ?? {};
+    if (
+      (
+        changed || (
+          keyVal && !Object.is(keyVal.val, stateMap.get(keyVal.key))
+        )
+      )
+      && !schedulerProcessor.get("willUpdating")
+    ) {
       schedulerProcessor.set("willUpdating", true);
       // 在更新执行将更新之前的数据状态缓存下拉，以便于subscribe触发监听使用
       prevState = new Map(stateMap);
     }
   }
   
-  // 可对象数据更新的函数（可理解为class组件中的this.setState函数）
+  // 可对象数据更新的函数
   function setState(updateParams: Partial<S> | StateFunc<S>, callback?: SetStateCallback<S>) {
     updateDataErrorHandle(updateParams, "setState");
-    handleWillUpdating();
-    const updateParamsTemp = updater(updateParams);
+    const { updateParams: updateParamsTemp, changed } = updater(updateParams);
+    handleWillUpdating({ changed });
     // 异步回调添加入栈
     if (callback) {
       const nextState = Object.assign({}, mapToObject(stateMap), updateParamsTemp);
@@ -475,7 +497,7 @@ export function createStore<S extends State>(
   
   // 单个属性数据更新
   function singlePropUpdate(_: S, key: keyof S, val: S[keyof S]) {
-    handleWillUpdating();
+    handleWillUpdating({ keyVal: { key, val } });
     taskPush(key, val);
     finallyBatchHandle();
     return true;
@@ -497,24 +519,6 @@ export function createStore<S extends State>(
       : Reflect.get(target, key, proxyReceiver);
   }
   
-  /**
-   * 代理函数内部的this指向对象的proxy代理对象
-   * 函数的调用有必要绑定代理对象，因为如果是先解构后调用函数，
-   * 则原函数的this指向会是undefined
-   * 如果是有store.xxFunc调用还会有调用的上下文可以找到this指向就是store
-   * 所以这里有必要兼容一下先解构后调用的情况
-   */
-  const funcInnerThisProxyStore = new Proxy(state, {
-    get(target: S, key: keyof S, receiver: any) {
-      /**
-       * 这里不用担心如果再次代理到函数怎么办，因为这里再次代理到函数肯定是上次bind了funcInnerThisProxyStore才走到这里的
-       * 而bind函数的内部this指向的函数内部的this指向都会是bind的this对象，所以刚好形成良性this上下文循环
-       */
-      return proxyReceiverThisHandle(receiver, funcInnerThisProxyStore, target, key);
-    },
-    set: singlePropUpdate,
-  } as ProxyHandler<S>) as S;
-  
   // setState、subscribe与syncUpdate以及store代理内部数据Map的合集
   const externalMap: ExternalMapType<S> = new Map();
   
@@ -522,7 +526,7 @@ export function createStore<S extends State>(
   const storeProxy = new Proxy(storeMap, {
     get(_, key: keyof S) {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as AnyFn).bind(null);
+        return (stateMap.get(key) as AnyFn).bind(undefined);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>)
         || (
@@ -554,7 +558,7 @@ export function createStore<S extends State>(
   const conciseExtraStoreProxy = new Proxy(state, {
     get(target, key: keyof S, receiver: any) {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as AnyFn).bind(null);
+        return (stateMap.get(key) as AnyFn).bind(undefined);
       }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, conciseExtraStoreProxy, target, key);
@@ -568,7 +572,7 @@ export function createStore<S extends State>(
   const conciseStoreProxy = new Proxy(storeMap, {
     get(_, key: keyof S) {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as AnyFn).bind(null);
+        return (stateMap.get(key) as AnyFn).bind(undefined);
       }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || (
         (
@@ -587,31 +591,47 @@ export function createStore<S extends State>(
   const store = new Proxy(state, {
     get(target, key: keyof S, receiver: any) {
       if (typeof stateMap.get(key) === "function") {
-        // 出于js中this指向的复杂不唯一性的考量，将this指向禁用，一律改为this指向null
-        return (stateMap.get(key) as AnyFn).bind(null);
+        // 出于js中this指向的复杂性以及js本身不是纯面向对象语言的考量，将this指向禁用，一律改为this指向undefined
+        return (stateMap.get(key) as AnyFn).bind(undefined);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, store, target, key);
     },
     set: singlePropUpdate,
-    setPrototypeOf: (target: S) => {
+    setPrototypeOf() {
       console.error(
         new Error(
-          "Store is not recommended to be set as a prototype chain object for a certain object!" +
-          " Resy will default the prototype object of the store to null."
+          "store is not recommended to be set as a prototype chain object for a certain object!" +
+          " resy will default the prototype object of the store to null."
         )
       );
-      Object.setPrototypeOf(target, null);
+      Object.setPrototypeOf(store, null);
       return true;
     },
-    getPrototypeOf: () => {
+    getPrototypeOf() {
       console.error(
         new Error(
-          "Resy will default the prototype object of the store to null."
+          "resy will default the prototype object of the store to null."
         )
       );
       return null;
     },
+    // delete 也会起到更新作用
+    deleteProperty(_: S, key: keyof S) {
+      handleWillUpdating({ keyVal: { key, val: undefined as S[keyof S] } });
+      taskPush(key, undefined as S[keyof S]);
+      finallyBatchHandle();
+      return true;
+    },
+    construct() {
+      console.error(
+        new Error(
+          "Store is not recommended as a constructor to create new objects," +
+          " even if it is forcibly constructed and created, it is still its own."
+        )
+      );
+      return store;
+    }
   } as ProxyHandler<S>) as Store<S>;
   
   return store;

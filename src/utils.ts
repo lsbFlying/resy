@@ -92,7 +92,10 @@ export function storeErrorHandle<S extends State>(store: S) {
 }
 
 // 数据更新参数报错处理
-export function updateDataErrorHandle<S extends State>(stateParams: Partial<S> | StateFunc<S>, funcName: string) {
+export function updateDataErrorHandle<S extends State>(
+  stateParams: Partial<S> | StateFunc<S>,
+  funcName: "setState" | "syncUpdate",
+) {
   if (
     _RE_DEV_SY_ && (
       (

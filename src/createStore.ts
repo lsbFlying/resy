@@ -37,7 +37,7 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * @param options 状态容器配置项
  */
 export function createStore<S extends State>(
-  initialState?: S | (() => S),
+  initialState?: S & ThisType<Store<S>> | (() => S & ThisType<Store<S>>),
   options?: CreateStoreOptions,
 ): Store<S> {
   /**
@@ -279,6 +279,11 @@ export function createStore<S extends State>(
       /**
        * @description 采用微任务结合开关标志控制的方式达到批量更新的效果，
        * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
+       *
+       * isUpdating、willUpdating的标志位重置必须放在batchUpdate之前重置，因为batchUpdate会有异步情况，
+       * 而batchUpdate里面的batchDispatchListener会存在同步更新数据的情况，
+       * 本身isUpdating的微任务执行方式已经是异步，而其内部的异步执行不会被等待阻塞，
+       * 所以及时重置标识位可以不阻塞别的更新流程，同时这种情况下显得prevStateTemp的必要性是存在有意义的。
        */
       schedulerProcessor.set("isUpdating", Promise.resolve().then(() => {
         // 重置更新进行标识
@@ -296,6 +301,7 @@ export function createStore<S extends State>(
         if (taskDataMap.size !== 0) {
           batchUpdate(() => {
             taskQueueMap.forEach(task => task());
+            // 不管batchUpdate是在何种模式下，同步还是异步，这里也顺便统一更新订阅中的更新了
             batchDispatchListener(prevStateTemp, mapToObject(taskDataMap));
           });
         }
@@ -342,7 +348,6 @@ export function createStore<S extends State>(
           )();
         }
       });
-      // 不管batchUpdate是在何种模式下，同步还是异步，这里也顺便统一更新订阅中的更新了
       effectState && batchDispatchListener(prevStateTemp, effectState);
     });
   }
@@ -507,7 +512,7 @@ export function createStore<S extends State>(
   const storeProxy = new Proxy(storeMap, {
     get(_, key: keyof S) {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as AnyFn).bind(undefined);
+        return (stateMap.get(key) as AnyFn).bind(store);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>)
         || (
@@ -539,7 +544,7 @@ export function createStore<S extends State>(
   const conciseExtraStoreProxy = new Proxy(state, {
     get(target, key: keyof S, receiver: any) {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as AnyFn).bind(undefined);
+        return (stateMap.get(key) as AnyFn).bind(store);
       }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, conciseExtraStoreProxy, target, key);
@@ -553,7 +558,7 @@ export function createStore<S extends State>(
   const conciseStoreProxy = new Proxy(storeMap, {
     get(_, key: keyof S) {
       if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as AnyFn).bind(undefined);
+        return (stateMap.get(key) as AnyFn).bind(store);
       }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || (
         (
@@ -572,31 +577,48 @@ export function createStore<S extends State>(
   const store = new Proxy(state, {
     get(target, key: keyof S, receiver: any) {
       if (typeof stateMap.get(key) === "function") {
-        // 出于js中this指向的复杂性以及js本身不是纯面向对象语言的考量，将this指向禁用，一律改为this指向undefined
-        return (stateMap.get(key) as AnyFn).bind(undefined);
+        /**
+         * "js中this指向的复杂性以及js本身不是纯面向对象语言的考量，将this指向禁用也不是不行"
+         * 我曾一度由于上述原因而打算放弃使用this，
+         * 但是store本身的"蛇头咬蛇尾"的问题除了加上类型定义难以解决，
+         * 以及ThisType<Store<S>>对于this指向的类型的友好处理
+         * 给了我新的希望迫使我重新考量this的使用，
+         * ThisType<Store<S>>可以解决store本身的蛇头咬蛇尾的问题，
+         * 但是this对于函数属性不能写箭头函数，两者都不完美，但是互相弥补吧，所以决定this也兼容处理
+         *
+         * @description "蛇头咬蛇尾" ———— 比如在createStore的定义对象中再次使用了store本身作为数据类型的判别
+         * 就会导致 "蛇头咬蛇尾" 的类型问题，例如：
+         * const store = createStore({
+         *   text: {},
+         *   t: {
+         *     name() {
+         *       return {
+         *         // 这里的store.text的引用就会导致 "蛇头咬蛇尾"，
+         *         // 因为store本身的类型推断不能在其未完成类型编译预判的过程中再次使用store本身而再次去推断
+         *         text: store.text
+         *       };
+         *     },
+         *   }
+         * });
+         * 除非加上类型标识：
+         * const store: Store<Type> = createStore<Type>({
+         *   text: {},
+         *   t: {
+         *     name() {
+         *       return {
+         *         // 给store加了类型 Store<Type> 标识即可解决 "蛇头咬蛇尾" 的问题
+         *         text: store.text
+         *       };
+         *     },
+         *   }
+         * })
+         */
+        return (stateMap.get(key) as AnyFn).bind(store);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>)
         || proxyReceiverThisHandle(receiver, store, target, key);
     },
     set: singlePropUpdate,
-    setPrototypeOf() {
-      console.error(
-        new Error(
-          "store is not recommended to be set as a prototype chain object for a certain object!" +
-          " resy will default the prototype object of the store to null."
-        )
-      );
-      Object.setPrototypeOf(store, null);
-      return true;
-    },
-    getPrototypeOf() {
-      console.error(
-        new Error(
-          "resy will default the prototype object of the store to null."
-        )
-      );
-      return null;
-    },
     // delete 也会起到更新作用
     deleteProperty(_: S, key: keyof S) {
       handleWillUpdating();
@@ -604,14 +626,16 @@ export function createStore<S extends State>(
       finallyBatchHandle();
       return true;
     },
-    construct() {
-      console.error(
-        new Error(
-          "Store is not recommended as a constructor to create new objects," +
-          " even if it is forcibly constructed and created, it is still its own."
-        )
+    setPrototypeOf() {
+      throw new Error("store is not recommended to be set as a prototype chain object for a certain object!");
+    },
+    getPrototypeOf() {
+      throw new Error(
+        "resy will default the prototype object of the store to null."
       );
-      return store;
+    },
+    construct() {
+      throw new Error("store is not recommended as a constructor to create new objects");
     }
   } as ProxyHandler<S>) as Store<S>;
   

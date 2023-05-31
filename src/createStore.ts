@@ -215,10 +215,10 @@ export function createStore<S extends State>(
   }
   
   // 批量触发订阅监听的数据变动
-  function batchDispatchListener(prevState: Map<keyof S, S[keyof S]>, changedData: Partial<S>) {
+  function batchDispatchListener(prevStateParams: Map<keyof S, S[keyof S]>, changedData: Partial<S>) {
     if (listenerSet.size > 0) {
       const nextStateTemp = mapToObject(stateMap);
-      const prevStateTemp = mapToObject(prevState);
+      const prevStateTemp = mapToObject(prevStateParams);
       listenerSet.forEach(item => item(
         changedData,
         nextStateTemp,

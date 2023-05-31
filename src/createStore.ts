@@ -627,15 +627,10 @@ export function createStore<S extends State>(
       return true;
     },
     setPrototypeOf() {
-      throw new Error("store is not recommended to be set as a prototype chain object for a certain object!");
-    },
-    getPrototypeOf() {
-      throw new Error(
-        "resy will default the prototype object of the store to null."
-      );
+      throw new Error("Prohibit changing the prototype of the store!");
     },
     construct() {
-      throw new Error("store is not recommended as a constructor to create new objects");
+      throw new Error("Prohibit store from being used as a constructor!");
     }
   } as ProxyHandler<S>) as Store<S>;
   

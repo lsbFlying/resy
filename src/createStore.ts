@@ -627,10 +627,16 @@ export function createStore<S extends State>(
       return true;
     },
     setPrototypeOf() {
-      throw new Error("Prohibit changing the prototype of the store!");
+      if (_RE_DEV_SY_) {
+        throw new Error("Prohibit changing the prototype of the store!");
+      }
+      return false;
     },
     construct() {
-      throw new Error("Prohibit store from being used as a constructor!");
+      if (_RE_DEV_SY_) {
+        throw new Error("Prohibit store from being used as a constructor!");
+      }
+      return store;
     }
   } as ProxyHandler<S>) as Store<S>;
   

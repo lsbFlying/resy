@@ -2,8 +2,7 @@ import { useMemo } from "react";
 import { USE_STORE_KEY, USE_CONCISE_STORE_KEY } from "./static";
 import { createStore } from "./createStore";
 import { storeErrorHandle } from "./utils";
-import type { State, ConciseStore } from "./model";
-import {Store} from "./model";
+import type { Store, State, ConciseStore } from "./model";
 
 /**
  * 驱动组件更新

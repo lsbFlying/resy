@@ -10,9 +10,9 @@ import scheduler from "./scheduler";
 import {
   batchUpdate, STORE_VIEW_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _RE_DEV_SY_,
 } from "./static";
-import { updateDataErrorHandle, mapToObject, objectToMap } from "./utils";
+import { updateDataErrorHandle, mapToObject, objectToMap, fnPropUpdateErrorHandle } from "./utils";
 import type {
-  Callback, ExternalMapType, ExternalMapValue, State, StateFunc, StoreViewMapType,
+  Callback, ExternalMapType, ExternalMapValue, State, StateFnParams, StoreViewMapType,
   StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe, Scheduler, Listener,
   CreateStoreOptions, Store, AnyFn, ConciseExternalMapType, ConciseExternalMapValue,
   SetStateCallback, SetStateCallbackItem,
@@ -234,6 +234,11 @@ export function createStore<S extends State>(
    */
   function taskPush(key: keyof S, val: S[keyof S]) {
     /**
+     * 不仅要以val最新的值为准来判断，还需要之前的老数据进行结合判断，
+     * 因为防止更新的值为空值导致函数为空，始终以最新的数据值为准进行函数属性检查
+     */
+    fnPropUpdateErrorHandle(key, stateMap.get(key) || val);
+    /**
      * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
      * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
      */
@@ -326,17 +331,22 @@ export function createStore<S extends State>(
    * 同步更新
    * @description todo 更多意义上是为了解决input无法输入非英文语言bug的无奈，后续待优化setState与单次更新
    */
-  function syncUpdate(updateParams: Partial<S> | StateFunc<S>) {
-    updateDataErrorHandle(updateParams, "syncUpdate");
+  function syncUpdate(updateParams: Partial<S> | StateFnParams<S>) {
     let updateParamsTemp = updateParams as Partial<S>;
     if (typeof updateParams === "function") {
-      updateParamsTemp = (updateParams as StateFunc<S>)();
+      updateParamsTemp = (updateParams as StateFnParams<S>)();
     }
+    
+    updateDataErrorHandle(updateParamsTemp, "syncUpdate");
+    
     const prevStateTemp = new Map(stateMap);
     batchUpdate(() => {
       let effectState: Partial<S> | null = null;
       Object.keys(updateParamsTemp).forEach(key => {
         const val = (updateParamsTemp as Partial<S> | S)[key];
+  
+        fnPropUpdateErrorHandle(key, val || stateMap.get(key));
+        
         if (!Object.is(val, stateMap.get(key))) {
           stateMap.set(key, val);
           !effectState && (effectState = {});
@@ -353,7 +363,7 @@ export function createStore<S extends State>(
   }
   
   // 更新函数入栈
-  function updater(updateParams: Partial<S> | StateFunc<S>) {
+  function updater(updateParams: Partial<S> | StateFnParams<S>) {
     if (typeof updateParams !== "function") {
       // 对象方式更新直接走单次直接更新的添加入栈，后续统一批次合并更新
       Object.keys(updateParams).forEach(key => {
@@ -386,7 +396,7 @@ export function createStore<S extends State>(
        * be careful：当然这里的特性是在react-V18中才有的，因为react-V18的unstable_batchedUpdates做了优化
        * 如果是react-V18以下的版本，则还是分两个批次渲染更新。
        */
-      const updateParamsTemp = (updateParams as StateFunc<S>)();
+      const updateParamsTemp = (updateParams as StateFnParams<S>)();
       Object.keys(updateParamsTemp).forEach(key => {
         taskPush(key, (updateParamsTemp as S)[key]);
       });
@@ -404,11 +414,11 @@ export function createStore<S extends State>(
   }
   
   // 可对象数据更新的函数
-  function setState(updateParams: Partial<S> | StateFunc<S>, callback?: SetStateCallback<S>) {
-    updateDataErrorHandle(updateParams, "setState");
+  function setState(updateParams: Partial<S> | StateFnParams<S>, callback?: SetStateCallback<S>) {
     // willUpdating需要在更新之前开启，这里不管是否有变化需要更新，先打开缓存一下prevState方便后续订阅事件的触发执行
     handleWillUpdating();
     const updateParamsTemp = updater(updateParams);
+    updateDataErrorHandle(updateParamsTemp, "setState");
     // 异步回调添加入栈
     if (callback) {
       const nextState = Object.assign({}, mapToObject(stateMap), updateParamsTemp);
@@ -462,12 +472,16 @@ export function createStore<S extends State>(
     batchUpdate(() => {
       let effectState: Partial<S> | null = null;
       prevStateTemp.forEach((_, key) => {
-        const val = state[key];
-        if (!Object.is(val, stateMap.get(key))) {
+        const originValue = state[key];
+        
+        const value = (stateMap.get(key) as S[keyof S]) || originValue;
+        
+        // 函数跳过
+        if (typeof value !== "function" && !Object.is(originValue, stateMap.get(key))) {
           resetStateMap(key);
           
           !effectState && (effectState = {});
-          effectState[key as keyof S] = val;
+          effectState[key as keyof S] = originValue;
           
           (
             (

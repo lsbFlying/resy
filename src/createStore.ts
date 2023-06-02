@@ -344,7 +344,7 @@ export function createStore<S extends State>(
       let effectState: Partial<S> | null = null;
       Object.keys(updateParamsTemp).forEach(key => {
         const val = (updateParamsTemp as Partial<S> | S)[key];
-  
+        
         fnPropUpdateErrorHandle(key, val || stateMap.get(key));
         
         if (!Object.is(val, stateMap.get(key))) {

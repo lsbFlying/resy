@@ -18,6 +18,13 @@
 <strong>changed logs - releases what's Changed</strong>
 </summary>
 
+🌟`v8.1.0`：<br/>
+1. Improved the type support of this inside the function.
+2. The proxy processing of store is optimized, and the security and stability of store are increased.
+3. Optimization improves the check code.
+4. Improve and optimize the processing of multiple store connection data of class components by view.
+5. New api for restore reset data has been added.
+
 🌟`v8.0.0`：<br/>
 1. Adjust the parameter position of the isDeepEqual function of "view",
    and adjust the position of the listener function parameter of the "subscribe" listening callback.
@@ -177,7 +184,6 @@ function App() {
 ### createStore
 ```tsx
 import { createStore } from "resy";
-import { FormInstance } from "antd/es/form";
 
 type StateType = {
   count: number;
@@ -185,7 +191,6 @@ type StateType = {
   testObj: { name: string };
   testArr: { age: number }[];
   testFun(): void;
-  form?: FormInstance;
   testCount: 0,
   testText: "Hello-World",
 };
@@ -198,30 +203,32 @@ const store = createStore<StateType>(
     testObj: { name: "Jack" },
     testArr: [{age: 12}, { age: 16 }],
     testFunc() {
-      /**
-       * You can use this inside the function to get the latest data values
-       * Be careful: if it is an arrow function, this points to undefined.
-       * You can also obtain data attributes through store.
-       * eg: console.log(store.count);
-       */
-      console.log("testFuncCount:", this.count === store.count);
-      store.count++;
-      // or:
-      // this.count++;
-      // Similarly, it`s equivalent to store.count++;
-      // The sincere purpose of compatibility and support for this pointers is to correctly point to the initialization object "initialState"
-      // and achieve intuitive this pointing.
-      // It should be noted that this pointer also has setState, syncUpdate, and subscribe functions
-      // eg:
-      // this.setState({ count: this.count + 1 });
+      // store.count++;
+      // store.setState({ count: store.count + 1 });
+      // store.syncUpdate({ count: store.count + 1 });
+      
+      // this point store object, example:
+      this.count++;
+      this.setState({ count: this.count + 1 });
+      this.syncUpdate({ count: this.count + 1 });
     },
   },
   {
     /**
-     * This parameter is mainly used to automatically reset the data
-     * during the initialization phase of the mount of a certain module.
-     * For example, it will be set to false
-     * when it encounters global data like login information, theme, etc.
+     * It seems that this attribute configuration contradicts my viewpoint
+     * that the store can be accessed globally,
+     * It seems difficult for me to explain its function, but it is so sincere and simple.
+     * Firstly, the store can indeed be accessed globally,
+     * but it is an important issue when the data in this store can remain in a state.
+     * Therefore, the "initialReset" configuration is designed to address this issue.
+     * 
+     * For example, if a topic configures such data, then you can set initialReset to true,
+     * because the theme needs to exist all the time in the system,
+     * it will never disappear, and so can data such as login information.
+     * 
+     * Generally speaking,
+     * if it is not global persistent data such as theme or login,
+     * we do not have to set initialReset.
      */
     initialReset: true,
   },
@@ -246,8 +253,9 @@ function App() {
     count, text, testObj: { name }, testArr, testFunc, inputValue,
   } = useStore(store);
   
-  // Or: const state = useStore(store);
-  // state.count; ...eg
+  // or:
+  // const state = useStore(store);
+  // <p>{state.count}</p>
   
   function btn2() {
     // Updates can be assigned directly (simple update method)
@@ -257,7 +265,10 @@ function App() {
      * Direct attribute chained updates are not allowed,
      * because resy only maps the data attributes of the first layer
      * Currently, there is no in-depth recursive agent for performance reasons.
-     * The following update method is invalid
+     * The following update method is invalid.
+     * 
+     * This also inherits the idea of react updating data,
+     * and has no feeling for chained updates.
      */
     // store.testObj.name = "Jack";
     store.testObj = { name: "Jack" }; // Effective update
@@ -290,7 +301,7 @@ function App() {
   const {
     count, text,
     // you can also deconstruct setState directly, or use store.setState,
-    // and syncUpdate, subscribe, these two api are the same.
+    // and syncUpdate, subscribe, these two api are the same and will be introduced in detail later.
     // setState,
   } = useStore(store);
   
@@ -304,18 +315,37 @@ function App() {
      */
     // @example A
     store.setState({
-      count: count + 1,
+      count: 999,
       text: "BNM",
-    }, (nextState) => {
-      // nextState：The latest data
-       Promise.resolve().then(() => {
-         // The parameter of the callback function of setState is the latest data updated in the current round
-         console.log(nextState.count, nextState.text);
-         // console.log(store.count, store.text);
-       });
+    }, nextState => {
+      /**
+       * @param nextState：The currently updated data, so the following value is 999, not 1000.
+       * This is the very important feature of the nextState parameter.
+       *
+       * This is different from the this.setState of the class component in react.
+       * This is determined by the characteristics of resy,
+       * because the store of its own resy has the ability to obtain the latest data values,
+       * so the ability to obtain periodic update results is particularly special,
+       * and it is also important.
+       */
+      console.log(nextState.count); // 999
+      // But you can get the final updated data results through store.
+      console.log(store.count); // 1000
     });
-    // The B way can write circular updates in the callback function
-    // to facilitate the handling of some more complex business logic.
+    store.setState({
+       count: 1000,
+    }, nextState => {
+      console.log(nextState.count); // 1000
+    });
+    /**
+     * The B way can write more complex update logic in the function
+     * Of course, you can say that I can write the logic of updating data before setState,
+     * which is no problem, of course you can do it,
+     * but this way only gives developers a higher degree of freedom to update data,
+     * and if there is a very complex and general update logic,
+     * then I can deal with it in a general function,
+     * so that this general function can be used as a parameter of setState directly.
+     */
     // @example B
     // store.setState(() => {
     //   // Returns the data object that will eventually be updated
@@ -367,15 +397,6 @@ function App() {
      * it will cause input/textarea unable to input characters in languages other than English.
      * be careful："syncUpdate" is a helpless solution to the conflict between
      * resy update scheduling mechanism and react's update execution mechanism for text input.
-     *
-     * be careful：react itself, even the version of react V18,
-     * There is a problem that asynchronous updates make it impossible to input text in languages other than English.
-     * eg: (xxxpromise).then(() => { setState(xxx); });
-     *
-     * be careful：At the same time, "syncUpdate" can also be used by development partners
-     * who do not like to use callbacks to get the latest data.
-     * Because after it is executed, it can get the latest data through store
-     * for the next step of business logic processing.
      */
     store.syncUpdate({
       inputValue: event.target.value,
@@ -386,9 +407,6 @@ function App() {
     //     inputValue: event.target.value,
     //   };
     // });
-    // be careful: you can get the latest data by read store.
-    // this is different from setState
-    // console.log(store.inputValue);
     /**
      * @example C
      * @description Although you can write your code in this way,
@@ -417,17 +435,17 @@ import { useConciseState } from "resy";
 
 const initialState = {
   count: 123,
-  text: "hello-rocket",
+  text: "hello-consice",
 };
 
 function App() {
   const {
-    count, text, setState, store,
+    count, text, store, setState,
     // syncUpdate, subscribe,
   } = useConciseState(initialState);
   // useConciseState is equivalent to the following usage
-  // const [count, setCount] = useState(0);
-  // const [text, setText] = useState("QWE");
+  // const [count, setCount] = useState(123);
+  // const [text, setText] = useState("hello-consice");
   
   console.log(store.count);
   
@@ -481,8 +499,8 @@ function App() {
     ) => {
       /**
        * effectState：Currently changing data
-       *   prevState：Data before change
        *   nextState：Data after change
+       *   prevState：Data before change
        */
       console.log(effectState, prevState, nextState);
     }, ["count", "text"]);
@@ -618,16 +636,16 @@ function HookCom() {
     <div>{count}{text}</div>
   );
 }
-const TestView2 = view(HookCom)();
-
 /**
  * view
  * @description Help components automatically handle high-level HOC of SCU and memo.
- * @return (store?: Store<S>) => React.MemoExoticComponent<(props: P) => JSX.Element>
- *       ⬇ ➡ 👉 @param store: store generated by createStore
+ * @return (stores?:Store<S>|Stores<S>)=>React.MemoExoticComponent<(props:P)=>JSX.Element>
+ *          ➡ 👉 @param stores: store or stores`s store is generated by createStore();
  * @param Comp: wrapped component
- * @param isDeepEqual: The depth comparison custom function can customize the depth comparison between props
- * and state and the previous props and state to determine whether to update the rendering re-render.
+ * @param equal: Whether the custom function is equal or not.
+ * You can customize the deep comparison between props and state and the previous props and state
+ * to decide whether to update the rendering re-render,
+ * similar to memo's propsAreEqual.
  *
  * If you want to render through props.state in function components,
  * you only need to bind the store when using the view.
@@ -639,7 +657,13 @@ const TestView2 = view(HookCom)();
  *  );
  * }
  * const TestView2 = view(HookCom)(store);
+ * 
+ * notes: But in fact, there is no need to use this troublesome way for function components.
+ * Function components are free to use task store,
+ * "view" it is more about the support and optimization of class components.
  */
+const TestView2 = view(HookCom)();
+
 const TestView = view(
   ClassCom,
   // You can customize the contrast function to control whether to update the rendering
@@ -653,6 +677,12 @@ const TestView = view(
   //   return false;
   // }
 )(store);
+
+// You can also connect multiple store, such as
+// const TestView = view(ClassCom)({
+//    loginStore: loginStore,
+//    themeStore: themeStore,
+// });
 
 /**
  * 1、name data update, will not cause TestView re-render

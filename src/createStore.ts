@@ -63,11 +63,7 @@ export function createStore<S extends State>(
     throw new Error("The initialization parameter result of createStore needs to be an object!");
   }
   
-  const { initialReset = true } = typeof options === "boolean"
-    ? options
-      ? {}
-      : { initialReset: false }
-    : (options || {});
+  const { initialReset = true } = options || {};
   
   // 当前store的调度处理器
   const schedulerProcessor = scheduler();

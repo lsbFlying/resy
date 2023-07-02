@@ -230,11 +230,8 @@ export interface Scheduler<S extends State = {}> {
 /**
  * @description createStore该API第二个参数配置项
  * 目前配置项不多，且常用主要配置也是initialReset
- * 所以简化兼容支持布尔值类型:
- * 为true则等价于{ initialReset: true }
- * 为false则等价于{ initialReset: false }
  */
-export type CreateStoreOptions = boolean | {
+export type CreateStoreOptions = {
   /**
    * @description 1、 该参数主要是为了在某模块mount初始化阶段自动重置数据的，
    * 如遇到登录信息、主题等这样的全局数据而言才会设置为false，

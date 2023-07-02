@@ -630,12 +630,6 @@ export function createStore<S extends State>(
       }
       return false;
     },
-    construct() {
-      if (_RE_DEV_SY_) {
-        throw new Error("Prohibit store from being used as a constructor!");
-      }
-      return store;
-    }
   } as ProxyHandler<S>) as Store<S>;
   
   return store;

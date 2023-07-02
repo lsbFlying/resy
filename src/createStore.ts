@@ -15,7 +15,7 @@ import type {
   Callback, ExternalMapType, ExternalMapValue, State, StateFnParams, StoreViewMapType,
   StoreMap, StoreMapValue, StoreMapValueType, Unsubscribe, Scheduler, Listener,
   CreateStoreOptions, Store, AnyFn, ConciseExternalMapType, ConciseExternalMapValue,
-  SetStateCallback, SetStateCallbackItem,
+  SetStateCallback, SetStateCallbackItem, MapType, ValueOf,
 } from "./model";
 
 /**
@@ -33,7 +33,9 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * 虽然resy会有类型自动推断，但是对于数据状态类型可能变化的情况下还是不够准确的
  * @author liushanbao
  * @date 2022-05-05
- * @param initialState 初始化状态数据（在有足够复杂的初始化数据逻辑场景下，函数化参数功能更能满足完善这种场景需求的写法）
+ * @param initialState 初始化状态数据
+ * 在有足够复杂的初始化数据逻辑场景下，"函数化参数" 功能更能满足完善这种场景需求的写法的便利性
+ * 最重要的是结合restore方法具有必须的重置恢复数据初始化的能力保证初始化逻辑执行的正确性
  * @param options 状态容器配置项
  */
 export function createStore<S extends State>(
@@ -90,18 +92,9 @@ export function createStore<S extends State>(
    * @description 不改变传参state，同时resy使用Map与Set提升性能
    * 如stateMap、storeMap、storeViewMap、storeChangeSet等
    */
-  let stateMap: Map<keyof S, S[keyof S]> = objectToMap(state);
+  let stateMap: MapType<S> = objectToMap(state);
   // 由于stateMap的设置前置了，优化了同步数据的获取，但是对于之前的数据状态也会需要前处理
-  let prevState: Map<keyof S, S[keyof S]> | null = null;
-  
-  // stateMap是否在view中整体重置过的的标记
-  let stateMapViewResetFlag: boolean | undefined;
-  // 复位stateMapViewResetFlag标记
-  function stateMapViewResetHandle() {
-    if (initialReset && stateMapViewResetFlag && !storeRefSet.size) {
-      stateMapViewResetFlag = false;
-    }
-  }
+  let prevState: MapType<S> | null = null;
   
   // 重置初始化stateMap状态
   function resetStateMap(key: keyof S) {
@@ -131,9 +124,9 @@ export function createStore<S extends State>(
   const storeViewMap: StoreViewMapType<S> = new Map();
   storeViewMap.set("getStateMap", () => stateMap);
   storeViewMap.set("viewInitialReset", () => {
-    if (initialReset && !stateMapViewResetFlag && !storeRefSet.size) {
-      stateMapViewResetFlag = true;
+    if (initialReset && !storeRefSet.size) {
       /**
+       * storeRefSet.size的判断完善了直接一次性覆盖的安全性
        * view初始化的时候执行直接一次性覆盖即可，
        * 而如果是在useSyncExternalStore的初始化中执行则按key逐个执行初始化重置
        * 主要是view初始化一开始拿不到全部的数据引用，
@@ -146,7 +139,6 @@ export function createStore<S extends State>(
     const storeRefIncreaseItem = storeRefSetSelfIncreasing();
     return () => {
       storeRefSet.delete(storeRefIncreaseItem);
-      stateMapViewResetHandle();
     }
   });
   
@@ -170,7 +162,6 @@ export function createStore<S extends State>(
       return () => {
         storeChangeSet.delete(onAtomStateChange);
         storeRefSet.delete(storeRefIncreaseItem);
-        stateMapViewResetHandle();
       };
     });
     
@@ -178,7 +169,7 @@ export function createStore<S extends State>(
     
     storeMapValue.set("updater", () => {
       // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
-      storeChangeSet.forEach(storeChange => storeChange?.());
+      storeChangeSet.forEach(storeChange => storeChange());
     });
     
     storeMapValue.set("useAtomState", () => {
@@ -193,7 +184,7 @@ export function createStore<S extends State>(
        *
        * 且也不能放在subscribe的return回调中卸载执行，以防止外部接口调用数据导致的数据不统一
        */
-      if (initialReset && !stateMapViewResetFlag && !storeRefSet.size) {
+      if (initialReset && !storeRefSet.size) {
         resetStateMap(key);
       }
       return useSyncExternalStore(
@@ -215,7 +206,7 @@ export function createStore<S extends State>(
   }
   
   // 批量触发订阅监听的数据变动
-  function batchDispatchListener(prevStateParams: Map<keyof S, S[keyof S]>, changedData: Partial<S>) {
+  function batchDispatchListener(prevStateParams: MapType<S>, changedData: Partial<S>) {
     if (listenerSet.size > 0) {
       const nextStateTemp = mapToObject(stateMap);
       const prevStateTemp = mapToObject(prevStateParams);
@@ -232,7 +223,7 @@ export function createStore<S extends State>(
    * be careful：因为考虑到不知道什么情况的业务逻辑需要函数作为数据属性来进行更新
    * 所以这里没有阻止函数作为数据属性的更新
    */
-  function taskPush(key: keyof S, val: S[keyof S]) {
+  function taskPush(key: keyof S, val: ValueOf<S>) {
     /**
      * 不仅要以val最新的值为准来判断，还需要之前的老数据进行结合判断，
      * 因为防止更新的值为空值导致函数为空，始终以最新的数据值为准进行函数属性检查
@@ -297,7 +288,7 @@ export function createStore<S extends State>(
         schedulerProcessor.set("willUpdating", null);
         
         // 防止之前的数据被别的更新改动，这里及时取出保证之前的数据的阶段状态的对应
-        const prevStateTemp = new Map(prevState as Map<keyof S, S[keyof S]>);
+        const prevStateTemp = new Map(prevState as MapType<S>);
         
         const { taskDataMap, taskQueueMap } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
         // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
@@ -474,7 +465,7 @@ export function createStore<S extends State>(
       prevStateTemp.forEach((_, key) => {
         const originValue = state[key];
         
-        const value = (stateMap.get(key) as S[keyof S]) || originValue;
+        const value = (stateMap.get(key) as ValueOf<S>) || originValue;
         
         // 函数跳过
         if (typeof value !== "function" && !Object.is(originValue, stateMap.get(key))) {
@@ -496,7 +487,7 @@ export function createStore<S extends State>(
   }
   
   // 单个属性数据更新
-  function singlePropUpdate(_: S, key: keyof S, val: S[keyof S]) {
+  function singlePropUpdate(_: S, key: keyof S, val: ValueOf<S>) {
     handleWillUpdating();
     taskPush(key, val);
     finallyBatchHandle();
@@ -633,7 +624,7 @@ export function createStore<S extends State>(
     // delete 也会起到更新作用
     deleteProperty(_: S, key: keyof S) {
       handleWillUpdating();
-      taskPush(key, undefined as S[keyof S]);
+      taskPush(key, undefined as ValueOf<S>);
       finallyBatchHandle();
       return true;
     },

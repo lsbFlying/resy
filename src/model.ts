@@ -3,7 +3,7 @@ import { STORE_VIEW_MAP_KEY, USE_CONCISE_STORE_KEY, USE_STORE_KEY } from "./stat
 export type Callback = () => void;
 
 // 初始化数据的继承类型
-export type State = Record<string, any>;
+export type State = Record<number | string | symbol, any>;
 
 /**
  * @description resy的storeMap接口类型
@@ -20,14 +20,14 @@ export type StoreMapValueType<S extends State> = {
   // 当前元数据的状态变化事件的订阅，useSyncExternalStore的订阅
   subscribeAtomState: (onAtomStateChange: Callback) => Callback;
   // 获取当前元数据(独立单独的数据状态)
-  getAtomState: () => S[keyof S];
+  getAtomState: () => ValueOf<S>;
   // 更新元数据的更新器
   updater: () => void;
   /**
    * 使用当前元数据，即useSyncExternalStore的useSnapshot，
    * 可以简单理解为useState的效果，具备驱动页面更新渲染的能力。
    */
-  useAtomState: () => S[keyof S];
+  useAtomState: () => ValueOf<S>;
 };
 
 export type StoreMapValue<S extends State> = Map<
@@ -53,7 +53,7 @@ export interface StoreViewMapValue<S extends State> {
    * store内部的stateMap数据对象
    * 使用函数执行得到最新值，类似于useSyncExternalStore的getSnapshot
    */
-  getStateMap: () => Map<keyof S, S[keyof S]>;
+  getStateMap: () => MapType<S>;
   // view初始化数据
   viewInitialReset: Callback;
   // view的props数据使用方式的数据生命周期与store关联同步
@@ -185,7 +185,7 @@ export type StoreFuncUtils<S extends State> = SetState<S> & Subscribe<S> & SyncU
 export type Store<S extends State> = S & StoreFuncUtils<S>;
 
 // 多个store
-export type Stores<S extends State> = { [key: string]: Store<S> };
+export type Stores<S extends State> = { [key in keyof S]: Store<ValueOf<S>> };
 
 /**
  * @description useConciseState的Store返回类型
@@ -216,13 +216,13 @@ export interface Scheduler<S extends State = {}> {
   add(
     task: Callback,
     key: keyof S,
-    val: S[keyof S],
+    val: ValueOf<S>,
   ): void;
   // 冲刷任务数据与任务队列
   flush(): void;
   // 获取任务数据与任务队列
   getTasks(): {
-    taskDataMap: Map<keyof S, S[keyof S]>,
+    taskDataMap: Map<keyof S, ValueOf<S>>,
     taskQueueMap: Map<keyof S, Callback>,
   };
 }
@@ -250,15 +250,23 @@ export type CreateStoreOptions = boolean | {
 // view中equal函数的参数类型，props与state的类型合集
 export type PS<P extends State = {}, S extends State = {}> = Readonly<{
   props: P;
-  state: EqualStateType<S>;
+  state: S;
 }>;
-
-export type EqualStateType<S extends State> = S | { [key in keyof Stores<S>]: S };
 
 // 函数类型，Function的替代类型
 export type AnyFn = (...args: unknown[]) => unknown;
 
 // view内部的stateMap的数据类型，根据是否是多store连接使用会有变化
-export type ViewStateMapType<S extends State> = Map<keyof S, S[keyof S]> | ViewStateMapObjectType<S>;
+export type ViewStateMapType<S extends State> = MapType<S> | ObjectMapType<S>;
 
-export type ViewStateMapObjectType<S extends State> = { [key: string]: Map<keyof S, S[keyof S]> };
+// object类型的值类型推断
+export type ValueOf<S extends State> = S[keyof S];
+
+// map类型推断
+export type MapType<S extends State> = Map<keyof S, ValueOf<S>>;
+
+// object类型推断
+export type ObjectType<S extends State> = { [key in keyof S]: ValueOf<S> };
+
+// object值类型是map的类型推断
+export type ObjectMapType<S extends State> = { [key in keyof S]: MapType<S> };

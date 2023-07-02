@@ -10,7 +10,8 @@
 [![npm bundle size](https://img.shields.io/bundlephobia/minzip/resy?color=brightgreen&style=flat-square)](https://bundlephobia.com/result?p=resy)
 [![react](https://img.shields.io/badge/React-%3E%3D16.8.0-green.svg?style=flat-square)](https://img.shields.io/badge/React-%3E%3D16.0.0-green.svg?style=flat-square)
 [![npm](https://img.shields.io/npm/v/resy?color=blue&style=flat-square)](https://www.npmjs.com/package/resy)
-[![npm](https://img.shields.io/npm/dm/resy?style=flat-square)](https://img.shields.io/npm/dm/resy?style=flat-square)
+
+[comment]: <> ([![npm]&#40;https://img.shields.io/npm/dm/resy?style=flat-square&#41;]&#40;https://img.shields.io/npm/dm/resy?style=flat-square&#41;)
 </div>
 
 <details>

@@ -1,16 +1,18 @@
 import { _RE_DEV_SY_, STORE_VIEW_MAP_KEY, USE_STORE_KEY } from "./static";
-import type { State, Store, StoreViewMapType, StoreViewMapValue, Stores } from "./model";
+import type {
+  State, Store, StoreViewMapType, StoreViewMapValue, Stores, ValueOf, MapType,
+} from "./model";
 
 /**
  * 给Comp组件的props上挂载的state属性数据做一层引用代理
  * @description 核心作用是找出SCU或者useMemo所需要的更新依赖的数据属性
  */
 export function proxyStateHandler<S extends State>(
-  stateMap: Map<keyof S, S[keyof S]>,
+  stateMap: MapType<S>,
   innerUseStateSet: Set<keyof S>,
 ) {
   const store = new Proxy(stateMap, {
-    get: (target: Map<keyof S, S[keyof S]>, key: keyof S, receiver: any) => {
+    get: (target: MapType<S>, key: keyof S, receiver: any) => {
       innerUseStateSet.add(key);
       /**
        * stateMap(即最新的状态数据Map-latestState)给出了resy生成的store内部数据的引用，
@@ -21,19 +23,19 @@ export function proxyStateHandler<S extends State>(
         ? target.get(key)
         : Reflect.get(target, key, receiver);
     },
-  } as ProxyHandler<Map<keyof S, S[keyof S]>>) as object as S;
+  } as ProxyHandler<MapType<S>>) as object as S;
   return store;
 }
 
 // view的多store的最新数据的处理
 export function viewStoresToLatestState<S extends State>(stores: Stores<S>) {
-  const latestStateTemp: { [key in keyof Stores<S>]: S } = {};
+  const latestStateTemp = {} as { [key in keyof Stores<S>]: ValueOf<S> };
   for (const storesKey in stores) {
     if (Object.prototype.hasOwnProperty.call(stores, storesKey)) {
       latestStateTemp[storesKey] = mapToObject(getLatestStateMap(stores[storesKey]));
     }
   }
-  return latestStateTemp;
+  return latestStateTemp as S;
 }
 
 // view的多个store的state更新处理
@@ -56,7 +58,7 @@ export function viewStoresStateUpdateHandle<S extends State>(
  * map转object
  * @description 解决回调参数如果是map的proxy代理的话无法做扩展运算的问题
  */
-export function mapToObject<S extends State>(map: Map<keyof S, S[keyof S]>): S {
+export function mapToObject<S extends State>(map: MapType<S>): S {
   return [...map.entries()].reduce((obj, [key, value]) => ((obj as S)[key] = value, obj), {}) as S;
 }
 
@@ -65,7 +67,7 @@ export function mapToObject<S extends State>(map: Map<keyof S, S[keyof S]>): S {
  * @description 相较于简洁的object.entries方式效率更高
  */
 export function objectToMap<S extends State>(obj: S) {
-  const map = new Map<keyof S, S[keyof S]>();
+  const map: MapType<S> = new Map();
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
       map.set(key, obj[key]);
@@ -76,7 +78,7 @@ export function objectToMap<S extends State>(obj: S) {
 
 // 获取最新数据Map对象
 export function getLatestStateMap<S extends State = {}>(store?: Store<S>) {
-  if (!store) return new Map<keyof S, S[keyof S]>();
+  if (!store) return new Map() as MapType<S>;
   return (
     (
       store[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
@@ -120,7 +122,7 @@ export function updateDataErrorHandle<S extends State>(
  * 更何况本身resy还要处理函数属性的this问题，
  * 所以这里就禁用函数属性的更新，并以报错处理提示开发人员
  */
-export function fnPropUpdateErrorHandle<S extends State>(key: keyof S, val: S[keyof S]) {
+export function fnPropUpdateErrorHandle<S extends State>(key: keyof S, val: ValueOf<S>) {
   if (_RE_DEV_SY_ && typeof val === "function") {
     throw new Error(`"${key as string}" is a function, can not update!`);
   }

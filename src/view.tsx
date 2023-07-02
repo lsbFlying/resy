@@ -5,8 +5,8 @@ import {
   viewStoresStateUpdateHandle, viewStoresToLatestState,
 } from "./utils";
 import type {
-  State, StoreViewMapType, StoreViewMapValue, MapStateToProps, Store, PS,
-  Unsubscribe, Stores, EqualStateType, ViewStateMapObjectType, ViewStateMapType,
+  State, StoreViewMapType, StoreViewMapValue, MapStateToProps, Store, PS, Unsubscribe,
+  Stores, ObjectMapType, ViewStateMapType, ValueOf, MapType, ObjectType,
 } from "./model";
 
 /**
@@ -72,7 +72,7 @@ export function view<P extends State = {}, S extends State = {}>(
      */
     const [state, setState] = useState<S | { [key in keyof Stores<S>]: S }>(() => {
       // 需要使用getState获取store内部的即时最新数据值（默认无store）
-      let stateMap: ViewStateMapType<S> = new Map<keyof S, S[keyof S]>();
+      let stateMap: ViewStateMapType<S> = new Map() as MapType<S>;
       
       /**
        * 如果是有store的情况则可以通过props.state的方式进行数据渲染及操作
@@ -92,8 +92,8 @@ export function view<P extends State = {}, S extends State = {}>(
           
           stateMap = getLatestStateMap(stores as Store<S>);
         } else {
-          innerUseStateMapSet = new Map<keyof Stores<S>, Set<keyof S>>();
           // 多个store
+          innerUseStateMapSet = new Map<keyof Stores<S>, Set<keyof S>>();
           (Object.keys(stores) as (keyof Stores<S>)[]).forEach(storesKey => {
             const storeItem = (stores as Stores<S>)[storesKey] as Store<S>;
             (
@@ -102,20 +102,22 @@ export function view<P extends State = {}, S extends State = {}>(
               )?.get("viewInitialReset") as StoreViewMapValue<S>["viewInitialReset"]
             )?.();
             
-            (stateMap as ViewStateMapObjectType<S>)[storesKey] = getLatestStateMap(storeItem);
+            (stateMap as ObjectMapType<S>)[storesKey] = getLatestStateMap(storeItem);
             
             (innerUseStateMapSet as Map<keyof Stores<S>, Set<keyof S>>).set(storesKey, new Set<keyof S>());
           });
         }
       }
       
+      // 单store
       if (!stores || (stores as Store<S>)[USE_STORE_KEY as keyof S]) {
-        return proxyStateHandler(stateMap as Map<keyof S, S[keyof S]>, innerUseStateMapSet as Set<keyof S>);
+        return proxyStateHandler(stateMap as MapType<S>, innerUseStateMapSet as Set<keyof S>);
       }
-      const stateTemp: { [key in keyof Stores<S>]: S } = {} as { [key in keyof Stores<S>]: S };
-      Object.keys(stateMap).forEach(stateMapKey => {
-        stateTemp[stateMapKey] = proxyStateHandler(
-          (stateMap as ViewStateMapObjectType<S>)[stateMapKey],
+      // 多store
+      const stateTemp = {} as ObjectType<S>;
+      Object.keys(stateMap).forEach((stateMapKey: keyof S) => {
+        stateTemp[stateMapKey] = proxyStateHandler<ValueOf<S>>(
+          (stateMap as ObjectMapType<S>)[stateMapKey],
           (innerUseStateMapSet as Map<keyof Stores<S>, Set<keyof S>>).get(stateMapKey) as Set<keyof S>,
         );
       });
@@ -226,7 +228,7 @@ export function view<P extends State = {}, S extends State = {}>(
       ? (stores as Store<S>)[USE_STORE_KEY as keyof S]
         ? mapToObject(getLatestStateMap(stores as Store<S>))
         : viewStoresToLatestState(stores)
-      : ({} as EqualStateType<S>);
+      : ({} as S);
     return equal(
       { props: nextProps, state: latestState },
       { props: prevProps, state: latestState },

@@ -30,6 +30,7 @@
 7. Improve and optimize the code, reduce the memory occupied by the code,
    and improve the execution efficiency of the code.
 8. Added compatibility of update functions with null parameters.
+9. Added the prevState parameter function of the function parameters of setState and syncUpdate.
 
 🌟`v8.0.0`：<br/>
 1. Adjust the parameter position of the isDeepEqual function of "view",

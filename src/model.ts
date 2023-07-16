@@ -122,7 +122,23 @@ export type SetState<S extends State> = Readonly<{
   ): void;
 }>;
 
-// setState的函数更新处理
+/**
+ * setState的函数更新处理
+ * @description prevState的存在是有必要的，注意区分在代码的同步变更state状态的过程中
+ * 从store获取最新数据值与从当前一轮更新之前的prevState中获取之前的更新状态的逻辑区别
+ * @example:
+ * const store = createStore({ count: 0, text: "hello world" });
+ * ...
+ * // change:
+ * store.count = 9;
+ * store.setState(prevState => {
+ *   console.log(prevState.count === 0);  // true
+ *   console.log(store.count === 9);  // true
+ *   return {
+ *     text: "ok",
+ *   };
+ * });
+ */
 export type StateFuncType<S extends State> = (prevState: Readonly<S>) => Partial<S>;
 
 // setState的回调函数的类型

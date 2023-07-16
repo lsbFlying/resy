@@ -12,7 +12,7 @@ import type {
 
 /**
  * 自动memo与SCU的高阶HOC
- * @description 自动化规避组件额外re-render的HOC
+ * @description 自动化规避组件额外多余re-render的HOC
  *
  * A、view创建初衷:
  * resy本身是为hook而生的，但是还是需要对class组件进行支持

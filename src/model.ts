@@ -1,5 +1,6 @@
 import { STORE_VIEW_MAP_KEY, USE_CONCISE_STORE_KEY, USE_STORE_KEY } from "./static";
 
+// 普通意义上的回调函数类型
 export type Callback = () => void;
 
 // 初始化数据的继承类型

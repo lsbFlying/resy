@@ -18,7 +18,7 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * 给Comp组件的props上挂载的state属性数据做一层引用代理
  * @description 核心作用是找出SCU或者useMemo所需要的更新依赖的数据属性
  */
-export function proxyStateHandler<S extends State>(
+export function stateRefByProxyHandle<S extends State>(
   stateMap: MapType<S>,
   innerUseStateSet: Set<keyof S>,
 ) {
@@ -59,7 +59,7 @@ export function viewStoresStateUpdateHandle<S extends State>(
   const stateTemp: { [key in keyof Stores<S>]: S } = Object.assign({}, state);
   Object.keys(state).forEach(storesKeyItem => {
     if (storesKey === storesKeyItem) {
-      stateTemp[storesKey] = proxyStateHandler(new Map(Object.entries(nextState)), innerUseStateSet)
+      stateTemp[storesKey] = stateRefByProxyHandle(new Map(Object.entries(nextState)), innerUseStateSet)
     }
   });
   return stateTemp;

@@ -2,7 +2,7 @@ import React, { memo, useEffect, useState } from "react";
 import { STORE_VIEW_MAP_KEY, USE_STORE_KEY } from "./static";
 import { mapToObject, storeErrorHandle } from "./utils";
 import {
-  getLatestStateMap, proxyStateHandler,
+  getLatestStateMap, stateRefByProxyHandle,
   viewStoresStateUpdateHandle, viewStoresToLatestState,
 } from "./reduce";
 import type {
@@ -112,12 +112,12 @@ export function view<P extends State = {}, S extends State = {}>(
       
       // 单store
       if (!stores || (stores as Store<S>)[USE_STORE_KEY as keyof S]) {
-        return proxyStateHandler(stateMap as MapType<S>, innerUseStateMapSet as Set<keyof S>);
+        return stateRefByProxyHandle(stateMap as MapType<S>, innerUseStateMapSet as Set<keyof S>);
       }
       // 多store
       const stateTemp = {} as ObjectType<S>;
       Object.keys(stateMap).forEach((stateMapKey: keyof S) => {
-        stateTemp[stateMapKey] = proxyStateHandler<ValueOf<S>>(
+        stateTemp[stateMapKey] = stateRefByProxyHandle<ValueOf<S>>(
           (stateMap as ObjectMapType<S>)[stateMapKey],
           (innerUseStateMapSet as Map<keyof Stores<S>, Set<keyof S>>).get(stateMapKey) as Set<keyof S>,
         );
@@ -160,7 +160,7 @@ export function view<P extends State = {}, S extends State = {}>(
               Array.from(innerUseStateMapSet as Set<keyof S>).some(key => effectStateFields.includes(key as string))
               && (!equal || !equal({ props, state: nextState }, { props, state: prevState }))
             ) {
-              setState(proxyStateHandler(new Map(Object.entries(nextState)), innerUseStateMapSet as Set<keyof S>));
+              setState(stateRefByProxyHandle(new Map(Object.entries(nextState)), innerUseStateMapSet as Set<keyof S>));
             }
           });
         } else {

@@ -10,7 +10,7 @@ import {
   batchUpdate, STORE_VIEW_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _RE_DEV_SY_,
 } from "./static";
 import {
-  updateDataErrorHandle, mapToObject, objectToMap, fnPropUpdateErrorHandle,
+  stateErrorHandle, mapToObject, objectToMap, fnPropUpdateErrorHandle,
 } from "./utils";
 import {
   resetStateMap, setStateCallbackStackPush, genStoreViewMap, connectStore,
@@ -56,9 +56,7 @@ export function createStore<S extends State>(
       ? initialState()
       : initialState;
   
-  if (_RE_DEV_SY_ && Object.prototype.toString.call(state) !== "[object Object]") {
-    throw new Error("The initialization parameter result of createStore needs to be an object!");
-  }
+  stateErrorHandle(state, "createStore");
   
   const { initialReset = true } = options || {};
   
@@ -69,11 +67,11 @@ export function createStore<S extends State>(
   const storeRefSet = new Set<number>();
   
   /**
-   * @description 不改变传参state，同时resy使用Map与Set提升性能
-   * 如stateMap、storeMap、storeViewMap、storeChangeSet等
+   * @description 由于proxy读取数据本身相较于原型链读取数据要慢，
+   * 所以在不改变传参state的情况下，同时resy使用Map与Set提升性能，来弥补proxy的性能缺陷
    */
   let stateMap: MapType<S> = objectToMap(state);
-  // 由于stateMap的设置前置了，优化了同步数据的获取，但是对于之前的数据状态也会需要前处理
+  // 由于stateMap的设置前置了，优化了同步数据的获取，但是对于之前的数据状态也会需要前置处理
   let prevState: MapType<S> | null = null;
   
   /**
@@ -109,8 +107,8 @@ export function createStore<S extends State>(
     if (typeof updateParams === "function") {
       updateParamsTemp = (updateParams as StateFnParams<S>)();
     }
-    
-    updateDataErrorHandle(updateParamsTemp, "syncUpdate");
+  
+    stateErrorHandle(updateParamsTemp, "syncUpdate");
     
     const prevStateTemp = new Map(stateMap);
     batchUpdate(() => {
@@ -179,8 +177,8 @@ export function createStore<S extends State>(
       });
       updateParamsTemp = updateParamsTemp2;
     }
-    
-    updateDataErrorHandle(updateParamsTemp, "setState");
+  
+    stateErrorHandle(updateParamsTemp, "setState");
     
     // 异步回调添加入栈
     if (callback) {
@@ -239,7 +237,7 @@ export function createStore<S extends State>(
         
         const value = (stateMap.get(key) as ValueOf<S>) || originValue;
         
-        // 函数跳过
+        // 函数跳过（因为在resy当中函数本身不允许更新也就没有变化）
         if (typeof value !== "function" && !Object.is(originValue, stateMap.get(key))) {
           resetStateMap(key, state, stateMap);
           

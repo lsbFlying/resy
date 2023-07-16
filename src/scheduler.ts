@@ -1,4 +1,4 @@
-import type { Callback, Scheduler } from "./model";
+import type { Callback, MapType, Scheduler } from "./model";
 
 /**
  * @description 调度处理器针对每一个store的私有化
@@ -18,7 +18,7 @@ export default function scheduler() {
    * 主要是为了resy的直接单次更新的批量合并
    * 同时完成react18以下的非管理领域的批处理更新的调度协调性
    */
-  const schedulerProcessor = new Map<keyof Scheduler, Scheduler[keyof Scheduler]>();
+  const schedulerProcessor: MapType<Scheduler> = new Map();
   
   schedulerProcessor.set("isCalling", null);
   schedulerProcessor.set("isUpdating", null);

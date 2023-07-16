@@ -1,9 +1,10 @@
 import React, { memo, useEffect, useState } from "react";
 import { STORE_VIEW_MAP_KEY, USE_STORE_KEY } from "./static";
+import { mapToObject, storeErrorHandle } from "./utils";
 import {
-  getLatestStateMap, mapToObject, proxyStateHandler, storeErrorHandle,
+  getLatestStateMap, proxyStateHandler,
   viewStoresStateUpdateHandle, viewStoresToLatestState,
-} from "./utils";
+} from "./reduce";
 import type {
   State, StoreViewMapType, StoreViewMapValue, MapStateToProps, Store, PS, Unsubscribe,
   Stores, ObjectMapType, ViewStateMapType, ValueOf, MapType, ObjectType,

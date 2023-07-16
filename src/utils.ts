@@ -1,58 +1,5 @@
-import { _RE_DEV_SY_, STORE_VIEW_MAP_KEY, USE_STORE_KEY } from "./static";
-import type {
-  State, Store, StoreViewMapType, StoreViewMapValue, Stores, ValueOf, MapType,
-} from "./model";
-
-/**
- * 给Comp组件的props上挂载的state属性数据做一层引用代理
- * @description 核心作用是找出SCU或者useMemo所需要的更新依赖的数据属性
- */
-export function proxyStateHandler<S extends State>(
-  stateMap: MapType<S>,
-  innerUseStateSet: Set<keyof S>,
-) {
-  const store = new Proxy(stateMap, {
-    get: (target: MapType<S>, key: keyof S, receiver: any) => {
-      innerUseStateSet.add(key);
-      /**
-       * stateMap(即最新的状态数据Map-latestState)给出了resy生成的store内部数据的引用，
-       * 这里始终能获取到最新数据
-       * 同时兼容考虑Reflect的bug兼容写法
-       */
-      return receiver === store
-        ? target.get(key)
-        : Reflect.get(target, key, receiver);
-    },
-  } as ProxyHandler<MapType<S>>) as object as S;
-  return store;
-}
-
-// view的多store的最新数据的处理
-export function viewStoresToLatestState<S extends State>(stores: Stores<S>) {
-  const latestStateTemp = {} as { [key in keyof Stores<S>]: ValueOf<S> };
-  for (const storesKey in stores) {
-    if (Object.prototype.hasOwnProperty.call(stores, storesKey)) {
-      latestStateTemp[storesKey] = mapToObject(getLatestStateMap(stores[storesKey]));
-    }
-  }
-  return latestStateTemp as S;
-}
-
-// view的多个store的state更新处理
-export function viewStoresStateUpdateHandle<S extends State>(
-  state: { [key in keyof Stores<S>]: S },
-  innerUseStateSet: Set<keyof S>,
-  nextState: S,
-  storesKey?: keyof Stores<S>,
-) {
-  const stateTemp: { [key in keyof Stores<S>]: S } = Object.assign({}, state);
-  Object.keys(state).forEach(storesKeyItem => {
-    if (storesKey === storesKeyItem) {
-      stateTemp[storesKey] = proxyStateHandler(new Map(Object.entries(nextState)), innerUseStateSet)
-    }
-  });
-  return stateTemp;
-}
+import { _RE_DEV_SY_, USE_STORE_KEY } from "./static";
+import type { State, ValueOf, MapType } from "./model";
 
 /**
  * map转object
@@ -74,16 +21,6 @@ export function objectToMap<S extends State>(obj: S) {
     }
   }
   return map;
-}
-
-// 获取最新数据Map对象
-export function getLatestStateMap<S extends State = {}>(store?: Store<S>) {
-  if (!store) return new Map() as MapType<S>;
-  return (
-    (
-      store[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
-    ).get("getStateMap") as StoreViewMapValue<S>["getStateMap"]
-  )();
 }
 
 // store传的不是由resy本身的createStore创建产生的store的错误处理

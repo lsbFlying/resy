@@ -27,5 +27,8 @@ export const USE_STORE_KEY = Symbol("useStoreKey");
 // useConciseStore的key值，获取storeMap的代理key值
 export const USE_CONCISE_STORE_KEY = Symbol("useConciseStoreKey");
 
+// resy的内部特殊标识
+export const RESY_ID = Symbol("resy_id");
+
 // develop environment
 export const _RE_DEV_SY_ = process.env.NODE_ENV !== "production";

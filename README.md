@@ -25,6 +25,8 @@
 3. Optimization improves the check code.
 4. Improve and optimize the processing of multiple store connection data of class components by view.
 5. New api for restore reset data has been added.
+6. Fixed a bug in useConciseState where the setState and syncUpdate update parameters
+   of the store were missing errors for the store.
 
 🌟`v8.0.0`：<br/>
 1. Adjust the parameter position of the isDeepEqual function of "view",

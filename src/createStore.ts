@@ -7,7 +7,7 @@
  */
 import scheduler from "./scheduler";
 import {
-  batchUpdate, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _RE_DEV_SY_,
+  batchUpdate, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _RE_DEV_SY_, RESY_ID,
 } from "./static";
 import {
   stateErrorHandle, mapToObject, objectToMap, fnPropUpdateErrorHandle,
@@ -264,6 +264,7 @@ export function createStore<S extends State>(
   externalMap.set("syncUpdate", syncUpdate);
   externalMap.set("restore", restore);
   externalMap.set("subscribe", subscribe);
+  externalMap.set(RESY_ID, RESY_ID);
   
   const conciseExternalMap = new Map(externalMap) as ConciseExternalMapType<S>;
   

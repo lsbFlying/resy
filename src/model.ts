@@ -1,4 +1,4 @@
-import { VIEW_CONNECT_STORE_KEY, USE_CONCISE_STORE_KEY, USE_STORE_KEY } from "./static";
+import { VIEW_CONNECT_STORE_KEY, USE_CONCISE_STORE_KEY, USE_STORE_KEY, RESY_ID } from "./static";
 
 // 普通意义上的回调函数类型
 export type Callback = () => void;
@@ -71,6 +71,7 @@ export type ExternalMapValue<S extends State> = StoreUtils<S> & {
   [VIEW_CONNECT_STORE_KEY]: StoreViewMapType<S>;
   [USE_STORE_KEY]: object;
   [USE_CONCISE_STORE_KEY]: object;
+  [RESY_ID]: symbol;
 }
 
 export type ExternalMapType<S extends State> = Map<
@@ -80,6 +81,7 @@ export type ExternalMapType<S extends State> = Map<
 
 export type ConciseExternalMapValue<S extends State> = StoreUtils<S> & {
   readonly store: Store<S>;
+  [RESY_ID]: symbol;
 }
 
 export type ConciseExternalMapType<S extends State> = Map<

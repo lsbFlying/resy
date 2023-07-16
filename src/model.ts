@@ -74,6 +74,7 @@ export type ExternalMapValue<S extends State> = StoreUtils<S> & {
   [RESY_ID]: symbol;
 }
 
+// 扩展map的类型
 export type ExternalMapType<S extends State> = Map<
   keyof ExternalMapValue<S>,
   ExternalMapValue<S>[keyof ExternalMapValue<S>]
@@ -84,39 +85,13 @@ export type ConciseExternalMapValue<S extends State> = StoreUtils<S> & {
   [RESY_ID]: symbol;
 }
 
+// concise扩展map的类型
 export type ConciseExternalMapType<S extends State> = Map<
   keyof ConciseExternalMapValue<S>,
   ConciseExternalMapValue<S>[keyof ConciseExternalMapValue<S>]
 >;
 
-/**
- * @description setState —————— 更新数据的函数
- *
- * A: resy需要setState最主要的原因是setState本身的使用方式在编码的时候具备很好的读写能力，
- * 支持扩展运算符的对象数据更新的便捷、函数入参的循环更新的宽泛，都让setState具备更强的生命力
- *
- * B: 尽管resy的每一次更新过后都可以通过store来读取最新数据，但是setState具备回调函数的功能依然是必要的
- * 因为有这样的场景：比如我更新了数据之后想要用当前这一轮更新的数据的最新结果，如果是同步代码中我们当然可以通过store获取
- * 但是如果是在异步代码中，我们依然想使用当前这一轮更新的数据的最新结果的话，就不能再通过store来获取了
- * 因为此时store可能因为在当前异步代码之外的地方有了别的更新改动，所以这时候我们需要一个回调函数，
- * 该函数的参数就是当前这一轮更新的数据最新结果，这样就可以解决同步异步导致的数据同步差异问题
- * 所以setState具备当前更新结果参数的回调函数的功能依然是必要的。
- *
- * @example A
- * store.setState({
- *   count: 123,
- *   text: "updateText",
- * });
- *
- * @description 函数入参方式主要是为了某些复杂的更新逻辑
- * @example B
- * store.setState(() => {
- *   return {
- *     count: 123,
- *     text: "updateText",
- *   };
- * });
- */
+// setState —————— 更新数据的函数
 export type SetState<S extends State> = Readonly<{
   setState(
     state: Partial<S> | StateFuncType<S>,

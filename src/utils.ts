@@ -28,7 +28,9 @@ export function objectToMap<S extends State>(object: S) {
 // store传的不是由resy本身的createStore创建产生的store的错误处理
 export function storeErrorHandle<S extends State>(store: S) {
   if (_RE_DEV_SY_ && !store[RESY_ID as keyof S]) {
-    throw new Error("The store parameter is not created by resty's createStore！");
+    throw new Error(
+      "The store parameter of useStore or useConciseState is not a store created by resty's createStore."
+    );
   }
 }
 

@@ -6,18 +6,20 @@ import type { State, ValueOf, MapType } from "./model";
  * @description 解决回调参数如果是map的proxy代理的话无法做扩展运算的问题
  */
 export function mapToObject<S extends State>(map: MapType<S>): S {
-  return [...map.entries()].reduce((obj, [key, value]) => ((obj as S)[key] = value, obj), {}) as S;
+  return [...map.entries()].reduce(
+    (object, [key, value]) => ((object as S)[key] = value, object), {}
+  ) as S;
 }
 
 /**
  * object转map
  * @description 相较于简洁的object.entries方式效率更高
  */
-export function objectToMap<S extends State>(obj: S) {
+export function objectToMap<S extends State>(object: S) {
   const map: MapType<S> = new Map();
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      map.set(key, obj[key]);
+  for (const key in object) {
+    if (Object.prototype.hasOwnProperty.call(object, key)) {
+      map.set(key, object[key]);
     }
   }
   return map;
@@ -63,6 +65,42 @@ export function stateErrorHandle<S extends State>(
  * @description 很难想象什么样的复杂的逻辑需要处理函数属性的更新，
  * 更何况本身resy还要处理函数属性的this问题，
  * 所以这里就禁用函数属性的更新，并以报错处理提示开发人员
+ *
+ * resy对于函数的处理的过程考量较为复杂：
+ * "js中this指向的复杂性以及js本身不是纯面向对象语言的考量，将this指向禁用也不是不行"
+ * 我曾一度由于上述原因而打算放弃使用this，
+ * 但是store本身的"蛇头咬蛇尾"的问题除了加上类型定义难以解决，
+ * 以及ThisType<Store<S>>对于this指向的类型的友好处理
+ * 给了我新的希望迫使我重新考量this的使用，
+ * ThisType<Store<S>>可以解决store本身的蛇头咬蛇尾的问题，
+ * 但是this对于函数属性不能写箭头函数，两者都不完美，但是互相弥补吧，所以决定this也兼容处理
+ *
+ * @description "蛇头咬蛇尾" ———— 比如在createStore的定义对象中再次使用了store本身作为数据类型的判别
+ * 就会导致 "蛇头咬蛇尾" 的类型问题，例如：
+ * const store = createStore({
+ *   text: {},
+ *   t: {
+ *     name() {
+ *       return {
+ *         // 这里的store.text的引用就会导致 "蛇头咬蛇尾"，
+ *         // 因为store本身的类型推断不能在其未完成类型编译预判的过程中再次使用store本身而再次去推断
+ *         text: store.text
+ *       };
+ *     },
+ *   }
+ * });
+ * 除非加上类型标识：
+ * const store: Store<Type> = createStore<Type>({
+ *   text: {},
+ *   t: {
+ *     name() {
+ *       return {
+ *         // 给store加了类型 Store<Type> 标识即可解决 "蛇头咬蛇尾" 的问题
+ *         text: store.text
+ *       };
+ *     },
+ *   }
+ * })
  */
 export function fnPropUpdateErrorHandle<S extends State>(key: keyof S, val: ValueOf<S>) {
   if (_RE_DEV_SY_ && typeof val === "function") {

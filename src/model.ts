@@ -117,13 +117,13 @@ export type ConciseExternalMapType<S extends State> = Map<
  */
 export type SetState<S extends State> = Readonly<{
   setState(
-    state: Partial<S> | StateFnParams<S>,
+    state: Partial<S> | StateFuncType<S>,
     callback?: SetStateCallback<S>,
   ): void;
 }>;
 
 // setState的函数更新处理
-export type StateFnParams<S extends State> = () => Partial<S>;
+export type StateFuncType<S extends State> = (prevState: Readonly<S>) => Partial<S>;
 
 // setState的回调函数的类型
 export type SetStateCallback<S extends State> = (nextState: S) => void;
@@ -148,7 +148,7 @@ export type SetStateCallbackItem<S extends State> = {
  */
 export type SyncUpdate<S extends State> = Readonly<{
   syncUpdate(
-    state: Partial<S> | StateFnParams<S>,
+    state: Partial<S> | StateFuncType<S>,
   ): void;
 }>;
 

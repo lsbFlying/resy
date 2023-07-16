@@ -29,6 +29,7 @@
    of the store were missing errors for the store.
 7. Improve and optimize the code, reduce the memory occupied by the code,
    and improve the execution efficiency of the code.
+8. Added compatibility of update functions with null parameters.
 
 🌟`v8.0.0`：<br/>
 1. Adjust the parameter position of the isDeepEqual function of "view",

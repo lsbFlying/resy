@@ -4,7 +4,7 @@ import { VIEW_CONNECT_STORE_KEY, USE_CONCISE_STORE_KEY, USE_STORE_KEY, RESY_ID }
 export type Callback = () => void;
 
 // 初始化数据的继承类型
-export type State = Record<number | string | symbol, any>;
+export type PrimitiveState = Record<number | string | symbol, any>;
 
 /**
  * @description resy的storeMap接口类型
@@ -17,7 +17,7 @@ export type State = Record<number | string | symbol, any>;
  * getAtomState单纯是获取内部静态数据值的函数
  * 刚好与useAtomState以及subscribe组件一个两参一方的三角挂钩
  */
-export type StoreMapValueType<S extends State> = {
+export type StoreMapValueType<S extends PrimitiveState> = {
   // 当前元数据的状态变化事件的订阅，useSyncExternalStore的订阅
   subscribeAtomState: (onAtomStateChange: Callback) => Callback;
   // 获取当前元数据(独立单独的数据状态)
@@ -31,15 +31,15 @@ export type StoreMapValueType<S extends State> = {
   useAtomState: () => ValueOf<S>;
 };
 
-export type StoreMapValue<S extends State> = Map<
+export type StoreMapValue<S extends PrimitiveState> = Map<
   keyof StoreMapValueType<S>,
   StoreMapValueType<S>[keyof StoreMapValueType<S>]
 >;
 // createStore的storeMap数据类型
-export type StoreMap<S extends State> = Map<keyof S, StoreMapValue<S>>;
+export type StoreMap<S extends PrimitiveState> = Map<keyof S, StoreMapValue<S>>;
 
 // 订阅事件的监听回调函数类型
-export type Listener<S extends State> = (
+export type Listener<S extends PrimitiveState> = (
   effectState: Partial<S>,
   nextState: S,
   prevState: S,
@@ -49,7 +49,7 @@ export type Listener<S extends State> = (
  * @description StoreViewMap的数据值类型，作为view这个api的核心Map接口类型
  * 具备处理store的重置数据、以及获取最新state数据等相关处理功能
  */
-export interface StoreViewMapValue<S extends State> {
+export interface StoreViewMapValue<S extends PrimitiveState> {
   /**
    * store内部的stateMap数据对象
    * 使用函数执行得到最新值，类似于useSyncExternalStore的getSnapshot
@@ -62,12 +62,12 @@ export interface StoreViewMapValue<S extends State> {
 }
 
 // 供view使用的核心连接容器Map，包括处理内部stateMap数据以及重置初始化数据的方法
-export type StoreViewMapType<S extends State> = Map<
+export type StoreViewMapType<S extends PrimitiveState> = Map<
   keyof StoreViewMapValue<S>,
   StoreViewMapValue<S>[keyof StoreViewMapValue<S>]
 >;
 
-export type ExternalMapValue<S extends State> = StoreUtils<S> & {
+export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & {
   [VIEW_CONNECT_STORE_KEY]: StoreViewMapType<S>;
   [USE_STORE_KEY]: object;
   [USE_CONCISE_STORE_KEY]: object;
@@ -75,24 +75,24 @@ export type ExternalMapValue<S extends State> = StoreUtils<S> & {
 }
 
 // 扩展map的类型
-export type ExternalMapType<S extends State> = Map<
+export type ExternalMapType<S extends PrimitiveState> = Map<
   keyof ExternalMapValue<S>,
   ExternalMapValue<S>[keyof ExternalMapValue<S>]
 >;
 
-export type ConciseExternalMapValue<S extends State> = StoreUtils<S> & {
+export type ConciseExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & {
   readonly store: Store<S>;
   [RESY_ID]: symbol;
 }
 
 // concise扩展map的类型
-export type ConciseExternalMapType<S extends State> = Map<
+export type ConciseExternalMapType<S extends PrimitiveState> = Map<
   keyof ConciseExternalMapValue<S>,
   ConciseExternalMapValue<S>[keyof ConciseExternalMapValue<S>]
 >;
 
 // setState —————— 更新数据的函数
-export type SetState<S extends State> = Readonly<{
+export type SetState<S extends PrimitiveState> = Readonly<{
   setState(
     state: Partial<S> | StateFuncType<S>,
     callback?: SetStateCallback<S>,
@@ -116,7 +116,7 @@ export type SetState<S extends State> = Readonly<{
  *   };
  * });
  */
-export type StateFuncType<S extends State> = (prevState: Readonly<S>) => Partial<S>;
+export type StateFuncType<S extends PrimitiveState> = (prevState: Readonly<S>) => Partial<S>;
 
 /**
  * setState的回调函数的类型
@@ -126,10 +126,10 @@ export type StateFuncType<S extends State> = (prevState: Readonly<S>) => Partial
  * 也就是说resy它的setState的回调函数的最后的执行是记住了阶段性的最新数据，而不是最终的最新数据
  * 这一点很大程度上与类组件的this.setState区别开来
  */
-export type SetStateCallback<S extends State> = (nextState: S) => void;
+export type SetStateCallback<S extends PrimitiveState> = (nextState: S) => void;
 
 // setState的回调执行栈的元素类型
-export type SetStateCallbackItem<S extends State> = {
+export type SetStateCallbackItem<S extends PrimitiveState> = {
   // 当前这一轮的state状态数据
   cycleState: S;
   callback: SetStateCallback<S>;
@@ -141,7 +141,7 @@ export type SetStateCallbackItem<S extends State> = {
  * 该场景为在异步中更新受控input类输入框的value值
  * 会导致输入不了英文以外的语言文字
  */
-export type SyncUpdate<S extends State> = Readonly<{
+export type SyncUpdate<S extends PrimitiveState> = Readonly<{
   syncUpdate(
     state: Partial<S> | StateFuncType<S>,
   ): void;
@@ -151,7 +151,7 @@ export type SyncUpdate<S extends State> = Readonly<{
 export type Unsubscribe = Callback;
 
 // resy的订阅监听
-export type Subscribe<S extends State> = Readonly<{
+export type Subscribe<S extends PrimitiveState> = Readonly<{
   /**
    * subscribe
    * @description 监听订阅，类似addEventListener，但是这里对应的数据的变化监听订阅
@@ -177,24 +177,24 @@ export type Restore = Readonly<{
 }>;
 
 // store的工具方法类型
-export type StoreUtils<S extends State> = SetState<S> & SyncUpdate<S> & Restore & Subscribe<S>;
+export type StoreUtils<S extends PrimitiveState> = SetState<S> & SyncUpdate<S> & Restore & Subscribe<S>;
 
-export type Store<S extends State> = S & StoreUtils<S>;
+export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
 
 // 多个store
-export type Stores<S extends State> = { [key in keyof S]: Store<ValueOf<S>> };
+export type Stores<S extends PrimitiveState> = { [key in keyof S]: Store<ValueOf<S>> };
 
 /**
  * @description useConciseState的Store返回类型
  * 增加了store的属性调用，为了完善最新数据值的获取，
  * 弥补了useState对于最新数据值获取不足的缺陷
  */
-export type ConciseStore<S extends State> = Store<S> & {
+export type ConciseStore<S extends PrimitiveState> = Store<S> & {
   readonly store: Store<S>;
 };
 
 // 将resy生成的store容器数据映射挂载到组件props的state属性上
-export type MapStateToProps<S extends State, P extends State = {}> = P & {
+export type MapStateToProps<S extends PrimitiveState, P extends PrimitiveState = {}> = P & {
   readonly state: S;
 }
 
@@ -202,7 +202,7 @@ export type MapStateToProps<S extends State, P extends State = {}> = P & {
  * resy的调度类型接口
  * @description 调度类型
  */
-export interface Scheduler<S extends State = {}> {
+export interface Scheduler<S extends PrimitiveState = {}> {
   // setState的回调函数callback的任务执行中
   isCalling: true | null;
   // 更新进行中
@@ -242,7 +242,7 @@ export type CreateStoreOptions = {
 };
 
 // view中equal函数的参数类型，props与state的类型合集
-export type PS<P extends State = {}, S extends State = {}> = Readonly<{
+export type PS<P extends PrimitiveState = {}, S extends PrimitiveState = {}> = Readonly<{
   props: P;
   state: S;
 }>;
@@ -251,16 +251,16 @@ export type PS<P extends State = {}, S extends State = {}> = Readonly<{
 export type AnyFn = (...args: unknown[]) => unknown;
 
 // view内部的stateMap的数据类型，根据是否是多store连接使用会有变化
-export type ViewStateMapType<S extends State> = MapType<S> | ObjectMapType<S>;
+export type ViewStateMapType<S extends PrimitiveState> = MapType<S> | ObjectMapType<S>;
 
 // object类型的值类型推断
-export type ValueOf<S extends State> = S[keyof S];
+export type ValueOf<S extends PrimitiveState> = S[keyof S];
 
 // map类型推断
-export type MapType<S extends State> = Map<keyof S, ValueOf<S>>;
+export type MapType<S extends PrimitiveState> = Map<keyof S, ValueOf<S>>;
 
 // object类型推断
-export type ObjectType<S extends State> = { [key in keyof S]: ValueOf<S> };
+export type ObjectType<S extends PrimitiveState> = { [key in keyof S]: ValueOf<S> };
 
 // object值类型是map的类型推断
-export type ObjectMapType<S extends State> = { [key in keyof S]: MapType<S> };
+export type ObjectMapType<S extends PrimitiveState> = { [key in keyof S]: MapType<S> };

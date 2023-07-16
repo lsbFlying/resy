@@ -17,7 +17,7 @@ import {
   batchDispatchListener, taskPush, finallyBatchHandle, proxyReceiverThisHandle,
 } from "./reduce";
 import type {
-  ExternalMapType, ExternalMapValue, State, StateFuncType, StoreMap, StoreMapValue, StoreMapValueType,
+  ExternalMapType, ExternalMapValue, PrimitiveState, StateFuncType, StoreMap, StoreMapValue, StoreMapValueType,
   Unsubscribe, Listener, CreateStoreOptions, Store, AnyFn, ConciseExternalMapType, ConciseExternalMapValue,
   SetStateCallback, SetStateCallbackItem, MapType, ValueOf,
 } from "./model";
@@ -35,7 +35,7 @@ import type {
  * 最重要的是结合restore方法具有必须的重置恢复数据初始化的能力保证初始化逻辑执行的正确性
  * @param options 状态容器配置项
  */
-export function createStore<S extends State>(
+export function createStore<S extends PrimitiveState>(
   initialState?: S & ThisType<Store<S>> | (() => S & ThisType<Store<S>>),
   options?: CreateStoreOptions,
 ): Store<S> {

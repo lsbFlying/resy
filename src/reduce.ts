@@ -1,7 +1,7 @@
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { batchUpdate, VIEW_CONNECT_STORE_KEY } from "./static";
 import type {
-  State, Store, StoreViewMapType, StoreViewMapValue, Stores, ValueOf, MapType,
+  PrimitiveState, Store, StoreViewMapType, StoreViewMapValue, Stores, ValueOf, MapType,
   Callback, SetStateCallback, SetStateCallbackItem, StoreMapValue, StoreMapValueType,
   Listener, Scheduler, StoreMap,
 } from "./model";
@@ -18,7 +18,7 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * 给Comp组件的props上挂载的state属性数据做一层引用代理
  * @description 核心作用是找出SCU或者useMemo所需要的更新依赖的数据属性
  */
-export function stateRefByProxyHandle<S extends State>(
+export function stateRefByProxyHandle<S extends PrimitiveState>(
   stateMap: MapType<S>,
   innerUseStateSet: Set<keyof S>,
 ) {
@@ -39,7 +39,7 @@ export function stateRefByProxyHandle<S extends State>(
 }
 
 // view的多store的最新数据的处理
-export function viewStoresToLatestState<S extends State>(stores: Stores<S>) {
+export function viewStoresToLatestState<S extends PrimitiveState>(stores: Stores<S>) {
   const latestStateTemp = {} as { [key in keyof Stores<S>]: ValueOf<S> };
   for (const storesKey in stores) {
     if (Object.prototype.hasOwnProperty.call(stores, storesKey)) {
@@ -50,7 +50,7 @@ export function viewStoresToLatestState<S extends State>(stores: Stores<S>) {
 }
 
 // view的多个store的state更新处理
-export function viewStoresStateUpdateHandle<S extends State>(
+export function viewStoresStateUpdateHandle<S extends PrimitiveState>(
   state: { [key in keyof Stores<S>]: S },
   innerUseStateSet: Set<keyof S>,
   nextState: S,
@@ -66,7 +66,7 @@ export function viewStoresStateUpdateHandle<S extends State>(
 }
 
 // 获取最新数据Map对象
-export function getLatestStateMap<S extends State = {}>(store?: Store<S>) {
+export function getLatestStateMap<S extends PrimitiveState = {}>(store?: Store<S>) {
   if (!store) return new Map() as MapType<S>;
   return (
     (
@@ -89,14 +89,14 @@ export function storeStateRefSetMark(storeStateRefSet: Set<number>) {
 }
 
 // 重置初始化stateMap状态
-export function resetStateMap<S extends State>(key: keyof S, state: S, stateMap: MapType<S>) {
+export function resetStateMap<S extends PrimitiveState>(key: keyof S, state: S, stateMap: MapType<S>) {
   Object.prototype.hasOwnProperty.call(state, key)
     ? stateMap.set(key, state[key])
     : stateMap.delete(key);
 }
 
 // setState的回调函数添加入栈
-export function setStateCallbackStackPush<S extends State>(
+export function setStateCallbackStackPush<S extends PrimitiveState>(
   cycleState: S,
   callback: SetStateCallback<S>,
   setStateCallbackStackArray: SetStateCallbackItem<S>[],
@@ -107,7 +107,7 @@ export function setStateCallbackStackPush<S extends State>(
   });
 }
 
-export function genViewConnectStoreMap<S extends State>(
+export function genViewConnectStoreMap<S extends PrimitiveState>(
   initialReset: boolean,
   state: S,
   stateMap: MapType<S>,
@@ -137,7 +137,7 @@ export function genViewConnectStoreMap<S extends State>(
 }
 
 // 为每一个数据字段储存连接到store容器中
-export function connectStore<S extends State>(
+export function connectStore<S extends PrimitiveState>(
   key: keyof S,
   initialReset: boolean,
   state: S,
@@ -201,7 +201,7 @@ export function connectStore<S extends State>(
 }
 
 // 批量触发订阅监听的数据变动
-export function batchDispatchListener<S extends State>(
+export function batchDispatchListener<S extends PrimitiveState>(
   prevStateParams: MapType<S>,
   changedData: Partial<S>,
   stateMap: MapType<S>,
@@ -219,7 +219,7 @@ export function batchDispatchListener<S extends State>(
 }
 
 // 更新任务添加入栈
-export function taskPush<S extends State>(
+export function taskPush<S extends PrimitiveState>(
   key: keyof S,
   val: ValueOf<S>,
   initialReset: boolean,
@@ -275,7 +275,7 @@ export function taskPush<S extends State>(
  * 由此可见为了实现批量更新与同步获取最新数据有点拆东墙补西墙的味道
  * 但好在setState的回调弥补了同步获取最新数据的问题
  */
-export function finallyBatchHandle<S extends State>(
+export function finallyBatchHandle<S extends PrimitiveState>(
   schedulerProcessor: MapType<Scheduler>,
   prevState: MapType<S> | null,
   stateMap: MapType<S>,
@@ -338,7 +338,7 @@ export function finallyBatchHandle<S extends State>(
  * 使得 get / set 所得到的数据产生非期望的数据值
  * set不会影响数据，因为set之后会从proxy的get走，所以只要控制好get即可保证数据的正确性
  */
-export function proxyReceiverThisHandle<S extends State>(
+export function proxyReceiverThisHandle<S extends PrimitiveState>(
   proxyReceiver: any,
   proxyStore: any,
   target: S,

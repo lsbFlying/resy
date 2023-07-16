@@ -1,11 +1,11 @@
 import { _RE_DEV_SY_, RESY_ID } from "./static";
-import type { State, ValueOf, MapType } from "./model";
+import type { PrimitiveState, ValueOf, MapType } from "./model";
 
 /**
  * map转object
  * @description 解决回调参数如果是map的proxy代理的话无法做扩展运算的问题
  */
-export function mapToObject<S extends State>(map: MapType<S>): S {
+export function mapToObject<S extends PrimitiveState>(map: MapType<S>): S {
   return [...map.entries()].reduce(
     (object, [key, value]) => ((object as S)[key] = value, object), {}
   ) as S;
@@ -15,7 +15,7 @@ export function mapToObject<S extends State>(map: MapType<S>): S {
  * object转map
  * @description 相较于简洁的object.entries方式效率更高
  */
-export function objectToMap<S extends State>(object: S) {
+export function objectToMap<S extends PrimitiveState>(object: S) {
   const map: MapType<S> = new Map();
   for (const key in object) {
     if (Object.prototype.hasOwnProperty.call(object, key)) {
@@ -26,7 +26,7 @@ export function objectToMap<S extends State>(object: S) {
 }
 
 // store传的不是由resy本身的createStore创建产生的store的错误处理
-export function storeErrorHandle<S extends State>(store: S) {
+export function storeErrorHandle<S extends PrimitiveState>(store: S) {
   if (_RE_DEV_SY_ && !store[RESY_ID as keyof S]) {
     throw new Error(
       "The store parameter of useStore or useConciseState is not a store created by resty's createStore."
@@ -35,7 +35,7 @@ export function storeErrorHandle<S extends State>(store: S) {
 }
 
 // 数据更新参数报错处理
-export function stateErrorHandle<S extends State>(
+export function stateErrorHandle<S extends PrimitiveState>(
   stateParams: Partial<S>,
   funcName: "setState" | "syncUpdate" | "createStore",
 ) {
@@ -104,7 +104,7 @@ export function stateErrorHandle<S extends State>(
  *   }
  * })
  */
-export function fnPropUpdateErrorHandle<S extends State>(key: keyof S, val: ValueOf<S>) {
+export function fnPropUpdateErrorHandle<S extends PrimitiveState>(key: keyof S, val: ValueOf<S>) {
   if (_RE_DEV_SY_ && typeof val === "function") {
     throw new Error(
       `"${key as string}" is a function.`

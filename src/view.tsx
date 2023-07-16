@@ -6,7 +6,7 @@ import {
   viewStoresStateUpdateHandle, viewStoresToLatestState,
 } from "./reduce";
 import type {
-  State, StoreViewMapType, StoreViewMapValue, MapStateToProps, Store, PS, Unsubscribe,
+  PrimitiveState, StoreViewMapType, StoreViewMapValue, MapStateToProps, Store, PS, Unsubscribe,
   Stores, ObjectMapType, ViewStateMapType, ValueOf, MapType, ObjectType,
 } from "./model";
 
@@ -19,7 +19,7 @@ import type {
  * @param Comp 被包裹的组件
  * @param equal 是否相等自定义函数
  */
-export function view<P extends State = {}, S extends State = {}>(
+export function view<P extends PrimitiveState = {}, S extends PrimitiveState = {}>(
   // any用于兼容某些HOC导致的类型不合一问题，比如withRouter(低版本的react-router还是存在该HOC)
   // tslint:disable-next-line:variable-name
   Comp: React.ComponentType<MapStateToProps<S, P> | any>,

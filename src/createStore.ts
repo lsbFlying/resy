@@ -80,7 +80,7 @@ export function createStore<S extends State>(
   const storeMap: StoreMap<S> = new Map();
   
   // 更新之前的处理
-  function willUpdating() {
+  function willUpdatingHandle() {
     if (!schedulerProcessor.get("willUpdating")) {
       schedulerProcessor.set("willUpdating", true);
       // 在更新执行将更新之前的数据状态缓存下拉，以便于subscribe触发监听使用
@@ -127,8 +127,9 @@ export function createStore<S extends State>(
   
   // 可对象数据更新的函数
   function setState(state: Partial<S> | StateFuncType<S>, callback?: SetStateCallback<S>) {
-    // willUpdating需要在更新之前开启，这里不管是否有变化需要更新，先打开缓存一下prevState方便后续订阅事件的触发执行
-    willUpdating();
+    // 调度处理器内部的willUpdating需要在更新之前开启，这里不管是否有变化需要更新，
+    // 先打开缓存一下prevState方便后续订阅事件的触发执行
+    willUpdatingHandle();
     
     let stateParams = state as Partial<S>;
     
@@ -233,7 +234,7 @@ export function createStore<S extends State>(
   
   // 单个属性数据更新
   function singlePropUpdate(_: S, key: keyof S, val: ValueOf<S>) {
-    willUpdating();
+    willUpdatingHandle();
     taskPush(key, val, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, schedulerProcessor);
     finallyBatchHandle(schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackArray);
     return true;
@@ -323,7 +324,7 @@ export function createStore<S extends State>(
     set: singlePropUpdate,
     // delete 也会起到更新作用
     deleteProperty(_: S, key: keyof S) {
-      willUpdating();
+      willUpdatingHandle();
       taskPush(
         key, undefined as ValueOf<S>, initialReset, reducerState,
         stateMap, storeStateRefSet, storeMap, schedulerProcessor,

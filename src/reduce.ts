@@ -218,11 +218,7 @@ export function batchDispatchListener<S extends State>(
   }
 }
 
-/**
- * @description 更新任务添加入栈
- * be careful：因为考虑到不知道什么情况的业务逻辑需要函数作为数据属性来进行更新
- * 所以这里没有阻止函数作为数据属性的更新
- */
+// 更新任务添加入栈
 export function taskPush<S extends State>(
   key: keyof S,
   val: ValueOf<S>,

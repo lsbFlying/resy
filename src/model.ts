@@ -118,7 +118,14 @@ export type SetState<S extends State> = Readonly<{
  */
 export type StateFuncType<S extends State> = (prevState: Readonly<S>) => Partial<S>;
 
-// setState的回调函数的类型
+/**
+ * setState的回调函数的类型
+ * @description 回调中nextState参数的存在是必要的，
+ * 它与class类组件的this.setState的回调中通过this.state读取最新数据有所区别
+ * 二者都是入栈最后执行，但是resy的nextState是每一句setState更新代码同步而来的最新数据
+ * 也就是说resy它的setState的回调函数的最后的执行是记住了阶段性的最新数据，而不是最终的最新数据
+ * 这一点很大程度上与类组件的this.setState区别开来
+ */
 export type SetStateCallback<S extends State> = (nextState: S) => void;
 
 // setState的回调执行栈的元素类型

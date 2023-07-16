@@ -79,8 +79,8 @@ export function createStore<S extends State>(
   // 数据存储容器storeMap
   const storeMap: StoreMap<S> = new Map();
   
-  // 异步更新之前的处理
-  function handleWillUpdating() {
+  // 更新之前的处理
+  function willUpdating() {
     if (!schedulerProcessor.get("willUpdating")) {
       schedulerProcessor.set("willUpdating", true);
       // 在更新执行将更新之前的数据状态缓存下拉，以便于subscribe触发监听使用
@@ -128,7 +128,7 @@ export function createStore<S extends State>(
   // 可对象数据更新的函数
   function setState(state: Partial<S> | StateFuncType<S>, callback?: SetStateCallback<S>) {
     // willUpdating需要在更新之前开启，这里不管是否有变化需要更新，先打开缓存一下prevState方便后续订阅事件的触发执行
-    handleWillUpdating();
+    willUpdating();
     
     let stateParams = state as Partial<S>;
     
@@ -169,31 +169,6 @@ export function createStore<S extends State>(
     finallyBatchHandle(schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackArray);
   }
   
-  // 订阅函数
-  function subscribe(listener: Listener<S>, stateKeys?: (keyof S)[]): Unsubscribe {
-    const listenerWrap: Listener<S> = (effectState, nextState, prevState) => {
-      const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
-      /**
-       * 事实上最终订阅触发时，每一个订阅的这个外层listener都被触发了，
-       * 只是这里在最终执行内层listener的时候做了数据变化的判断才实现了subscribe中的listener的是否执行
-       */
-      if (
-        listenerKeysIsEmpty
-        || (
-          !listenerKeysIsEmpty
-          && Object.keys(effectState).some(key => stateKeys.includes(key))
-        )
-      ) listener(effectState, nextState, prevState);
-    };
-    
-    listenerSet.add(listenerWrap);
-    
-    // 显示返回解除订阅函数供用户自行选择是否解除订阅，因为也有可能用户想要一个订阅一直生效
-    return () => {
-      listenerSet.delete(listenerWrap);
-    };
-  }
-  
   // 重置恢复初始化状态数据
   function restore() {
     const prevStateTemp = new Map(stateMap);
@@ -231,15 +206,40 @@ export function createStore<S extends State>(
     });
   }
   
+  // 订阅函数
+  function subscribe(listener: Listener<S>, stateKeys?: (keyof S)[]): Unsubscribe {
+    const listenerWrap: Listener<S> = (effectState, nextState, prevState) => {
+      const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
+      /**
+       * 事实上最终订阅触发时，每一个订阅的这个外层listener都被触发了，
+       * 只是这里在最终执行内层listener的时候做了数据变化的判断才实现了subscribe中的listener的是否执行
+       */
+      if (
+        listenerKeysIsEmpty
+        || (
+          !listenerKeysIsEmpty
+          && Object.keys(effectState).some(key => stateKeys.includes(key))
+        )
+      ) listener(effectState, nextState, prevState);
+    };
+    
+    listenerSet.add(listenerWrap);
+    
+    // 显示返回解除订阅函数供用户自行选择是否解除订阅，因为也有可能用户想要一个订阅一直生效
+    return () => {
+      listenerSet.delete(listenerWrap);
+    };
+  }
+  
   // 单个属性数据更新
   function singlePropUpdate(_: S, key: keyof S, val: ValueOf<S>) {
-    handleWillUpdating();
+    willUpdating();
     taskPush(key, val, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, schedulerProcessor);
     finallyBatchHandle(schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackArray);
     return true;
   }
   
-  // setState、subscribe与syncUpdate以及store代理内部数据Map的合集
+  // setState、syncUpdate、restore、subscribe以及store代理内部数据Map的合集
   const externalMap: ExternalMapType<S> = new Map();
   
   // 给useStore的驱动更新代理
@@ -248,23 +248,22 @@ export function createStore<S extends State>(
       if (typeof stateMap.get(key) === "function") {
         return (stateMap.get(key) as AnyFn).bind(store);
       }
-      return externalMap.get(key as keyof ExternalMapValue<S>)
-        || (
+      return externalMap.get(key as keyof ExternalMapValue<S>) || (
+        (
           (
-            (
-              connectStore(
-                key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap,
-              ) as StoreMap<S>
-            ).get(key) as StoreMapValue<S>
-          ).get("useAtomState") as StoreMapValueType<S>["useAtomState"]
-        )();
+            connectStore(
+              key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap,
+            ) as StoreMap<S>
+          ).get(key) as StoreMapValue<S>
+        ).get("useAtomState") as StoreMapValueType<S>["useAtomState"]
+      )();
     },
   } as ProxyHandler<StoreMap<S>>);
   
   externalMap.set("setState", setState);
   externalMap.set("syncUpdate", syncUpdate);
-  externalMap.set("subscribe", subscribe);
   externalMap.set("restore", restore);
+  externalMap.set("subscribe", subscribe);
   
   const conciseExternalMap = new Map(externalMap) as ConciseExternalMapType<S>;
   
@@ -323,7 +322,7 @@ export function createStore<S extends State>(
     set: singlePropUpdate,
     // delete 也会起到更新作用
     deleteProperty(_: S, key: keyof S) {
-      handleWillUpdating();
+      willUpdating();
       taskPush(
         key, undefined as ValueOf<S>, initialReset, reducerState,
         stateMap, storeStateRefSet, storeMap, schedulerProcessor,

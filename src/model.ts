@@ -67,7 +67,7 @@ export type StoreViewMapType<S extends State> = Map<
   StoreViewMapValue<S>[keyof StoreViewMapValue<S>]
 >;
 
-export type ExternalMapValue<S extends State> = StoreFuncUtils<S> & {
+export type ExternalMapValue<S extends State> = StoreUtils<S> & {
   [VIEW_CONNECT_STORE_KEY]: StoreViewMapType<S>;
   [USE_STORE_KEY]: object;
   [USE_CONCISE_STORE_KEY]: object;
@@ -78,7 +78,7 @@ export type ExternalMapType<S extends State> = Map<
   ExternalMapValue<S>[keyof ExternalMapValue<S>]
 >;
 
-export type ConciseExternalMapValue<S extends State> = StoreFuncUtils<S> & {
+export type ConciseExternalMapValue<S extends State> = StoreUtils<S> & {
   readonly store: Store<S>;
 }
 
@@ -197,9 +197,9 @@ export type Restore = Readonly<{
   restore(): void;
 }>;
 
-export type StoreFuncUtils<S extends State> = SetState<S> & Subscribe<S> & SyncUpdate<S> & Restore;
+export type StoreUtils<S extends State> = SetState<S> & SyncUpdate<S> & Restore & Subscribe<S>;
 
-export type Store<S extends State> = S & StoreFuncUtils<S>;
+export type Store<S extends State> = S & StoreUtils<S>;
 
 // 多个store
 export type Stores<S extends State> = { [key in keyof S]: Store<ValueOf<S>> };

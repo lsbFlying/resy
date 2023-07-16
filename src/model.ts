@@ -129,15 +129,10 @@ export type SetStateCallbackItem<S extends State> = {
 };
 
 /**
- * @description 非异步更新，强制同步更新
- * A：为了react的更新机制不适应在异步中执行的场景
+ * @description 同步更新
+ * 为了react的更新机制不适应在异步中执行的场景
  * 该场景为在异步中更新受控input类输入框的value值
  * 会导致输入不了英文以外的语言文字
- *
- * B："syncUpdate" 算是resy更新调度机制与react本身针对文本输入的
- * 更新执行机制冲突的一个无奈的解决办法
- *
- * C：同时，同步更新也可以供给不喜欢用回调回去最新数据值的开发小伙伴使用
  */
 export type SyncUpdate<S extends State> = Readonly<{
   syncUpdate(
@@ -152,7 +147,7 @@ export type Unsubscribe = Callback;
 export type Subscribe<S extends State> = Readonly<{
   /**
    * subscribe
-   * @description 监听订阅，类似subscribe/addEventListener，但是这里对应的数据的变化监听订阅
+   * @description 监听订阅，类似addEventListener，但是这里对应的数据的变化监听订阅
    * subscribe的存在是必要的，它的作用并不类比于useEffect，
    * 而是像subscribe或者addEventListener的效果，监听订阅数据的变化
    * 具备多数据订阅监听的能力
@@ -174,6 +169,7 @@ export type Restore = Readonly<{
   restore(): void;
 }>;
 
+// store的工具方法类型
 export type StoreUtils<S extends State> = SetState<S> & SyncUpdate<S> & Restore & Subscribe<S>;
 
 export type Store<S extends State> = S & StoreUtils<S>;

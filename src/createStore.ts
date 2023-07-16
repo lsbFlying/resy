@@ -17,9 +17,10 @@ import {
   batchDispatchListener, taskPush, finallyBatchHandle, proxyReceiverThisHandle,
 } from "./reduce";
 import type {
-  ExternalMapType, ExternalMapValue, PrimitiveState, StateFuncType, StoreMap, StoreMapValue, StoreMapValueType,
-  Unsubscribe, Listener, CreateStoreOptions, Store, AnyFn, ConciseExternalMapType, ConciseExternalMapValue,
-  SetStateCallback, SetStateCallbackItem, MapType, ValueOf,
+  ExternalMapType, ExternalMapValue, PrimitiveState, StateFuncType, StoreMap, StoreMapValue,
+  StoreMapValueType, Unsubscribe, Listener, CreateStoreOptions, Store, AnyFn,
+  ConciseExternalMapType, ConciseExternalMapValue, SetStateCallback, SetStateCallbackItem,
+  MapType, ValueOf, State,
 } from "./model";
 
 /**
@@ -92,18 +93,20 @@ export function createStore<S extends PrimitiveState>(
    * 同步更新
    * @description todo 更多意义上是为了解决input无法输入非英文语言bug的无奈，后续待优化setState与单次更新
    */
-  function syncUpdate(state: Partial<S> | StateFuncType<S>) {
-    let stateParams = state as Partial<S>;
+  function syncUpdate(state: State<S> | StateFuncType<S>) {
+    let stateParams = state;
     if (typeof state === "function") {
       stateParams = (state as StateFuncType<S>)(mapToObject(prevState || stateMap));
     }
+    
+    if (stateParams === null) return;
     
     stateErrorHandle(stateParams, "syncUpdate");
     
     const prevStateTemp = new Map(stateMap);
     batchUpdate(() => {
       let effectState: Partial<S> | null = null;
-      Object.keys(stateParams).forEach(key => {
+      Object.keys(stateParams as NonNullable<State<S>>).forEach(key => {
         const val = (stateParams as Partial<S> | S)[key];
         
         fnPropUpdateErrorHandle(key, val || stateMap.get(key));
@@ -126,33 +129,28 @@ export function createStore<S extends PrimitiveState>(
   }
   
   // 可对象数据更新的函数
-  function setState(state: Partial<S> | StateFuncType<S>, callback?: SetStateCallback<S>) {
+  function setState(state: State<S> | StateFuncType<S>, callback?: SetStateCallback<S>) {
     // 调度处理器内部的willUpdating需要在更新之前开启，这里不管是否有变化需要更新，
     // 先打开缓存一下prevState方便后续订阅事件的触发执行
     willUpdatingHandle();
     
-    let stateParams = state as Partial<S>;
+    let stateParams = state;
     
-    if (typeof state !== "function") {
-      // 对象方式更新直接走单次直接更新的添加入栈，后续统一批次合并更新
-      Object.keys(state).forEach(key => {
-        taskPush(
-          key, (state as Partial<S> | S)[key], initialReset, reducerState,
-          stateMap, storeStateRefSet, storeMap, schedulerProcessor,
-        );
-      });
-    } else {
-      const stateParamsTemp = (state as StateFuncType<S>)(mapToObject(prevState as MapType<S>));
-      Object.keys(stateParamsTemp).forEach(key => {
-        taskPush(
-          key, (stateParamsTemp as S)[key], initialReset, reducerState,
-          stateMap, storeStateRefSet, storeMap, schedulerProcessor,
-        );
-      });
-      stateParams = stateParamsTemp;
+    if (typeof state === "function") {
+      stateParams = (state as StateFuncType<S>)(mapToObject(prevState as MapType<S>));
     }
-  
-    stateErrorHandle(stateParams, "setState");
+    
+    if (stateParams !== null) {
+      stateErrorHandle(stateParams, "setState");
+      
+      // 更新添加入栈，后续统一批次合并更新
+      Object.keys(stateParams as NonNullable<State<S>>).forEach(key => {
+        taskPush(
+          key, (stateParams as S)[key], initialReset, reducerState,
+          stateMap, storeStateRefSet, storeMap, schedulerProcessor,
+        );
+      });
+    }
     
     // 异步回调添加入栈
     if (callback) {

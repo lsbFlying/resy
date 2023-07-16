@@ -1,5 +1,5 @@
 import { _RE_DEV_SY_, RESY_ID } from "./static";
-import type { PrimitiveState, ValueOf, MapType } from "./model";
+import type { PrimitiveState, ValueOf, MapType, State } from "./model";
 
 /**
  * map转object
@@ -36,7 +36,7 @@ export function storeErrorHandle<S extends PrimitiveState>(store: S) {
 
 // 数据更新参数报错处理
 export function stateErrorHandle<S extends PrimitiveState>(
-  stateParams: Partial<S>,
+  stateParams: State<S>,
   funcName: "setState" | "syncUpdate" | "createStore",
 ) {
   if (

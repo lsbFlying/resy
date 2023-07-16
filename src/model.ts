@@ -91,10 +91,12 @@ export type ConciseExternalMapType<S extends PrimitiveState> = Map<
   ConciseExternalMapValue<S>[keyof ConciseExternalMapValue<S>]
 >;
 
+export type State<S extends PrimitiveState> = Partial<S> | S | null;
+
 // setState —————— 更新数据的函数
 export type SetState<S extends PrimitiveState> = Readonly<{
   setState(
-    state: Partial<S> | StateFuncType<S>,
+    state: State<S> | StateFuncType<S>,
     callback?: SetStateCallback<S>,
   ): void;
 }>;
@@ -116,7 +118,7 @@ export type SetState<S extends PrimitiveState> = Readonly<{
  *   };
  * });
  */
-export type StateFuncType<S extends PrimitiveState> = (prevState: Readonly<S>) => Partial<S>;
+export type StateFuncType<S extends PrimitiveState> = (prevState: Readonly<S>) => State<S>;
 
 /**
  * setState的回调函数的类型
@@ -143,7 +145,7 @@ export type SetStateCallbackItem<S extends PrimitiveState> = {
  */
 export type SyncUpdate<S extends PrimitiveState> = Readonly<{
   syncUpdate(
-    state: Partial<S> | StateFuncType<S>,
+    state: State<S> | StateFuncType<S>,
   ): void;
 }>;
 

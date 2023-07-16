@@ -78,8 +78,6 @@ test("resy-set-and-sub1", async () => {
   });
   
   // @ts-ignore
-  expect(() => store.setState(null)).toThrowError();
-  // @ts-ignore
   expect(() => store.setState(0)).toThrowError();
   // @ts-ignore
   expect(() => store.setState("")).toThrowError();

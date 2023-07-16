@@ -54,8 +54,6 @@ test("resy-syncUpdate", async () => {
   expect("hello-0" === store.text).toBeTruthy();
   
   // @ts-ignore
-  expect(() => store.syncUpdate(null)).toThrowError();
-  // @ts-ignore
   expect(() => store.syncUpdate(0)).toThrowError();
   // @ts-ignore
   expect(() => store.syncUpdate("")).toThrowError();

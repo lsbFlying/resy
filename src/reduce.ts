@@ -1,5 +1,5 @@
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import { batchUpdate, STORE_VIEW_MAP_KEY } from "./static";
+import { batchUpdate, VIEW_CONNECT_STORE_KEY } from "./static";
 import type {
   State, Store, StoreViewMapType, StoreViewMapValue, Stores, ValueOf, MapType,
   Callback, SetStateCallback, SetStateCallbackItem, StoreMapValue, StoreMapValueType,
@@ -70,21 +70,21 @@ export function getLatestStateMap<S extends State = {}>(store?: Store<S>) {
   if (!store) return new Map() as MapType<S>;
   return (
     (
-      store[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
+      store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
     ).get("getStateMap") as StoreViewMapValue<S>["getStateMap"]
   )();
 }
 
 /**
- * @description storeRefSet自增处理
+ * @description storeStateRefSet自增处理
  * view连接store内部数据引用的自增指针处理
  */
-export function storeRefSetSelfIncreasing(storeRefSet: Set<number>) {
-  const lastTemp = [...storeRefSet].at(-1);
+export function storeStateRefSetMark(storeStateRefSet: Set<number>) {
+  const lastTemp = [...storeStateRefSet].at(-1);
   // 索引自增
   const lastItem = typeof lastTemp === "number" ? lastTemp + 1 : 0;
   // 做一个引用占位符，表示有一处引用，便于最后初始化逻辑执行的size判别
-  storeRefSet.add(lastItem);
+  storeStateRefSet.add(lastItem);
   return lastItem;
 }
 
@@ -107,18 +107,18 @@ export function setStateCallbackStackPush<S extends State>(
   });
 }
 
-export function genStoreViewMap<S extends State>(
+export function genViewConnectStoreMap<S extends State>(
   initialReset: boolean,
   state: S,
   stateMap: MapType<S>,
-  storeRefSet: Set<number>,
+  storeStateRefSet: Set<number>,
 ) {
-  const storeViewMap: StoreViewMapType<S> = new Map();
-  storeViewMap.set("getStateMap", () => stateMap);
-  storeViewMap.set("viewInitialReset", () => {
-    if (initialReset && !storeRefSet.size) {
+  const viewConnectStoreMap: StoreViewMapType<S> = new Map();
+  viewConnectStoreMap.set("getStateMap", () => stateMap);
+  viewConnectStoreMap.set("viewInitialReset", () => {
+    if (initialReset && !storeStateRefSet.size) {
       /**
-       * storeRefSet.size的判断完善了直接一次性覆盖的安全性
+       * storeStateRefSet.size的判断完善了直接一次性覆盖的安全性
        * view初始化的时候执行直接一次性覆盖即可，
        * 而如果是在useSyncExternalStore的初始化中执行则按key逐个执行初始化重置
        * 主要是view初始化一开始拿不到全部的数据引用，
@@ -127,13 +127,13 @@ export function genStoreViewMap<S extends State>(
       stateMap = objectToMap(state);
     }
   });
-  storeViewMap.set("viewConnectStore", () => {
-    const storeRefIncreaseItem = storeRefSetSelfIncreasing(storeRefSet);
+  viewConnectStoreMap.set("viewConnectStore", () => {
+    const storeRefIncreaseItem = storeStateRefSetMark(storeStateRefSet);
     return () => {
-      storeRefSet.delete(storeRefIncreaseItem);
+      storeStateRefSet.delete(storeRefIncreaseItem);
     }
   });
-  return storeViewMap;
+  return viewConnectStoreMap;
 }
 
 // 为每一个数据字段储存连接到store容器中
@@ -142,7 +142,7 @@ export function connectStore<S extends State>(
   initialReset: boolean,
   state: S,
   stateMap: MapType<S>,
-  storeRefSet: Set<number>,
+  storeStateRefSet: Set<number>,
   storeMap: StoreMap<S>,
 ) {
   // 解决初始化属性泛型有?判断符，即一开始没有初始化的数据属性
@@ -159,10 +159,10 @@ export function connectStore<S extends State>(
   const storeMapValue: StoreMapValue<S> = new Map();
   storeMapValue.set("subscribeAtomState", (onAtomStateChange: Callback) => {
     storeChangeSet.add(onAtomStateChange);
-    const storeRefIncreaseItem = storeRefSetSelfIncreasing(storeRefSet);
+    const storeRefIncreaseItem = storeStateRefSetMark(storeStateRefSet);
     return () => {
       storeChangeSet.delete(onAtomStateChange);
-      storeRefSet.delete(storeRefIncreaseItem);
+      storeStateRefSet.delete(storeRefIncreaseItem);
     };
   });
   
@@ -175,7 +175,7 @@ export function connectStore<S extends State>(
   
   storeMapValue.set("useAtomState", () => {
     /**
-     * @description 通过storeRefSet判断当前数据是否还有组件引用
+     * @description 通过storeStateRefSet判断当前数据是否还有组件引用
      * 只要还有一个组件在引用当前数据，都不会重置数据，
      * 因为当前还在业务逻辑中，不属于完整的卸载
      * 完整的卸载周期对应表达的是整个store的
@@ -185,7 +185,7 @@ export function connectStore<S extends State>(
      *
      * 且也不能放在subscribe的return回调中卸载执行，以防止外部接口调用数据导致的数据不统一
      */
-    if (initialReset && !storeRefSet.size) {
+    if (initialReset && !storeStateRefSet.size) {
       resetStateMap(key, state, stateMap);
     }
     return useSyncExternalStore(
@@ -229,7 +229,7 @@ export function taskPush<S extends State>(
   initialReset: boolean,
   state: S,
   stateMap: MapType<S>,
-  storeRefSet: Set<number>,
+  storeStateRefSet: Set<number>,
   storeMap: StoreMap<S>,
   schedulerProcessor: MapType<Scheduler>,
 ) {
@@ -259,7 +259,9 @@ export function taskPush<S extends State>(
     (schedulerProcessor.get("add") as Scheduler<S>["add"])(
       () => (
         (
-          connectStore(key, initialReset, state, stateMap, storeRefSet, storeMap).get(key) as StoreMapValue<S>
+          connectStore(
+            key, initialReset, state, stateMap, storeStateRefSet, storeMap
+          ).get(key) as StoreMapValue<S>
         ).get("updater") as StoreMapValueType<S>["updater"]
       )(),
       key,

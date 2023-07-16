@@ -7,13 +7,13 @@
  */
 import scheduler from "./scheduler";
 import {
-  batchUpdate, STORE_VIEW_MAP_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _RE_DEV_SY_,
+  batchUpdate, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _RE_DEV_SY_,
 } from "./static";
 import {
   stateErrorHandle, mapToObject, objectToMap, fnPropUpdateErrorHandle,
 } from "./utils";
 import {
-  resetStateMap, setStateCallbackStackPush, genStoreViewMap, connectStore,
+  resetStateMap, setStateCallbackStackPush, genViewConnectStoreMap, connectStore,
   batchDispatchListener, taskPush, finallyBatchHandle, proxyReceiverThisHandle,
 } from "./reduce";
 import type {
@@ -39,17 +39,7 @@ export function createStore<S extends State>(
   initialState?: S & ThisType<Store<S>> | (() => S & ThisType<Store<S>>),
   options?: CreateStoreOptions,
 ): Store<S> {
-  /**
-   * @description 做了一个假值兼容，本想兼容createStore()以及useConciseState()的，
-   * 但这样刚好导致0、null、false、""、undefined、NaN都可以了
-   * 但事实上我最大程度允许的假值就是JS的undefined，因为必要条件下我不想写初始化参数
-   * 例如：const { count, setState } = useConciseState<{ count?: number }>();
-   * 或者：const store = createStore<{ count?: number }>();
-   * 我可以不写初始化参数，即使在TS中我也可以只通过一个初始化的范型类型确定代码中我要使用的数据
-   * 这样写法看起来像是凭空捏造了一个有效的数据状态，it`s looks cool!
-   * 但同样除了undefined其他的假值可能是开发者的代码bug，如果都兼容了不太好
-   */
-  // 所以在这里的Object判断中只对undefined特殊处理（reducerState：解析还原出来的数据状态）
+  // 解析还原出来的数据状态
   let reducerState = initialState === undefined
     ? ({} as S)
     : typeof initialState === "function"
@@ -64,7 +54,7 @@ export function createStore<S extends State>(
   const schedulerProcessor = scheduler();
   
   // 对应整个store的数据引用标记的set集合
-  const storeRefSet = new Set<number>();
+  const storeStateRefSet = new Set<number>();
   
   /**
    * @description 由于proxy读取数据本身相较于原型链读取数据要慢，
@@ -84,7 +74,7 @@ export function createStore<S extends State>(
   const listenerSet = new Set<Listener<S>>();
   
   // 处理view连接store、以及获取最新state数据的相关处理Map
-  const storeViewMap = genStoreViewMap(initialReset, reducerState, stateMap, storeRefSet);
+  const viewConnectStoreMap = genViewConnectStoreMap(initialReset, reducerState, stateMap, storeStateRefSet);
   
   // 数据存储容器storeMap
   const storeMap: StoreMap<S> = new Map();
@@ -125,12 +115,7 @@ export function createStore<S extends State>(
           (
             (
               connectStore(
-                key,
-                initialReset,
-                reducerState,
-                stateMap,
-                storeRefSet,
-                storeMap,
+                key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap,
               ).get(key) as StoreMapValue<S>
             ).get("updater") as StoreMapValueType<S>["updater"]
           )();
@@ -151,28 +136,16 @@ export function createStore<S extends State>(
       // 对象方式更新直接走单次直接更新的添加入栈，后续统一批次合并更新
       Object.keys(state).forEach(key => {
         taskPush(
-          key,
-          (state as Partial<S> | S)[key],
-          initialReset,
-          reducerState,
-          stateMap,
-          storeRefSet,
-          storeMap,
-          schedulerProcessor,
+          key, (state as Partial<S> | S)[key], initialReset, reducerState,
+          stateMap, storeStateRefSet, storeMap, schedulerProcessor,
         );
       });
     } else {
       const stateParamsTemp = (state as StateFuncType<S>)(mapToObject(prevState as MapType<S>));
       Object.keys(stateParamsTemp).forEach(key => {
         taskPush(
-          key,
-          (stateParamsTemp as S)[key],
-          initialReset,
-          reducerState,
-          stateMap,
-          storeRefSet,
-          storeMap,
-          schedulerProcessor,
+          key, (stateParamsTemp as S)[key], initialReset, reducerState,
+          stateMap, storeStateRefSet, storeMap, schedulerProcessor,
         );
       });
       stateParams = stateParamsTemp;
@@ -247,12 +220,7 @@ export function createStore<S extends State>(
           (
             (
               connectStore(
-                key,
-                initialReset,
-                reducerState,
-                stateMap,
-                storeRefSet,
-                storeMap,
+                key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap,
               ).get(key) as StoreMapValue<S>
             ).get("updater") as StoreMapValueType<S>["updater"]
           )();
@@ -266,7 +234,7 @@ export function createStore<S extends State>(
   // 单个属性数据更新
   function singlePropUpdate(_: S, key: keyof S, val: ValueOf<S>) {
     handleWillUpdating();
-    taskPush(key, val, initialReset, reducerState, stateMap, storeRefSet, storeMap, schedulerProcessor);
+    taskPush(key, val, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, schedulerProcessor);
     finallyBatchHandle(schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackArray);
     return true;
   }
@@ -285,12 +253,7 @@ export function createStore<S extends State>(
           (
             (
               connectStore(
-                key,
-                initialReset,
-                reducerState,
-                stateMap,
-                storeRefSet,
-                storeMap,
+                key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap,
               ) as StoreMap<S>
             ).get(key) as StoreMapValue<S>
           ).get("useAtomState") as StoreMapValueType<S>["useAtomState"]
@@ -337,12 +300,7 @@ export function createStore<S extends State>(
         (
           (
             connectStore(
-              key,
-              initialReset,
-              reducerState,
-              stateMap,
-              storeRefSet,
-              storeMap,
+              key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap,
             ) as StoreMap<S>
           ).get(key) as StoreMapValue<S>
         ).get("useAtomState") as StoreMapValueType<S>["useAtomState"]
@@ -350,7 +308,7 @@ export function createStore<S extends State>(
     },
   } as ProxyHandler<StoreMap<S>>);
   
-  externalMap.set(STORE_VIEW_MAP_KEY, storeViewMap);
+  externalMap.set(VIEW_CONNECT_STORE_KEY, viewConnectStoreMap);
   externalMap.set(USE_STORE_KEY, storeProxy);
   externalMap.set(USE_CONCISE_STORE_KEY, conciseStoreProxy);
   
@@ -367,14 +325,8 @@ export function createStore<S extends State>(
     deleteProperty(_: S, key: keyof S) {
       handleWillUpdating();
       taskPush(
-        key,
-        undefined as ValueOf<S>,
-        initialReset,
-        reducerState,
-        stateMap,
-        storeRefSet,
-        storeMap,
-        schedulerProcessor,
+        key, undefined as ValueOf<S>, initialReset, reducerState,
+        stateMap, storeStateRefSet, storeMap, schedulerProcessor,
       );
       finallyBatchHandle(
         schedulerProcessor,

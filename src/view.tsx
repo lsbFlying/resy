@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useState } from "react";
-import { STORE_VIEW_MAP_KEY, USE_STORE_KEY } from "./static";
+import { VIEW_CONNECT_STORE_KEY, USE_STORE_KEY } from "./static";
 import { mapToObject, storeErrorHandle } from "./utils";
 import {
   getLatestStateMap, stateRefByProxyHandle,
@@ -87,7 +87,7 @@ export function view<P extends State = {}, S extends State = {}>(
         if ((stores as Store<S>)[USE_STORE_KEY as keyof S]) {
           (
             (
-              (stores as Store<S>)?.[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
+              (stores as Store<S>)?.[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
             )?.get("viewInitialReset") as StoreViewMapValue<S>["viewInitialReset"]
           )?.();
           
@@ -99,7 +99,7 @@ export function view<P extends State = {}, S extends State = {}>(
             const storeItem = (stores as Stores<S>)[storesKey] as Store<S>;
             (
               (
-                storeItem?.[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
+                storeItem?.[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
               )?.get("viewInitialReset") as StoreViewMapValue<S>["viewInitialReset"]
             )?.();
             
@@ -137,11 +137,11 @@ export function view<P extends State = {}, S extends State = {}>(
         
         if (singleStore) {
           innerUseStateMapSet.forEach(() => {
-            // 将view关联到store内部的storeRefSet，进行数据生命周期的同步
+            // 将view关联到store内部的storeStateRefSet，进行数据生命周期的同步
             viewConnectStoreSet.add(
               (
                 (
-                  store[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
+                  store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
                 ).get("viewConnectStore") as StoreViewMapValue<S>["viewConnectStore"]
               )()
             );
@@ -170,11 +170,11 @@ export function view<P extends State = {}, S extends State = {}>(
             map,
           ) => {
             (map.get(storesKey) as Set<keyof S>).forEach(() => {
-              // 将view关联到每一个store内部的storeRefSet，进行数据生命周期的同步
+              // 将view关联到每一个store内部的storeStateRefSet，进行数据生命周期的同步
               viewConnectStoreSet.add(
                 (
                   (
-                    store[STORE_VIEW_MAP_KEY as keyof S] as StoreViewMapType<S>
+                    store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
                   ).get("viewConnectStore") as StoreViewMapValue<S>["viewConnectStore"]
                 )()
               );

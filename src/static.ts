@@ -19,7 +19,7 @@ export function batchUpdateShimRun(fn: Callback) { fn() }
 export const batchUpdate = unstable_batchedUpdates || batchUpdateShimRun;
 
 // 处理view连接store的唯一标识key值
-export const STORE_VIEW_MAP_KEY = Symbol("storeViewMapKey");
+export const VIEW_CONNECT_STORE_KEY = Symbol("storeViewMapKey");
 
 // useStore的key值，获取storeMap的代理key值
 export const USE_STORE_KEY = Symbol("useStoreKey");

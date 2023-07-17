@@ -1,4 +1,4 @@
-import { _RE_DEV_SY_, RESY_ID } from "./static";
+import { RESY_ID } from "./static";
 import type { PrimitiveState, ValueOf, MapType, State } from "./model";
 
 /**
@@ -27,7 +27,7 @@ export function objectToMap<S extends PrimitiveState>(object: S) {
 
 // store传的不是由resy本身的createStore创建产生的store的错误处理
 export function storeErrorHandle<S extends PrimitiveState>(store: S) {
-  if (_RE_DEV_SY_ && !store[RESY_ID as keyof S]) {
+  if (!store[RESY_ID as keyof S]) {
     throw new Error(
       "The store parameter of useStore or useConciseState is not a store created by resty's createStore."
     );
@@ -40,12 +40,8 @@ export function stateErrorHandle<S extends PrimitiveState>(
   funcName: "setState" | "syncUpdate" | "createStore",
 ) {
   if (
-    _RE_DEV_SY_ && (
-      (
-        Object.prototype.toString.call(stateParams) !== "[object Object]"
-        && Object.prototype.toString.call(stateParams) !== "[object Function]"
-      )
-    )
+    Object.prototype.toString.call(stateParams) !== "[object Object]"
+    && Object.prototype.toString.call(stateParams) !== "[object Function]"
   ) {
     throw new Error(
       `resy's ${funcName}(...): takes an object of state variables to update or`
@@ -53,8 +49,7 @@ export function stateErrorHandle<S extends PrimitiveState>(
     );
   }
   if (
-    _RE_DEV_SY_
-    && Object.prototype.toString.call(stateParams) === "[object Object]"
+    Object.prototype.toString.call(stateParams) === "[object Object]"
     && (stateParams as Partial<S>)[RESY_ID as keyof S]
   ) {
     throw new Error(
@@ -105,7 +100,7 @@ export function stateErrorHandle<S extends PrimitiveState>(
  * })
  */
 export function fnPropUpdateErrorHandle<S extends PrimitiveState>(key: keyof S, val: ValueOf<S>) {
-  if (_RE_DEV_SY_ && typeof val === "function") {
+  if (typeof val === "function") {
     throw new Error(
       `"${key as string}" is a function.`
       + " I didn't expect the scenario where function attributes need to be updated," +
@@ -113,5 +108,24 @@ export function fnPropUpdateErrorHandle<S extends PrimitiveState>(key: keyof S, 
       " and because JavaScript itself is not a pure object-oriented language." +
       " so resy temporarily prohibits function update operations!"
     );
+  }
+}
+
+//
+/**
+ * store被设置为某对象的原型的错误处理
+ * @description 防止有对象继承了createStore生成的代理对象，
+ * 同时initialState属性中又有 "属性描述对象" 的get (getter) 或者set (setter) 存取器 的写法
+ * 会导致proxy中的receiver对象指向的this上下文对象变化
+ * 使得 get / set 所得到的数据产生非期望的数据值
+ * set不会影响数据，因为set之后会从proxy的get走，所以只要控制好get即可保证数据的正确性
+ *
+ * 为了杜绝这种复杂的易产生bug的问题，所以直接抛出错误，提醒开发者禁止疑难杂症的代码写法
+ * 因为不禁止就要既要解决get又要解决set，两方面综合起来很麻烦，
+ * 而且本身这种东西就是容易误导人或者说难以理清的写法，禁止是最好的考量
+ */
+export function protoPointStoreErrorHandle(receiver: any, store: any) {
+  if (receiver !== store) {
+    throw new Error("Prohibit store from being set as the prototype of an object!");
   }
 }

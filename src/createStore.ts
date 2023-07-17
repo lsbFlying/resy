@@ -7,14 +7,14 @@
  */
 import scheduler from "./scheduler";
 import {
-  batchUpdate, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, _RE_DEV_SY_, RESY_ID,
+  batchUpdate, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, RESY_ID,
 } from "./static";
 import {
-  stateErrorHandle, mapToObject, objectToMap, fnPropUpdateErrorHandle,
+  stateErrorHandle, mapToObject, objectToMap, fnPropUpdateErrorHandle, protoPointStoreErrorHandle,
 } from "./utils";
 import {
   resetStateMap, setStateCallbackStackPush, genViewConnectStoreMap, connectStore,
-  batchDispatchListener, taskPush, finallyBatchHandle, proxyReceiverThisHandle,
+  batchDispatchListener, taskPush, finallyBatchHandle,
 } from "./reduce";
 import type {
   ExternalMapType, ExternalMapValue, PrimitiveState, StateFuncType, StoreMap, StoreMapValue,
@@ -277,12 +277,13 @@ export function createStore<S extends PrimitiveState>(
    * 而使用这个额外的store来读取数据可以具有追溯性得到最新的数据状态
    */
   const conciseExtraStoreProxy = new Proxy(reducerState, {
-    get(target, key: keyof S, receiver: any) {
+    get(_, key: keyof S, receiver: any) {
+      protoPointStoreErrorHandle(receiver, conciseExtraStoreProxy);
+      
       if (typeof stateMap.get(key) === "function") {
         return (stateMap.get(key) as AnyFn).bind(store);
       }
-      return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>)
-        || proxyReceiverThisHandle(receiver, conciseExtraStoreProxy, target, key, stateMap);
+      return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || stateMap.get(key);
     },
     set: singlePropUpdate,
   } as ProxyHandler<S>) as Store<S>;
@@ -312,35 +313,18 @@ export function createStore<S extends PrimitiveState>(
   externalMap.set(USE_CONCISE_STORE_KEY, conciseStoreProxy);
   
   const store = new Proxy(reducerState, {
-    get(target, key: keyof S, receiver: any) {
+    get(_, key: keyof S, receiver: any) {
+      protoPointStoreErrorHandle(receiver, store);
+      
       if (typeof stateMap.get(key) === "function") {
         return (stateMap.get(key) as AnyFn).bind(store);
       }
-      return externalMap.get(key as keyof ExternalMapValue<S>)
-        || proxyReceiverThisHandle(receiver, store, target, key, stateMap);
+      return externalMap.get(key as keyof ExternalMapValue<S>) || stateMap.get(key);
     },
     set: singlePropUpdate,
     // delete 也会起到更新作用
     deleteProperty(_: S, key: keyof S) {
-      willUpdatingHandle();
-      taskPush(
-        key, undefined as ValueOf<S>, initialReset, reducerState,
-        stateMap, storeStateRefSet, storeMap, schedulerProcessor,
-      );
-      finallyBatchHandle(
-        schedulerProcessor,
-        prevState,
-        stateMap,
-        listenerSet,
-        setStateCallbackStackArray,
-      );
-      return true;
-    },
-    setPrototypeOf() {
-      if (_RE_DEV_SY_) {
-        throw new Error("Prohibit changing the prototype of the store!");
-      }
-      return false;
+      return singlePropUpdate(_, key, undefined as ValueOf<S>);
     },
   } as ProxyHandler<S>) as Store<S>;
   

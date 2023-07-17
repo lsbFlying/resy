@@ -22,12 +22,11 @@ test("resy-simple1", async () => {
   const obj = {
     name: "Obj-FGH",
   };
+  
   Object.setPrototypeOf(obj, store);
   
   // @ts-ignore
-  console.log("obj.value：", obj.value);
-  // @ts-ignore
-  expect(obj.value === "Obj-FGH").toBeTruthy();
+  expect(() => { console.log(obj.value); }).toThrowError();
   
   const App = () => {
     const state = useStore(store);

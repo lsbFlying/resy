@@ -15,7 +15,6 @@ export type PrimitiveState = Record<number | string | symbol, any>;
  * 然后在update中去进行forEach循环更新
  *
  * getAtomState单纯是获取内部静态数据值的函数
- * 刚好与useAtomState以及subscribe组件一个两参一方的三角挂钩
  */
 export type StoreMapValueType<S extends PrimitiveState> = {
   // 当前元数据的状态变化事件的订阅，useSyncExternalStore的订阅

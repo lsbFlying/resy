@@ -43,7 +43,6 @@ test("resy-simple2", async () => {
     getByText("999");
   });
   
-  expect(() => Object.setPrototypeOf(store, {})).toThrowError();
   expect(() => {
     // @ts-ignore
     const sC = new store();

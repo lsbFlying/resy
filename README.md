@@ -247,7 +247,7 @@ the general module is set to true by default, and the initialReset setting item 
 Therefore, if it is not similar to the global state of login and theme, it generally does not need to be specially set.
 </details>
 
-For states that need to exist globally, such as login and theme,
+For states that need to exist globally, such as login or theme,
 you need to set initialReset to true.
 ```tsx
 const loginStore = createStore<{ userName: string; userId: number }>(
@@ -387,8 +387,6 @@ function App() {
 ```
 
 ### setState
-
-#### simple demo
 ```tsx
 import { useStore } from "resy";
 
@@ -578,7 +576,7 @@ function App() {
 
 ### subscribe
 To some extent, we can use useEffect's dependency array to subscribe to data,
-but resy's subscribe is actually slightly different from useEffect's,
+but resy's subscribe is actually slightly different from useEffect,
 and it can also make up for and improve many functions that useEffect can't deal with.
 ```tsx
 import { useEffect } from "react";

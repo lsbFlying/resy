@@ -199,101 +199,186 @@ type StateType = {
   testArr: { age: number }[];
   testFunc(): void;
   countIncrease(): void;
+  inputValue?: string;
 };
 
 // The generated store can be shared globally
-const store = createStore<StateType>(
+const store = createStore<StateType>({
+  count: 0,
+  text: "hello",
+  testObj: { name: "Jack" },
+  testArr: [{age: 12}, { age: 16 }],
+  testFunc() {
+    // store.count++;
+    // store.setState({ count: store.count + 1 });
+    // store.syncUpdate({ count: store.count + 1 });
+    
+    // this point store object, example:
+    this.count++;
+    this.setState({ count: this.count + 1 });
+    this.syncUpdate({ count: this.count + 1 });
+    // this.restore();
+  },
+  countIncrease() {
+    store.count++;
+  },
+});
+```
+
+#### the global significance of store
+<details>
+<summary>about the initialReset settings item</summary>
+    We usually think that the store of the state manager should be globally existed and shared all the time,
+but in fact, in the process of development, the division of each module applied in our system is different from the existing stage.
+Many times, some modules or most of the modules do not need to exist all the time, just like the view of the world in quantum mechanics,
+so our every store state may not need to exist all the time. As a state manager,
+the most important thing is how to share the state globally rather than exist globally all the time,
+so the store of resy makes a separate design for this, for example,
+the state of a module at a certain time is displayed at a certain stage at the current stage, with the switching of routes.
+The module currently displayed in our system application will be the next unknown module to be displayed.
+If we switch back to the previous module,
+then the state display of the previous module should be the state presentation of this module at the time of initialization,
+rather than the state presentation when it leaves before the routing switch.
+This is my understanding of the general state presentation. At the same time, if it is separated from a certain module,
+or there is a globally shared module, such as the user login information loginStore of the user login module,
+or the global style themeStore. For this kind of real global store, it needs to exist all the time for the whole system application,
+so we will set it to false through the initialReset setting item of the second parameter of createStore, otherwise,
+the general module is set to true by default, and the initialReset setting item itself defaults to true.
+Therefore, if it is not similar to the global state of login and theme, it generally does not need to be specially set.
+</details>
+
+For states that need to exist globally, such as login and theme,
+you need to set initialReset to true.
+```tsx
+const loginStore = createStore<{ userName: string; userId: number }>(
   {
-    count: 0,
-    text: "hello",
-    testObj: { name: "Jack" },
-    testArr: [{age: 12}, { age: 16 }],
-    testFunc() {
-      // store.count++;
-      // store.setState({ count: store.count + 1 });
-      // store.syncUpdate({ count: store.count + 1 });
-      
-      // this point store object, example:
-      this.count++;
-      this.setState({ count: this.count + 1 });
-      this.syncUpdate({ count: this.count + 1 });
-    },
-    countIncrease() {
-      store.count++;
-    },
+    userName: "wenmu",
+    userId: 0,
   },
   {
-    /**
-     * It seems that this attribute configuration contradicts my viewpoint
-     * that the store can be accessed globally,
-     * It seems difficult for me to explain its function, but it is so sincere and simple.
-     * Firstly, the store can indeed be accessed globally,
-     * but it is an important issue when the data in this store can remain in a state.
-     * Therefore, the "initialReset" configuration is designed to address this issue.
-     * 
-     * For example, if a topic configures such data, then you can set initialReset to true,
-     * because the theme needs to exist all the time in the system,
-     * it will never disappear, and so can data such as login information.
-     * 
-     * Generally speaking,
-     * if it is not global persistent data such as theme or login,
-     * we do not have to set initialReset.
-     */
-    initialReset: true,
+    initialReset: false,
+  },
+);
+const themeStore = createStore<{ themeStyle: "dark" | "light" }>(
+  {
+    themeStyle: "dark",
+  },
+  {
+    initialReset: false,
   },
 );
 ```
 
 ### useStore
+You can think of it as useState, but not exactly.
+It is used to drive component updates re-render.<br/>
+
+If you directly deconstruct the store for example:
+<div>const { count } = store;</div>
+
+Only simple data will be obtained, which has no update render effect.
+
+#### deconstruction usage mode
 ```tsx
-import React from "react";
 import { useStore } from "resy";
 
 function App() {
-  /**
-   * @description You can think of it as useState, but not exactly.
-   * It is used to drive component updates re-render.
-   * 
-   * If you directly deconstruct the store for example: 
-   * const { count } = store;
-   * Only simple data will be obtained, which has no update effect
-   */
+  const { count, text } = useStore(store);
+  
+  return (
+    <>
+      <p>{count}</p>
+      <p>{text}</p>
+    </>
+  );
+}
+```
+
+#### direct read usage mode
+```tsx
+import { useStore } from "resy";
+
+function App() {
+  const state = useStore(store);
+  
+  return (
+    <>
+      <p>{state.count}</p>
+      <p>{state.text}</p>
+    </>
+  );
+}
+```
+
+#### The method of deconstructing StoreUtils
+The four methods of StoreUtils are setState, syncUpdate,
+restore and subscribe. It can be deconstructed and used directly
+from useStore, but store itself has these four methods,
+which are described in more detail in the following sections.
+```tsx
+import { useStore } from "resy";
+
+function App() {
   const {
-    count, text, testObj: { name }, testArr, testFunc, inputValue,
+    count, text,
+    // The use of these api will be described in detail later.
+    setState, syncUpdate, restore, subscribe,
   } = useStore(store);
   
-  // or:
-  // const state = useStore(store);
-  // <p>{state.count}</p>
+  return (
+    <>
+      <p>{count}</p>
+      <p>{text}</p>
+    </>
+  );
+}
+```
+
+### direct assignment update
+```tsx
+import { useStore } from "resy";
+
+function App() {
+  const { count, text } = useStore(store);
   
+  // Updates can be assigned directly
   function btn2() {
-    // Updates can be assigned directly (simple update method)
     store.count++;
     store.text = "456asd";
-    /**
-     * Direct attribute chained updates are not allowed,
-     * because resy only maps the data attributes of the first layer
-     * Currently, there is no in-depth recursive agent for performance reasons.
-     * The following update method is invalid.
-     * 
-     * This also inherits the idea of react updating data,
-     * and has no feeling for chained updates.
-     */
-    // store.testObj.name = "Jack";
-    store.testObj = { name: "Jack" }; // Effective update
-    // Similarly, arrays are not allowed to update data by directly changing the index value,
-    // and the following update method is invalid
-    // store.testArr[0] = { age: 7 };
-    store.testArr = [{age: 7}]; // Effective update
   }
   
   return (
     <>
       <p>{count}</p>
       <p>{text}</p>
+    </>
+  );
+}
+```
+
+#### Invalid update
+Direct attribute chained updates are not allowed,
+because resy only maps the data attributes of the first layer.
+Currently, there is no in-depth recursive agent for performance reasons.
+```tsx
+import { useStore } from "resy";
+
+function App() {
+  const {
+    testObj: { name }, testArr, testFunc, inputValue,
+  } = useStore(store);
+  
+  function btn2() {
+    // store.testObj.name = "Jack";   // Invalid update
+    // store.testArr[0] = { age: 7 };   // Invalid update
+    
+    store.testObj = { name: "Jack" }; // Effective update
+    store.testArr = [{age: 7}];   // Effective update
+  }
+  
+  return (
+    <>
       <p>{name}</p>
-      <button onClick={testFunc}>btn1</button>
-      <br/>
       {testArr.map(item => `Age：${item}`)}<br/>
       <button onClick={btn2}>btn2</button>
     </>
@@ -302,79 +387,144 @@ function App() {
 ```
 
 ### setState
+
+#### simple demo
 ```tsx
-import React from "react";
 import { useStore } from "resy";
 
 function App() {
-  const {
-    count, text,
-    // you can also deconstruct setState directly, or use store.setState,
-    // and syncUpdate, subscribe, these api are the same and will be introduced in detail later.
-    // setState,
-  } = useStore(store);
+  const { count, text } = useStore(store);
   
-  function btnClick() {
-    /**
-     * setState and a single direct update are asynchronous,
-     * the callback function of setState can obtain the latest data.
-     *
-     * setState use objects as the data update method to have more robust coding capabilities.
-     * The update method of function input parameters makes setState more robust.
-     */
-    // @example A
-    store.setState({
-      count: 999,
-      text: "BNM",
-    }, nextState => {
-      /**
-       * @param nextState：The currently updated data, so the following value is 999, not 1000.
-       * This is the very important feature of the nextState parameter.
-       *
-       * This is different from the this.setState of the class component in react.
-       * This is determined by the characteristics of resy,
-       * because the store of its own resy has the ability to obtain the latest data values,
-       * so the ability to obtain periodic update results is particularly special,
-       * and it is also important.
-       */
-      console.log(nextState.count); // 999
-      // But you can get the final updated data results through store.
-      console.log(store.count); // 1000
+  return (
+    <>
+      <div>{count}</div>
+      <div>{text}</div>
+      <button
+        onClick={() => {
+          store.setState({
+            text: "demo-setState",
+            count: count + 1,
+          });
+        }}
+      >
+        btn
+      </button>
+    </>
+  );
+}
+```
+
+#### setState's callback
+```tsx
+import { useStore } from "resy";
+
+function App() {
+  const { text } = useStore(store);
+  
+  return (
+    <button
+      onClick={() => {
+        store.setState({
+          text: "cur-text",
+        }, nextState => {
+          console.log(nextState.text === "cur-text"); // true
+        });
+      }}
+    >
+      {text}
+    </button>
+  );
+}
+```
+
+#### parameters of callback for setState
+The difference between the callback of setState
+and the callback of this.setState of class components
+
+* Reading this.state in the callback function of this.setState
+  in the class component obtains the latest data in the current round of updates.
+```tsx
+import { Component } from "react";
+
+class x extends Component {
+  state = { count: 0, text: "class-x" };
+  
+  render() {
+    const { count, text } = this.state;
+    return (
+      <>
+        {count},{text}
+        <button
+          onClick={() => {
+            this.setState({
+              text: "Try",
+            }, () => {
+              console.log(this.state.count === 9);  // true
+            });
+            this.setState({ count: 9 });
+          }}
+        >
+          btn
+        </button>
+      </>
+    );
+  }
+}
+```  
+
+* However, the nextState of the callback function
+  of resy's setState is the latest data in the current synchronization phase,
+  but it does not belong to the latest data after the final round of updates.
+```tsx
+import { useStore, createStore } from "resy";
+
+const store = createStore({count: 0, text: "hello"});
+
+function App() {
+  const { text } = useStore(store);
+  
+  return (
+    <button
+      onClick={() => {
+        store.setState({
+          text: "cur-text",
+        }, nextState => {
+          console.log(nextState.text === "cur-text"); // true
+          console.log(nextState.count === 0); // true
+          console.log(store.count === 9); // true
+        });
+        store.setState({count: 9});
+      }}
+    >
+      {text}
+    </button>
+  );
+}
+```
+
+#### parameters of the function type of setState
+```tsx
+import { useStore } from "resy";
+
+const store = createStore({count: 0, text: "hello"});
+
+function App() {
+  const { count, text } = useStore(store);
+  
+  function btnClick1() {
+    store.setState(() => {
+      // Returns the object that will eventually be updated
+      // through the calculation of complex business logic
+      return {
+        count: count + 1,
+        text: "B-Way-setState-with-function",
+      };
     });
-    store.setState({
-       count: 1000,
-    }, nextState => {
-      console.log(nextState.count); // 1000
-    });
-    
-    /**
-     * The B way can write more complex update logic in the function
-     * Of course, you can say that I can write the logic of updating data before setState,
-     * which is no problem, of course you can do it,
-     * but this way only gives developers a higher degree of freedom to update data,
-     * and if there is a very complex and general update logic,
-     * then I can deal with it in a general function,
-     * so that this general function can be used as a parameter of setState directly.
-     */
-    // @example B1
-    // store.setState(() => {
-    //   // Returns the data object that will eventually be updated
-    //   // through the calculation of complex business logic
-    //   return {
-    //     count: count + 1,
-    //     text: "B-Way-setState-with-function",
-    //   };
-    // }, (nextState) => {
-    //   console.log(nextState.count, nextState.text);
-    // });
-     
-    /**
-     * Pay attention to the logical difference between getting the latest data value
-     * from the store and the previous update status from the prevState
-     * before the current round of updates during the synchronous change of the state state of the code.
-     */
-    // @example: B2
+  }
+  
+  function btnClick2() {
     store.count = 9;
+    // The prevState parameter of the function
     store.setState(prevState => {
       console.log(prevState.count === 0);  // true
       console.log(store.count === 9);  // true
@@ -382,71 +532,42 @@ function App() {
         text: "ok",
       };
     });
-    
-    /**
-     * @example C
-     * @description Although you can write your code in this way,
-     * it is not recommended because this is not the trigger point for
-     * the creation of setState's function arguments.
-     * In fact, if you have business logic for circular updates,
-     * you can also directly use "store.x = y" for a single update.
-     */
-    // store.setState(() => {
-    //   store.count++;
-    //   store.text = "C-Way-setState-with-function";
-    //   return {};
-    // });
   }
   
   return (
     <>
       <div>{count}</div>
       <div>{text}</div>
-      <button onClick={btnClick}>btn</button>
+      <button onClick={btnClick1}>btn-1</button>
+      <button onClick={btnClick2}>btn-2</button>
     </>
   );
 }
 ```
 
 ### syncUpdate
+The update of this controlled input/textarea needs to be updated synchronously,
+otherwise, due to asynchronous updates such as "store.setState" or "store[key] = newValue",
+it will cause input/textarea unable to input characters in languages other than English.
+"syncUpdate" is a helpless solution to the conflict between
+resy update scheduling mechanism and react's update execution mechanism for text input.
 ```tsx
-import React from "react";
 import { useStore, syncUpdate } from "resy";
 
 function App() {
   const { inputValue } = useStore(store);
   
   function inputChange(event: React.ChangeEvent<HTMLInputElement>) {
-    /**
-     * be careful：The update of this controlled input/textarea needs to be updated synchronously,
-     * otherwise, due to asynchronous updates such as "store.setState" or "store[key] = newValue",
-     * it will cause input/textarea unable to input characters in languages other than English.
-     * be careful："syncUpdate" is a helpless solution to the conflict between
-     * resy update scheduling mechanism and react's update execution mechanism for text input.
-     */
     store.syncUpdate({
       inputValue: event.target.value,
     });
-    // @example B:
-    // store.syncUpdate((prevState) => {
-    //   // prevState is the same as setState's prevState.
+    // @example B
+    // store.syncUpdate(prevState => {
+    //   // prevState is same as setState's prevState.
     //   return {
     //     inputValue: event.target.value,
     //   };
     // });
-    /**
-     * @example C
-     * @description Although you can write your code in this way,
-     * it is not recommended because this is not the trigger point for
-     * the creation of syncUpdate's function arguments.
-     * In fact, if you have business logic for circular updates,
-     * you can also directly use "store.x = y" for a single update.
-     */
-     // @example C:
-     // store.syncUpdate(() => {
-     //   store.inputValue = event.target.value;
-     //   return {};
-     // });
   }
   
   return (
@@ -455,49 +576,12 @@ function App() {
 }
 ```
 
-### useConciseState
-```tsx
-import React from "react";
-import { useConciseState } from "resy";
-
-const initialState = {
-  count: 123,
-  text: "hello-consice",
-};
-
-function App() {
-  const {
-    count, text, store, setState,
-    // The store read by deconstruction from useConciseState
-    // still has the effect of the store generated by createStore.
-    // You can use store.setState/syncUpdate/restore/subscribe.
-    // syncUpdate, restore, subscribe,
-  } = useConciseState(initialState);
-  // useConciseState is equivalent to the following usage
-  // const [count, setCount] = useState(123);
-  // const [text, setText] = useState("hello-consice");
-  
-  console.log(store.count);
-  
-  function addClick() {
-    setState({
-      count: count + 1,
-      text: "ASD",
-    });
-  }
-  
-  return (
-    <>
-      <div onClick={addClick}>{count}</div>
-      <div>{text}</div>
-    </>
-  );
-}
-```
-
 ### subscribe
+To some extent, we can use useEffect's dependency array to subscribe to data,
+but resy's subscribe is actually slightly different from useEffect's,
+and it can also make up for and improve many functions that useEffect can't deal with.
 ```tsx
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useStore } from "resy";
 
 function App() {
@@ -551,6 +635,121 @@ function App() {
       <button onClick={btnClickA}>btn-A</button><br/>
       <button onClick={btnClickB}>btn-B</button><br/>
       <button onClick={btnClickC}>btn-C</button>
+    </>
+  );
+}
+```
+
+### useConciseState
+The existence of useConciseState is mainly for the improvement of state management
+for data state localization and hook state simplification,
+which makes up for most state management can only carry out large-scale module state management,
+and makes up for and improve the lack of privatized processing capacity of local states.
+at the same time, the most convenient and obvious core characteristic of useConciseState
+is the coding mode of simplifying state processing.
+```tsx
+import { useConciseState } from "resy";
+
+const initialState = {
+  count: 123,
+  text: "hello-consice",
+};
+
+function App() {
+  const {
+    count, text, setState,
+  } = useConciseState(initialState);
+  
+  return (
+    <>
+      <div
+        onClick={() => {
+          setState({
+             count: count + 1,
+             text: "ASD",
+          });
+        }}
+      >
+        {count}
+      </div>
+      <div>{text}</div>
+    </>
+  );
+}
+```
+
+restore、syncUpdate、subscribe these api can also be deconstructed and used directly.
+```tsx
+import { useEffect } from "react";
+import { useConciseState } from "resy";
+
+function App() {
+  const {
+    count, text, restore, syncUpdate, subscribe,
+  } = useConciseState(initialState);
+  
+  useEffect(() => {
+    return subscribe((effectState) => {
+      console.log(effectState);
+    }, ["text"]);
+  }, []);
+  
+  return (
+    <>
+      <input
+        value={text}
+        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+          syncUpdate({text: event.target.value});
+        }}
+      />
+      <div onClick={() => restore()}>reset-btn</div>
+      <div>{text}</div>
+    </>
+  );
+}
+```
+
+* You can deconstruct and read store directly from useConciseState,
+  and you can call various methods that store has through store,
+  such as store.setState, store.syncUpdate, store.restore, store.subscribe.
+
+* The greatest help of deconstructing reading store from useConciseState
+  is to combat the dependency forgetting problem of hook's dependency array,
+  because the data read from store is always up-to-date,
+  so you don't have to worry about the mental burden caused by hook dependency array.
+```tsx
+import { useEffect, useMemo } from "react";
+import { useConciseState } from "resy";
+
+function App() {
+  const {
+    count, text, store,
+  } = useConciseState(initialState);
+
+  useEffect(() => {
+    return store.subscribe((effectState) => {
+      console.log(effectState);
+    }, ["count"]);
+  }, []);
+  
+  const countTemp = useMemo(() => {
+    // Don't worry if the dependency array is empty,
+    // because the data read through store will always be up to date.
+    return store.count + 9;
+  }, []);
+  
+  return (
+    <>
+      <div onClick={() => restore()}>{countTemp}</div>
+      <div onClick={() => { store.count++; }}>add-btn</div>
+      <div onClick={() => { store.setState({ text: "ok" }) }}>{text}</div>
+      <input
+        value={text}
+        onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+          store.syncUpdate({text: event.target.value});
+        }}
+      />
+      <div onClick={() => store.restore()}>reset-btn</div>
     </>
   );
 }
@@ -710,6 +909,8 @@ resy itself has natural support for the ability of hook components to use multip
 for example, you can use useStore directly inside the hook component to reference different store.
 but refer to different store for class components, the following methods are required:
 ```tsx
+import React from "react";
+
 const loginStore = createStore<{ userName: string }>({
    userName: "resy",
 });

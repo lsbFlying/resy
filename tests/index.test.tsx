@@ -17,32 +17,21 @@ test("resy-basic", async () => {
   };
   
   // 生成的这个store可以全局共享，直接引入store即可
-  const store = createStore<Store>(
-    {
-      count: 0,
-      testCount: 0,
-      text: "123qwe",
-      testObj: { name: "Paul" },
-      testArr: [{age: 12, name: "Alen"}, { age: 16, name: "Frac" }],
-      testFun() {
-        store.count++;
-        console.log("testFun");
-      },
-      testFun2() {
-        store.testCount++;
-        console.log("testFun: 'store.count === this.count'", store.testCount === this.testCount);
-      },
+  const store = createStore<Store>({
+    count: 0,
+    testCount: 0,
+    text: "123qwe",
+    testObj: { name: "Paul" },
+    testArr: [{age: 12, name: "Alen"}, { age: 16, name: "Frac" }],
+    testFun() {
+      store.count++;
+      console.log("testFun");
     },
-    /**
-     * 默认为true
-     * true：默认模块卸载时自动恢复初始化数据状态
-     * false：模块卸载时也不恢复初始化数据，保持数据状态
-     * 常规使用场景设置为true即可
-     * 特殊使用场景如login登录信息数据
-     * 或theme主题数据属于全局状态数据可以设置为false
-     */
-    // false,
-  );
+    testFun2() {
+      store.testCount++;
+      console.log("testFun: 'store.count === this.count'", store.testCount === this.testCount);
+    },
+  });
   
   let index = 0;
   

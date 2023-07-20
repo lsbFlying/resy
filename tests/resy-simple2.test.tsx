@@ -47,8 +47,4 @@ test("resy-simple2", async () => {
     // @ts-ignore
     const sC = new store();
   }).toThrowError();
-  
-  expect(() => {
-    store.test = () => {};
-  }).toThrowError();
 });

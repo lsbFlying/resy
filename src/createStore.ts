@@ -10,7 +10,7 @@ import {
   batchUpdate, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, RESY_ID,
 } from "./static";
 import {
-  stateErrorHandle, mapToObject, objectToMap, fnPropUpdateErrorHandle, protoPointStoreErrorHandle,
+  stateErrorHandle, mapToObject, objectToMap, protoPointStoreErrorHandle,
 } from "./utils";
 import {
   resetStateMap, setStateCallbackStackPush, genViewConnectStoreMap, connectStore,
@@ -94,22 +94,20 @@ export function createStore<S extends PrimitiveState>(
    * @description todo 更多意义上是为了解决input无法输入非英文语言bug的无奈，后续待优化setState与单次更新
    */
   function syncUpdate(state: State<S> | StateFuncType<S>) {
-    let stateParams = state;
+    let stateTemp = state;
     if (typeof state === "function") {
-      stateParams = (state as StateFuncType<S>)(mapToObject(prevState || stateMap));
+      stateTemp = (state as StateFuncType<S>)(mapToObject(prevState || stateMap));
     }
     
-    if (stateParams === null) return;
+    if (stateTemp === null) return;
     
-    stateErrorHandle(stateParams, "syncUpdate");
+    stateErrorHandle(stateTemp, "syncUpdate");
     
     const prevStateTemp = new Map(stateMap);
     batchUpdate(() => {
       let effectState: Partial<S> | null = null;
-      Object.keys(stateParams as NonNullable<State<S>>).forEach(key => {
-        const val = (stateParams as Partial<S> | S)[key];
-        
-        fnPropUpdateErrorHandle(key, val || stateMap.get(key));
+      Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
+        const val = (stateTemp as Partial<S> | S)[key];
         
         if (!Object.is(val, stateMap.get(key))) {
           stateMap.set(key, val);
@@ -134,19 +132,19 @@ export function createStore<S extends PrimitiveState>(
     // 先打开缓存一下prevState方便后续订阅事件的触发执行
     willUpdatingHandle();
     
-    let stateParams = state;
+    let stateTemp = state;
     
     if (typeof state === "function") {
-      stateParams = (state as StateFuncType<S>)(mapToObject(prevState as MapType<S>));
+      stateTemp = (state as StateFuncType<S>)(mapToObject(prevState as MapType<S>));
     }
     
-    if (stateParams !== null) {
-      stateErrorHandle(stateParams, "setState");
+    if (stateTemp !== null) {
+      stateErrorHandle(stateTemp, "setState");
       
       // 更新添加入栈，后续统一批次合并更新
-      Object.keys(stateParams as NonNullable<State<S>>).forEach(key => {
+      Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         taskPush(
-          key, (stateParams as S)[key], initialReset, reducerState,
+          key, (stateTemp as S)[key], initialReset, reducerState,
           stateMap, storeStateRefSet, storeMap, schedulerProcessor,
         );
       });
@@ -154,7 +152,7 @@ export function createStore<S extends PrimitiveState>(
     
     // 异步回调添加入栈
     if (callback) {
-      const nextState = Object.assign({}, mapToObject(stateMap), stateParams);
+      const nextState = Object.assign({}, mapToObject(stateMap), stateTemp);
       /**
        * 如果是回调在执行时发现回调中有更setState并且有回调，
        * 此时回调进入下一个微任务循环中添加入栈，不影响这一轮的回调执行栈的执行
@@ -182,10 +180,7 @@ export function createStore<S extends PrimitiveState>(
       prevStateTemp.forEach((_, key) => {
         const originValue = reducerState[key];
         
-        const value = (stateMap.get(key) as ValueOf<S>) || originValue;
-        
-        // 函数跳过（因为在resy当中函数本身不允许更新也就没有变化）
-        if (typeof value !== "function" && !Object.is(originValue, stateMap.get(key))) {
+        if (!Object.is(originValue, stateMap.get(key))) {
           resetStateMap(key, reducerState, stateMap);
           
           !effectState && (effectState = {});
@@ -283,6 +278,7 @@ export function createStore<S extends PrimitiveState>(
       if (typeof stateMap.get(key) === "function") {
         return (stateMap.get(key) as AnyFn).bind(store);
       }
+      
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || stateMap.get(key);
     },
     set: singlePropUpdate,
@@ -319,6 +315,7 @@ export function createStore<S extends PrimitiveState>(
       if (typeof stateMap.get(key) === "function") {
         return (stateMap.get(key) as AnyFn).bind(store);
       }
+      
       return externalMap.get(key as keyof ExternalMapValue<S>) || stateMap.get(key);
     },
     set: singlePropUpdate,

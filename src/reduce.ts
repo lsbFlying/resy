@@ -8,7 +8,7 @@ import type {
   Callback, SetStateCallback, SetStateCallbackItem, StoreMapValue, StoreMapValueType,
   Listener, Scheduler, StoreMap,
 } from "./model";
-import { mapToObject, objectToMap, fnPropUpdateErrorHandle } from "./utils";
+import { mapToObject, objectToMap } from "./utils";
 
 /**
  * 从use-sync-external-store包的导入方式到下面的引用方式
@@ -232,11 +232,6 @@ export function taskPush<S extends PrimitiveState>(
   storeMap: StoreMap<S>,
   schedulerProcessor: MapType<Scheduler>,
 ) {
-  /**
-   * 不仅要以val最新的值为准来判断，还需要之前的老数据进行结合判断，
-   * 因为防止更新的值为空值导致函数为空，始终以最新的数据值为准进行函数属性检查
-   */
-  fnPropUpdateErrorHandle(key, stateMap.get(key) || val);
   /**
    * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
    * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见

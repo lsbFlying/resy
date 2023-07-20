@@ -1,4 +1,4 @@
-import React, {Dispatch, memo, SetStateAction, useEffect, useState} from "react";
+import React, { Dispatch, memo, SetStateAction, useEffect, useState } from "react";
 import { VIEW_CONNECT_STORE_KEY, RESY_ID } from "./static";
 import { mapToObject, storeErrorHandle } from "./utils";
 import {
@@ -78,7 +78,7 @@ export function view<P extends PrimitiveState = {}, S extends PrimitiveState = {
         }
       }
       
-      // 单store
+      // 单store 或 无store
       if (!stores || (stores as Store<S>)[RESY_ID as keyof S]) {
         return stateRefByProxyHandle(stateMap as MapType<S>, innerUseStateMapSet as Set<keyof S>);
       }
@@ -175,7 +175,7 @@ function handleStoreSubscribe<S extends PrimitiveState, P extends PrimitiveState
   storesKeyTemp?: keyof Stores<S>,
 ) {
   // 在mounted进行一次的store校验
-  storeErrorHandle(store);
+  storeErrorHandle(store, "view");
   
   if (singleStore) {
     innerUseStateMapSet.forEach(() => {

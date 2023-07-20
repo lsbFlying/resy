@@ -12,7 +12,7 @@ import type { Store, PrimitiveState, ConciseStore } from "./model";
  * @param store
  */
 export function useStore<S extends PrimitiveState>(store: S): S {
-  storeErrorHandle(store);
+  storeErrorHandle(store, "useStore");
   return store[USE_STORE_KEY as keyof S];
 }
 

@@ -26,10 +26,10 @@ export function objectToMap<S extends PrimitiveState>(object: S) {
 }
 
 // store传的不是由resy本身的createStore创建产生的store的错误处理
-export function storeErrorHandle<S extends PrimitiveState>(store: S) {
+export function storeErrorHandle<S extends PrimitiveState>(store: S, funcName: "useStore" | "view") {
   if (!store[RESY_ID as keyof S]) {
     throw new Error(
-      "The store parameter of useStore or useConciseState is not a store created by resty's createStore."
+      `The store parameter of ${funcName} is not a store created by resty's createStore!`
     );
   }
 }
@@ -72,6 +72,6 @@ export function stateErrorHandle<S extends PrimitiveState>(
  */
 export function protoPointStoreErrorHandle(receiver: any, store: any) {
   if (receiver !== store) {
-    throw new Error("Prohibit store from being set as the prototype of an object!");
+    console.error("Prohibit store from being set as the prototype of an object!");
   }
 }

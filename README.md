@@ -479,7 +479,7 @@ and the callback of this.setState of class components
 ```tsx
 import { Component } from "react";
 
-class x extends Component {
+class TestClassX extends Component {
   state = { count: 0, text: "class-x" };
   
   render() {

@@ -8,6 +8,7 @@ type State = {
   text?: string;
   value: string;
   name: string;
+  test(): number;
 };
 
 test("resy-simple1", async () => {
@@ -17,6 +18,9 @@ test("resy-simple1", async () => {
     get value() {
       return this.name;
     },
+    test() {
+      return this.count;
+    }
   });
   
   const obj = {
@@ -26,7 +30,10 @@ test("resy-simple1", async () => {
   Object.setPrototypeOf(obj, store);
   
   // @ts-ignore
-  expect(() => { console.log(obj.value); }).toThrowError();
+  expect(obj.test() === 0).toBeTruthy();
+  
+  // @ts-ignore
+  expect(obj.value === "resy-simple").toBeTruthy();
   
   const App = () => {
     const state = useStore(store);
@@ -61,7 +68,7 @@ test("resy-simple1", async () => {
   // @ts-ignore
   expect(() => createStore("")).toThrowError();
   /** 测试初始化入参报错 end */
-  
+
   /** 测试store类型报错 start */
   // @ts-ignore
   expect(() => useStore(123)).toThrowError();
@@ -88,7 +95,7 @@ test("resy-simple1", async () => {
   // @ts-ignore
   expect(() => useStore(new Set())).toThrowError();
   /** 测试store类型报错 end */
-  
+
   /** 测试store类型报错 start */
   // @ts-ignore
   expect(() => useConciseState(123)).toThrowError();

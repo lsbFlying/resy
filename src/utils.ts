@@ -72,6 +72,9 @@ export function stateErrorHandle<S extends PrimitiveState>(
  */
 export function protoPointStoreErrorHandle(receiver: any, store: any) {
   if (receiver !== store) {
-    console.error("Prohibit store from being set as the prototype of an object!");
+    console.error(
+      "It is not recommended that store be inherited as a prototype object," +
+      " because there is no this pointing to the target object corresponding to the Reflect proxy within store!"
+    );
   }
 }

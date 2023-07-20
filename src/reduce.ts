@@ -139,7 +139,10 @@ export function genViewConnectStoreMap<S extends PrimitiveState>(
   return viewConnectStoreMap;
 }
 
-// 为每一个数据字段储存连接到store容器中
+/**
+ * @description 为每一个数据字段储存连接到store容器中
+ * 既解决了初始化数据属性为undefined的情况，又节省了内存
+ */
 export function connectStore<S extends PrimitiveState>(
   key: keyof S,
   initialReset: boolean,

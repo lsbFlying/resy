@@ -35,7 +35,7 @@ test("resy-view", async () => {
       // @ts-ignore
       expect(obj.value === "Obj-text").toBeFalsy();
       // @ts-ignore
-      expect(obj.value === undefined).toBeTruthy();
+      expect(obj.value === "Hello").toBeTruthy();
       
       return (
         <div>ViewClassComCount:{count}</div>

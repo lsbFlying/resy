@@ -13,8 +13,7 @@ import {
   stateErrorHandle, mapToObject, objectToMap, protoPointStoreErrorHandle,
 } from "./utils";
 import {
-  resetStateMap, setStateCallbackStackPush, genViewConnectStoreMap, connectStore,
-  batchDispatchListener, taskPush, finallyBatchHandle,
+  genViewConnectStoreMap, connectStore, batchDispatchListener, taskPush, finallyBatchHandle,
 } from "./reduce";
 import type {
   ExternalMapType, ExternalMapValue, PrimitiveState, StateFuncType, StoreMap, StoreMapValue,
@@ -152,16 +151,16 @@ export function createStore<S extends PrimitiveState>(
     
     // 异步回调添加入栈
     if (callback) {
-      const nextState = Object.assign({}, mapToObject(stateMap), stateTemp);
+      const nextState: S = Object.assign({}, mapToObject(stateMap), stateTemp);
       /**
        * 如果是回调在执行时发现回调中有更setState并且有回调，
        * 此时回调进入下一个微任务循环中添加入栈，不影响这一轮的回调执行栈的执行
        */
       schedulerProcessor.get("isCalling")
         ? Promise.resolve().then(() => {
-          setStateCallbackStackPush(nextState, callback, setStateCallbackStackArray);
+          setStateCallbackStackArray.push({ cycleState: nextState, callback });
         })
-        : setStateCallbackStackPush(nextState, callback, setStateCallbackStackArray);
+        : setStateCallbackStackArray.push({ cycleState: nextState, callback });
     }
     finallyBatchHandle(schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackArray);
   }
@@ -181,7 +180,9 @@ export function createStore<S extends PrimitiveState>(
         const originValue = reducerState[key];
         
         if (!Object.is(originValue, stateMap.get(key))) {
-          resetStateMap(key, reducerState, stateMap);
+          Object.prototype.hasOwnProperty.call(reducerState, key)
+            ? stateMap.set(key, reducerState[key])
+            : stateMap.delete(key);
           
           !effectState && (effectState = {});
           effectState[key as keyof S] = originValue;

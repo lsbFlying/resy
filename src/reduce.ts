@@ -5,10 +5,10 @@ import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { batchUpdate, VIEW_CONNECT_STORE_KEY } from "./static";
 import type {
   PrimitiveState, Store, StoreViewMapType, StoreViewMapValue, Stores, ValueOf, MapType,
-  Callback, SetStateCallback, SetStateCallbackItem, StoreMapValue, StoreMapValueType,
+  Callback, SetStateCallbackItem, StoreMapValue, StoreMapValueType,
   Listener, Scheduler, StoreMap,
 } from "./model";
-import { mapToObject, objectToMap } from "./utils";
+import { mapToObject, objectToMap, protoPointStoreErrorHandle } from "./utils";
 
 /**
  * 从use-sync-external-store包的导入方式到下面的引用方式
@@ -26,16 +26,11 @@ export function stateRefByProxyHandle<S extends PrimitiveState>(
   innerUseStateSet: Set<keyof S>,
 ) {
   const store = new Proxy(stateMap, {
-    get: (target: MapType<S>, key: keyof S, receiver: any) => {
+    get: (_, key: keyof S, receiver: any) => {
+      protoPointStoreErrorHandle(receiver, store);
+      
       innerUseStateSet.add(key);
-      /**
-       * stateMap(即最新的状态数据Map-latestState)给出了resy生成的store内部数据的引用，
-       * 这里始终能获取到最新数据
-       * 同时兼容考虑Reflect的bug兼容写法
-       */
-      return receiver === store
-        ? target.get(key)
-        : Reflect.get(target, key, receiver);
+      return stateMap.get(key);
     },
   } as ProxyHandler<MapType<S>>) as object as S;
   return store;
@@ -89,25 +84,6 @@ export function storeStateRefSetMark(storeStateRefSet: Set<number>) {
   // 做一个引用占位符，表示有一处引用，便于最后初始化逻辑执行的size判别
   storeStateRefSet.add(lastItem);
   return lastItem;
-}
-
-// 重置初始化stateMap状态
-export function resetStateMap<S extends PrimitiveState>(key: keyof S, state: S, stateMap: MapType<S>) {
-  Object.prototype.hasOwnProperty.call(state, key)
-    ? stateMap.set(key, state[key])
-    : stateMap.delete(key);
-}
-
-// setState的回调函数添加入栈
-export function setStateCallbackStackPush<S extends PrimitiveState>(
-  cycleState: S,
-  callback: SetStateCallback<S>,
-  setStateCallbackStackArray: SetStateCallbackItem<S>[],
-) {
-  setStateCallbackStackArray.push({
-    cycleState,
-    callback,
-  });
 }
 
 export function genViewConnectStoreMap<S extends PrimitiveState>(
@@ -192,7 +168,9 @@ export function connectStore<S extends PrimitiveState>(
      * 且也不能放在subscribe的return回调中卸载执行，以防止外部接口调用数据导致的数据不统一
      */
     if (initialReset && !storeStateRefSet.size) {
-      resetStateMap(key, state, stateMap);
+      Object.prototype.hasOwnProperty.call(state, key)
+        ? stateMap.set(key, state[key])
+        : stateMap.delete(key);
     }
     return useSyncExternalStore(
       (storeMap.get(key) as StoreMapValue<S>).get("subscribeAtomState") as StoreMapValueType<S>["subscribeAtomState"],

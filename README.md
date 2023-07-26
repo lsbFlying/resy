@@ -210,7 +210,7 @@ const demoStore2 = createStore<DemoStateType>({
 ```
 
 #### function return
-You can return the initialization object through the function.
+you can return the initialization object through the function.
 ```tsx
 const demoStore3 = createStore(() => {
   return {

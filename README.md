@@ -293,7 +293,7 @@ Therefore, if it is not similar to the global state of login and theme, it gener
 </details>
 
 #### createStore options item - initialReset
-For states that need to exist globally, such as login or theme,
+for states that need to exist globally, such as login or theme,
 you need to set initialReset to true.
 ```tsx
 const loginStore = createStore<{ userName: string; userId: number }>(
@@ -316,13 +316,13 @@ const themeStore = createStore<{ themeStyle: "dark" | "light" }>(
 ```
 
 ### useStore
-You can think of it as useState, but not exactly.
-It is used to drive component updates re-render.<br/>
+you can think of it as useState, but not exactly.
+it is used to drive component updates re-render.<br/>
 
-If you directly deconstruct the store for example:
+if you directly deconstruct the store for example:
 <div>const { count } = store;</div>
 
-Only simple data will be obtained, which has no update render effect.
+only simple data will be obtained, which has no update render effect.
 
 #### deconstruction usage mode
 ```tsx
@@ -357,8 +357,8 @@ function App() {
 ```
 
 #### The method of deconstructing StoreUtils
-The four methods of StoreUtils are setState, syncUpdate,
-restore and subscribe. It can be deconstructed and used directly
+the four methods of StoreUtils are setState, syncUpdate,
+restore and subscribe, it can be deconstructed and used directly
 from useStore, but store itself has these four methods,
 which are described in more detail in the following sections.
 ```tsx
@@ -403,9 +403,9 @@ function App() {
 ```
 
 #### Invalid update
-Direct attribute chained updates are not allowed,
+direct attribute chained updates are not allowed,
 because resy only maps the data attributes of the first layer.
-Currently, there is no in-depth recursive agent for performance reasons.
+currently, there is no in-depth recursive agent for performance reasons.
 ```tsx
 import { useStore } from "resy";
 
@@ -482,10 +482,10 @@ function App() {
 ```
 
 #### parameters of callback for setState
-The difference between the callback of setState
+the difference between the callback of setState
 and the callback of this.setState of class components
 
-* Reading this.state in the callback function of this.setState
+* reading this.state in the callback function of this.setState
   in the class component obtains the latest data in the current round of updates.
 ```tsx
 import { Component } from "react";
@@ -516,7 +516,7 @@ class TestClassX extends Component {
 }
 ```  
 
-* However, the nextState of the callback function
+* however, the nextState of the callback function
   of resy's setState is the latest data in the current synchronization phase,
   but it does not belong to the latest data after the final round of updates.
 ```tsx
@@ -590,7 +590,7 @@ function App() {
 ```
 
 ### syncUpdate
-The update of this controlled input/textarea needs to be updated synchronously,
+the update of this controlled input/textarea needs to be updated synchronously,
 otherwise, due to asynchronous updates such as "store.setState" or "store[key] = newValue",
 it will cause input/textarea unable to input characters in languages other than English.
 "syncUpdate" is a helpless solution to the conflict between
@@ -621,7 +621,7 @@ function App() {
 ```
 
 ### subscribe
-To some extent, we can use useEffect's dependency array to subscribe to data,
+to some extent, we can use useEffect's dependency array to subscribe to data,
 but resy's subscribe is actually slightly different from useEffect,
 and it can also make up for and improve many functions that useEffect can't deal with.
 ```tsx
@@ -685,7 +685,7 @@ function App() {
 ```
 
 ### useConciseState
-The existence of useConciseState is mainly for the improvement of state management
+the existence of useConciseState is mainly for the improvement of state management
 for data state localization and hook state simplification,
 which makes up for most state management can only carry out large-scale module state management,
 and makes up for and improve the lack of privatized processing capacity of local states.
@@ -753,11 +753,11 @@ function App() {
 }
 ```
 
-* You can deconstruct and read store directly from useConciseState,
+* you can deconstruct and read store directly from useConciseState,
   and you can call various methods that store has through store,
   such as store.setState, store.syncUpdate, store.restore, store.subscribe.
 
-* The greatest help of deconstructing reading store from useConciseState
+* the greatest help of deconstructing reading store from useConciseState
   is to combat the dependency forgetting problem of hook's dependency array,
   because the data read from store is always up-to-date,
   so you don't have to worry about the mental burden caused by hook dependency array.
@@ -777,7 +777,7 @@ function App() {
   }, []);
   
   const countTemp = useMemo(() => {
-    // Don't worry if the dependency array is empty,
+    // don't worry if the dependency array is empty,
     // because the data read through store will always be up to date.
     return store.count + 9;
   }, []);
@@ -809,13 +809,13 @@ continue to see the introduction to view in the next section.
 ```tsx
 import { useStore } from "resy";
 
-// Changes in the state of count data will not cause re-render in Text
+// changes in the state of count data will not cause re-render in Text
 function Text() {
   const { text } = useStore(store);
   return <p>{text}</p>;
 }
 
-// Changes in the state of text data will not cause re-render in Count
+// changes in the state of text data will not cause re-render in Count
 function Count() {
   const { count } = useStore(store);
   return <p>{count}</p>;
@@ -855,7 +855,7 @@ and it can still be used against hook components.
 
 B: implementation principle.<br/>
 
-By wrapping class components with a layer of memo and transforming
+by wrapping class components with a layer of memo and transforming
 them into hook components, support for class components can be realized.
 
 C: optimize rendering.<br/>
@@ -869,15 +869,15 @@ updates the rendering even in its parent component. as long as the data
 used internally is not updated, it will not render
 itself and generate additional re-render.
 
-D: Corey use.<br/>
+D: corey use.<br/>
 
-The use of Corey optimizes the degree of freedom of the scene.
+the use of Corey optimizes the degree of freedom of the scene.
 
-Characteristics: <br/>
+E: characteristics: <br/>
 
-1、Support for class components.<br/>
-2、Support for class components to connect multiple store data.<br/>
-3、Automatically circumvents extra re-render.<br/>
+1、support for class components.<br/>
+2、support for class components to connect multiple store data.<br/>
+3、automatically circumvents extra re-render.<br/>
 </details>
 
 #### support for class components
@@ -899,8 +899,8 @@ const TestView = view(ClassCom)(store);
 ```
 
 #### view for hook mode I
-Simply wrap the hook component, the internal useStore is still used normally.
-Because useStore is normally used inside the hook component,
+simply wrap the hook component, the internal useStore is still used normally.
+because useStore is normally used inside the hook component,
 so you don't need to fill in store in the return function of view.
 ```tsx
 function HookCom() {
@@ -934,7 +934,7 @@ function App() {
 ```
 
 #### view for hook mode II
-You can also use the data hung on the state attribute of props
+you can also use the data hung on the state attribute of props
 to complete the rendering execution,
 but then you need to enter store in the return function of view,
 as follows:
@@ -989,7 +989,7 @@ import { useStore, MapStateToProps, view } from "resy";
 
 type ComPropsType = { name: string };
 
-// The second type parameter of the MapStateToProps paradigm type is the type of props.
+// the second type parameter of the MapStateToProps paradigm type is the type of props.
 class ClassComProps extends React.Component<
   MapStateToProps<StateType, ComPropsType>
 > {
@@ -1001,7 +1001,7 @@ class ClassComProps extends React.Component<
   }
 }
 
-// You can add a props type interface to the generic type of view.
+// you can add a props type interface to the generic type of view.
 const TestComPropsView = view<ComPropsType>(ClassComProps)(store);
 
 function App() {
@@ -1012,14 +1012,14 @@ function App() {
 ```
 
 #### view's equal function handle
-The second function parameter of view api is the advanced encapsulation
+the second function parameter of view api is the advanced encapsulation
 of React.memo's propsAreEqual function,
 which is essentially a custom comparison of the similarities
 and differences between props and state.
 ```tsx
 const TestEqualView = view<ComPropsType>(
   ClassComProps,
-  // It is similar to React.memo's propsAreEqual.
+  // it is similar to React.memo's propsAreEqual.
   (next, prev) => {
     const { props: nextProps, state: nextState } = next;
     const { props: prevProps, state: prevState } = prev;

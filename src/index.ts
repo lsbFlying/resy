@@ -2,6 +2,6 @@ export * from "./createStore";
 export * from "./use";
 export * from "./view";
 export type {
-  CreateStoreOptions, MapStateToProps, Store, ConciseStore, PS, PrimitiveState, StoreUtils,
-  SetState, SyncUpdate, Restore, Subscribe,
+  CreateStoreOptions, MapStateToProps, ConciseStore, PrimitiveState,
+  PS, StoreUtils, SetState, SyncUpdate, Restore, Subscribe, Store,
 } from "./model";

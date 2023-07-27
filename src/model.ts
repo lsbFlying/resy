@@ -265,3 +265,6 @@ export type ObjectType<S extends PrimitiveState> = { [key in keyof S]: ValueOf<S
 
 // object值类型是map的类型推断
 export type ObjectMapType<S extends PrimitiveState> = { [key in keyof S]: MapType<S> };
+
+// stateMap恢复的状态开关标识map类型
+export type StoreStateRestoreOkMapType = MapType<{ storeStateRestoreOk: boolean | null }>;

@@ -2,13 +2,12 @@
  * @description 本文件是createStore的内部代码抽离拆解的一些方法
  */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import { batchUpdate, VIEW_CONNECT_STORE_KEY } from "./static";
+import { batchUpdate } from "./static";
 import type {
-  PrimitiveState, Store, StoreViewMapType, StoreViewMapValue, Stores, ValueOf, MapType,
-  Callback, SetStateCallbackItem, StoreMapValue, StoreMapValueType,
-  Listener, Scheduler, StoreMap,
+  PrimitiveState, StoreViewMapType, ValueOf, MapType, Callback, SetStateCallbackItem,
+  StoreMapValue, StoreMapValueType, Listener, Scheduler, StoreMap, StoreStateRestoreOkMapType,
 } from "./model";
-import { mapToObject, objectToMap, protoPointStoreErrorHandle } from "./utils";
+import { followUpMap, mapToObject } from "./utils";
 
 /**
  * 从use-sync-external-store包的导入方式到下面的引用方式
@@ -18,66 +17,10 @@ import { mapToObject, objectToMap, protoPointStoreErrorHandle } from "./utils";
 const { useSyncExternalStore } = useSyncExternalStoreExports;
 
 /**
- * 给Comp组件的props上挂载的state属性数据做一层引用代理
- * @description 核心作用是找出SCU或者useMemo所需要的更新依赖的数据属性
- */
-export function stateRefByProxyHandle<S extends PrimitiveState>(
-  stateMap: MapType<S>,
-  innerUseStateSet: Set<keyof S>,
-) {
-  const store = new Proxy(stateMap, {
-    get: (_, key: keyof S, receiver: any) => {
-      protoPointStoreErrorHandle(receiver, store);
-      
-      innerUseStateSet.add(key);
-      return stateMap.get(key);
-    },
-  } as ProxyHandler<MapType<S>>) as object as S;
-  return store;
-}
-
-// view的多store的最新数据的处理
-export function viewStoresToLatestState<S extends PrimitiveState>(stores: Stores<S>) {
-  const latestStateTemp = {} as { [key in keyof Stores<S>]: ValueOf<S> };
-  for (const storesKey in stores) {
-    if (Object.prototype.hasOwnProperty.call(stores, storesKey)) {
-      latestStateTemp[storesKey] = mapToObject(getLatestStateMap(stores[storesKey]));
-    }
-  }
-  return latestStateTemp as S;
-}
-
-// view的多个store的state更新处理
-export function viewStoresStateUpdateHandle<S extends PrimitiveState>(
-  state: { [key in keyof Stores<S>]: S },
-  innerUseStateSet: Set<keyof S>,
-  nextState: S,
-  storesKey?: keyof Stores<S>,
-) {
-  const stateTemp: { [key in keyof Stores<S>]: S } = Object.assign({}, state);
-  Object.keys(state).forEach(storesKeyItem => {
-    if (storesKey === storesKeyItem) {
-      stateTemp[storesKey] = stateRefByProxyHandle(new Map(Object.entries(nextState)), innerUseStateSet)
-    }
-  });
-  return stateTemp;
-}
-
-// 获取最新数据Map对象
-export function getLatestStateMap<S extends PrimitiveState = {}>(store?: Store<S>) {
-  if (!store) return new Map() as MapType<S>;
-  return (
-    (
-      store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
-    ).get("getStateMap") as StoreViewMapValue<S>["getStateMap"]
-  )();
-}
-
-/**
  * @description storeStateRefSet自增处理
  * view连接store内部数据引用的自增指针处理
  */
-export function storeStateRefSetMark(storeStateRefSet: Set<number>) {
+function storeStateRefSetMark(storeStateRefSet: Set<number>) {
   const lastTemp = [...storeStateRefSet].at(-1);
   // 索引自增
   const lastItem = typeof lastTemp === "number" ? lastTemp + 1 : 0;
@@ -86,30 +29,65 @@ export function storeStateRefSetMark(storeStateRefSet: Set<number>) {
   return lastItem;
 }
 
+/**
+ * @description stateMap的恢复（复位）初始化
+ * 同时相较于直接复制 stateMap = new Map(state)的方式效率更快
+ */
+function stateMapRestore<S extends PrimitiveState>(state: S, stateMap: MapType<S>) {
+  stateMap.clear();
+  Object.entries(state).forEach(([key, value]) => {
+    stateMap.set(key, value);
+  });
+}
+
+/**
+ * 初始化渲染恢复重置数据处理
+ * @description 通过storeStateRefSet判断当前数据是否还有组件引用
+ * 只要还有一个组件在引用当前数据，都不会重置数据，
+ * 因为当前还在业务逻辑中，不属于完整的卸载
+ * 完整的卸载周期对应表达的是整个store的
+ *
+ * 原本将初始化重置放在subscribe中不稳定，
+ * 可能形成数据更新的撕裂，放在useAtomState中同步执行一次解决数据撕裂的安全问题
+ *
+ * 且也不能放在subscribe的return回调中卸载执行，以防止外部接口调用数据导致的数据不统一
+ */
+function initialRenderRestore<S extends PrimitiveState>(
+  initialReset: boolean,
+  state: S,
+  stateMap: MapType<S>,
+  storeStateRefSet: Set<number>,
+  storeStateRestoreOkMap: StoreStateRestoreOkMapType,
+) {
+  if (initialReset && !storeStateRefSet.size && !storeStateRestoreOkMap.get("storeStateRestoreOk")) {
+    storeStateRestoreOkMap.set("storeStateRestoreOk", true);
+    /**
+     * 重置数据状态（一次性全部重置）
+     * 之所以选择全部重置是因为防止某些模块未被及时渲染导致后续数据没有被初始化恢复
+     */
+    stateMapRestore(state, stateMap);
+  }
+}
+
 export function genViewConnectStoreMap<S extends PrimitiveState>(
   initialReset: boolean,
   state: S,
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
+  storeStateRestoreOkMap: StoreStateRestoreOkMapType,
 ) {
   const viewConnectStoreMap: StoreViewMapType<S> = new Map();
   viewConnectStoreMap.set("getStateMap", () => stateMap);
   viewConnectStoreMap.set("viewInitialReset", () => {
-    if (initialReset && !storeStateRefSet.size) {
-      /**
-       * storeStateRefSet.size的判断完善了直接一次性覆盖的安全性
-       * view初始化的时候执行直接一次性覆盖即可，
-       * 而如果是在useSyncExternalStore的初始化中执行则按key逐个执行初始化重置
-       * 主要是view初始化一开始拿不到全部的数据引用，
-       * 而useSyncExternalStore使用的时候可以拿到具体的数据引用
-       */
-      stateMap = objectToMap(state);
-    }
+    initialRenderRestore(initialReset, state, stateMap, storeStateRefSet, storeStateRestoreOkMap);
   });
   viewConnectStoreMap.set("viewConnectStore", () => {
     const storeRefIncreaseItem = storeStateRefSetMark(storeStateRefSet);
     return () => {
       storeStateRefSet.delete(storeRefIncreaseItem);
+      if (storeStateRefSet.size === 0) {
+        storeStateRestoreOkMap.set("storeStateRestoreOk", null);
+      }
     }
   });
   return viewConnectStoreMap;
@@ -126,6 +104,7 @@ export function connectStore<S extends PrimitiveState>(
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
   storeMap: StoreMap<S>,
+  storeStateRestoreOkMap: StoreStateRestoreOkMapType,
 ) {
   // 解决初始化属性泛型有?判断符，即一开始没有初始化的数据属性
   if (storeMap.has(key)) return storeMap;
@@ -145,6 +124,9 @@ export function connectStore<S extends PrimitiveState>(
     return () => {
       storeChangeSet.delete(onAtomStateChange);
       storeStateRefSet.delete(storeRefIncreaseItem);
+      if (storeStateRefSet.size === 0) {
+        storeStateRestoreOkMap.set("storeStateRestoreOk", null);
+      }
     };
   });
   
@@ -156,22 +138,7 @@ export function connectStore<S extends PrimitiveState>(
   });
   
   storeMapValue.set("useAtomState", () => {
-    /**
-     * @description 通过storeStateRefSet判断当前数据是否还有组件引用
-     * 只要还有一个组件在引用当前数据，都不会重置数据，
-     * 因为当前还在业务逻辑中，不属于完整的卸载
-     * 完整的卸载周期对应表达的是整个store的
-     *
-     * 原本将初始化重置放在subscribe中不稳定，
-     * 可能形成数据更新的撕裂，放在useAtomState中同步执行一次解决数据撕裂的安全问题
-     *
-     * 且也不能放在subscribe的return回调中卸载执行，以防止外部接口调用数据导致的数据不统一
-     */
-    if (initialReset && !storeStateRefSet.size) {
-      Object.prototype.hasOwnProperty.call(state, key)
-        ? stateMap.set(key, state[key])
-        : stateMap.delete(key);
-    }
+    initialRenderRestore(initialReset, state, stateMap, storeStateRefSet, storeStateRestoreOkMap);
     return useSyncExternalStore(
       (storeMap.get(key) as StoreMapValue<S>).get("subscribeAtomState") as StoreMapValueType<S>["subscribeAtomState"],
       (storeMap.get(key) as StoreMapValue<S>).get("getAtomState") as StoreMapValueType<S>["getAtomState"],
@@ -186,14 +153,14 @@ export function connectStore<S extends PrimitiveState>(
 
 // 批量触发订阅监听的数据变动
 export function batchDispatchListener<S extends PrimitiveState>(
-  prevStateParams: MapType<S>,
+  prevState: MapType<S>,
   changedData: Partial<S>,
   stateMap: MapType<S>,
   listenerSet: Set<Listener<S>>,
 ) {
   if (listenerSet.size > 0) {
     const nextStateTemp = mapToObject(stateMap);
-    const prevStateTemp = mapToObject(prevStateParams);
+    const prevStateTemp = mapToObject(prevState);
     listenerSet.forEach(item => item(
       changedData,
       nextStateTemp,
@@ -212,6 +179,7 @@ export function taskPush<S extends PrimitiveState>(
   storeStateRefSet: Set<number>,
   storeMap: StoreMap<S>,
   schedulerProcessor: MapType<Scheduler>,
+  storeStateRestoreOkMap: StoreStateRestoreOkMapType,
 ) {
   /**
    * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
@@ -235,7 +203,7 @@ export function taskPush<S extends PrimitiveState>(
       () => (
         (
           connectStore(
-            key, initialReset, state, stateMap, storeStateRefSet, storeMap
+            key, initialReset, state, stateMap, storeStateRefSet, storeMap, storeStateRestoreOkMap,
           ).get(key) as StoreMapValue<S>
         ).get("updater") as StoreMapValueType<S>["updater"]
       )(),
@@ -256,7 +224,7 @@ export function taskPush<S extends PrimitiveState>(
  */
 export function finallyBatchHandle<S extends PrimitiveState>(
   schedulerProcessor: MapType<Scheduler>,
-  prevState: MapType<S> | null,
+  prevState: MapType<S>,
   stateMap: MapType<S>,
   listenerSet: Set<Listener<S>>,
   setStateCallbackStackArray: SetStateCallbackItem<S>[],
@@ -280,7 +248,7 @@ export function finallyBatchHandle<S extends PrimitiveState>(
       schedulerProcessor.set("willUpdating", null);
       
       // 防止之前的数据被别的更新改动，这里及时取出保证之前的数据的阶段状态的对应
-      const prevStateTemp = new Map(prevState as MapType<S>);
+      const prevStateTemp = followUpMap(prevState);
       
       const { taskDataMap, taskQueueMap } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
       // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
@@ -303,9 +271,24 @@ export function finallyBatchHandle<S extends PrimitiveState>(
           callback(cycleState);
           if (index === array.length - 1) schedulerProcessor.set("isCalling", null);
         });
-        // 清空回调执行栈，否则回调中如果有更新则形成死循环
+        // 清空回调执行栈，否则回调中如果有更新则形成死循环 todo 待优化
         setStateCallbackStackArray.splice(0);
       }
     }));
+  }
+}
+
+// 更新之前的处理
+export function willUpdatingHandle<S extends PrimitiveState>(
+  schedulerProcessor: MapType<Scheduler>,
+  prevState: MapType<S>,
+  stateMap: MapType<S>,
+) {
+  if (!schedulerProcessor.get("willUpdating")) {
+    schedulerProcessor.set("willUpdating", true);
+    // 在更新执行将更新之前的数据状态缓存下拉，以便于subscribe触发监听使用
+    stateMap.forEach((value, key) => {
+      prevState.set(key, value);
+    });
   }
 }

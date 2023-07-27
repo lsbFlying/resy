@@ -10,16 +10,17 @@ import {
   batchUpdate, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, RESY_ID,
 } from "./static";
 import {
-  stateErrorHandle, mapToObject, objectToMap, protoPointStoreErrorHandle,
+  stateErrorHandle, mapToObject, objectToMap, protoPointStoreErrorHandle, followUpMap,
 } from "./utils";
 import {
-  genViewConnectStoreMap, connectStore, batchDispatchListener, taskPush, finallyBatchHandle,
+  genViewConnectStoreMap, connectStore, batchDispatchListener,
+  taskPush, finallyBatchHandle, willUpdatingHandle,
 } from "./reduce";
 import type {
   ExternalMapType, ExternalMapValue, PrimitiveState, StateFuncType, StoreMap, StoreMapValue,
   StoreMapValueType, Unsubscribe, Listener, CreateStoreOptions, Store, AnyFn,
   ConciseExternalMapType, ConciseExternalMapValue, SetStateCallback, SetStateCallbackItem,
-  MapType, ValueOf, State,
+  MapType, ValueOf, State, StoreStateRestoreOkMapType,
 } from "./model";
 
 /**
@@ -55,14 +56,21 @@ export function createStore<S extends PrimitiveState>(
   
   // 对应整个store的数据引用标记的set集合
   const storeStateRefSet = new Set<number>();
+  /**
+   * storeStateRef的引用清空的状态对应了整个store的数据状态的恢复到初始化的情况，
+   * 这里是恢复初始化成功与否的开关标识，以防止代码多次执行重复的动作，减轻冗余负担
+   */
+  const storeStateRestoreOkMap: StoreStateRestoreOkMapType = new Map();
   
   /**
    * @description 由于proxy读取数据本身相较于原型链读取数据要慢，
    * 所以在不改变传参state的情况下，同时resy使用Map与Set提升性能，来弥补proxy的性能缺陷
+   * 同时更重要的是转换给map，做一层引用类型数据的安全保护层，
+   * 这样即使外部的initialState数据的引用数据恶意错误变化，也不会影响内部map数据的恶意变化
    */
-  let stateMap: MapType<S> = objectToMap(reducerState);
+  const stateMap: MapType<S> = objectToMap(reducerState);
   // 由于stateMap的设置前置了，优化了同步数据的获取，但是对于之前的数据状态也会需要前置处理
-  let prevState: MapType<S> | null = null;
+  const prevState: MapType<S> = objectToMap(reducerState);
   
   /**
    * setState的回调函数执行栈数组
@@ -74,19 +82,12 @@ export function createStore<S extends PrimitiveState>(
   const listenerSet = new Set<Listener<S>>();
   
   // 处理view连接store、以及获取最新state数据的相关处理Map
-  const viewConnectStoreMap = genViewConnectStoreMap(initialReset, reducerState, stateMap, storeStateRefSet);
+  const viewConnectStoreMap = genViewConnectStoreMap(
+    initialReset, reducerState, stateMap, storeStateRefSet, storeStateRestoreOkMap,
+  );
   
   // 数据存储容器storeMap
   const storeMap: StoreMap<S> = new Map();
-  
-  // 更新之前的处理
-  function willUpdatingHandle() {
-    if (!schedulerProcessor.get("willUpdating")) {
-      schedulerProcessor.set("willUpdating", true);
-      // 在更新执行将更新之前的数据状态缓存下拉，以便于subscribe触发监听使用
-      prevState = new Map(stateMap);
-    }
-  }
   
   /**
    * 同步更新
@@ -102,7 +103,7 @@ export function createStore<S extends PrimitiveState>(
     
     stateErrorHandle(stateTemp, "syncUpdate");
     
-    const prevStateTemp = new Map(stateMap);
+    const prevStateTemp: MapType<S> = followUpMap(stateMap);
     batchUpdate(() => {
       let effectState: Partial<S> | null = null;
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
@@ -115,7 +116,7 @@ export function createStore<S extends PrimitiveState>(
           (
             (
               connectStore(
-                key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap,
+                key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, storeStateRestoreOkMap,
               ).get(key) as StoreMapValue<S>
             ).get("updater") as StoreMapValueType<S>["updater"]
           )();
@@ -129,7 +130,7 @@ export function createStore<S extends PrimitiveState>(
   function setState(state: State<S> | StateFuncType<S>, callback?: SetStateCallback<S>) {
     // 调度处理器内部的willUpdating需要在更新之前开启，这里不管是否有变化需要更新，
     // 先打开缓存一下prevState方便后续订阅事件的触发执行
-    willUpdatingHandle();
+    willUpdatingHandle(schedulerProcessor, prevState, stateMap);
     
     let stateTemp = state;
     
@@ -143,8 +144,8 @@ export function createStore<S extends PrimitiveState>(
       // 更新添加入栈，后续统一批次合并更新
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         taskPush(
-          key, (stateTemp as S)[key], initialReset, reducerState,
-          stateMap, storeStateRefSet, storeMap, schedulerProcessor,
+          key, (stateTemp as S)[key], initialReset, reducerState, stateMap,
+          storeStateRefSet, storeMap, schedulerProcessor, storeStateRestoreOkMap,
         );
       });
     }
@@ -190,7 +191,7 @@ export function createStore<S extends PrimitiveState>(
           (
             (
               connectStore(
-                key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap,
+                key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, storeStateRestoreOkMap,
               ).get(key) as StoreMapValue<S>
             ).get("updater") as StoreMapValueType<S>["updater"]
           )();
@@ -228,8 +229,11 @@ export function createStore<S extends PrimitiveState>(
   
   // 单个属性数据更新
   function singlePropUpdate(_: S, key: keyof S, val: ValueOf<S>) {
-    willUpdatingHandle();
-    taskPush(key, val, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, schedulerProcessor);
+    willUpdatingHandle(schedulerProcessor, prevState, stateMap);
+    taskPush(
+      key, val, initialReset, reducerState, stateMap, storeStateRefSet,
+      storeMap, schedulerProcessor, storeStateRestoreOkMap,
+    );
     finallyBatchHandle(schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackArray);
     return true;
   }
@@ -247,7 +251,7 @@ export function createStore<S extends PrimitiveState>(
         (
           (
             connectStore(
-              key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap,
+              key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, storeStateRestoreOkMap,
             ) as StoreMap<S>
           ).get(key) as StoreMapValue<S>
         ).get("useAtomState") as StoreMapValueType<S>["useAtomState"]
@@ -261,7 +265,7 @@ export function createStore<S extends PrimitiveState>(
   externalMap.set("subscribe", subscribe);
   externalMap.set(RESY_ID, RESY_ID);
   
-  const conciseExternalMap = new Map(externalMap) as ConciseExternalMapType<S>;
+  const conciseExternalMap = followUpMap(externalMap) as ConciseExternalMapType<S>;
   
   /**
    * @description 给useConciseState的store代理的额外的store代理，
@@ -297,7 +301,7 @@ export function createStore<S extends PrimitiveState>(
         (
           (
             connectStore(
-              key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap,
+              key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, storeStateRestoreOkMap,
             ) as StoreMap<S>
           ).get(key) as StoreMapValue<S>
         ).get("useAtomState") as StoreMapValueType<S>["useAtomState"]

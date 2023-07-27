@@ -78,3 +78,15 @@ export function protoPointStoreErrorHandle(receiver: any, store: any) {
     );
   }
 }
+
+/**
+ * @description 跟进状态map
+ * 相较于直接赋值新值的方式也更快
+ */
+export function followUpMap<K, V>(map: Map<K, V>) {
+  const mapTemp: Map<K, V> = new Map();
+  map.forEach((value, key) => {
+    mapTemp.set(key, value);
+  });
+  return mapTemp;
+}

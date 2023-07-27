@@ -1,4 +1,5 @@
 import type { Callback, MapType, Scheduler } from "./model";
+import { followUpMap } from "./utils";
 
 /**
  * @description 调度处理器针对每一个store的私有化
@@ -47,8 +48,8 @@ export default function scheduler() {
   schedulerProcessor.set(
     "getTasks",
     () => ({
-      taskDataMap: new Map(taskDataMap),
-      taskQueueMap: new Map(taskQueueMap),
+      taskDataMap: followUpMap(taskDataMap),
+      taskQueueMap: followUpMap(taskQueueMap),
     }),
   );
   

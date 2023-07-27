@@ -11,7 +11,6 @@
 [![react](https://img.shields.io/badge/React-%3E%3D16.8.0-green.svg?style=flat-square)](https://img.shields.io/badge/React-%3E%3D16.0.0-green.svg?style=flat-square)
 [![npm](https://img.shields.io/npm/v/resy?color=blue&style=flat-square)](https://www.npmjs.com/package/resy)
 
-[comment]: <> ([![npm]&#40;https://img.shields.io/npm/dm/resy?style=flat-square&#41;]&#40;https://img.shields.io/npm/dm/resy?style=flat-square&#41;)
 </div>
 
 <details>
@@ -31,6 +30,7 @@
    and improve the execution efficiency of the code.
 8. Added compatibility of update functions with null parameters.
 9. Added the prevState parameter function of the function parameters of setState and syncUpdate.
+10. Fixed bug for useStore initialization data.
 
 🌟`v8.0.0`：<br/>
 1. Adjust the parameter position of the isDeepEqual function of "view",

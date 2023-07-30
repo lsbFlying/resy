@@ -34,6 +34,27 @@ test("resy-syncUpdate", async () => {
               });
             }}>btn</button>
           </div>
+          <button onClick={() => {
+            store.syncUpdate((prevState) => {
+              console.log("prevState", prevState);  // prevState { text: 'qwe', count: 0 }
+              if (prevState.count > 0) {
+                return {
+                  count: 999,
+                };
+              }
+              return {
+                count: -999,
+              };
+            });
+          }}>btn-2</button>
+          <button onClick={() => {
+            store.syncUpdate(() => {
+              return null
+            });
+          }}>btn-3</button>
+          <button onClick={() => {
+            store.syncUpdate(null);
+          }}>btn-4</button>
         </div>
       </div>
     );
@@ -52,6 +73,15 @@ test("resy-syncUpdate", async () => {
   fireEvent.click(getByText("btn"));
   getByText("count:1");
   expect("hello-0" === store.text).toBeTruthy();
+  
+  fireEvent.click(getByText("btn-2"));
+  getByText("count:-999");
+  
+  fireEvent.click(getByText("btn-3"));
+  getByText("count:-999");
+  
+  fireEvent.click(getByText("btn-4"));
+  getByText("count:-999");
   
   // @ts-ignore
   expect(() => store.syncUpdate(0)).toThrowError();

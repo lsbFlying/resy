@@ -169,7 +169,7 @@ function Count() {
   return <p>{count}</p>;
 }
 
-test("resy-view", async () => {
+test("resy-view-1", async () => {
   
   const App = () => {
     const {

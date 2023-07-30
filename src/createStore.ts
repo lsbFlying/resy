@@ -96,7 +96,7 @@ export function createStore<S extends PrimitiveState>(
   function syncUpdate(state: State<S> | StateFuncType<S>) {
     let stateTemp = state;
     if (typeof state === "function") {
-      stateTemp = (state as StateFuncType<S>)(mapToObject(prevState || stateMap));
+      stateTemp = (state as StateFuncType<S>)(mapToObject(prevState));
     }
     
     if (stateTemp === null) return;

@@ -6,7 +6,7 @@ import { fireEvent, render, waitFor } from "@testing-library/react";
 const originTime = `${Date.now()}${Math.random() * 100}`;
 
 test("resy-createStore", async () => {
-  const storeFn = createStore<{ time: string }>(() => {
+  const storeFn = createStore<{ time: string, text?: string }>(() => {
     const curTime = `${Date.now()}${Math.random() * 100}`;
     return {
       time: originTime === curTime ? originTime : curTime,
@@ -51,10 +51,15 @@ test("resy-createStore", async () => {
   }
   
   const App = () => {
+    const { text } = useStore(storeFn);
     const { show } = useStore(store);
     
     return (
       <div>
+        <span>text:{text}</span>
+        <button onClick={() => {
+          storeFn.text = "hello-restore";
+        }}>restore-prev-handle-btn</button>
         <button onClick={() => {
           store.show = !store.show;
           store0.count++;
@@ -69,9 +74,15 @@ test("resy-createStore", async () => {
   
   const { getByText } = render(<App/>);
   
+  fireEvent.click(getByText("restore-prev-handle-btn"));
+  await waitFor(() => {
+    getByText("text:hello-restore");
+  });
+  
   fireEvent.click(getByText("initialResetBtn"));
   await waitFor(() => {
     getByText("LoginInfo-Null");
+    getByText("text:");
     expect(JSON.stringify(store.loginInfo) === '{"name":"L","age":28,"msg":"Hello, createStore"}').toBeTruthy();
     expect(store0.count === 999).toBeTruthy();
   });

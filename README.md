@@ -238,9 +238,9 @@ const demoStore4 = createStore({
     // this.syncUpdate({ count: this.count + 1 });
     // this.restore();
     
-    // demoStore3.count++;
-    // demoStore3.setState({ count: demoStore3.count + 1 });
-    // demoStore3.syncUpdate({ count: demoStore3.count + 1 });
+    // demoStore4.count++;
+    // demoStore4.setState({ count: demoStore3.count + 1 });
+    // demoStore4.syncUpdate({ count: demoStore3.count + 1 });
   },
 });
 ```

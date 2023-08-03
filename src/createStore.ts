@@ -20,7 +20,7 @@ import type {
   ExternalMapType, ExternalMapValue, PrimitiveState, StateFuncType, StoreMap, StoreMapValue,
   StoreMapValueType, Unsubscribe, Listener, CreateStoreOptions, Store, AnyFn,
   ConciseExternalMapType, ConciseExternalMapValue, SetStateCallback, SetStateCallbackItem,
-  MapType, ValueOf, State, StoreStateRestoreOkMapType,
+  MapType, ValueOf, State, StateRestoreAccomplishMapType,
 } from "./model";
 
 /**
@@ -60,7 +60,7 @@ export function createStore<S extends PrimitiveState>(
    * storeStateRef的引用清空的状态对应了整个store的数据状态的恢复到初始化的情况，
    * 这里是恢复初始化成功与否的开关标识，以防止代码多次执行重复的动作，减轻冗余负担
    */
-  const storeStateRestoreOkMap: StoreStateRestoreOkMapType = new Map();
+  const stateRestoreAccomplishMap: StateRestoreAccomplishMapType = new Map();
   
   /**
    * @description 由于proxy读取数据本身相较于原型链读取数据要慢，
@@ -83,7 +83,7 @@ export function createStore<S extends PrimitiveState>(
   
   // 处理view连接store、以及获取最新state数据的相关处理Map
   const viewConnectStoreMap = genViewConnectStoreMap(
-    initialReset, reducerState, stateMap, storeStateRefSet, storeStateRestoreOkMap,
+    initialReset, reducerState, stateMap, storeStateRefSet, stateRestoreAccomplishMap,
   );
   
   // 数据存储容器storeMap
@@ -116,7 +116,7 @@ export function createStore<S extends PrimitiveState>(
           (
             (
               connectStore(
-                key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, storeStateRestoreOkMap,
+                key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
               ).get(key) as StoreMapValue<S>
             ).get("updater") as StoreMapValueType<S>["updater"]
           )();
@@ -145,7 +145,7 @@ export function createStore<S extends PrimitiveState>(
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         taskPush(
           key, (stateTemp as S)[key], initialReset, reducerState, stateMap,
-          storeStateRefSet, storeMap, schedulerProcessor, storeStateRestoreOkMap,
+          storeStateRefSet, storeMap, schedulerProcessor, stateRestoreAccomplishMap,
         );
       });
     }
@@ -191,7 +191,7 @@ export function createStore<S extends PrimitiveState>(
           (
             (
               connectStore(
-                key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, storeStateRestoreOkMap,
+                key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
               ).get(key) as StoreMapValue<S>
             ).get("updater") as StoreMapValueType<S>["updater"]
           )();
@@ -232,7 +232,7 @@ export function createStore<S extends PrimitiveState>(
     willUpdatingHandle(schedulerProcessor, prevState, stateMap);
     taskPush(
       key, val, initialReset, reducerState, stateMap, storeStateRefSet,
-      storeMap, schedulerProcessor, storeStateRestoreOkMap,
+      storeMap, schedulerProcessor, stateRestoreAccomplishMap,
     );
     finallyBatchHandle(schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackArray);
     return true;
@@ -251,7 +251,7 @@ export function createStore<S extends PrimitiveState>(
         (
           (
             connectStore(
-              key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, storeStateRestoreOkMap,
+              key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
             ) as StoreMap<S>
           ).get(key) as StoreMapValue<S>
         ).get("useAtomState") as StoreMapValueType<S>["useAtomState"]
@@ -301,7 +301,7 @@ export function createStore<S extends PrimitiveState>(
         (
           (
             connectStore(
-              key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, storeStateRestoreOkMap,
+              key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
             ) as StoreMap<S>
           ).get(key) as StoreMapValue<S>
         ).get("useAtomState") as StoreMapValueType<S>["useAtomState"]

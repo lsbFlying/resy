@@ -48,16 +48,16 @@ test("resy-view-3", async () => {
     }
   }
   
-  const ClassComView = view<ClassComProps>(ClassCom, (next, prev) => {
-    const { props: nextProps, state: nextState } = next;
-    const { props: prevProps, state: prevState } = prev;
-    return !(
-      prevProps.value !== nextProps.value
-      || JSON.stringify(prevState) !== JSON.stringify(nextState)
-    );
-  })({
-    loginState: loginStore,
-    themeState: themeStore,
+  const ClassComView = view<ClassComProps>(ClassCom)({
+    stores: { loginState: loginStore, themeState: themeStore },
+    equal: (next, prev) => {
+      const { props: nextProps, state: nextState } = next;
+      const { props: prevProps, state: prevState } = prev;
+      return !(
+        prevProps.value !== nextProps.value
+        || JSON.stringify(prevState) !== JSON.stringify(nextState)
+      );
+    },
   });
   
   function Login() {

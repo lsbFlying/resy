@@ -43,7 +43,7 @@ test("resy-view-2", async () => {
     }
   }
   
-  const ClassComView = view(ClassCom)(store);
+  const ClassComView = view(ClassCom)({ stores: store });
   
   function HookCom() {
     const { count } = useStore(store);
@@ -54,9 +54,11 @@ test("resy-view-2", async () => {
     );
   }
   
-  const HookComView = view(HookCom, () => {
-    return false;
-  })();
+  const HookComView = view(HookCom)({
+    equal: () => {
+      return false;
+    },
+  });
   
   const App = () => {
     const { text } = useStore(store);

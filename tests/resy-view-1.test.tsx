@@ -51,7 +51,7 @@ class ClassCom extends React.PureComponent<MapStateToProps<Store>> {
   }
 }
 
-const PureClassCom = view(ClassCom)(store);
+const PureClassCom = view(ClassCom)({ stores: store });
 
 const HookCom = (props: MapStateToProps<Store>) => {
   // view会将store数据挂载到props上新增的state属性上
@@ -78,7 +78,7 @@ const HookCom = (props: MapStateToProps<Store>) => {
   );
 }
 
-const PureHookCom = view(HookCom)(store);
+const PureHookCom = view(HookCom)({ stores: store });
 
 interface TestComProps { testObj: { name: string } }
 // 该组件测试view的深度对比功能
@@ -104,24 +104,25 @@ const TestCom = (props: MapStateToProps<Store, TestComProps>) => {
   );
 }
 
-const PureTestCom = view<TestComProps, Store>(
-  TestCom,
-  (next, prev) => {
-  const { props: nextProps, state: nextState } = next;
-  const { props: prevProps, state: prevState } = prev;
-  if (
-    prevProps.testObj.name === nextProps.testObj.name
-    || (
-      prevState.testComTestState.name === nextState.testComTestState.name
-      && prevState.testComTestState.age === nextState.testComTestState.age
-    )
-  ) {
-    console.log(123);
-    return true;
-  }
-  console.log(456);
-  return false;
-})(store);
+const PureTestCom = view<TestComProps, Store>(TestCom)({
+  stores: store,
+  equal: (next, prev) => {
+    const { props: nextProps, state: nextState } = next;
+    const { props: prevProps, state: prevState } = prev;
+    if (
+      prevProps.testObj.name === nextProps.testObj.name
+      || (
+        prevState.testComTestState.name === nextState.testComTestState.name
+        && prevState.testComTestState.age === nextState.testComTestState.age
+      )
+    ) {
+      console.log(123);
+      return true;
+    }
+    console.log(456);
+    return false;
+  },
+});
 
 const TestCom2 = (props: MapStateToProps<Store, TestComProps>) => {
   // view会将store数据挂载到props上新增的state属性上
@@ -145,7 +146,7 @@ const TestCom2 = (props: MapStateToProps<Store, TestComProps>) => {
   );
 }
 
-const PureTestCom2 = view<TestComProps, Store>(TestCom2)(store);
+const PureTestCom2 = view<TestComProps, Store>(TestCom2)({ stores: store });
 
 // count数据状态的变化不会引起Text的re-render
 function Text() {

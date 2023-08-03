@@ -18,6 +18,10 @@
 <strong>changed logs - releases what's Changed</strong>
 </summary>
 
+🌟`v9.0.0`：<br/>
+1. Adjusted the usage position of the equal function in view.
+2. Solved the issue of inaccurate type recognition in views.
+
 🌟`v8.1.0`：<br/>
 1. Improved the type support of this inside the function.
 2. The proxy processing of store is optimized, and the security and stability of store are increased.
@@ -895,7 +899,7 @@ class ClassCom extends React.Component<MapStateToProps<StateType>> {
   }
 }
 
-const TestView = view(ClassCom)(store);
+const TestView = view(ClassCom)({ stores: store });
 ```
 
 ##### view for hook mode I
@@ -945,41 +949,7 @@ function HookCom2(props: MapStateToProps<StateType>) {
     <div>{count}{text}</div>
   );
 }
-const TestView3 = view(HookCom2)(store);
-```
-
-##### multiple store for class components
-resy itself has natural support for the ability of hook components to use multiple store,
-for example, you can use useStore directly inside the hook component to reference different store.
-but refer to different store for class components, the following methods are required:
-```tsx
-import React from "react";
-
-const loginStore = createStore<{ userName: string }>({
-   userName: "resy",
-});
-const themeStore = createStore<{ theme: "light" | "dark" }>({
-   theme: "light",
-});
-
-class ClassCom2 extends React.Component<
-  MapStateToProps<{ loginState: { userName: string }, themeState: { theme: "light" | "dark" } }>
-> {
-  render() {
-    const { loginState: { userName }, themeState: { theme } } = this.props.state;
-    return (
-      <div>
-        userName{userName}<br/>
-        theme:{theme}
-      </div>
-    );
-  }
-}
-
-const TestView4 = view(ClassCom2)({
-   loginState: loginStore,
-   themeState: themeStore,
-});
+const TestView3 = view(HookCom2)({ stores: store });
 ```
 
 ##### view api's type recognition support for props
@@ -1002,7 +972,7 @@ class ClassComProps extends React.Component<
 }
 
 // you can add a props type interface to the generic type of view.
-const TestComPropsView = view<ComPropsType>(ClassComProps)(store);
+const TestComPropsView = view<ComPropsType>(ClassComProps)({ stores: store });
 
 function App() {
    return (
@@ -1017,10 +987,10 @@ of React.memo's propsAreEqual function,
 which is essentially a custom comparison of the similarities
 and differences between props and state.
 ```tsx
-const TestEqualView = view<ComPropsType>(
-  ClassComProps,
+const TestEqualView = view<ComPropsType, StateType>(ClassComProps)({
+  stores: store,
   // it is similar to React.memo's propsAreEqual.
-  (next, prev) => {
+  equal: (next, prev) => {
     const { props: nextProps, state: nextState } = next;
     const { props: prevProps, state: prevState } = prev;
     // some conditon
@@ -1034,8 +1004,61 @@ const TestEqualView = view<ComPropsType>(
       nextState.count === prevState.count
       || nextState.text === prevState.text
     );
+  },
+});
+```
+
+##### multiple store for class components
+resy itself has natural support for the ability of hook components to use multiple store,
+for example, you can use useStore directly inside the hook component to reference different store.
+but refer to different store for class components, the following methods are required:
+```tsx
+import React from "react";
+
+const loginStore = createStore<{ userName: string }>({
+   userName: "resy",
+});
+const themeStore = createStore<{ theme: "light" | "dark" }>({
+   theme: "light",
+});
+
+type MultipleStateType = {
+  loginState: {
+    userName: string;
+  };
+  themeState: {
+    theme: "light" | "dark";
+  };
+};
+
+type ClassCom2Props = {
+  value: number;
+};
+
+class ClassCom2 extends React.Component<
+  MapStateToProps<MultipleStateType, ClassCom2Props>
+> {
+  render() {
+    const { value } = this.props;
+    const { loginState: { userName }, themeState: { theme } } = this.props.state;
+    return (
+      <div>
+        userName{userName}<br/>
+        theme:{theme}<br/>
+        value:{value}<br/>
+      </div>
+    );
   }
-)(store);
+}
+
+const TestView4 = view<ClassCom2Props, MultipleStateType>(ClassCom2)({
+  stores: { loginState: loginStore, themeState: themeStore },
+  equal: (next, prev) => {
+    console.log(next.state.loginState.userName, prev.props.value);
+    // if (...) return true;
+    return false;
+  },
+});
 ```
 
 ### License

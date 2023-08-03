@@ -5,7 +5,7 @@ import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { batchUpdate } from "./static";
 import type {
   PrimitiveState, StoreViewMapType, ValueOf, MapType, Callback, SetStateCallbackItem,
-  StoreMapValue, StoreMapValueType, Listener, Scheduler, StoreMap, StoreStateRestoreOkMapType,
+  StoreMapValue, StoreMapValueType, Listener, Scheduler, StoreMap, StateRestoreAccomplishMapType,
 } from "./model";
 import { followUpMap, mapToObject } from "./utils";
 
@@ -57,10 +57,10 @@ function initialRenderRestore<S extends PrimitiveState>(
   state: S,
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
-  storeStateRestoreOkMap: StoreStateRestoreOkMapType,
+  stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
 ) {
-  if (initialReset && !storeStateRefSet.size && !storeStateRestoreOkMap.get("storeStateRestoreOk")) {
-    storeStateRestoreOkMap.set("storeStateRestoreOk", true);
+  if (initialReset && !storeStateRefSet.size && !stateRestoreAccomplishMap.get("stateRestoreAccomplish")) {
+    stateRestoreAccomplishMap.set("stateRestoreAccomplish", true);
     /**
      * 重置数据状态（一次性全部重置）
      * 之所以选择全部重置是因为防止某些模块未被及时渲染导致后续数据没有被初始化恢复
@@ -74,19 +74,19 @@ export function genViewConnectStoreMap<S extends PrimitiveState>(
   state: S,
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
-  storeStateRestoreOkMap: StoreStateRestoreOkMapType,
+  stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
 ) {
   const viewConnectStoreMap: StoreViewMapType<S> = new Map();
   viewConnectStoreMap.set("getStateMap", () => stateMap);
   viewConnectStoreMap.set("viewInitialReset", () => {
-    initialRenderRestore(initialReset, state, stateMap, storeStateRefSet, storeStateRestoreOkMap);
+    initialRenderRestore(initialReset, state, stateMap, storeStateRefSet, stateRestoreAccomplishMap);
   });
   viewConnectStoreMap.set("viewConnectStore", () => {
     const storeRefIncreaseItem = storeStateRefSetMark(storeStateRefSet);
     return () => {
       storeStateRefSet.delete(storeRefIncreaseItem);
       if (storeStateRefSet.size === 0) {
-        storeStateRestoreOkMap.set("storeStateRestoreOk", null);
+        stateRestoreAccomplishMap.set("stateRestoreAccomplish", null);
       }
     }
   });
@@ -104,7 +104,7 @@ export function connectStore<S extends PrimitiveState>(
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
   storeMap: StoreMap<S>,
-  storeStateRestoreOkMap: StoreStateRestoreOkMapType,
+  stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
 ) {
   // 解决初始化属性泛型有?判断符，即一开始没有初始化的数据属性
   if (storeMap.has(key)) return storeMap;
@@ -125,7 +125,7 @@ export function connectStore<S extends PrimitiveState>(
       storeChangeSet.delete(onAtomStateChange);
       storeStateRefSet.delete(storeRefIncreaseItem);
       if (storeStateRefSet.size === 0) {
-        storeStateRestoreOkMap.set("storeStateRestoreOk", null);
+        stateRestoreAccomplishMap.set("stateRestoreAccomplish", null);
       }
     };
   });
@@ -138,7 +138,7 @@ export function connectStore<S extends PrimitiveState>(
   });
   
   storeMapValue.set("useAtomState", () => {
-    initialRenderRestore(initialReset, state, stateMap, storeStateRefSet, storeStateRestoreOkMap);
+    initialRenderRestore(initialReset, state, stateMap, storeStateRefSet, stateRestoreAccomplishMap);
     return useSyncExternalStore(
       (storeMap.get(key) as StoreMapValue<S>).get("subscribeAtomState") as StoreMapValueType<S>["subscribeAtomState"],
       (storeMap.get(key) as StoreMapValue<S>).get("getAtomState") as StoreMapValueType<S>["getAtomState"],
@@ -179,7 +179,7 @@ export function taskPush<S extends PrimitiveState>(
   storeStateRefSet: Set<number>,
   storeMap: StoreMap<S>,
   schedulerProcessor: MapType<Scheduler>,
-  storeStateRestoreOkMap: StoreStateRestoreOkMapType,
+  stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
 ) {
   /**
    * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
@@ -203,7 +203,7 @@ export function taskPush<S extends PrimitiveState>(
       () => (
         (
           connectStore(
-            key, initialReset, state, stateMap, storeStateRefSet, storeMap, storeStateRestoreOkMap,
+            key, initialReset, state, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
           ).get(key) as StoreMapValue<S>
         ).get("updater") as StoreMapValueType<S>["updater"]
       )(),

@@ -182,8 +182,11 @@ export type StoreUtils<S extends PrimitiveState> = SetState<S> & SyncUpdate<S> &
 
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
 
+// 针对class组件的混合store数据状态类型
+export type AdvancedMultipleState = Record<number | string | symbol, Store<any>>;
+
 // 多个store
-export type Stores<S extends PrimitiveState> = { [key in keyof S]: Store<ValueOf<S>> };
+export type Stores<S extends AdvancedMultipleState> = { [key in keyof S]: Store<S[key]> };
 
 /**
  * @description useConciseState的Store返回类型
@@ -261,10 +264,16 @@ export type ValueOf<S extends PrimitiveState> = S[keyof S];
 export type MapType<S extends PrimitiveState> = Map<keyof S, ValueOf<S>>;
 
 // object类型推断
-export type ObjectType<S extends PrimitiveState> = { [key in keyof S]: ValueOf<S> };
+export type ObjectType<S extends PrimitiveState> = { [key in keyof S]: S[key] };
 
 // object值类型是map的类型推断
 export type ObjectMapType<S extends PrimitiveState> = { [key in keyof S]: MapType<S> };
 
 // stateMap恢复的状态开关标识map类型
-export type StoreStateRestoreOkMapType = MapType<{ storeStateRestoreOk: boolean | null }>;
+export type StateRestoreAccomplishMapType = MapType<{ stateRestoreAccomplish: boolean | null }>;
+
+// view返回函数的参数类型
+export type ViewOptionsType<P extends PrimitiveState = {}, S extends PrimitiveState = {}> = {
+  stores?: Store<S> | Stores<S>,
+  equal?: (next: PS<P, S>, prev: PS<P, S>) => boolean,
+};

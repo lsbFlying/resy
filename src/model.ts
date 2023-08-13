@@ -183,10 +183,10 @@ export type StoreUtils<S extends PrimitiveState> = SetState<S> & SyncUpdate<S> &
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
 
 // 针对class组件的混合store数据状态类型
-export type AdvancedMultipleState = Record<number | string | symbol, Store<any>>;
+export type MultipleState = Record<number | string | symbol, Store<any>>;
 
 // 多个store
-export type Stores<S extends AdvancedMultipleState> = { [key in keyof S]: Store<S[key]> };
+export type Stores<S extends MultipleState> = { [key in keyof S]: Store<S[key]> };
 
 /**
  * @description useConciseState的Store返回类型

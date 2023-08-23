@@ -36,10 +36,10 @@ import type {
  * 最重要的是结合restore方法具有必须的重置恢复数据初始化的能力保证初始化逻辑执行的正确性
  * @param options 状态容器配置项
  */
-export function createStore<S extends PrimitiveState>(
+export const createStore = <S extends PrimitiveState>(
   initialState?: S & ThisType<Store<S>> | (() => S & ThisType<Store<S>>),
   options?: CreateStoreOptions,
-): Store<S> {
+): Store<S> => {
   // 解析还原出来的数据状态
   let reducerState = initialState === undefined
     ? ({} as S)
@@ -93,7 +93,7 @@ export function createStore<S extends PrimitiveState>(
    * 同步更新
    * @description todo 更多意义上是为了解决input无法输入非英文语言bug的无奈，后续待优化setState与单次更新
    */
-  function syncUpdate(state: State<S> | StateFuncType<S>) {
+  const syncUpdate = (state: State<S> | StateFuncType<S>) => {
     let stateTemp = state;
     if (typeof state === "function") {
       stateTemp = (state as StateFuncType<S>)(mapToObject(prevState));
@@ -124,10 +124,10 @@ export function createStore<S extends PrimitiveState>(
       });
       effectState && batchDispatchListener(prevStateTemp, effectState, stateMap, listenerSet);
     });
-  }
+  };
   
   // 可对象数据更新的函数
-  function setState(state: State<S> | StateFuncType<S>, callback?: SetStateCallback<S>) {
+  const setState = (state: State<S> | StateFuncType<S>, callback?: SetStateCallback<S>) => {
     // 调度处理器内部的willUpdating需要在更新之前开启，这里不管是否有变化需要更新，
     // 先打开缓存一下prevState方便后续订阅事件的触发执行
     willUpdatingHandle(schedulerProcessor, prevState, stateMap);
@@ -164,10 +164,10 @@ export function createStore<S extends PrimitiveState>(
         : setStateCallbackStackArray.push({ cycleState: nextState, callback });
     }
     finallyBatchHandle(schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackArray);
-  }
+  };
   
   // 重置恢复初始化状态数据
-  function restore() {
+  const restore = () => {
     const prevStateTemp = new Map(stateMap);
     /**
      * 如果是函数返回的初始化状态数据，则需要再次执行初始化函数来获取内部初始化的逻辑数据
@@ -200,10 +200,10 @@ export function createStore<S extends PrimitiveState>(
       
       effectState && batchDispatchListener(prevStateTemp, effectState, stateMap, listenerSet);
     });
-  }
+  };
   
   // 订阅函数
-  function subscribe(listener: Listener<S>, stateKeys?: (keyof S)[]): Unsubscribe {
+  const subscribe = (listener: Listener<S>, stateKeys?: (keyof S)[]): Unsubscribe => {
     const listenerWrap: Listener<S> = (effectState, nextState, prevState) => {
       const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
       /**
@@ -225,10 +225,10 @@ export function createStore<S extends PrimitiveState>(
     return () => {
       listenerSet.delete(listenerWrap);
     };
-  }
+  };
   
   // 单个属性数据更新
-  function singlePropUpdate(_: S, key: keyof S, val: ValueOf<S>) {
+  const singlePropUpdate = (_: S, key: keyof S, val: ValueOf<S>) => {
     willUpdatingHandle(schedulerProcessor, prevState, stateMap);
     taskPush(
       key, val, initialReset, reducerState, stateMap, storeStateRefSet,
@@ -236,7 +236,7 @@ export function createStore<S extends PrimitiveState>(
     );
     finallyBatchHandle(schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackArray);
     return true;
-  }
+  };
   
   // setState、syncUpdate、restore、subscribe以及store代理内部数据Map的合集
   const externalMap: ExternalMapType<S> = new Map();

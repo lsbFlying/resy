@@ -13,11 +13,11 @@ import type {
  * @description 它会自动化规避组件额外多余的re-render
  * @param Comp 被包裹的组件
  */
-export function view<P extends PrimitiveState = {}, S extends PrimitiveState = {}>(
+export const view = <P extends PrimitiveState = {}, S extends PrimitiveState = {}>(
   // any用于兼容某些HOC导致的类型不合一问题，比如withRouter(低版本的react-router还是存在该HOC)
   // tslint:disable-next-line:variable-name
   Comp: React.ComponentType<MapStateToProps<S, P> | any>,
-) {
+) => {
   return (viewOptions: ViewOptionsType<P, S> = {}) => {
     const { stores, equal } = viewOptions;
     
@@ -55,4 +55,4 @@ export function view<P extends PrimitiveState = {}, S extends PrimitiveState = {
       );
     } : undefined);
   };
-}
+};

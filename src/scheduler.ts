@@ -8,7 +8,7 @@ import { followUpMap } from "./utils";
  *
  * 核心是使得调度与任务数据/队列并行统一
  */
-export default function scheduler() {
+const scheduler = () => {
   // 更新的任务队列
   const taskQueueMap = new Map();
   // 更新的任务数据
@@ -54,4 +54,6 @@ export default function scheduler() {
   );
   
   return schedulerProcessor;
-}
+};
+
+export default scheduler;

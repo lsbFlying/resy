@@ -13,10 +13,10 @@ import { RESY_ID, VIEW_CONNECT_STORE_KEY } from "./static";
  * 给Comp组件的props上挂载的state属性数据做一层引用代理
  * @description 核心作用是找出SCU或者useMemo所需要的更新依赖的数据属性
  */
-function stateRefByProxyHandle<S extends PrimitiveState>(
+const stateRefByProxyHandle = <S extends PrimitiveState>(
   stateMap: MapType<S>,
   innerUseStateSet: Set<keyof S>,
-) {
+) => {
   const store = new Proxy(stateMap, {
     get: (_, key: keyof S, receiver: any) => {
       protoPointStoreErrorHandle(receiver, store);
@@ -26,10 +26,10 @@ function stateRefByProxyHandle<S extends PrimitiveState>(
     },
   } as ProxyHandler<MapType<S>>) as object as S;
   return store;
-}
+};
 
 // view多个store的最新数据的处理
-export function viewStoresToLatestState<S extends PrimitiveState>(stores: Stores<S>) {
+export const viewStoresToLatestState = <S extends PrimitiveState>(stores: Stores<S>) => {
   const latestStateTemp = {} as { [key in keyof Stores<S>]: ValueOf<S> };
   for (const storesKey in stores) {
     if (Object.prototype.hasOwnProperty.call(stores, storesKey)) {
@@ -38,15 +38,15 @@ export function viewStoresToLatestState<S extends PrimitiveState>(stores: Stores
   }
   // as S 是为了配合view的equal函数的类型识别
   return latestStateTemp as S;
-}
+};
 
 // view多个store的state更新处理
-function viewStoresStateUpdateHandle<S extends PrimitiveState>(
+const viewStoresStateUpdateHandle = <S extends PrimitiveState>(
   state: { [key in keyof Stores<S>]: S },
   innerUseStateSet: Set<keyof S>,
   nextState: S,
   storesKey?: keyof Stores<S>,
-) {
+) => {
   const stateTemp: { [key in keyof Stores<S>]: S } = Object.assign({}, state);
   Object.keys(state).forEach(storesKeyItem => {
     if (storesKey === storesKeyItem) {
@@ -54,23 +54,23 @@ function viewStoresStateUpdateHandle<S extends PrimitiveState>(
     }
   });
   return stateTemp;
-}
+};
 
 // 获取最新数据Map对象（针对单个/无store，多个store就遍历再多次调用）
-export function getLatestStateMap<S extends PrimitiveState = {}>(store?: Store<S> | Stores<S>) {
+export const getLatestStateMap = <S extends PrimitiveState = {}>(store?: Store<S> | Stores<S>) => {
   if (!store || !store[RESY_ID]) return new Map() as MapType<S>;
   return (
     (
       store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
     ).get("getStateMap") as StoreViewMapValue<S>["getStateMap"]
   )();
-}
+};
 
 // 初始化state数据处理函数
-export function initialStateHandle<S extends PrimitiveState>(
+export const initialStateHandle = <S extends PrimitiveState>(
   innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>>,
   stores?: Store<S> | Stores<S>,
-) {
+) => {
   // 需要使用getState获取store内部的即时最新数据值（默认无store，同时默认兼容处理多store的返回情况）
   const stateMap: ViewStateMapType<S> = getLatestStateMap(stores) as MapType<S>;
   
@@ -120,17 +120,17 @@ export function initialStateHandle<S extends PrimitiveState>(
     );
   });
   return stateTemp;
-}
+};
 
 // 组件加载完成后的处理
-export function mountedHandle<S extends PrimitiveState, P extends PrimitiveState = {}>(
+export const mountedHandle = <S extends PrimitiveState, P extends PrimitiveState = {}>(
   innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>>,
   state: S | { [key in keyof Stores<S>]: S },
   setState: Dispatch<SetStateAction<S | { [key in keyof Stores<S>]: S }>>,
   props: P,
   stores?: Store<S> | Stores<S>,
   equal?: (next: PS<P, S>, prev: PS<P, S>) => boolean,
-) {
+) => {
   if (!stores) return;
   
   // 因为useEffect是异步的，所以后续访问 innerUseStateMapSet 时会有数据而不是空
@@ -171,10 +171,10 @@ export function mountedHandle<S extends PrimitiveState, P extends PrimitiveState
     viewConnectStoreSet.forEach(unsubscribe => unsubscribe());
     innerUseStateMapSet.clear();
   };
-}
+};
 
 // 处理单个/多个store的数据订阅监听
-function handleStoreSubscribe<S extends PrimitiveState, P extends PrimitiveState = {}>(
+const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState = {}>(
   store: Store<S>,
   innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>>,
   viewConnectStoreSet: Set<Unsubscribe>,
@@ -184,7 +184,7 @@ function handleStoreSubscribe<S extends PrimitiveState, P extends PrimitiveState
   equal?: (next: PS<P, S>, prev: PS<P, S>) => boolean,
   singleStore?: boolean,
   storesKeyTemp?: keyof Stores<S>,
-) {
+) => {
   // 在mounted进行一次的store校验
   storeErrorHandle(store, "view");
   
@@ -253,4 +253,4 @@ function handleStoreSubscribe<S extends PrimitiveState, P extends PrimitiveState
       }
     });
   }
-}
+};

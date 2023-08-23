@@ -20,25 +20,25 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * @description storeStateRefSet自增处理
  * view连接store内部数据引用的自增指针处理
  */
-function storeStateRefSetMark(storeStateRefSet: Set<number>) {
+const storeStateRefSetMark = (storeStateRefSet: Set<number>) => {
   const lastTemp = [...storeStateRefSet].at(-1);
   // 索引自增
   const lastItem = typeof lastTemp === "number" ? lastTemp + 1 : 0;
   // 做一个引用占位符，表示有一处引用，便于最后初始化逻辑执行的size判别
   storeStateRefSet.add(lastItem);
   return lastItem;
-}
+};
 
 /**
  * @description stateMap的恢复（复位）初始化
  * 同时相较于直接复制 stateMap = new Map(state)的方式效率更快
  */
-function stateMapRestore<S extends PrimitiveState>(state: S, stateMap: MapType<S>) {
+const stateMapRestore = <S extends PrimitiveState>(state: S, stateMap: MapType<S>) => {
   stateMap.clear();
   Object.entries(state).forEach(([key, value]) => {
     stateMap.set(key, value);
   });
-}
+};
 
 /**
  * 初始化渲染恢复重置数据处理
@@ -52,13 +52,13 @@ function stateMapRestore<S extends PrimitiveState>(state: S, stateMap: MapType<S
  *
  * 且也不能放在subscribe的return回调中卸载执行，以防止外部接口调用数据导致的数据不统一
  */
-function initialRenderRestore<S extends PrimitiveState>(
+const initialRenderRestore = <S extends PrimitiveState>(
   initialReset: boolean,
   state: S,
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
   stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
-) {
+) => {
   if (initialReset && !storeStateRefSet.size && !stateRestoreAccomplishMap.get("stateRestoreAccomplish")) {
     stateRestoreAccomplishMap.set("stateRestoreAccomplish", true);
     /**
@@ -67,15 +67,15 @@ function initialRenderRestore<S extends PrimitiveState>(
      */
     stateMapRestore(state, stateMap);
   }
-}
+};
 
-export function genViewConnectStoreMap<S extends PrimitiveState>(
+export const genViewConnectStoreMap = <S extends PrimitiveState>(
   initialReset: boolean,
   state: S,
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
   stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
-) {
+) => {
   const viewConnectStoreMap: StoreViewMapType<S> = new Map();
   viewConnectStoreMap.set("getStateMap", () => stateMap);
   viewConnectStoreMap.set("viewInitialReset", () => {
@@ -91,13 +91,13 @@ export function genViewConnectStoreMap<S extends PrimitiveState>(
     }
   });
   return viewConnectStoreMap;
-}
+};
 
 /**
  * @description 为每一个数据字段储存连接到store容器中
  * 既解决了初始化数据属性为undefined的情况，又节省了内存
  */
-export function connectStore<S extends PrimitiveState>(
+export const connectStore = <S extends PrimitiveState>(
   key: keyof S,
   initialReset: boolean,
   state: S,
@@ -105,7 +105,7 @@ export function connectStore<S extends PrimitiveState>(
   storeStateRefSet: Set<number>,
   storeMap: StoreMap<S>,
   stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
-) {
+) => {
   // 解决初始化属性泛型有?判断符，即一开始没有初始化的数据属性
   if (storeMap.has(key)) return storeMap;
   
@@ -149,15 +149,15 @@ export function connectStore<S extends PrimitiveState>(
   storeMap.set(key, storeMapValue);
   
   return storeMap;
-}
+};
 
 // 批量触发订阅监听的数据变动
-export function batchDispatchListener<S extends PrimitiveState>(
+export const batchDispatchListener = <S extends PrimitiveState>(
   prevState: MapType<S>,
   changedData: Partial<S>,
   stateMap: MapType<S>,
   listenerSet: Set<Listener<S>>,
-) {
+) => {
   if (listenerSet.size > 0) {
     const nextStateTemp = mapToObject(stateMap);
     const prevStateTemp = mapToObject(prevState);
@@ -167,10 +167,10 @@ export function batchDispatchListener<S extends PrimitiveState>(
       prevStateTemp,
     ));
   }
-}
+};
 
 // 更新任务添加入栈
-export function taskPush<S extends PrimitiveState>(
+export const taskPush = <S extends PrimitiveState>(
   key: keyof S,
   val: ValueOf<S>,
   initialReset: boolean,
@@ -180,7 +180,7 @@ export function taskPush<S extends PrimitiveState>(
   storeMap: StoreMap<S>,
   schedulerProcessor: MapType<Scheduler>,
   stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
-) {
+) => {
   /**
    * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
    * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
@@ -211,7 +211,7 @@ export function taskPush<S extends PrimitiveState>(
       val,
     );
   }
-}
+};
 
 /**
  * @description 最终批量处理（更新、触发）
@@ -222,13 +222,13 @@ export function taskPush<S extends PrimitiveState>(
  * 由此可见为了实现批量更新与同步获取最新数据有点拆东墙补西墙的味道
  * 但好在setState的回调弥补了同步获取最新数据的问题
  */
-export function finallyBatchHandle<S extends PrimitiveState>(
+export const finallyBatchHandle = <S extends PrimitiveState>(
   schedulerProcessor: MapType<Scheduler>,
   prevState: MapType<S>,
   stateMap: MapType<S>,
   listenerSet: Set<Listener<S>>,
   setStateCallbackStackArray: SetStateCallbackItem<S>[],
-) {
+) => {
   // 如果当前这一条更新没有变化也就没有任务队列入栈，则不需要更新就没有必要再往下执行多余的代码了
   const { taskQueueMap } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
   if (taskQueueMap.size && !schedulerProcessor.get("isUpdating")) {
@@ -276,14 +276,14 @@ export function finallyBatchHandle<S extends PrimitiveState>(
       }
     }));
   }
-}
+};
 
 // 更新之前的处理
-export function willUpdatingHandle<S extends PrimitiveState>(
+export const willUpdatingHandle = <S extends PrimitiveState>(
   schedulerProcessor: MapType<Scheduler>,
   prevState: MapType<S>,
   stateMap: MapType<S>,
-) {
+) => {
   if (!schedulerProcessor.get("willUpdating")) {
     schedulerProcessor.set("willUpdating", true);
     // 在更新执行将更新之前的数据状态缓存下拉，以便于subscribe触发监听使用
@@ -291,4 +291,4 @@ export function willUpdatingHandle<S extends PrimitiveState>(
       prevState.set(key, value);
     });
   }
-}
+};

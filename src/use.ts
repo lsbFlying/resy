@@ -11,10 +11,10 @@ import type { Store, PrimitiveState, ConciseStore } from "./model";
  * 本身产生的数据就是hook数据，所以会多一层代理
  * @param store
  */
-export function useStore<S extends PrimitiveState>(store: S): S {
+export const useStore = <S extends PrimitiveState>(store: S): S => {
   storeErrorHandle(store, "useStore");
   return store[USE_STORE_KEY as keyof S];
-}
+};
 
 /**
  * useState的简明版本
@@ -28,11 +28,11 @@ export function useStore<S extends PrimitiveState>(store: S): S {
  * 🌟:同时 useConciseState中可以解析出store属性，通过store可以读取各个数据的最新数据值
  * 弥补了useState中无法读取属性数据的最新值的不足，这是最核心的关键点
  */
-export function useConciseState<S extends PrimitiveState>(
+export const useConciseState = <S extends PrimitiveState>(
   initialState?: S & ThisType<Store<S>> | (() => S & ThisType<Store<S>>)
-): ConciseStore<S> {
+): ConciseStore<S> => {
   return useMemo(() => {
     return createStore<S>(initialState);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])[USE_CONCISE_STORE_KEY as keyof S];
-}
+};

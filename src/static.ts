@@ -6,7 +6,9 @@ import type { Callback } from "./model";
  * 批处理的安全补包
  * @description 一个unstable_batchedUpdates的shim垫片
  */
-export function batchUpdateShimRun(fn: Callback) { fn() }
+export const batchUpdateShimRun = (fn: Callback) => {
+  fn();
+};
 
 /**
  * 批处理更新

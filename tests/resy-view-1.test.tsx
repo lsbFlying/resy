@@ -152,7 +152,7 @@ const PureTestCom2 = view<TestComProps, Store>(TestCom2)({ stores: store });
 function Text() {
   const { text } = useStore(store);
   useEffect(() => {
-    return store.subscribe((effectState) => {
+    return store.subscribe(({ effectState }) => {
       store.text = `Text：${effectState.appTestState}`;
     }, ["appTestState"]);
   }, []);
@@ -178,7 +178,7 @@ test("resy-view-1", async () => {
     } = useStore(store);
     
     useEffect(() => {
-      return store.subscribe((effectState) => {
+      return store.subscribe(({ effectState }) => {
         if (effectState.classComTestState) {
           store.count = 18756;
         }

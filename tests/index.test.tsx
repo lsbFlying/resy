@@ -42,11 +42,7 @@ test("resy-basic", async () => {
       const { testFun2 } = store;
       testFun2();
       
-      const unsubscribe = store.subscribe((
-        effectState,
-        nextState,
-        prevState,
-      ) => {
+      const unsubscribe = store.subscribe(({ effectState, nextState, prevState }) => {
         if (effectState.sex === "no-sex-subscribe") {
           console.log(prevState.sex, nextState.sex);
           store.count = 999;

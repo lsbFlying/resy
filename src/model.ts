@@ -1,33 +1,33 @@
-import { VIEW_CONNECT_STORE_KEY, USE_CONCISE_STORE_KEY, USE_STORE_KEY, RESY_ID } from "./static";
+import { VIEW_CONNECT_STORE_KEY, USE_CONCISE_STORE_KEY, USE_STORE_KEY, REGENERATIVE_SYSTEM_KEY } from "./static";
 
 // 普通意义上的回调函数类型
 export type Callback = () => void;
 
-// 初始化数据的继承类型
-export type PrimitiveState = Record<number | string | symbol, any>;
+/**
+ * @description 初始化数据的原始继承类型，目前没有想到键为symbol的状态使用场景，
+ * 且支持symbol的键数据状态场景较为复杂，所以暂时不予支持symbol类型的键
+ */
+export type PrimitiveState = Record<number | string, any>;
 
 /**
  * @description resy的storeMap接口类型
- * subscribeAtomState与getAtomState是useSyncExternalStore参数接口
- *
- * 其中subscribeAtomState的onAtomStateChange参数回调包含数据更新操作
- * 将这些数据更新操作的函数储存在某个Set中
- * 然后在update中去进行forEach循环更新
- *
- * getAtomState单纯是获取内部静态数据值的函数
+ * subscribeOriginState与getOriginState是useSyncExternalStore参数接口
+ * 其中subscribeOriginState的onOriginStateChange参数回调包含数据更新操作
+ * 将这些数据更新操作的函数储存在某个既定的Set中，然后在update中去进行forEach循环更新
+ * getOriginState单纯是获取resy整个内部静态数据的函数
  */
 export type StoreMapValueType<S extends PrimitiveState> = {
-  // 当前元数据的状态变化事件的订阅，useSyncExternalStore的订阅
-  subscribeAtomState: (onAtomStateChange: Callback) => Callback;
-  // 获取当前元数据(独立单独的数据状态)
-  getAtomState: () => ValueOf<S>;
-  // 更新元数据的更新器
+  // 当前源数据的状态变化事件的订阅，useSyncExternalStore的订阅
+  subscribeOriginState: (onOriginStateChange: Callback) => Callback;
+  // 获取当前源数据(独立单独的数据状态)
+  getOriginState: () => ValueOf<S>;
+  // 更新源数据的更新器
   updater: () => void;
   /**
-   * 使用当前元数据，即useSyncExternalStore的useSnapshot，
+   * 使用当前源数据，即useSyncExternalStore的useSnapshot，
    * 可以简单理解为useState的效果，具备驱动页面更新渲染的能力。
    */
-  useAtomState: () => ValueOf<S>;
+  useOriginState: () => ValueOf<S>;
 };
 
 export type StoreMapValue<S extends PrimitiveState> = Map<
@@ -37,12 +37,14 @@ export type StoreMapValue<S extends PrimitiveState> = Map<
 // createStore的storeMap数据类型
 export type StoreMap<S extends PrimitiveState> = Map<keyof S, StoreMapValue<S>>;
 
-// 订阅事件的监听回调函数类型
-export type Listener<S extends PrimitiveState> = (
+export type ListenerParams<S extends PrimitiveState> = {
   effectState: Partial<S>,
   nextState: S,
   prevState: S,
-) => void;
+};
+
+// 订阅事件的监听回调函数类型
+export type Listener<S extends PrimitiveState> = (data: ListenerParams<S>) => void;
 
 /**
  * @description StoreViewMap的数据值类型，作为view这个api的核心Map接口类型
@@ -70,7 +72,7 @@ export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & {
   [VIEW_CONNECT_STORE_KEY]: StoreViewMapType<S>;
   [USE_STORE_KEY]: object;
   [USE_CONCISE_STORE_KEY]: object;
-  [RESY_ID]: symbol;
+  [REGENERATIVE_SYSTEM_KEY]: symbol;
 }
 
 // 扩展map的类型
@@ -81,7 +83,7 @@ export type ExternalMapType<S extends PrimitiveState> = Map<
 
 export type ConciseExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & {
   readonly store: Store<S>;
-  [RESY_ID]: symbol;
+  [REGENERATIVE_SYSTEM_KEY]: symbol;
 }
 
 // concise扩展map的类型
@@ -94,6 +96,10 @@ export type State<S extends PrimitiveState> = Partial<S> | S | null;
 
 // setState —————— 更新数据的函数
 export type SetState<S extends PrimitiveState> = Readonly<{
+  /**
+   * @param state
+   * @param callback
+   */
   setState(
     state: State<S> | StateFuncType<S>,
     callback?: SetStateCallback<S>,
@@ -101,7 +107,7 @@ export type SetState<S extends PrimitiveState> = Readonly<{
 }>;
 
 /**
- * setState的函数更新处理
+ * setState与syncUpdate的函数更新类型
  * @description prevState的存在是有必要的，注意区分在代码的同步变更state状态的过程中
  * 从store获取最新数据值与从当前一轮更新之前的prevState中获取之前的更新状态的逻辑区别
  * @example:
@@ -127,22 +133,24 @@ export type StateFuncType<S extends PrimitiveState> = (prevState: Readonly<S>) =
  * 也就是说resy它的setState的回调函数的最后的执行是记住了阶段性的最新数据，而不是最终的最新数据
  * 这一点很大程度上与类组件的this.setState区别开来
  */
-export type SetStateCallback<S extends PrimitiveState> = (nextState: S) => void;
+export type SetStateCallback<S extends PrimitiveState> = (nextState: Readonly<S>) => void;
 
 // setState的回调执行栈的元素类型
 export type SetStateCallbackItem<S extends PrimitiveState> = {
-  // 当前这一轮的state状态数据
-  cycleState: S;
+  // 当前这一句更新代码更新的state状态数据
+  nextState: S;
   callback: SetStateCallback<S>;
 };
 
-/**
- * @description 同步更新
- * 为了react的更新机制不适应在异步中执行的场景
- * 该场景为在异步中更新受控input类输入框的value值
- * 会导致输入不了英文以外的语言文字
- */
+// 同步更新
 export type SyncUpdate<S extends PrimitiveState> = Readonly<{
+  /**
+   * @description 同步更新
+   * 为了react的更新机制不适应在异步中执行的场景
+   * 该场景为在异步中更新受控input类输入框的value值
+   * 会导致输入不了英文以外的语言文字
+   * @param state
+   */
   syncUpdate(
     state: State<S> | StateFuncType<S>,
   ): void;
@@ -159,7 +167,6 @@ export type Subscribe<S extends PrimitiveState> = Readonly<{
    * subscribe的存在是必要的，它的作用并不类比于useEffect，
    * 而是像subscribe或者addEventListener的效果，监听订阅数据的变化
    * 具备多数据订阅监听的能力
-   *
    * @param listener 监听订阅的回调函数
    * @param stateKeys 监听订阅的具体的某一个store容器的某些数据变化，如果为空则默认监听store的任何一个数据的变化
    * @return unsubscribe 返回取消监听的函数
@@ -187,6 +194,9 @@ export type MultipleState = Record<number | string | symbol, Store<any>>;
 
 // 多个store
 export type Stores<S extends MultipleState> = { [key in keyof S]: Store<S[key]> };
+
+// 初始化数据类型
+export type InitialStateType<S extends PrimitiveState> = S & ThisType<Store<S>> | (() => S & ThisType<Store<S>>);
 
 /**
  * @description useConciseState的Store返回类型
@@ -237,9 +247,7 @@ export type CreateStoreOptions = {
    * @description 1、 该参数主要是为了在某模块mount初始化阶段自动重置数据的，
    * 如遇到登录信息、主题等这样的全局数据而言才会设置为false，
    * 这样可以使得生成的loginStore或者themeStore系统的全局生效
-   *
    * 2、对象接口式的写法是为了兼容未来可能的未知的配置功能的增加
-   *
    * @default true
    */
   initialReset?: boolean;
@@ -276,4 +284,26 @@ export type StateRestoreAccomplishMapType = MapType<{ stateRestoreAccomplish: bo
 export type ViewOptionsType<P extends PrimitiveState = {}, S extends PrimitiveState = {}> = {
   stores?: Store<S> | Stores<S>,
   equal?: (next: PS<P, S>, prev: PS<P, S>) => boolean,
+};
+
+/**
+ * 被保护的数据配置类型
+ * @param state 被保护的state的map数据
+ * @param fnName 被保护的作用域函数
+ * @param dataName 被保护的数据名称
+ * @param callback 被保护的函数域是否是回掉函数
+ */
+export type ProtectStateType<S extends PrimitiveState> = {
+  state: MapType<S>,
+  fnName: "setState" | "syncUpdate" | "subscribe",
+  dataName: "effectState" | "prevState" | "nextState",
+  callback?: boolean,
+};
+
+// 保护数据的操作类型
+export type ProtectActionType<S extends PrimitiveState> = {
+  // 数据属性键key
+  key: keyof S;
+  // 操作动作的类型，新增add、修改modify —— Setting; 删除 —— Deleting
+  type: "Setting" | "Deleting";
 };

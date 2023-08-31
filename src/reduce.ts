@@ -45,12 +45,14 @@ const stateMapRestore = <S extends PrimitiveState>(state: S, stateMap: MapType<S
  * @description 通过storeStateRefSet判断当前数据是否还有组件引用
  * 只要还有一个组件在引用当前数据，都不会重置数据，
  * 因为当前还在业务逻辑中，不属于完整的卸载
- * 完整的卸载周期对应表达的是整个store的
- *
+ * 完整的卸载周期对应表达的是整个store的使用周期
+ * course one：
  * 原本将初始化重置放在subscribe中不稳定，
- * 可能形成数据更新的撕裂，放在useAtomState中同步执行一次解决数据撕裂的安全问题
- *
+ * 可能形成数据更新的撕裂，放在useOriginState中同步执行一次解决数据撕裂的安全问题
+ * course two：
  * 且也不能放在subscribe的return回调中卸载执行，以防止外部接口调用数据导致的数据不统一
+ * 即使你放在subscribe的return回调中的setTimeout执行也无法保证外部调用的宏任务的顺序机制的执行可能
+ * 所以只有结合数据引用挂在标识以及渲染重置才是最安全合理的解决方式
  */
 const initialRenderRestore = <S extends PrimitiveState>(
   initialReset: boolean,
@@ -118,11 +120,12 @@ export const connectStore = <S extends PrimitiveState>(
   const storeChangeSet = new Set<Callback>();
   
   const storeMapValue: StoreMapValue<S> = new Map();
-  storeMapValue.set("subscribeAtomState", (onAtomStateChange: Callback) => {
-    storeChangeSet.add(onAtomStateChange);
+  
+  storeMapValue.set("subscribeOriginState", (onOriginStateChange: Callback) => {
+    storeChangeSet.add(onOriginStateChange);
     const storeRefIncreaseItem = storeStateRefSetMark(storeStateRefSet);
     return () => {
-      storeChangeSet.delete(onAtomStateChange);
+      storeChangeSet.delete(onOriginStateChange);
       storeStateRefSet.delete(storeRefIncreaseItem);
       if (storeStateRefSet.size === 0) {
         stateRestoreAccomplishMap.set("stateRestoreAccomplish", null);
@@ -130,19 +133,19 @@ export const connectStore = <S extends PrimitiveState>(
     };
   });
   
-  storeMapValue.set("getAtomState", () => stateMap.get(key));
+  storeMapValue.set("getOriginState", () => stateMap.get(key));
   
   storeMapValue.set("updater", () => {
     // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
     storeChangeSet.forEach(storeChange => storeChange());
   });
   
-  storeMapValue.set("useAtomState", () => {
+  storeMapValue.set("useOriginState", () => {
     initialRenderRestore(initialReset, state, stateMap, storeStateRefSet, stateRestoreAccomplishMap);
     return useSyncExternalStore(
-      (storeMap.get(key) as StoreMapValue<S>).get("subscribeAtomState") as StoreMapValueType<S>["subscribeAtomState"],
-      (storeMap.get(key) as StoreMapValue<S>).get("getAtomState") as StoreMapValueType<S>["getAtomState"],
-      (storeMap.get(key) as StoreMapValue<S>).get("getAtomState") as StoreMapValueType<S>["getAtomState"],
+      (storeMap.get(key) as StoreMapValue<S>).get("subscribeOriginState") as StoreMapValueType<S>["subscribeOriginState"],
+      (storeMap.get(key) as StoreMapValue<S>).get("getOriginState") as StoreMapValueType<S>["getOriginState"],
+      (storeMap.get(key) as StoreMapValue<S>).get("getOriginState") as StoreMapValueType<S>["getOriginState"],
     );
   });
   
@@ -154,23 +157,21 @@ export const connectStore = <S extends PrimitiveState>(
 // 批量触发订阅监听的数据变动
 export const batchDispatchListener = <S extends PrimitiveState>(
   prevState: MapType<S>,
-  changedData: Partial<S>,
+  effectState: Partial<S>,
   stateMap: MapType<S>,
   listenerSet: Set<Listener<S>>,
 ) => {
   if (listenerSet.size > 0) {
-    const nextStateTemp = mapToObject(stateMap);
-    const prevStateTemp = mapToObject(prevState);
-    listenerSet.forEach(item => item(
-      changedData,
-      nextStateTemp,
-      prevStateTemp,
-    ));
+    listenerSet.forEach(item => item({
+      effectState,
+      nextState: mapToObject(stateMap),
+      prevState: mapToObject(prevState),
+    }));
   }
 };
 
 // 更新任务添加入栈
-export const taskPush = <S extends PrimitiveState>(
+export const pushTask = <S extends PrimitiveState>(
   key: keyof S,
   val: ValueOf<S>,
   initialReset: boolean,
@@ -194,8 +195,7 @@ export const taskPush = <S extends PrimitiveState>(
      * store.count++;
      * store.count++;
      * 加了三次，如果count初始化值是0，那么理论上结果需要是3
-     *
-     * 同时这一步也是为了配合getAtomState，使得getAtomState可以获得最新值
+     * 同时这一步也是为了配合getOriginState，使得getOriginState可以获得最新值
      */
     stateMap.set(key, val);
     
@@ -227,7 +227,7 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
   prevState: MapType<S>,
   stateMap: MapType<S>,
   listenerSet: Set<Listener<S>>,
-  setStateCallbackStackArray: SetStateCallbackItem<S>[],
+  setStateCallbackStackSet: Set<SetStateCallbackItem<S>>,
 ) => {
   // 如果当前这一条更新没有变化也就没有任务队列入栈，则不需要更新就没有必要再往下执行多余的代码了
   const { taskQueueMap } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
@@ -235,7 +235,7 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
     /**
      * @description 采用微任务结合开关标志控制的方式达到批量更新的效果，
      * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
-     *
+     * detail course:
      * isUpdating、willUpdating的标志位重置必须放在batchUpdate之前重置，因为batchUpdate会有异步情况，
      * 而batchUpdate里面的batchDispatchListener会存在同步更新数据的情况，
      * 本身isUpdating的微任务执行方式已经是异步，而其内部的异步执行不会被等待阻塞，
@@ -262,17 +262,14 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
         });
       }
       
-      if (setStateCallbackStackArray.length) {
+      if (setStateCallbackStackSet.size) {
         schedulerProcessor.set("isCalling", true);
         // 先更新，再执行回调，循环调用回调
-        setStateCallbackStackArray.forEach((
-          {callback, cycleState}, index, array,
-        ) => {
-          callback(cycleState);
-          if (index === array.length - 1) schedulerProcessor.set("isCalling", null);
+        setStateCallbackStackSet.forEach(({callback, nextState}) => {
+          callback(nextState);
         });
-        // 清空回调执行栈，否则回调中如果有更新则形成死循环 todo 待优化
-        setStateCallbackStackArray.splice(0);
+        schedulerProcessor.set("isCalling", null);
+        setStateCallbackStackSet.clear();
       }
     }));
   }

@@ -7,7 +7,7 @@ import {
   StoreViewMapType, StoreViewMapValue, Unsubscribe, ValueOf, ViewStateMapType,
 } from "./model";
 import { mapToObject, objectToMap, protoPointStoreErrorHandle, storeErrorHandle } from "./utils";
-import { RESY_ID, VIEW_CONNECT_STORE_KEY } from "./static";
+import { REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY } from "./static";
 
 /**
  * 给Comp组件的props上挂载的state属性数据做一层引用代理
@@ -58,7 +58,7 @@ const viewStoresStateUpdateHandle = <S extends PrimitiveState>(
 
 // 获取最新数据Map对象（针对单个/无store，多个store就遍历再多次调用）
 export const getLatestStateMap = <S extends PrimitiveState = {}>(store?: Store<S> | Stores<S>) => {
-  if (!store || !store[RESY_ID]) return new Map() as MapType<S>;
+  if (!store || !store[REGENERATIVE_SYSTEM_KEY as keyof S]) return new Map() as MapType<S>;
   return (
     (
       store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
@@ -83,7 +83,7 @@ export const initialStateHandle = <S extends PrimitiveState>(
   // 先行初始化执行逻辑，并且每次生命周期中只同步执行一次
   if (stores) {
     // 单个Store
-    if ((stores as Store<S>)[RESY_ID as keyof S]) {
+    if ((stores as Store<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]) {
       (
         (
           (stores as Store<S>)?.[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
@@ -107,7 +107,7 @@ export const initialStateHandle = <S extends PrimitiveState>(
   }
   
   // 单store 或 无store
-  if (!stores || (stores as Store<S>)[RESY_ID as keyof S]) {
+  if (!stores || (stores as Store<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]) {
     return stateRefByProxyHandle(stateMap as MapType<S>, innerUseStateMapSet as Set<keyof S>);
   }
   
@@ -138,7 +138,7 @@ export const mountedHandle = <S extends PrimitiveState, P extends PrimitiveState
   
   let unsubscribe: Unsubscribe | Unsubscribe[];
   // 单store
-  if ((stores as Store<S>)[RESY_ID as keyof S]) {
+  if ((stores as Store<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]) {
     unsubscribe = handleStoreSubscribe(
       stores as Store<S>,
       innerUseStateMapSet,
@@ -201,11 +201,8 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
     });
     
     // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
-    return store.subscribe((
-      effectState,
-      nextState,
-      prevState,
-    ) => {
+    return store.subscribe((data) => {
+      const { effectState, nextState, prevState } = data;
       const effectStateFields = Object.keys(effectState);
       
       if (
@@ -234,11 +231,8 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
       });
     });
     
-    return store.subscribe((
-      effectState,
-      nextState,
-      prevState,
-    ) => {
+    return store.subscribe((data) => {
+      const { effectState, nextState, prevState } = data;
       const effectStateFields = Object.keys(effectState);
       const innerUseStateSet = (
         innerUseStateMapSet as Map<keyof Stores<S>, Set<keyof S>>

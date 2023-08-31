@@ -18,6 +18,12 @@
 <strong>changed logs - releases what's Changed</strong>
 </summary>
 
+🌟`v10.0.0`：<br/>
+1. Optimized the writing method and internal execution code for some types.
+2. Modify the subscribe listening parameter to flatten parameter processing.
+3. Added protection for prevState, nextState, and effectState.
+4. Improve the attribute deletion function of useConciseState.
+
 🌟`v9.0.0`：<br/>
 1. Adjusted the usage position of the equal function in view.
 2. Solved the issue of inaccurate type recognition in views.

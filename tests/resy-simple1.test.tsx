@@ -35,6 +35,10 @@ test("resy-simple1", async () => {
   // @ts-ignore
   expect(obj.value === "resy-simple").toBeTruthy();
   
+  expect(() => {
+    Object.setPrototypeOf(store, obj);
+  }).toThrowError();
+  
   const App = () => {
     const state = useStore(store);
     return (

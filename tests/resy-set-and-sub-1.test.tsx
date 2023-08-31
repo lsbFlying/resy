@@ -8,7 +8,7 @@ test("resy-set-and-sub1", async () => {
   const App = () => {
     const { count, text, text2 } = useStore(store);
     useEffect(() => {
-      return store.subscribe((effectState) => {
+      return store.subscribe(({ effectState }) => {
         console.log(effectState.count);
         store.text = "Arosy";
       }, ["count"]);

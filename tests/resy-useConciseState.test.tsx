@@ -81,7 +81,7 @@ test("resy-useConciseState", async () => {
     });
     
     useEffect(() => {
-      return store.subscribe((effectState, nextState, prevState) => {
+      return store.subscribe(({ effectState, nextState, prevState }) => {
         console.log("age-subscribe", effectState.age, prevState.age, nextState.age);
         expect(effectState.age === 28).toBeTruthy();
         expect(prevState.age === 14).toBeTruthy();

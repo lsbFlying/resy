@@ -7,20 +7,20 @@
  */
 import scheduler from "./scheduler";
 import {
-  batchUpdate, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, RESY_ID,
+  batchUpdate, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, REGENERATIVE_SYSTEM_KEY,
 } from "./static";
 import {
   stateErrorHandle, mapToObject, objectToMap, protoPointStoreErrorHandle, followUpMap,
 } from "./utils";
 import {
   genViewConnectStoreMap, connectStore, batchDispatchListener,
-  taskPush, finallyBatchHandle, willUpdatingHandle,
+  pushTask, finallyBatchHandle, willUpdatingHandle,
 } from "./reduce";
 import type {
   ExternalMapType, ExternalMapValue, PrimitiveState, StateFuncType, StoreMap, StoreMapValue,
   StoreMapValueType, Unsubscribe, Listener, CreateStoreOptions, Store, AnyFn,
   ConciseExternalMapType, ConciseExternalMapValue, SetStateCallback, SetStateCallbackItem,
-  MapType, ValueOf, State, StateRestoreAccomplishMapType,
+  MapType, ValueOf, State, StateRestoreAccomplishMapType, InitialStateType,
 } from "./model";
 
 /**
@@ -35,12 +35,13 @@ import type {
  * 在有足够复杂的初始化数据逻辑场景下，"函数化参数" 功能更能满足完善这种场景需求的写法的便利性
  * 最重要的是结合restore方法具有必须的重置恢复数据初始化的能力保证初始化逻辑执行的正确性
  * @param options 状态容器配置项
+ * @return Store<S>
  */
 export const createStore = <S extends PrimitiveState>(
-  initialState?: S & ThisType<Store<S>> | (() => S & ThisType<Store<S>>),
+  initialState?: InitialStateType<S>,
   options?: CreateStoreOptions,
 ): Store<S> => {
-  // 解析还原出来的数据状态
+  // 解析还原出来的状态数据
   let reducerState = initialState === undefined
     ? ({} as S)
     : typeof initialState === "function"
@@ -76,7 +77,7 @@ export const createStore = <S extends PrimitiveState>(
    * setState的回调函数执行栈数组
    * 用Array没有用Set或者Map是因为内部需要用索引index
    */
-  const setStateCallbackStackArray: SetStateCallbackItem<S>[] = [];
+  const setStateCallbackStackSet = new Set<SetStateCallbackItem<S>>();
   
   // 订阅监听Set容器
   const listenerSet = new Set<Listener<S>>();
@@ -91,7 +92,8 @@ export const createStore = <S extends PrimitiveState>(
   
   /**
    * 同步更新
-   * @description todo 更多意义上是为了解决input无法输入非英文语言bug的无奈，后续待优化setState与单次更新
+   * @description todo 更多意义上是为了解决input无法输入非英文语言bug的无奈
+   * bug原因是react的更新调度机制不满足在微任务中执行的问题，vue中是可以的，后续待优化
    */
   const syncUpdate = (state: State<S> | StateFuncType<S>) => {
     let stateTemp = state;
@@ -104,8 +106,10 @@ export const createStore = <S extends PrimitiveState>(
     stateErrorHandle(stateTemp, "syncUpdate");
     
     const prevStateTemp: MapType<S> = followUpMap(stateMap);
+    
     batchUpdate(() => {
       let effectState: Partial<S> | null = null;
+      
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         const val = (stateTemp as Partial<S> | S)[key];
         
@@ -122,6 +126,7 @@ export const createStore = <S extends PrimitiveState>(
           )();
         }
       });
+      
       effectState && batchDispatchListener(prevStateTemp, effectState, stateMap, listenerSet);
     });
   };
@@ -135,7 +140,7 @@ export const createStore = <S extends PrimitiveState>(
     let stateTemp = state;
     
     if (typeof state === "function") {
-      stateTemp = (state as StateFuncType<S>)(mapToObject(prevState as MapType<S>));
+      stateTemp = (state as StateFuncType<S>)(mapToObject(prevState));
     }
     
     if (stateTemp !== null) {
@@ -143,7 +148,7 @@ export const createStore = <S extends PrimitiveState>(
       
       // 更新添加入栈，后续统一批次合并更新
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
-        taskPush(
+        pushTask(
           key, (stateTemp as S)[key], initialReset, reducerState, stateMap,
           storeStateRefSet, storeMap, schedulerProcessor, stateRestoreAccomplishMap,
         );
@@ -159,16 +164,19 @@ export const createStore = <S extends PrimitiveState>(
        */
       schedulerProcessor.get("isCalling")
         ? Promise.resolve().then(() => {
-          setStateCallbackStackArray.push({ cycleState: nextState, callback });
+          setStateCallbackStackSet.add({ nextState, callback });
         })
-        : setStateCallbackStackArray.push({ cycleState: nextState, callback });
+        : setStateCallbackStackSet.add({ nextState, callback });
     }
-    finallyBatchHandle(schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackArray);
+  
+    stateTemp !== null && finallyBatchHandle(
+      schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackSet,
+    );
   };
   
   // 重置恢复初始化状态数据
   const restore = () => {
-    const prevStateTemp = new Map(stateMap);
+    const prevStateTemp = followUpMap(stateMap);
     /**
      * 如果是函数返回的初始化状态数据，则需要再次执行初始化函数来获取内部初始化的逻辑数据
      * 防止因为初始化函数的内部逻辑导致重置恢复的数据不符合初始化的数据逻辑
@@ -177,6 +185,7 @@ export const createStore = <S extends PrimitiveState>(
     
     batchUpdate(() => {
       let effectState: Partial<S> | null = null;
+      
       prevStateTemp.forEach((_, key) => {
         const originValue = reducerState[key];
         
@@ -204,7 +213,7 @@ export const createStore = <S extends PrimitiveState>(
   
   // 订阅函数
   const subscribe = (listener: Listener<S>, stateKeys?: (keyof S)[]): Unsubscribe => {
-    const listenerWrap: Listener<S> = (effectState, nextState, prevState) => {
+    const listenerWrap: Listener<S> = (data) => {
       const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
       /**
        * 事实上最终订阅触发时，每一个订阅的这个外层listener都被触发了，
@@ -214,9 +223,9 @@ export const createStore = <S extends PrimitiveState>(
         listenerKeysIsEmpty
         || (
           !listenerKeysIsEmpty
-          && Object.keys(effectState).some(key => stateKeys.includes(key))
+          && Object.keys(data.effectState).some(key => stateKeys.includes(key))
         )
-      ) listener(effectState, nextState, prevState);
+      ) listener(data);
     };
     
     listenerSet.add(listenerWrap);
@@ -230,11 +239,11 @@ export const createStore = <S extends PrimitiveState>(
   // 单个属性数据更新
   const singlePropUpdate = (_: S, key: keyof S, val: ValueOf<S>) => {
     willUpdatingHandle(schedulerProcessor, prevState, stateMap);
-    taskPush(
+    pushTask(
       key, val, initialReset, reducerState, stateMap, storeStateRefSet,
       storeMap, schedulerProcessor, stateRestoreAccomplishMap,
     );
-    finallyBatchHandle(schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackArray);
+    finallyBatchHandle(schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackSet);
     return true;
   };
   
@@ -254,7 +263,7 @@ export const createStore = <S extends PrimitiveState>(
               key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
             ) as StoreMap<S>
           ).get(key) as StoreMapValue<S>
-        ).get("useAtomState") as StoreMapValueType<S>["useAtomState"]
+        ).get("useOriginState") as StoreMapValueType<S>["useOriginState"]
       )();
     },
   } as ProxyHandler<StoreMap<S>>);
@@ -263,7 +272,7 @@ export const createStore = <S extends PrimitiveState>(
   externalMap.set("syncUpdate", syncUpdate);
   externalMap.set("restore", restore);
   externalMap.set("subscribe", subscribe);
-  externalMap.set(RESY_ID, RESY_ID);
+  externalMap.set(REGENERATIVE_SYSTEM_KEY, REGENERATIVE_SYSTEM_KEY);
   
   const conciseExternalMap = followUpMap(externalMap) as ConciseExternalMapType<S>;
   
@@ -287,6 +296,12 @@ export const createStore = <S extends PrimitiveState>(
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || stateMap.get(key);
     },
     set: singlePropUpdate,
+    deleteProperty: (_: S, key: keyof S) => {
+      return singlePropUpdate(_, key, undefined as ValueOf<S>);
+    },
+    setPrototypeOf: () => {
+      throw new Error("Changing the prototype of store is forbidden!");
+    },
   } as ProxyHandler<S>) as Store<S>;
   
   conciseExternalMap.set("store", conciseExtraStoreProxy);
@@ -304,7 +319,7 @@ export const createStore = <S extends PrimitiveState>(
               key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
             ) as StoreMap<S>
           ).get(key) as StoreMapValue<S>
-        ).get("useAtomState") as StoreMapValueType<S>["useAtomState"]
+        ).get("useOriginState") as StoreMapValueType<S>["useOriginState"]
       )();
     },
   } as ProxyHandler<StoreMap<S>>);
@@ -314,10 +329,15 @@ export const createStore = <S extends PrimitiveState>(
   externalMap.set(USE_CONCISE_STORE_KEY, conciseStoreProxy);
   
   const store = new Proxy(reducerState, {
-    get(_, key: keyof S, receiver: any) {
+    get: (_, key: keyof S, receiver: any) => {
       protoPointStoreErrorHandle(receiver, store);
       
       if (typeof stateMap.get(key) === "function") {
+        /**
+         * 增加bind绑定对象是因为如果是单纯的const { xFn } = store;的解构写法，
+         * 会使得函数内部的this指向的上下文作用域变成组件的作用域，
+         * 而组件运行的作用域在开发的严格模式中是undefined，所以这里需要bind绑定this对象来兼容这种情况
+         */
         return (stateMap.get(key) as AnyFn).bind(store);
       }
       
@@ -325,8 +345,11 @@ export const createStore = <S extends PrimitiveState>(
     },
     set: singlePropUpdate,
     // delete 也会起到更新作用
-    deleteProperty(_: S, key: keyof S) {
+    deleteProperty: (_: S, key: keyof S) => {
       return singlePropUpdate(_, key, undefined as ValueOf<S>);
+    },
+    setPrototypeOf: () => {
+      throw new Error("Changing the prototype of store is forbidden!");
     },
   } as ProxyHandler<S>) as Store<S>;
   

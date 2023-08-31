@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { USE_STORE_KEY, USE_CONCISE_STORE_KEY } from "./static";
 import { createStore } from "./createStore";
 import { storeErrorHandle } from "./utils";
-import type { Store, PrimitiveState, ConciseStore } from "./model";
+import type { PrimitiveState, ConciseStore, InitialStateType } from "./model";
 
 /**
  * 驱动组件更新
@@ -10,6 +10,7 @@ import type { Store, PrimitiveState, ConciseStore } from "./model";
  * 特意分离直接从store获取hook调用是为了数据的安全使用
  * 本身产生的数据就是hook数据，所以会多一层代理
  * @param store
+ * @return S
  */
 export const useStore = <S extends PrimitiveState>(store: S): S => {
   storeErrorHandle(store, "useStore");
@@ -27,10 +28,10 @@ export const useStore = <S extends PrimitiveState>(store: S): S => {
  * 🌟: useConciseState相对于useState在多个数据状态时使用相对简单明了
  * 🌟:同时 useConciseState中可以解析出store属性，通过store可以读取各个数据的最新数据值
  * 弥补了useState中无法读取属性数据的最新值的不足，这是最核心的关键点
+ * @param initialState
+ * @return ConciseStore<S>
  */
-export const useConciseState = <S extends PrimitiveState>(
-  initialState?: S & ThisType<Store<S>> | (() => S & ThisType<Store<S>>)
-): ConciseStore<S> => {
+export const useConciseState = <S extends PrimitiveState>(initialState?: InitialStateType<S>): ConciseStore<S> => {
   return useMemo(() => {
     return createStore<S>(initialState);
     // eslint-disable-next-line react-hooks/exhaustive-deps

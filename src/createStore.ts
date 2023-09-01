@@ -168,7 +168,7 @@ export const createStore = <S extends PrimitiveState>(
         })
         : setStateCallbackStackSet.add({ nextState, callback });
     }
-  
+    
     stateTemp !== null && finallyBatchHandle(
       schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackSet,
     );

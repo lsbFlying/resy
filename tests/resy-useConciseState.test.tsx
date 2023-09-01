@@ -24,8 +24,14 @@ test("resy-useConciseState", async () => {
      * 但实际上在超过两个以上的数据状态的情况下，下面的写法的优势是直线上升
      */
     const { count, text, testFun, store, setState } = useConciseState(initialState);
+  
+    expect(() => {
+      Object.setPrototypeOf(store, {});
+    }).toThrowError();
+    
     return (
       <>
+        <p>{count === undefined ? "count prop has deleted" : ""}</p>
         <p>{name}{text}</p>
         <p>{name === "app1" ? `${count}app1` : `${count}app2`}</p>
         <button onClick={testFun}>{name === "app1" ? "testFunBtn1" : "testFunBtn1T"}</button>
@@ -38,6 +44,14 @@ test("resy-useConciseState", async () => {
         <button onClick={() => { setState({text: name}); }}>
           {name === "app1" ? "text1" : "text2"}
         </button>
+        {
+          name === "app1" && (
+            <button onClick={() => {
+              // @ts-ignore
+              delete store.count;
+            }}>deleteAction</button>
+          )
+        }
       </>
     );
   }
@@ -188,4 +202,9 @@ test("resy-useConciseState", async () => {
   
   fireEvent.click(getByText("TestComBtnSex"));
   getByText("ArosySex:man");
+  
+  fireEvent.click(getByText("deleteAction"));
+  await waitFor(() => {
+    getByText("count prop has deleted");
+  });
 });

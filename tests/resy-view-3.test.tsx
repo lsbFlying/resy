@@ -48,7 +48,7 @@ test("resy-view-3", async () => {
     }
   }
   
-  const ClassComView = view<ClassComProps>(ClassCom)({
+  const ClassComView = view<ClassComProps>(ClassCom, {
     stores: { loginState: loginStore, themeState: themeStore },
     equal: (next, prev) => {
       const { props: nextProps, state: nextState } = next;

@@ -38,9 +38,9 @@ export type StoreMapValue<S extends PrimitiveState> = Map<
 export type StoreMap<S extends PrimitiveState> = Map<keyof S, StoreMapValue<S>>;
 
 export type ListenerParams<S extends PrimitiveState> = {
-  effectState: Partial<S>,
-  nextState: S,
-  prevState: S,
+  effectState: Partial<S>;
+  nextState: S;
+  prevState: S;
 };
 
 // 订阅事件的监听回调函数类型
@@ -233,8 +233,8 @@ export interface Scheduler<S extends PrimitiveState = {}> {
   flush(): void;
   // 获取任务数据与任务队列
   getTasks(): {
-    taskDataMap: Map<keyof S, ValueOf<S>>,
-    taskQueueMap: Map<keyof S, Callback>,
+    taskDataMap: Map<keyof S, ValueOf<S>>;
+    taskQueueMap: Map<keyof S, Callback>;
   };
 }
 
@@ -282,8 +282,8 @@ export type StateRestoreAccomplishMapType = MapType<{ stateRestoreAccomplish: bo
 
 // view返回函数的参数类型
 export type ViewOptionsType<P extends PrimitiveState = {}, S extends PrimitiveState = {}> = {
-  stores?: Store<S> | Stores<S>,
-  equal?: (next: PS<P, S>, prev: PS<P, S>) => boolean,
+  stores?: Store<S> | Stores<S>;
+  equal?: (next: PS<P, S>, prev: PS<P, S>) => boolean;
 };
 
 /**
@@ -294,10 +294,10 @@ export type ViewOptionsType<P extends PrimitiveState = {}, S extends PrimitiveSt
  * @param callback 被保护的函数域是否是回掉函数
  */
 export type ProtectStateType<S extends PrimitiveState> = {
-  state: MapType<S>,
-  fnName: "setState" | "syncUpdate" | "subscribe",
-  dataName: "effectState" | "prevState" | "nextState",
-  callback?: boolean,
+  state: MapType<S>;
+  fnName: "setState" | "syncUpdate" | "subscribe";
+  dataName: "effectState" | "prevState" | "nextState";
+  callback?: boolean;
 };
 
 // 保护数据的操作类型

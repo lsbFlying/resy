@@ -31,9 +31,9 @@ export const useStore = <S extends PrimitiveState>(store: S): S => {
  * @param initialState
  * @return ConciseStore<S>
  */
-export const useConciseState = <S extends PrimitiveState>(initialState?: InitialStateType<S>): ConciseStore<S> => {
-  return useMemo(() => {
-    return createStore<S>(initialState);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])[USE_CONCISE_STORE_KEY as keyof S];
-};
+export const useConciseState = <S extends PrimitiveState>(
+  initialState?: InitialStateType<S>,
+): ConciseStore<S> =>
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+    useMemo(() => createStore<S>(initialState), [])[USE_CONCISE_STORE_KEY as keyof S]
+;

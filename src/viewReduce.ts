@@ -20,12 +20,22 @@ const stateRefByProxyHandle = <S extends PrimitiveState>(
   const store = new Proxy(stateMap, {
     get: (_, key: keyof S, receiver: any) => {
       protoPointStoreErrorHandle(receiver, store);
-      
+
       innerUseStateSet.add(key);
       return stateMap.get(key);
     },
   } as ProxyHandler<MapType<S>>) as object as S;
   return store;
+};
+
+// 获取最新数据Map对象（针对单个/无store，多个store就遍历再多次调用）
+export const getLatestStateMap = <S extends PrimitiveState = {}>(store?: Store<S> | Stores<S>) => {
+  if (!store || !store[REGENERATIVE_SYSTEM_KEY as keyof S]) return new Map() as MapType<S>;
+  return (
+    (
+      store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
+    ).get("getStateMap") as StoreViewMapValue<S>["getStateMap"]
+  )();
 };
 
 // view多个store的最新数据的处理
@@ -50,20 +60,10 @@ const viewStoresStateUpdateHandle = <S extends PrimitiveState>(
   const stateTemp: { [key in keyof Stores<S>]: S } = Object.assign({}, state);
   Object.keys(state).forEach(storesKeyItem => {
     if (storesKey === storesKeyItem) {
-      stateTemp[storesKey] = stateRefByProxyHandle(objectToMap(nextState), innerUseStateSet)
+      stateTemp[storesKey] = stateRefByProxyHandle(objectToMap(nextState), innerUseStateSet);
     }
   });
   return stateTemp;
-};
-
-// 获取最新数据Map对象（针对单个/无store，多个store就遍历再多次调用）
-export const getLatestStateMap = <S extends PrimitiveState = {}>(store?: Store<S> | Stores<S>) => {
-  if (!store || !store[REGENERATIVE_SYSTEM_KEY as keyof S]) return new Map() as MapType<S>;
-  return (
-    (
-      store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
-    ).get("getStateMap") as StoreViewMapValue<S>["getStateMap"]
-  )();
 };
 
 // 初始化state数据处理函数
@@ -73,7 +73,7 @@ export const initialStateHandle = <S extends PrimitiveState>(
 ) => {
   // 需要使用getState获取store内部的即时最新数据值（默认无store，同时默认兼容处理多store的返回情况）
   const stateMap: ViewStateMapType<S> = getLatestStateMap(stores) as MapType<S>;
-  
+
   /**
    * 如果是有store的情况则可以通过props.state的方式进行数据渲染及操作
    * 且props.state的方式兼容于函数组件与class组件
@@ -92,25 +92,25 @@ export const initialStateHandle = <S extends PrimitiveState>(
     } else {
       (Object.keys(stores) as (keyof Stores<S>)[]).forEach(storesKey => {
         const storeItem = (stores as Stores<S>)[storesKey] as Store<S>;
-        
+
         (
           (
             storeItem?.[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
           )?.get("viewInitialReset") as StoreViewMapValue<S>["viewInitialReset"]
         )?.();
-        
+
         (stateMap as ObjectMapType<S>)[storesKey] = getLatestStateMap(storeItem);
-        
+
         (innerUseStateMapSet as Map<keyof Stores<S>, Set<keyof S>>).set(storesKey, new Set<keyof S>());
       });
     }
   }
-  
+
   // 单store 或 无store
   if (!stores || (stores as Store<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]) {
     return stateRefByProxyHandle(stateMap as MapType<S>, innerUseStateMapSet as Set<keyof S>);
   }
-  
+
   // 多store
   const stateTemp = {} as ObjectType<S>;
   Object.keys(stateMap).forEach((stateMapKey: keyof S) => {
@@ -120,6 +120,82 @@ export const initialStateHandle = <S extends PrimitiveState>(
     );
   });
   return stateTemp;
+};
+
+// 处理单个/多个store的数据订阅监听
+const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState = {}>(
+  store: Store<S>,
+  innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>>,
+  viewConnectStoreSet: Set<Unsubscribe>,
+  state: S | { [key in keyof Stores<S>]: S },
+  setState: Dispatch<SetStateAction<S | { [key in keyof Stores<S>]: S }>>,
+  props: P,
+  equal?: (next: PS<P, S>, prev: PS<P, S>) => boolean,
+  singleStore?: boolean,
+  storesKeyTemp?: keyof Stores<S>,
+) => {
+  // 在mounted进行一次的store校验
+  storeErrorHandle(store, "view");
+
+  if (singleStore) {
+    innerUseStateMapSet.forEach(() => {
+      // 将view关联到store内部的storeStateRefSet，进行数据生命周期的同步
+      viewConnectStoreSet.add(
+        (
+          (
+            store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
+          ).get("viewConnectStore") as StoreViewMapValue<S>["viewConnectStore"]
+        )()
+      );
+    });
+
+    // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
+    return store.subscribe(data => {
+      const { effectState, nextState, prevState } = data;
+      const effectStateFields = Object.keys(effectState);
+
+      if (
+        // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
+        Array.from(innerUseStateMapSet as Set<keyof S>).some(key => effectStateFields.includes(key as string))
+        && (!equal || !equal({ props, state: nextState }, { props, state: prevState }))
+      ) {
+        setState(stateRefByProxyHandle(objectToMap(nextState), innerUseStateMapSet as Set<keyof S>));
+      }
+    });
+  } else {
+    (innerUseStateMapSet as Map<keyof Stores<S>, Set<keyof S>>).forEach((
+      _,
+      storesKey,
+      map,
+    ) => {
+      (map.get(storesKey) as Set<keyof S>).forEach(() => {
+        // 将view关联到每一个store内部的storeStateRefSet，进行数据生命周期的同步
+        viewConnectStoreSet.add(
+          (
+            (
+              store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
+            ).get("viewConnectStore") as StoreViewMapValue<S>["viewConnectStore"]
+          )()
+        );
+      });
+    });
+
+    return store.subscribe(data => {
+      const { effectState, nextState, prevState } = data;
+      const effectStateFields = Object.keys(effectState);
+      const innerUseStateSet = (
+        innerUseStateMapSet as Map<keyof Stores<S>, Set<keyof S>>
+      ).get(storesKeyTemp as keyof Stores<S>) as Set<keyof S>;
+
+      if (
+        // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
+        Array.from(innerUseStateSet).some(key => effectStateFields.includes(key as string))
+        && (!equal || !equal({ props, state: nextState }, { props, state: prevState }))
+      ) {
+        setState(viewStoresStateUpdateHandle(state, innerUseStateSet, nextState, storesKeyTemp));
+      }
+    });
+  }
 };
 
 // 组件加载完成后的处理
@@ -132,10 +208,10 @@ export const mountedHandle = <S extends PrimitiveState, P extends PrimitiveState
   equal?: (next: PS<P, S>, prev: PS<P, S>) => boolean,
 ) => {
   if (!stores) return;
-  
+
   // 因为useEffect是异步的，所以后续访问 innerUseStateMapSet 时会有数据而不是空
   const viewConnectStoreSet = new Set<Unsubscribe>();
-  
+
   let unsubscribe: Unsubscribe | Unsubscribe[];
   // 单store
   if ((stores as Store<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]) {
@@ -165,86 +241,16 @@ export const mountedHandle = <S extends PrimitiveState, P extends PrimitiveState
       ));
     });
   }
-  
+
   return () => {
-    typeof unsubscribe === "function" ? unsubscribe() : unsubscribe.forEach(item => item());
-    viewConnectStoreSet.forEach(unsubscribe => unsubscribe());
+    typeof unsubscribe === "function"
+      ? unsubscribe()
+      : unsubscribe.forEach(item => {
+        item();
+      });
+    viewConnectStoreSet.forEach(unsubscribe => {
+      unsubscribe();
+    });
     innerUseStateMapSet.clear();
   };
-};
-
-// 处理单个/多个store的数据订阅监听
-const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState = {}>(
-  store: Store<S>,
-  innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>>,
-  viewConnectStoreSet: Set<Unsubscribe>,
-  state: S | { [key in keyof Stores<S>]: S },
-  setState: Dispatch<SetStateAction<S | { [key in keyof Stores<S>]: S }>>,
-  props: P,
-  equal?: (next: PS<P, S>, prev: PS<P, S>) => boolean,
-  singleStore?: boolean,
-  storesKeyTemp?: keyof Stores<S>,
-) => {
-  // 在mounted进行一次的store校验
-  storeErrorHandle(store, "view");
-  
-  if (singleStore) {
-    innerUseStateMapSet.forEach(() => {
-      // 将view关联到store内部的storeStateRefSet，进行数据生命周期的同步
-      viewConnectStoreSet.add(
-        (
-          (
-            store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
-          ).get("viewConnectStore") as StoreViewMapValue<S>["viewConnectStore"]
-        )()
-      );
-    });
-    
-    // 刚好巧妙的与resy的订阅监听subscribe结合起来，形成一个reactive更新的包裹容器
-    return store.subscribe((data) => {
-      const { effectState, nextState, prevState } = data;
-      const effectStateFields = Object.keys(effectState);
-      
-      if (
-        // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
-        Array.from(innerUseStateMapSet as Set<keyof S>).some(key => effectStateFields.includes(key as string))
-        && (!equal || !equal({ props, state: nextState }, { props, state: prevState }))
-      ) {
-        setState(stateRefByProxyHandle(objectToMap(nextState), innerUseStateMapSet as Set<keyof S>));
-      }
-    });
-  } else {
-    (innerUseStateMapSet as Map<keyof Stores<S>, Set<keyof S>>).forEach((
-      _,
-      storesKey,
-      map,
-    ) => {
-      (map.get(storesKey) as Set<keyof S>).forEach(() => {
-        // 将view关联到每一个store内部的storeStateRefSet，进行数据生命周期的同步
-        viewConnectStoreSet.add(
-          (
-            (
-              store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
-            ).get("viewConnectStore") as StoreViewMapValue<S>["viewConnectStore"]
-          )()
-        );
-      });
-    });
-    
-    return store.subscribe((data) => {
-      const { effectState, nextState, prevState } = data;
-      const effectStateFields = Object.keys(effectState);
-      const innerUseStateSet = (
-        innerUseStateMapSet as Map<keyof Stores<S>, Set<keyof S>>
-      ).get(storesKeyTemp as keyof Stores<S>) as Set<keyof S>;
-      
-      if (
-        // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
-        Array.from(innerUseStateSet).some(key => effectStateFields.includes(key as string))
-        && (!equal || !equal({ props, state: nextState }, { props, state: prevState }))
-      ) {
-        setState(viewStoresStateUpdateHandle(state, innerUseStateSet, nextState, storesKeyTemp));
-      }
-    });
-  }
 };

@@ -90,7 +90,7 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
       if (storeStateRefSet.size === 0) {
         stateRestoreAccomplishMap.set("stateRestoreAccomplish", null);
       }
-    }
+    };
   });
   return viewConnectStoreMap;
 };
@@ -110,7 +110,7 @@ export const connectStore = <S extends PrimitiveState>(
 ) => {
   // 解决初始化属性泛型有?判断符，即一开始没有初始化的数据属性
   if (storeMap.has(key)) return storeMap;
-  
+
   /**
    * @description 为每一个数据的change更新回调做一个闭包Set储存
    * 之所以用Set不用Map是因为每一个使用数据字段
@@ -118,9 +118,9 @@ export const connectStore = <S extends PrimitiveState>(
    * 而每一个绑定回调函数是针对组件对于数据使用的更新开关
    */
   const storeChangeSet = new Set<Callback>();
-  
+
   const storeMapValue: StoreMapValue<S> = new Map();
-  
+
   storeMapValue.set("subscribeOriginState", (onOriginStateChange: Callback) => {
     storeChangeSet.add(onOriginStateChange);
     const storeRefIncreaseItem = storeStateRefSetMark(storeStateRefSet);
@@ -132,14 +132,16 @@ export const connectStore = <S extends PrimitiveState>(
       }
     };
   });
-  
+
   storeMapValue.set("getOriginState", () => stateMap.get(key));
-  
+
   storeMapValue.set("updater", () => {
     // 这一步才是真正的更新数据，通过useSyncExternalStore的内部变动后强制更新来刷新数据驱动页面更新
-    storeChangeSet.forEach(storeChange => storeChange());
+    storeChangeSet.forEach(storeChange => {
+      storeChange();
+    });
   });
-  
+
   storeMapValue.set("useOriginState", () => {
     initialRenderRestore(initialReset, state, stateMap, storeStateRefSet, stateRestoreAccomplishMap);
     return useSyncExternalStore(
@@ -148,9 +150,9 @@ export const connectStore = <S extends PrimitiveState>(
       (storeMap.get(key) as StoreMapValue<S>).get("getOriginState") as StoreMapValueType<S>["getOriginState"],
     );
   });
-  
+
   storeMap.set(key, storeMapValue);
-  
+
   return storeMap;
 };
 
@@ -162,11 +164,13 @@ export const batchDispatchListener = <S extends PrimitiveState>(
   listenerSet: Set<Listener<S>>,
 ) => {
   if (listenerSet.size > 0) {
-    listenerSet.forEach(item => item({
-      effectState,
-      nextState: mapToObject(stateMap),
-      prevState: mapToObject(prevState),
-    }));
+    listenerSet.forEach(item => {
+      item({
+        effectState,
+        nextState: mapToObject(stateMap),
+        prevState: mapToObject(prevState),
+      });
+    });
   }
 };
 
@@ -198,7 +202,7 @@ export const pushTask = <S extends PrimitiveState>(
      * 同时这一步也是为了配合getOriginState，使得getOriginState可以获得最新值
      */
     stateMap.set(key, val);
-    
+
     (schedulerProcessor.get("add") as Scheduler<S>["add"])(
       () => (
         (
@@ -246,26 +250,28 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
       schedulerProcessor.set("isUpdating", null);
       // 重置当前轮的即将更新的标识
       schedulerProcessor.set("willUpdating", null);
-      
+
       // 防止之前的数据被别的更新改动，这里及时取出保证之前的数据的阶段状态的对应
       const prevStateTemp = followUpMap(prevState);
-      
+
       const { taskDataMap, taskQueueMap } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
       // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
       (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
-      
+
       if (taskDataMap.size !== 0) {
         batchUpdate(() => {
-          taskQueueMap.forEach(task => task());
+          taskQueueMap.forEach(task => {
+            task();
+          });
           // 不管batchUpdate是在何种模式下，同步还是异步，这里也顺便统一更新订阅中的更新了
           batchDispatchListener(prevStateTemp, mapToObject(taskDataMap), stateMap, listenerSet);
         });
       }
-      
+
       if (setStateCallbackStackSet.size) {
         schedulerProcessor.set("isCalling", true);
         // 先更新，再执行回调，循环调用回调
-        setStateCallbackStackSet.forEach(({callback, nextState}) => {
+        setStateCallbackStackSet.forEach(({ callback, nextState }) => {
           callback(nextState);
         });
         schedulerProcessor.set("isCalling", null);

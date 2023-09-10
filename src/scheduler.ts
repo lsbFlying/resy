@@ -21,18 +21,18 @@ const scheduler = () => {
   const taskQueueMap = new Map();
   // 更新的任务数据
   const taskDataMap = new Map();
-  
+
   /**
    * @description 批量处理更新的调度Map
    * 主要是为了resy的直接单次更新的批量合并
    * 同时完成react18以下的非管理领域的批处理更新的调度协调性
    */
   const schedulerProcessor: MapType<Scheduler> = new Map();
-  
+
   schedulerProcessor.set("isCalling", null);
   schedulerProcessor.set("isUpdating", null);
   schedulerProcessor.set("willUpdating", null);
-  
+
   schedulerProcessor.set(
     "add",
     (
@@ -44,7 +44,7 @@ const scheduler = () => {
       taskQueueMap.set(key, task);
     },
   );
-  
+
   schedulerProcessor.set(
     "flush",
     () => {
@@ -52,7 +52,7 @@ const scheduler = () => {
       taskQueueMap.clear();
     },
   );
-  
+
   schedulerProcessor.set(
     "getTasks",
     () => ({
@@ -60,7 +60,7 @@ const scheduler = () => {
       taskQueueMap: followUpMap(taskQueueMap),
     }),
   );
-  
+
   return schedulerProcessor;
 };
 

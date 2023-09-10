@@ -47,14 +47,14 @@ export const createStore = <S extends PrimitiveState>(
     : typeof initialState === "function"
       ? initialState()
       : initialState;
-  
+
   stateErrorHandle(reducerState, "createStore");
-  
+
   const { initialReset = true } = options || {};
-  
+
   // 当前store的调度处理器
   const schedulerProcessor = scheduler();
-  
+
   // 对应整个store的数据引用标记的set集合
   const storeStateRefSet = new Set<number>();
   /**
@@ -62,7 +62,7 @@ export const createStore = <S extends PrimitiveState>(
    * 这里是恢复初始化成功与否的开关标识，以防止代码多次执行重复的动作，减轻冗余负担
    */
   const stateRestoreAccomplishMap: StateRestoreAccomplishMapType = new Map();
-  
+
   /**
    * @description 由于proxy读取数据本身相较于原型链读取数据要慢，
    * 所以在不改变传参state的情况下，同时resy使用Map与Set提升性能，来弥补proxy的性能缺陷
@@ -72,24 +72,24 @@ export const createStore = <S extends PrimitiveState>(
   const stateMap: MapType<S> = objectToMap(reducerState);
   // 由于stateMap的设置前置了，优化了同步数据的获取，但是对于之前的数据状态也会需要前置处理
   const prevState: MapType<S> = objectToMap(reducerState);
-  
+
   /**
    * setState的回调函数执行栈数组
    * 用Array没有用Set或者Map是因为内部需要用索引index
    */
   const setStateCallbackStackSet = new Set<SetStateCallbackItem<S>>();
-  
+
   // 订阅监听Set容器
   const listenerSet = new Set<Listener<S>>();
-  
+
   // 处理view连接store、以及获取最新state数据的相关处理Map
   const viewConnectStoreMap = genViewConnectStoreMap(
     initialReset, reducerState, stateMap, storeStateRefSet, stateRestoreAccomplishMap,
   );
-  
+
   // 数据存储容器storeMap
   const storeMap: StoreMap<S> = new Map();
-  
+
   /**
    * 同步更新
    * @description todo 更多意义上是为了解决input无法输入非英文语言bug的无奈
@@ -100,19 +100,19 @@ export const createStore = <S extends PrimitiveState>(
     if (typeof state === "function") {
       stateTemp = (state as StateFuncType<S>)(mapToObject(prevState));
     }
-    
+
     if (stateTemp === null) return;
-    
+
     stateErrorHandle(stateTemp, "syncUpdate");
-    
+
     const prevStateTemp: MapType<S> = followUpMap(stateMap);
-    
+
     batchUpdate(() => {
       let effectState: Partial<S> | null = null;
-      
+
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         const val = (stateTemp as Partial<S> | S)[key];
-        
+
         if (!Object.is(val, stateMap.get(key))) {
           stateMap.set(key, val);
           !effectState && (effectState = {});
@@ -126,26 +126,26 @@ export const createStore = <S extends PrimitiveState>(
           )();
         }
       });
-      
+
       effectState && batchDispatchListener(prevStateTemp, effectState, stateMap, listenerSet);
     });
   };
-  
+
   // 可对象数据更新的函数
   const setState = (state: State<S> | StateFuncType<S>, callback?: SetStateCallback<S>) => {
     // 调度处理器内部的willUpdating需要在更新之前开启，这里不管是否有变化需要更新，
     // 先打开缓存一下prevState方便后续订阅事件的触发执行
     willUpdatingHandle(schedulerProcessor, prevState, stateMap);
-    
+
     let stateTemp = state;
-    
+
     if (typeof state === "function") {
       stateTemp = (state as StateFuncType<S>)(mapToObject(prevState));
     }
-    
+
     if (stateTemp !== null) {
       stateErrorHandle(stateTemp, "setState");
-      
+
       // 更新添加入栈，后续统一批次合并更新
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         pushTask(
@@ -154,7 +154,7 @@ export const createStore = <S extends PrimitiveState>(
         );
       });
     }
-    
+
     // 异步回调添加入栈
     if (callback) {
       const nextState: S = Object.assign({}, mapToObject(stateMap), stateTemp);
@@ -168,12 +168,12 @@ export const createStore = <S extends PrimitiveState>(
         })
         : setStateCallbackStackSet.add({ nextState, callback });
     }
-    
+
     stateTemp !== null && finallyBatchHandle(
       schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackSet,
     );
   };
-  
+
   // 重置恢复初始化状态数据
   const restore = () => {
     const prevStateTemp = followUpMap(stateMap);
@@ -182,21 +182,21 @@ export const createStore = <S extends PrimitiveState>(
      * 防止因为初始化函数的内部逻辑导致重置恢复的数据不符合初始化的数据逻辑
      */
     if (typeof initialState === "function") reducerState = initialState();
-    
+
     batchUpdate(() => {
       let effectState: Partial<S> | null = null;
-      
+
       prevStateTemp.forEach((_, key) => {
         const originValue = reducerState[key];
-        
+
         if (!Object.is(originValue, stateMap.get(key))) {
           Object.prototype.hasOwnProperty.call(reducerState, key)
             ? stateMap.set(key, reducerState[key])
             : stateMap.delete(key);
-          
+
           !effectState && (effectState = {});
           effectState[key as keyof S] = originValue;
-          
+
           (
             (
               connectStore(
@@ -206,14 +206,14 @@ export const createStore = <S extends PrimitiveState>(
           )();
         }
       });
-      
+
       effectState && batchDispatchListener(prevStateTemp, effectState, stateMap, listenerSet);
     });
   };
-  
+
   // 订阅函数
   const subscribe = (listener: Listener<S>, stateKeys?: (keyof S)[]): Unsubscribe => {
-    const listenerWrap: Listener<S> = (data) => {
+    const listenerWrap: Listener<S> = data => {
       const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
       /**
        * 事实上最终订阅触发时，每一个订阅的这个外层listener都被触发了，
@@ -227,15 +227,15 @@ export const createStore = <S extends PrimitiveState>(
         )
       ) listener(data);
     };
-    
+
     listenerSet.add(listenerWrap);
-    
+
     // 显示返回解除订阅函数供用户自行选择是否解除订阅，因为也有可能用户想要一个订阅一直生效
     return () => {
       listenerSet.delete(listenerWrap);
     };
   };
-  
+
   // 单个属性数据更新
   const singlePropUpdate = (_: S, key: keyof S, val: ValueOf<S>) => {
     willUpdatingHandle(schedulerProcessor, prevState, stateMap);
@@ -246,10 +246,33 @@ export const createStore = <S extends PrimitiveState>(
     finallyBatchHandle(schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackSet);
     return true;
   };
-  
+
   // setState、syncUpdate、restore、subscribe以及store代理内部数据Map的合集
   const externalMap: ExternalMapType<S> = new Map();
-  
+
+  const store = new Proxy(reducerState, {
+    get: (_, key: keyof S, receiver: any) => {
+      protoPointStoreErrorHandle(receiver, store);
+
+      if (typeof stateMap.get(key) === "function") {
+        /**
+         * 增加bind绑定对象是因为如果是单纯的const { xFn } = store;的解构写法，
+         * 会使得函数内部的this指向的上下文作用域变成组件的作用域，
+         * 而组件运行的作用域在开发的严格模式中是undefined，所以这里需要bind绑定this对象来兼容这种情况
+         */
+        return (stateMap.get(key) as AnyFn).bind(store);
+      }
+
+      return externalMap.get(key as keyof ExternalMapValue<S>) || stateMap.get(key);
+    },
+    set: singlePropUpdate,
+    // delete 也会起到更新作用
+    deleteProperty: (_: S, key: keyof S) => singlePropUpdate(_, key, undefined as ValueOf<S>),
+    setPrototypeOf: () => {
+      throw new Error("Changing the prototype of store is forbidden!");
+    },
+  } as ProxyHandler<S>) as Store<S>;
+
   // 给useStore的驱动更新代理
   const storeProxy = new Proxy(storeMap, {
     get(_, key: keyof S) {
@@ -267,15 +290,15 @@ export const createStore = <S extends PrimitiveState>(
       )();
     },
   } as ProxyHandler<StoreMap<S>>);
-  
+
   externalMap.set("setState", setState);
   externalMap.set("syncUpdate", syncUpdate);
   externalMap.set("restore", restore);
   externalMap.set("subscribe", subscribe);
   externalMap.set(REGENERATIVE_SYSTEM_KEY, REGENERATIVE_SYSTEM_KEY);
-  
+
   const conciseExternalMap = followUpMap(externalMap) as ConciseExternalMapType<S>;
-  
+
   /**
    * @description 给useConciseState的store代理的额外的store代理，
    * 同时store不仅仅是单纯的数据读取操作，set/sync/sub三个函数的使用一样可以，
@@ -288,24 +311,22 @@ export const createStore = <S extends PrimitiveState>(
   const conciseExtraStoreProxy = new Proxy(reducerState, {
     get(_, key: keyof S, receiver: any) {
       protoPointStoreErrorHandle(receiver, conciseExtraStoreProxy);
-      
+
       if (typeof stateMap.get(key) === "function") {
         return (stateMap.get(key) as AnyFn).bind(store);
       }
-      
+
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || stateMap.get(key);
     },
     set: singlePropUpdate,
-    deleteProperty: (_: S, key: keyof S) => {
-      return singlePropUpdate(_, key, undefined as ValueOf<S>);
-    },
+    deleteProperty: (_: S, key: keyof S) => singlePropUpdate(_, key, undefined as ValueOf<S>),
     setPrototypeOf: () => {
       throw new Error("Changing the prototype of store is forbidden!");
     },
   } as ProxyHandler<S>) as Store<S>;
-  
+
   conciseExternalMap.set("store", conciseExtraStoreProxy);
-  
+
   // 给useConciseState的驱动更新代理，与useStore分离开来，避免useStore中解构读取store产生冗余
   const conciseStoreProxy = new Proxy(storeMap, {
     get(_, key: keyof S) {
@@ -323,35 +344,10 @@ export const createStore = <S extends PrimitiveState>(
       )();
     },
   } as ProxyHandler<StoreMap<S>>);
-  
+
   externalMap.set(VIEW_CONNECT_STORE_KEY, viewConnectStoreMap);
   externalMap.set(USE_STORE_KEY, storeProxy);
   externalMap.set(USE_CONCISE_STORE_KEY, conciseStoreProxy);
-  
-  const store = new Proxy(reducerState, {
-    get: (_, key: keyof S, receiver: any) => {
-      protoPointStoreErrorHandle(receiver, store);
-      
-      if (typeof stateMap.get(key) === "function") {
-        /**
-         * 增加bind绑定对象是因为如果是单纯的const { xFn } = store;的解构写法，
-         * 会使得函数内部的this指向的上下文作用域变成组件的作用域，
-         * 而组件运行的作用域在开发的严格模式中是undefined，所以这里需要bind绑定this对象来兼容这种情况
-         */
-        return (stateMap.get(key) as AnyFn).bind(store);
-      }
-      
-      return externalMap.get(key as keyof ExternalMapValue<S>) || stateMap.get(key);
-    },
-    set: singlePropUpdate,
-    // delete 也会起到更新作用
-    deleteProperty: (_: S, key: keyof S) => {
-      return singlePropUpdate(_, key, undefined as ValueOf<S>);
-    },
-    setPrototypeOf: () => {
-      throw new Error("Changing the prototype of store is forbidden!");
-    },
-  } as ProxyHandler<S>) as Store<S>;
-  
+
   return store;
-}
+};

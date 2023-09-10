@@ -47,7 +47,7 @@ export const stateErrorHandle = <S extends PrimitiveState>(
   ) {
     throw new Error(
       `resy's ${funcName}(...): takes an object of state variables to update or`
-      + ` a function which returns an object of state variables.`
+      + " a function which returns an object of state variables."
     );
   }
   if (
@@ -94,27 +94,6 @@ export const followUpMap = <K, V>(map: Map<K, V>) => {
 };
 
 /**
- * 引用数据类型深对比（fast-deep-equal的源码）
- * @description 主要是为了对比stateMap与prevState的前后数据是否一致，
- * 有没有被通过第一层之外的内层引用操作改动内层数据的值
- * 避免(store || effectState || prevState || nextState).name.age = x;这种方式改动数据产生的bug
- */
-// effectState、prevState、nextState以及更新数据的循环引用更新调度的错误处理
-export const stateSchedulerErrorHandle = <S extends PrimitiveState>(
-  state: Partial<S>,
-  prevState: MapType<S>,
-  stateMap: MapType<S>,
-) => {
-  Object.keys(state).forEach(key => {
-    if (prevState.get(key) !== stateMap.get(key)) {
-      // 1
-    }
-  });
-  new Date()
-  console.log(state);
-};
-
-/**
  * 数据保护处理的异常错误抛出提示处理
  * @description effectState、prevState、nextState以及更新数据的循环引用更新调度的错误处理
  */
@@ -131,4 +110,4 @@ export const stateProtectErrorHandle = <S extends PrimitiveState>(
     In fact, any attribute of ${dataName} is forbidden to operate.
     If you need to manipulate the ${dataName}, you can make an extra deep copy of the ${dataName}.`
   );
-}
+};

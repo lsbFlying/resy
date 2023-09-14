@@ -8,13 +8,11 @@ test("resy-set-and-sub2", async () => {
   const App = () => {
     const { setState, subscribe } = store;
     const { count, text } = useStore(store);
-    useEffect(() => {
-      return subscribe(({ effectState }) => {
-        console.log(effectState.count);
-        store.text = "Arosy";
-      }, ["count"]);
-    }, []);
-    
+    useEffect(() => subscribe(({ effectState }) => {
+      console.log(effectState.count);
+      store.text = "Arosy";
+    }, ["count"]), []);
+
     return (
       <>
         <p>{count}</p>
@@ -23,9 +21,9 @@ test("resy-set-and-sub2", async () => {
       </>
     );
   };
-  
-  const { getByText } = render(<App/>);
-  
+
+  const { getByText } = render(<App />);
+
   fireEvent.click(getByText("inc-btn"));
   await waitFor(() => {
     getByText("1");

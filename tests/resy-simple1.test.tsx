@@ -22,23 +22,23 @@ test("resy-simple1", async () => {
       return this.count;
     }
   });
-  
+
   const obj = {
     name: "Obj-FGH",
   };
-  
+
   Object.setPrototypeOf(obj, store);
-  
+
   // @ts-ignore
   expect(obj.test() === 0).toBeTruthy();
-  
+
   // @ts-ignore
   expect(obj.value === "resy-simple").toBeTruthy();
-  
+
   expect(() => {
     Object.setPrototypeOf(store, obj);
   }).toThrowError();
-  
+
   const App = () => {
     const state = useStore(store);
     return (
@@ -57,7 +57,7 @@ test("resy-simple1", async () => {
       </>
     );
   };
-  
+
   /** 测试初始化入参报错 start */
   // @ts-ignore
   expect(() => createStore(0)).toThrowError();
@@ -81,6 +81,7 @@ test("resy-simple1", async () => {
   // @ts-ignore
   expect(() => useStore({})).toThrowError();
   // @ts-ignore
+  // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
   expect(() => useStore(() => {})).toThrowError();
   // @ts-ignore
   expect(() => useStore([])).toThrowError();
@@ -108,6 +109,7 @@ test("resy-simple1", async () => {
   // @ts-ignore
   expect(() => useConciseState({})).toThrowError();
   // @ts-ignore
+  // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
   expect(() => useConciseState(() => {})).toThrowError();
   // @ts-ignore
   expect(() => useConciseState([])).toThrowError();
@@ -126,14 +128,14 @@ test("resy-simple1", async () => {
   // @ts-ignore
   expect(() => useConciseState(new Set())).toThrowError();
   /** 测试store类型报错 end */
-  
-  const { getByText } = render(<App/>);
-  
+
+  const { getByText } = render(<App />);
+
   fireEvent.click(getByText("btn-1"));
   await waitFor(() => {
     getByText("1");
   });
-  
+
   fireEvent.click(getByText("inc-btn"));
   await waitFor(() => {
     getByText("2");

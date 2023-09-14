@@ -10,7 +10,7 @@ import {
   batchUpdate, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, REGENERATIVE_SYSTEM_KEY,
 } from "./static";
 import {
-  stateErrorHandle, mapToObject, objectToMap, protoPointStoreErrorHandle, followUpMap,
+  stateErrorHandle, mapToObject, objectToMap, protoPointStoreErrorHandle, followUpMap, clearObject,
 } from "./utils";
 import {
   genViewConnectStoreMap, connectStore, batchDispatchListener,
@@ -42,7 +42,7 @@ export const createStore = <S extends PrimitiveState>(
   options?: CreateStoreOptions,
 ): Store<S> => {
   // 解析还原出来的状态数据
-  let reducerState = initialState === undefined
+  const reducerState = initialState === undefined
     ? ({} as S)
     : typeof initialState === "function"
       ? initialState()
@@ -181,7 +181,12 @@ export const createStore = <S extends PrimitiveState>(
      * 如果是函数返回的初始化状态数据，则需要再次执行初始化函数来获取内部初始化的逻辑数据
      * 防止因为初始化函数的内部逻辑导致重置恢复的数据不符合初始化的数据逻辑
      */
-    if (typeof initialState === "function") reducerState = initialState();
+    if (typeof initialState === "function") {
+      clearObject(reducerState);
+      Object.entries(initialState()).forEach(([key, value]) => {
+        reducerState[key as keyof S] = value;
+      });
+    }
 
     batchUpdate(() => {
       let effectState: Partial<S> | null = null;
@@ -250,8 +255,8 @@ export const createStore = <S extends PrimitiveState>(
   // setState、syncUpdate、restore、subscribe以及store代理内部数据Map的合集
   const externalMap: ExternalMapType<S> = new Map();
 
-  const store = new Proxy(reducerState, {
-    get: (_, key: keyof S, receiver: any) => {
+  const store = new Proxy(storeMap, {
+    get: (_: StoreMap<S>, key: keyof S, receiver: any) => {
       protoPointStoreErrorHandle(receiver, store);
 
       if (typeof stateMap.get(key) === "function") {
@@ -271,7 +276,7 @@ export const createStore = <S extends PrimitiveState>(
     setPrototypeOf: () => {
       throw new Error("Changing the prototype of store is forbidden!");
     },
-  } as ProxyHandler<S>) as Store<S>;
+  } as any as ProxyHandler<StoreMap<S>>) as any as Store<S>;
 
   // 给useStore的驱动更新代理
   const storeProxy = new Proxy(storeMap, {
@@ -308,8 +313,8 @@ export const createStore = <S extends PrimitiveState>(
    * 比如在某些函数中因为因为或者作用域的不同导致函数内部再次获取useState的数据会不准确
    * 而使用这个额外的store来读取数据可以具有追溯性得到最新的数据状态
    */
-  const conciseExtraStoreProxy = new Proxy(reducerState, {
-    get(_, key: keyof S, receiver: any) {
+  const conciseExtraStoreProxy = new Proxy(storeMap, {
+    get(_: StoreMap<S>, key: keyof S, receiver: any) {
       protoPointStoreErrorHandle(receiver, conciseExtraStoreProxy);
 
       if (typeof stateMap.get(key) === "function") {
@@ -323,7 +328,7 @@ export const createStore = <S extends PrimitiveState>(
     setPrototypeOf: () => {
       throw new Error("Changing the prototype of store is forbidden!");
     },
-  } as ProxyHandler<S>) as Store<S>;
+  } as any as ProxyHandler<StoreMap<S>>) as any as Store<S>;
 
   conciseExternalMap.set("store", conciseExtraStoreProxy);
 

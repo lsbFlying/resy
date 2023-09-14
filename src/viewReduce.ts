@@ -32,10 +32,8 @@ const stateRefByProxyHandle = <S extends PrimitiveState>(
 export const getLatestStateMap = <S extends PrimitiveState = {}>(store?: Store<S> | Stores<S>) => {
   if (!store || !store[REGENERATIVE_SYSTEM_KEY as keyof S]) return new Map() as MapType<S>;
   return (
-    (
-      store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
-    ).get("getStateMap") as StoreViewMapValue<S>["getStateMap"]
-  )();
+    store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
+  ).get("getStateMap") as StoreViewMapValue<S>["getStateMap"];
 };
 
 // view多个store的最新数据的处理

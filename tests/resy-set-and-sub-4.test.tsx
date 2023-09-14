@@ -9,13 +9,13 @@ test("resy-set-and-sub4", async () => {
   const store = createStore({ count: 0, text: "poiu", text2: "qwe" });
   const App = () => {
     const { count, text, text2 } = useStore(store);
-    
+
     useEffect(() => {
       if (count === 570) {
         store.text = "destroy";
       }
     }, [count]);
-    
+
     gCount++;
     return (
       <>
@@ -112,60 +112,60 @@ test("resy-set-and-sub4", async () => {
       </>
     );
   };
-  
-  const { getByText } = render(<App/>);
-  
+
+  const { getByText } = render(<App />);
+
   fireEvent.click(getByText("btn-1"));
   await waitFor(() => {
     expect(gCount === 2).toBeTruthy();
   });
-  
+
   fireEvent.click(getByText("btn-2"));
   await waitFor(() => {
     expect(gCount === 3).toBeTruthy();
   });
-  
+
   fireEvent.click(getByText("btn-3"));
   await waitFor(() => {
     expect(gCount === 4).toBeTruthy();
   });
-  
+
   fireEvent.click(getByText("btn-4"));
   await waitFor(() => {
     expect(gCount === 5).toBeTruthy();
   });
-  
+
   fireEvent.click(getByText("btn-5"));
   console.log(gCount);
   await waitFor(() => {
     console.log("btn-5", gCount, gCount === 6);
     expect(gCount === 6).toBeTruthy();
   });
-  
+
   fireEvent.click(getByText("btn-6"));
   await waitFor(() => {
     console.log("btn-6", gCount);
     expect(gCount === 7).toBeTruthy();
   });
-  
+
   fireEvent.click(getByText("btn-7"));
   await waitFor(() => {
     console.log("btn-7", gCount); // 8
     expect(gCount === 8).toBeTruthy();
   });
-  
+
   fireEvent.click(getByText("btn-8"));
   await waitFor(() => {
     console.log("btn-8", gCount); // 10
     expect(gCount === 10).toBeTruthy();
   });
-  
+
   fireEvent.click(getByText("btn-9"));
   await waitFor(() => {
     console.log("btn-9", gCount); // 12
     expect(gCount === 12).toBeTruthy();
   });
-  
+
   fireEvent.click(getByText("btn-10"));
   await waitFor(() => {
     console.log("btn-10-gCount", gCount, "btn-10-count", store.count);
@@ -174,7 +174,7 @@ test("resy-set-and-sub4", async () => {
     expect(gCount === 13).toBeTruthy();
     expect(store.count === 569).toBeTruthy();
   });
-  
+
   // 按钮10可以看出，resy甚至可以合并处理useEffect中的更新
   fireEvent.click(getByText("btn-11"));
   await waitFor(() => {

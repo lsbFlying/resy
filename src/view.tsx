@@ -22,7 +22,7 @@ export const view = <P extends PrimitiveState = {}, S extends PrimitiveState = {
   options: ViewOptionsType<P, S> = {}
 ) => {
   const { stores, equal } = options;
-  
+
   return memo((props: P) => {
     /**
      * 需要将innerUseStateMapSet与stateMap放在内部执行，
@@ -31,7 +31,7 @@ export const view = <P extends PrimitiveState = {}, S extends PrimitiveState = {
      */
     const innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>> =
       (!stores || (stores as Store<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]) ? new Set() : new Map();
-    
+
     /**
      * @description 给state数据做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
      * 恰巧由于这里的proxy代理，导致在挂载属性数据的时候不能使用扩展运算符，
@@ -42,10 +42,10 @@ export const view = <P extends PrimitiveState = {}, S extends PrimitiveState = {
       innerUseStateMapSet,
       stores,
     ));
-    
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => mountedHandle(innerUseStateMapSet, state, setState, props, stores, equal), []);
-    
+
     return <Comp {...props} state={state} />;
   }, equal ? (prevProps: P, nextProps: P) => {
     // props与state的变化可能存在同时变化的情况，但不影响equal的执行

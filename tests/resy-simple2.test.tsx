@@ -15,7 +15,7 @@ test("resy-simple2", async () => {
       console.log(this.count);
     },
   });
-  
+
   const App = () => {
     const { count } = useStore(store);
     return (
@@ -30,21 +30,22 @@ test("resy-simple2", async () => {
       </>
     );
   };
-  
-  const { getByText } = render(<App/>);
-  
+
+  const { getByText } = render(<App />);
+
   fireEvent.click(getByText("btn-1"));
   await waitFor(() => {
     getByText("1");
   });
-  
+
   fireEvent.click(getByText("btn-2"));
   await waitFor(() => {
     getByText("999");
   });
-  
+
   expect(() => {
     // @ts-ignore
-    const sC = new store();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const sn = new store();
   }).toThrowError();
 });

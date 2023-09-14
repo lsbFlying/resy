@@ -51,11 +51,8 @@ export type Listener<S extends PrimitiveState> = (data: ListenerParams<S>) => vo
  * 具备处理store的重置数据、以及获取最新state数据等相关处理功能
  */
 export interface StoreViewMapValue<S extends PrimitiveState> {
-  /**
-   * store内部的stateMap数据对象
-   * 使用函数执行得到最新值，类似于useSyncExternalStore的getSnapshot
-   */
-  getStateMap: () => MapType<S>;
+  // store内部的stateMap数据对象
+  getStateMap: MapType<S>;
   // view初始化数据
   viewInitialReset: Callback;
   // view的props数据使用方式的数据生命周期与store关联同步
@@ -284,26 +281,4 @@ export type StateRestoreAccomplishMapType = MapType<{ stateRestoreAccomplish: bo
 export type ViewOptionsType<P extends PrimitiveState = {}, S extends PrimitiveState = {}> = {
   stores?: Store<S> | Stores<S>;
   equal?: (next: PS<P, S>, prev: PS<P, S>) => boolean;
-};
-
-/**
- * 被保护的数据配置类型
- * @param state 被保护的state的map数据
- * @param fnName 被保护的作用域函数
- * @param dataName 被保护的数据名称
- * @param callback 被保护的函数域是否是回掉函数
- */
-export type ProtectStateType<S extends PrimitiveState> = {
-  state: MapType<S>;
-  fnName: "setState" | "syncUpdate" | "subscribe";
-  dataName: "effectState" | "prevState" | "nextState";
-  callback?: boolean;
-};
-
-// 保护数据的操作类型
-export type ProtectActionType<S extends PrimitiveState> = {
-  // 数据属性键key
-  key: keyof S;
-  // 操作动作的类型，新增add、修改modify —— Setting; 删除 —— Deleting
-  type: "Setting" | "Deleting";
 };

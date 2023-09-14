@@ -6,7 +6,7 @@ import { fireEvent, render, waitFor } from "@testing-library/react";
 const originTime = `${Date.now()}${Math.random() * 100}`;
 
 test("resy-createStore", async () => {
-  const storeFn = createStore<{ time: string, text?: string }>(() => {
+  const storeFn = createStore<{ time: string; text?: string }>(() => {
     const curTime = `${Date.now()}${Math.random() * 100}`;
     return {
       time: originTime === curTime ? originTime : curTime,
@@ -15,33 +15,33 @@ test("resy-createStore", async () => {
   const store0 = createStore<{ count: number }>({ count: 998 });
   const store = createStore<{
     show: boolean;
-    loginInfo: { name?: string; age?: number; msg?: string; },
+    loginInfo: { name?: string; age?: number; msg?: string };
   }>({
     show: true,
     loginInfo: {},
   }, {
     initialReset: false,
   });
-  
+
   function LoginInfo() {
     const { count } = useStore(store0);
     const { loginInfo: { name, age, msg } } = useStore(store);
-    
+
     useEffect(() => {
       store.loginInfo = { name: "L", age: 28, msg: "Hello, createStore" };
     }, []);
-    
+
     return (
       <span>name:{name}; age:{age}; msg:{msg}; count:{count}</span>
     );
   }
-  
+
   function TimeCheck() {
     const { time } = useStore(storeFn);
-    
+
     // 可以看到三次打印出来的时间与随机数都不一样
     console.log("time", time);
-    
+
     return (
       <>
         <span>LoginInfo-Null</span>
@@ -49,11 +49,11 @@ test("resy-createStore", async () => {
       </>
     );
   }
-  
+
   const App = () => {
     const { text } = useStore(storeFn);
     const { show } = useStore(store);
-    
+
     return (
       <div>
         <span>text:{text}</span>
@@ -66,32 +66,32 @@ test("resy-createStore", async () => {
           storeFn.restore();
         }}>initialResetBtn</button>
         <p>
-          {show ? <LoginInfo/> : <TimeCheck/>}
+          {show ? <LoginInfo /> : <TimeCheck />}
         </p>
       </div>
     );
   };
-  
-  const { getByText } = render(<App/>);
-  
+
+  const { getByText } = render(<App />);
+
   fireEvent.click(getByText("restore-prev-handle-btn"));
   await waitFor(() => {
     getByText("text:hello-restore");
   });
-  
+
   fireEvent.click(getByText("initialResetBtn"));
   await waitFor(() => {
     getByText("LoginInfo-Null");
     getByText("text:");
-    expect(JSON.stringify(store.loginInfo) === '{"name":"L","age":28,"msg":"Hello, createStore"}').toBeTruthy();
+    expect(JSON.stringify(store.loginInfo) === "{\"name\":\"L\",\"age\":28,\"msg\":\"Hello, createStore\"}").toBeTruthy();
     expect(store0.count === 999).toBeTruthy();
   });
-  
+
   fireEvent.click(getByText("initialResetBtn"));
   await waitFor(() => {
     expect(store0.count === 998).toBeTruthy();
   });
-  
+
   fireEvent.click(getByText("initialResetBtn"));
   await waitFor(() => {
     expect(store0.count === 999).toBeTruthy();

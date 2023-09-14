@@ -1,5 +1,5 @@
 import { REGENERATIVE_SYSTEM_KEY } from "./static";
-import type { PrimitiveState, MapType, State, ProtectStateType, ProtectActionType } from "./model";
+import type { PrimitiveState, MapType, State } from "./model";
 
 /**
  * map转object
@@ -93,21 +93,11 @@ export const followUpMap = <K, V>(map: Map<K, V>) => {
   return mapTemp;
 };
 
-/**
- * 数据保护处理的异常错误抛出提示处理
- * @description effectState、prevState、nextState以及更新数据的循环引用更新调度的错误处理
- */
-export const stateProtectErrorHandle = <S extends PrimitiveState>(
-  action: ProtectActionType<S>,
-  protectState: ProtectStateType<S>,
-) => {
-  const { fnName, dataName, callback } = protectState;
-  const { key, type } = action;
-  throw new Error(
-    `${type} the property ${key as string} of ${dataName} is forbidden!
-    The parameters given by ${callback ? `${fnName}'s callback` : fnName} are for comparative reference only,
-    and cannot be added, deleted or modified.
-    In fact, any attribute of ${dataName} is forbidden to operate.
-    If you need to manipulate the ${dataName}, you can make an extra deep copy of the ${dataName}.`
-  );
+// 清空对象
+export const clearObject = <S extends PrimitiveState>(object: S) => {
+  for (const key in object) {
+    if (Object.prototype.hasOwnProperty.call(object, key)) {
+      delete object[key];
+    }
+  }
 };

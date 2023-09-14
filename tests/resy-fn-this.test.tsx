@@ -26,7 +26,7 @@ test("resy-func-prop-inner-this", async () => {
       this.text = "Hello-ok";
     },
   });
-  
+
   function Count1() {
     const { testFuncAdd } = store;
     return (
@@ -35,7 +35,7 @@ test("resy-func-prop-inner-this", async () => {
       </button>
     );
   }
-  
+
   function Count2() {
     const { testFuncAdd } = useStore(store);
     return (
@@ -44,7 +44,7 @@ test("resy-func-prop-inner-this", async () => {
       </button>
     );
   }
-  
+
   function Count3() {
     return (
       <button onClick={() => { store.testFuncReduce(); }}>
@@ -52,7 +52,7 @@ test("resy-func-prop-inner-this", async () => {
       </button>
     );
   }
-  
+
   function Count4() {
     const { name, changeName } = useConciseState<{name: string; changeName(): void}>({
       name: "Jack",
@@ -65,7 +65,7 @@ test("resy-func-prop-inner-this", async () => {
       </div>
     );
   }
-  
+
   function Count5() {
     const { age, store } = useConciseState<{age: number; changeAge(): void}>({
       age: 15,
@@ -78,7 +78,7 @@ test("resy-func-prop-inner-this", async () => {
       </div>
     );
   }
-  
+
   const App = () => {
     const { count, text } = useStore(store);
     return (
@@ -87,38 +87,38 @@ test("resy-func-prop-inner-this", async () => {
           App:{count}
         </div>
         <div>text:{text}</div>
-        <Count1/>
-        <Count2/>
-        <Count3/>
-        <Count4/>
-        <Count5/>
+        <Count1 />
+        <Count2 />
+        <Count3 />
+        <Count4 />
+        <Count5 />
       </>
     );
   };
-  
-  const { getByText } = render(<App/>);
-  
+
+  const { getByText } = render(<App />);
+
   fireEvent.click(getByText("count1-btn"));
   await waitFor(() => {
     getByText("App:2");
   });
-  
+
   fireEvent.click(getByText("count2-btn"));
   await waitFor(() => {
     getByText("App:3");
   });
-  
+
   fireEvent.click(getByText("count3-btn"));
   await waitFor(() => {
     getByText("App:2");
     getByText("text:Hello-ok");
   });
-  
+
   fireEvent.click(getByText("name-btn"));
   await waitFor(() => {
     getByText("name:Arosy");
   });
-  
+
   fireEvent.click(getByText("age-btn"));
   await waitFor(() => {
     getByText("age:24");

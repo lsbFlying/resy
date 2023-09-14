@@ -8,7 +8,7 @@ test("resy-syncUpdate", async () => {
   let textRes = "";
   const App = () => {
     const { text, count } = useStore(store);
-    
+
     function inputChange(event: React.ChangeEvent<HTMLInputElement>) {
       store.syncUpdate({
         text: event.target.value,
@@ -16,26 +16,24 @@ test("resy-syncUpdate", async () => {
       console.log("etv", event.target.value, "store.text", store.text);
       textRes = store.text;
     }
-    
+
     return (
       <div>
         <div>
-          <input placeholder="请输入" value={text} onChange={inputChange}/>
+          <input placeholder="请输入" value={text} onChange={inputChange} />
         </div>
         <div>
           <p>count:{count}</p>
           <div>
-            <button onClick={() =>{
-              store.syncUpdate(() => {
-                return {
-                  count: count + 1,
-                  text: `hello-${count}`,
-                };
-              });
+            <button onClick={() => {
+              store.syncUpdate(() => ({
+                count: count + 1,
+                text: `hello-${count}`,
+              }));
             }}>btn</button>
           </div>
           <button onClick={() => {
-            store.syncUpdate((prevState) => {
+            store.syncUpdate(prevState => {
               console.log("prevState", prevState);  // prevState { text: 'qwe', count: 0 }
               if (prevState.count > 0) {
                 return {
@@ -48,9 +46,7 @@ test("resy-syncUpdate", async () => {
             });
           }}>btn-2</button>
           <button onClick={() => {
-            store.syncUpdate(() => {
-              return null
-            });
+            store.syncUpdate(() => null);
           }}>btn-3</button>
           <button onClick={() => {
             store.syncUpdate(null);
@@ -59,9 +55,9 @@ test("resy-syncUpdate", async () => {
       </div>
     );
   };
-  
-  const { getByPlaceholderText, getByText } = render(<App/>);
-  
+
+  const { getByPlaceholderText, getByText } = render(<App />);
+
   fireEvent.change(getByPlaceholderText("请输入"), {
     target: {
       value: "ASDZXC",
@@ -69,20 +65,20 @@ test("resy-syncUpdate", async () => {
   });
   expect(textRes === store.text).toBeTruthy();
   expect("ASDZXC" === store.text).toBeTruthy();
-  
+
   fireEvent.click(getByText("btn"));
   getByText("count:1");
   expect("hello-0" === store.text).toBeTruthy();
-  
+
   fireEvent.click(getByText("btn-2"));
   getByText("count:-999");
-  
+
   fireEvent.click(getByText("btn-3"));
   getByText("count:-999");
-  
+
   fireEvent.click(getByText("btn-4"));
   getByText("count:-999");
-  
+
   // @ts-ignore
   expect(() => store.syncUpdate(0)).toThrowError();
   // @ts-ignore
@@ -94,6 +90,7 @@ test("resy-syncUpdate", async () => {
   // @ts-ignore
   expect(() => store.syncUpdate([])).toThrowError();
   // @ts-ignore
+  // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
   expect(() => store.syncUpdate(() => {})).toThrowError();
   // @ts-ignore
   expect(() => store.syncUpdate(true)).toThrowError();

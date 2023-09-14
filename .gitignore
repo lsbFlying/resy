@@ -2,6 +2,6 @@ node_modules
 coverage
 dist
 .DS_Store
-
+package-lock.json
+yarn-lock.json
 yarn-error.log
-/.idea/codeStyles/codeStyleConfig.xml

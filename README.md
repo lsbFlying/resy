@@ -23,6 +23,8 @@
 2. Modify the subscribe listening parameter to flatten parameter processing.
 3. Added protection for prevState, nextState, and effectState.
 4. Improve the attribute deletion function of useConciseState.
+5. Fixed data stagnation caused by inconsistent data references
+   between restore data attribute reset and render reset.
 
 🌟`v9.0.0`：<br/>
 1. Adjusted the usage position of the equal function in view.

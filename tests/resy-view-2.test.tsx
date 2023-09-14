@@ -4,13 +4,13 @@ import { createStore, useStore, MapStateToProps, view } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 
 test("resy-view-2", async () => {
-  
+
   type State = {
     count: number;
     text: string;
     value: string;
   };
-  
+
   const store = createStore<State>({
     count: 0,
     text: "Hello",
@@ -19,7 +19,7 @@ test("resy-view-2", async () => {
       return this.text;
     },
   });
-  
+
   class ClassCom extends React.PureComponent<MapStateToProps<State>> {
     render() {
       // view会将store数据挂载到props上新增的state属性上
@@ -36,15 +36,15 @@ test("resy-view-2", async () => {
       expect(obj.value === "Obj-text").toBeFalsy();
       // @ts-ignore
       expect(obj.value === "Hello").toBeTruthy();
-      
+
       return (
         <div>ViewClassComCount:{count}</div>
       );
     }
   }
-  
+
   const ClassComView = view(ClassCom, { stores: store });
-  
+
   function HookCom() {
     const { count } = useStore(store);
     return (
@@ -53,21 +53,19 @@ test("resy-view-2", async () => {
       </div>
     );
   }
-  
+
   const HookComView = view(HookCom, {
-    equal: () => {
-      return false;
-    },
+    equal: () => false,
   });
-  
+
   const App = () => {
     const { text } = useStore(store);
-    
+
     return (
       <div>
         <div>AppText:{text}</div>
-        <ClassComView/>
-        <HookComView/>
+        <ClassComView />
+        <HookComView />
         <div>
           <button onClick={() => {
             store.count++;
@@ -80,16 +78,16 @@ test("resy-view-2", async () => {
       </div>
     );
   };
-  
-  const { getByText } = render(<App/>);
-  
+
+  const { getByText } = render(<App />);
+
   fireEvent.click(getByText("btn1"));
   await waitFor(() => {
     getByText("AppText:OK");
     getByText("ViewClassComCount:1");
     getByText("HookCom-count:1");
   });
-  
+
   fireEvent.click(getByText("btn2"));
   await waitFor(() => {
     getByText("AppText:Hello");

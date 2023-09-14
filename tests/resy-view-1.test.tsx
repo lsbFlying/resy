@@ -68,7 +68,7 @@ const HookCom = (props: MapStateToProps<Store>) => {
   console.log(hookComTestState);
   return (
     <div>
-      View HookCom{hookComTestState}<br/>
+      View HookCom{hookComTestState}<br />
       {
         hookBooleanTest && props.state.count !== 0
           ? <span>hook123</span>
@@ -76,7 +76,7 @@ const HookCom = (props: MapStateToProps<Store>) => {
       }
     </div>
   );
-}
+};
 
 const PureHookCom = view(HookCom, { stores: store });
 
@@ -86,14 +86,14 @@ const TestCom = (props: MapStateToProps<Store, TestComProps>) => {
   // view会将store数据挂载到props上新增的state属性上
   const { testComTestState } = props.state;
   const { testObj } = props;
-  
+
   const [count, setCount] = useState(0);
-  
+
   useEffect(() => {
     setCount(count + 1);
-    console.log("useEffect", testComTestState)
+    console.log("useEffect", testComTestState);
   }, [testComTestState, testObj]);
-  
+
   console.log("PureTestCom", testComTestState);
   return (
     <div>
@@ -102,7 +102,7 @@ const TestCom = (props: MapStateToProps<Store, TestComProps>) => {
       name：{testComTestState.name}-age：{testComTestState.age}
     </div>
   );
-}
+};
 
 const PureTestCom = view<TestComProps, Store>(TestCom, {
   stores: store,
@@ -128,15 +128,15 @@ const TestCom2 = (props: MapStateToProps<Store, TestComProps>) => {
   // view会将store数据挂载到props上新增的state属性上
   const { testComTestState } = props.state;
   const { testObj } = props;
-  
+
   const [count, setCount] = useState(0);
-  
+
   useEffect(() => {
     setCount(count + 1);
   }, [testComTestState, testObj]);
-  
+
   console.log("PureTestCom2");
-  
+
   return (
     <div>
       <span>count2：{count}</span>
@@ -144,58 +144,52 @@ const TestCom2 = (props: MapStateToProps<Store, TestComProps>) => {
       name2：{testComTestState.name}-age2：{testComTestState.age}
     </div>
   );
-}
+};
 
 const PureTestCom2 = view<TestComProps, Store>(TestCom2, { stores: store });
 
 // count数据状态的变化不会引起Text的re-render
 function Text() {
   const { text } = useStore(store);
-  useEffect(() => {
-    return store.subscribe(({ effectState }) => {
-      store.text = `Text：${effectState.appTestState}`;
-    }, ["appTestState"]);
-  }, []);
+  useEffect(() => store.subscribe(({ effectState }) => {
+    store.text = `Text：${effectState.appTestState}`;
+  }, ["appTestState"]), []);
   return <p>{text}</p>;
 }
 
 // text数据状态的变化不会引起Count的re-render
 function Count() {
   const { count } = useStore(store);
-  useEffect(() => {
-    return store.subscribe(() => {
-      store.count = 1099;
-    }, ["appTestState"]);
-  }, []);
+  useEffect(() => store.subscribe(() => {
+    store.count = 1099;
+  }, ["appTestState"]), []);
   return <p>{count}</p>;
 }
 
 test("resy-view-1", async () => {
-  
+
   const App = () => {
     const {
       appTestState, classComTestState, hookComTestState, testObj,
     } = useStore(store);
-    
-    useEffect(() => {
-      return store.subscribe(({ effectState }) => {
-        if (effectState.classComTestState) {
-          store.count = 18756;
-        }
-        if (effectState.hookComTestState) {
-          store.text = "567";
-        }
-      });
-    }, []);
-    
+
+    useEffect(() => store.subscribe(({ effectState }) => {
+      if (effectState.classComTestState) {
+        store.count = 18756;
+      }
+      if (effectState.hookComTestState) {
+        store.text = "567";
+      }
+    }), []);
+
     function appTestClick() {
       store.appTestState = `${Math.random()}~appTestState~`;
     }
-    
+
     function classComTestStateClick() {
       store.classComTestState = `*${Math.random()}classComTestState*`;
     }
-    
+
     function hookComTestStateClick() {
       store.hookComTestState = `!${Math.random()}hookComTestState!`;
       store.hookBooleanTest = true;
@@ -218,8 +212,8 @@ test("resy-view-1", async () => {
         <div onClick={classComTestStateClick}>class-btn</div>
         <p>{hookComTestState}</p>
         <div onClick={hookComTestStateClick}>hook-btn</div>
-        <Text/>
-        <Count/>
+        <Text />
+        <Count />
         <button onClick={() => { store.count = 0; }}>btn-zero</button>
         <button onClick={() => { store.setState({}); }}>btn-empty</button>
         <button onClick={() => {
@@ -233,45 +227,45 @@ test("resy-view-1", async () => {
             testComTestState: Object.assign({}, store.testComTestState),
           });
         }}>viewDeepEqual-2</button>
-        <PureClassCom/>
-        <PureHookCom/>
-        <PureTestCom testObj={testObj}/>
-        <PureTestCom2 testObj={testObj}/>
+        <PureClassCom />
+        <PureHookCom />
+        <PureTestCom testObj={testObj} />
+        <PureTestCom2 testObj={testObj} />
       </>
     );
   };
-  
-  const { getByText } = render(<App/>);
-  
+
+  const { getByText } = render(<App />);
+
   fireEvent.click(getByText("app-btn"));
   await waitFor(() => {
-    getByText(`Text：${store.appTestState}`)
+    getByText(`Text：${store.appTestState}`);
     getByText("1099");
     getByText("classComTestState");
     getByText("hookComTestState");
   });
-  
+
   fireEvent.click(getByText("class-btn"));
   await waitFor(() => {
     getByText("18756");
   });
-  
+
   fireEvent.click(getByText("hook-btn"));
   await waitFor(() => {
     getByText("567");
     getByText("hook123");
   });
-  
+
   fireEvent.click(getByText("btn-zero"));
   await waitFor(() => {
     getByText("hook456");
   });
-  
+
   fireEvent.click(getByText("btn-empty"));
   await waitFor(() => {
     getByText("567");
   });
-  
+
   fireEvent.click(getByText("viewDeepEqual-1"));
   await waitFor(() => {
     getByText("count：1");

@@ -34,6 +34,7 @@ const storeStateRefSetMark = (storeStateRefSet: Set<number>) => {
  * 同时相较于直接复制 stateMap = new Map(state)的方式效率更快
  */
 const stateMapRestore = <S extends PrimitiveState>(state: S, stateMap: MapType<S>) => {
+  // 因为不确定key的原始状态，所以直接先清楚所有key后面再添加
   stateMap.clear();
   Object.entries(state).forEach(([key, value]) => {
     stateMap.set(key, value);
@@ -79,7 +80,7 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
   stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
 ) => {
   const viewConnectStoreMap: StoreViewMapType<S> = new Map();
-  viewConnectStoreMap.set("getStateMap", () => stateMap);
+  viewConnectStoreMap.set("getStateMap", stateMap);
   viewConnectStoreMap.set("viewInitialReset", () => {
     initialRenderRestore(initialReset, state, stateMap, storeStateRefSet, stateRestoreAccomplishMap);
   });

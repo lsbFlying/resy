@@ -15,14 +15,14 @@ test("resy-basic", async () => {
     testFun2(): void;
     sex?: "man" | "woman" | string;
   };
-  
+
   // 生成的这个store可以全局共享，直接引入store即可
   const store = createStore<Store>({
     count: 0,
     testCount: 0,
     text: "123qwe",
     testObj: { name: "Paul" },
-    testArr: [{age: 12, name: "Alen"}, { age: 16, name: "Frac" }],
+    testArr: [{ age: 12, name: "Alen" }, { age: 16, name: "Frac" }],
     testFun() {
       store.count++;
       console.log("testFun");
@@ -32,16 +32,16 @@ test("resy-basic", async () => {
       console.log("testFun: 'store.count === this.count'", store.testCount === this.testCount);
     },
   });
-  
+
   let index = 0;
-  
+
   const App = () => {
     const { count, text, testFun, testObj, testArr, sex } = useStore(store);
     index++;
     useEffect(() => {
       const { testFun2 } = store;
       testFun2();
-      
+
       const unsubscribe = store.subscribe(({ effectState, nextState, prevState }) => {
         if (effectState.sex === "no-sex-subscribe") {
           console.log(prevState.sex, nextState.sex);
@@ -61,7 +61,7 @@ test("resy-basic", async () => {
         // 同时可以做一些其他的解除或者释放的操作
       };
     }, []);
-    
+
     return (
       <>
         <p>{count}</p>
@@ -98,7 +98,7 @@ test("resy-basic", async () => {
           // 无效更新
           store.testObj.name = "Forrest Gump";
           // 无效更新
-          store.testArr[0] = {age: 7, name: "Forrest Gump"};
+          store.testArr[0] = { age: 7, name: "Forrest Gump" };
         }}>btn5</button>
         <button onClick={() => {
           store.sex = undefined;
@@ -136,46 +136,46 @@ test("resy-basic", async () => {
       </>
     );
   };
-  
-  const { getByText, queryByText } = render(<App/>);
-  
+
+  const { getByText, queryByText } = render(<App />);
+
   fireEvent.click(getByText("btn1"));
   await waitFor(async () => {
     getByText("1");
   });
-  
+
   fireEvent.click(getByText("btn2"));
   await waitFor(async () => {
     getByText("2");
     getByText("456asd");
   });
-  
+
   fireEvent.click(getByText("btn3"));
   await waitFor(() => {
     getByText("2");
     getByText("Jack");
   });
-  
+
   fireEvent.click(getByText("btn4"));
   await waitFor(() => {
     getByText("1");
     getByText("Alen：11");
     getByText("man");
   });
-  
+
   fireEvent.click(getByText("btn5"));
   await waitFor(() => {
     console.log(queryByText("Forrest Gump"), queryByText("Forrest Gump：7"));
     expect(queryByText("Forrest Gump")).toBeNull();
     expect(queryByText("Forrest Gump：7")).toBeNull();
   });
-  
+
   fireEvent.click(getByText("btn6"));
   await waitFor(() => {
     getByText("no-sex");
     console.log("btn6", index); // btn6, 6
   });
-  
+
   fireEvent.click(getByText("btn7"));
   await waitFor(() => {
     getByText("batch-forEach");
@@ -183,19 +183,19 @@ test("resy-basic", async () => {
     console.log("btn7", index, store.testObj); // btn7, 7
   });
   console.log("btn7-btn8", index);  // btn7-btn8 7
-  
+
   fireEvent.click(getByText("btn8"));
   await waitFor(() => {
     getByText("999");
     console.log("btn8", index); // btn8, 8
   });
-  
+
   fireEvent.click(getByText("btn9"));
   await waitFor(() => {
     getByText("999666");
     console.log("btn9", index); // btn9, 9
   });
-  
+
   fireEvent.click(getByText("btn10"));
   await waitFor(() => {
     console.log("btn10", index); // btn10, 9

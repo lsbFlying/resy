@@ -13,144 +13,6 @@
 
 </div>
 
-<details>
-<summary>
-<strong>changed logs - releases what's Changed</strong>
-</summary>
-
-🌟`v10.0.0`：<br/>
-1. Optimized the writing method and internal execution code for some types.
-2. Modify the subscribe listening parameter to flatten parameter processing.
-3. Added protection for prevState, nextState, and effectState.
-4. Improve the attribute deletion function of useConciseState.
-5. Fixed data stagnation caused by inconsistent data references
-   between restore data attribute reset and render reset.
-
-🌟`v9.0.0`：<br/>
-1. Adjusted the usage position of the equal function in view.
-2. Solved the issue of inaccurate type recognition in views.
-
-🌟`v8.1.0`：<br/>
-1. Improved the type support of this inside the function.
-2. The proxy processing of store is optimized, and the security and stability of store are increased.
-3. Optimization improves the check code.
-4. Improve and optimize the processing of multiple store connection data of class components by view.
-5. New api for restore reset data has been added.
-6. Fixed a bug in useConciseState where the setState and syncUpdate update parameters
-   of the store were missing errors for the store.
-7. Improve and optimize the code, reduce the memory occupied by the code,
-   and improve the execution efficiency of the code.
-8. Added compatibility of update functions with null parameters.
-9. Added the prevState parameter function of the function parameters of setState and syncUpdate.
-10. Fixed bug for useStore initialization data.
-
-🌟`v8.0.0`：<br/>
-1. Adjust the parameter position of the isDeepEqual function of "view",
-   and adjust the position of the listener function parameter of the "subscribe" listening callback.
-2. Due to the unfriendly usage of the useStoreWithRef API, it was removed.
-3. Adjust and optimize the execution time of initialReset
-   to make the reset logic more in line with intuitive expectations.
-4. The use mode of "view" is changed to the use mode of currying to optimize the freedom of the use scene.
-5. Adjusted and optimized the modularity of the scheduling system, making scheduling more coordinated.
-   At the same time, removed the "\_\_privatization\_\_" internal configuration properties.
-6. Improved the coordination of updates,
-   and increased the absolute advantage of reading the latest value of data through the store.
-7. Optimized scheduling batch processing for rendering.
-
-🌟`v7.1.1`：<br/>
-1. Fixed bug that did not correspond to the latest data parameters of setState's callback function.
-2. Optimized scheduling adjustment for update batches of scheduler.
-3. Improved the use of function types of the state parameter of setState.
-4. Added useStoreWithRef support for not passing refData parameters.
-
-🌟`v7.1.0`：<br/>
-1. Added a new api for useStoreWithRef.
-
-🌟`v7.0.0`：<br/>
-1. Adjusted the timing of initialization reset data, change unmountReset to initialReset,
-   fixed conflicts between reset execution and promise data reset.
-2. Remove useStore hookInitialState params and fixed execution logic of viewInitialReset.
-3. Improved the use of "this" context object in function data.
-4. Improved the data storage and reading of additional stores in useConciseState.
-5. Remove "react-fast-compare"
-   and modify the parameter of the isDeepEqual function of view to the usage of a custom function
-
-🌟`v6.0.0`：<br/>
-1. Fixed the influence of adjusting the accessor get and set of the attribute description object
-   on the inheritance of store.
-2. Increase the use of the "this" context object within the function data.
-3. Remove the functional compatibility of initialization parameters for "createStore" and "useConciseState".
-
-🌟`v5.2.1`：<br/>
-1. Release the call of useConciseStore to the set/sub/sync functions of store.
-
-🌟`v5.2.0`：<br/>
-1. Added a new function in useConciseState that can parse store attributes.
-
-🌟`v5.1.3`：<br/>
-1. Fix logical bug with inconsistent data reset and data usage scenarios.
-
-🌟`v5.1.2`：<br/>
-1. Fixed bug for data unloading and reset logic for full scene types.
-
-🌟`v5.1.1`：<br/>
-1. Fixed logical bug of "view" internal resetState.<br/>
-
-🌟`v5.1.0`：<br/>
-1. Add non-required function of "useConciseState" initialState parameters.<br/>
-
-🌟`v5.0.1`：<br/>
-1. Remove redundant and useless processing scheduling,
-   simplify and improve the execution of scheduling batches.<br/>
-
-🌟`v5.0.0`：<br/>
-1. Optimized code to fix bug with incomplete data of batch-triggered subscription changes
-   in setState mixing scenarios.<br/>
-2. Fixed bug for the way createStore is used as the state of privatized data.<br/>
-3. Added the "useConciseState" hook to simplify the "use of data state localization".<br/>
-4. Added "syncUpdate" synchronous update api.<br/>
-5. Compatible with many function return types.
-
-🌟`v4.0.5`：<br/>
-1. Improved merge updates for all mixed scenarios of setState and direct updates.
-
-🌟`v4.0.4`：<br/>
-1. Fixed direct update of bug that could not be updated in similar next round update batches in useEffect.<br/>
-2. Optimize the execution of the "add" function in direct update mode.<br/>
-3. Optimized merge updates in scenarios where direct updates are partially mixed with setState batch updates.
-
-🌟`v4.0.3`：<br/>
-1. Fixed the logic of comparing props of view's deepEqual to avoid the problem of components updating rendering
-   due to different reference addresses of props<br/>
-2. Improved and optimized the execution performance of data subscription listening "subscribe" code.
-
-🌟`v4.0.2`：<br/>
-1. Fixed processing bug with empty logical data for view's getDerivedStateFromProps.<br/>
-2. Fixed bug that failed to update due to missing acquisition of data reference fields
-   caused by possible complex reference logic within components of view packages
-
-🌟`v4.0.1`：<br/>
-1. Reduce the use of the hookInitialState initialization hook parameter of useStore
-to set the corresponding key value multiple times, increase code efficiency.
-
-🌟`v4.0.0`：<br/>
-1. Starting from version v4.0.0, resy has officially entered a stage of stable development.
-Api has been named and will not be changed easily.
-At the same time, the code tends to be stable and strengthened.<br/>
-🌟🌟🌟🌟🌟🌟You are welcome to use the website.🌟🌟🌟🌟🌟🌟
-
-</details>
-
-<details>
-<summary>The reason for naming resy</summary>
-First of all,the original meaning of "resy" is "react state easy",
-and secondly,the internal data sharing of "resy" is not the transfer of data,
-but the acquisition of atomized data from a unified store container for data regeneration,
-more like a regeneration system,
-which happens to take the name "resy"
-formed by the combination of the first and last letters of the two letters.
-</details>
-
 ### Features
 - 😎 Create simple
 - 😎 Sharing freedom
@@ -326,6 +188,18 @@ const themeStore = createStore<{ themeStyle: "dark" | "light" }>(
     initialReset: false,
   },
 );
+```
+
+#### setOptions
+```tsx
+function App() {
+  return (
+    <button onClick={() => {
+      // You can change the initialReset parameter setting of createStore
+      store.setOptions({ initialReset: false });
+    }}>btn</button>
+  );
+}
 ```
 
 ### useStore

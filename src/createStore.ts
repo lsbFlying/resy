@@ -10,7 +10,7 @@ import {
   batchUpdate, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, REGENERATIVE_SYSTEM_KEY,
 } from "./static";
 import {
-  stateErrorHandle, mapToObject, objectToMap, protoPointStoreErrorHandle, followUpMap, clearObject,
+  stateErrorHandle, mapToObject, objectToMap, protoPointStoreErrorHandle, followUpMap, clearObject, optionsErrorHandle,
 } from "./utils";
 import {
   genViewConnectStoreMap, connectStore, batchDispatchListener,
@@ -50,7 +50,10 @@ export const createStore = <S extends PrimitiveState>(
 
   stateErrorHandle(reducerState, "createStore");
 
-  const { initialReset = true } = options || {};
+  optionsErrorHandle(options);
+  const optionsTemp = options
+    ? { initialReset: options.initialReset }
+    : { initialReset: true };
 
   // 当前store的调度处理器
   const schedulerProcessor = scheduler();
@@ -84,7 +87,7 @@ export const createStore = <S extends PrimitiveState>(
 
   // 处理view连接store、以及获取最新state数据的相关处理Map
   const viewConnectStoreMap = genViewConnectStoreMap(
-    initialReset, reducerState, stateMap, storeStateRefSet, stateRestoreAccomplishMap,
+    optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet, stateRestoreAccomplishMap,
   );
 
   // 数据存储容器storeMap
@@ -120,7 +123,7 @@ export const createStore = <S extends PrimitiveState>(
           (
             (
               connectStore(
-                key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
+                key, optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
               ).get(key) as StoreMapValue<S>
             ).get("updater") as StoreMapValueType<S>["updater"]
           )();
@@ -149,7 +152,7 @@ export const createStore = <S extends PrimitiveState>(
       // 更新添加入栈，后续统一批次合并更新
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         pushTask(
-          key, (stateTemp as S)[key], initialReset, reducerState, stateMap,
+          key, (stateTemp as S)[key], optionsTemp.initialReset, reducerState, stateMap,
           storeStateRefSet, storeMap, schedulerProcessor, stateRestoreAccomplishMap,
         );
       });
@@ -158,15 +161,7 @@ export const createStore = <S extends PrimitiveState>(
     // 异步回调添加入栈
     if (callback) {
       const nextState: S = Object.assign({}, mapToObject(stateMap), stateTemp);
-      /**
-       * 如果是回调在执行时发现回调中有更setState并且有回调，
-       * 此时回调进入下一个微任务循环中添加入栈，不影响这一轮的回调执行栈的执行
-       */
-      schedulerProcessor.get("isCalling")
-        ? Promise.resolve().then(() => {
-          setStateCallbackStackSet.add({ nextState, callback });
-        })
-        : setStateCallbackStackSet.add({ nextState, callback });
+      setStateCallbackStackSet.add({ nextState, callback });
     }
 
     stateTemp !== null && finallyBatchHandle(
@@ -205,7 +200,7 @@ export const createStore = <S extends PrimitiveState>(
           (
             (
               connectStore(
-                key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
+                key, optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
               ).get(key) as StoreMapValue<S>
             ).get("updater") as StoreMapValueType<S>["updater"]
           )();
@@ -241,11 +236,17 @@ export const createStore = <S extends PrimitiveState>(
     };
   };
 
+  // 更改设置initialReset参数配置
+  const setOptions = (options?: CreateStoreOptions) => {
+    optionsErrorHandle(options);
+    optionsTemp.initialReset = options?.initialReset ?? optionsTemp.initialReset;
+  };
+
   // 单个属性数据更新
   const singlePropUpdate = (_: S, key: keyof S, val: ValueOf<S>) => {
     willUpdatingHandle(schedulerProcessor, prevState, stateMap);
     pushTask(
-      key, val, initialReset, reducerState, stateMap, storeStateRefSet,
+      key, val, optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet,
       storeMap, schedulerProcessor, stateRestoreAccomplishMap,
     );
     finallyBatchHandle(schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackSet);
@@ -288,7 +289,7 @@ export const createStore = <S extends PrimitiveState>(
         (
           (
             connectStore(
-              key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
+              key, optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
             ) as StoreMap<S>
           ).get(key) as StoreMapValue<S>
         ).get("useOriginState") as StoreMapValueType<S>["useOriginState"]
@@ -303,6 +304,8 @@ export const createStore = <S extends PrimitiveState>(
   externalMap.set(REGENERATIVE_SYSTEM_KEY, REGENERATIVE_SYSTEM_KEY);
 
   const conciseExternalMap = followUpMap(externalMap) as ConciseExternalMapType<S>;
+
+  externalMap.set("setOptions", setOptions);
 
   /**
    * @description 给useConciseState的store代理的额外的store代理，
@@ -342,7 +345,7 @@ export const createStore = <S extends PrimitiveState>(
         (
           (
             connectStore(
-              key, initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
+              key, optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
             ) as StoreMap<S>
           ).get(key) as StoreMapValue<S>
         ).get("useOriginState") as StoreMapValueType<S>["useOriginState"]

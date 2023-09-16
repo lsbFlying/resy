@@ -29,7 +29,6 @@ const scheduler = () => {
    */
   const schedulerProcessor: MapType<Scheduler> = new Map();
 
-  schedulerProcessor.set("isCalling", null);
   schedulerProcessor.set("isUpdating", null);
   schedulerProcessor.set("willUpdating", null);
 

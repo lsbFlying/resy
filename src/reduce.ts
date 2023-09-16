@@ -270,13 +270,10 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
       }
 
       if (setStateCallbackStackSet.size) {
-        // todo isCalling貌似没有存在的必要 ？
-        schedulerProcessor.set("isCalling", true);
         // 先更新，再执行回调，循环调用回调
         setStateCallbackStackSet.forEach(({ callback, nextState }) => {
           callback(nextState);
         });
-        schedulerProcessor.set("isCalling", null);
         setStateCallbackStackSet.clear();
       }
     }));

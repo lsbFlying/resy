@@ -70,7 +70,7 @@ export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & {
   [USE_STORE_KEY]: object;
   [USE_CONCISE_STORE_KEY]: object;
   [REGENERATIVE_SYSTEM_KEY]: symbol;
-}
+};
 
 // 扩展map的类型
 export type ExternalMapType<S extends PrimitiveState> = Map<
@@ -81,7 +81,7 @@ export type ExternalMapType<S extends PrimitiveState> = Map<
 export type ConciseExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & {
   readonly store: Store<S>;
   [REGENERATIVE_SYSTEM_KEY]: symbol;
-}
+};
 
 // concise扩展map的类型
 export type ConciseExternalMapType<S extends PrimitiveState> = Map<
@@ -181,8 +181,26 @@ export type Restore = Readonly<{
   restore(): void;
 }>;
 
+/**
+ * 设置createStore的options参数
+ * @description 之所以可以允许改变CreateStoreOptions，是因为业务场景的需要
+ * 同时也是开放通道灵活开发，因为本身createStore的静态执行是一种限制
+ * 如果需要在某种场景下的突然变动而无法使得静态参数设置变得可更改是一种束缚
+ * 比如我有一个store初始场景是不需要initialReset为false，即常规下不需要永存状态信息
+ * 但是突然因为业务场景的需求需要变更为我需要永存状态信息以便于在下次回到该store的运用情况的时候
+ * 还能仍然保持之前的数据状态信息，这种情况是有必要的，主要是不想让CreateStoreOptions成为一种限制
+ * 应该使得其作为一种辅助，但一般而言CreateStoreOptions本身的配置能够符合且满足绝大多数场景
+ * 所以SetOptions的使用场景还是较少概率的。
+ */
+export type SetOptions = Readonly<{
+  setOptions(options?: CreateStoreOptions): void;
+}>;
+
+// ConciseStore的工具方法类型
+export type ConciseStoreUtils<S extends PrimitiveState> = SetState<S> & SyncUpdate<S> & Restore & Subscribe<S>;
+
 // store的工具方法类型
-export type StoreUtils<S extends PrimitiveState> = SetState<S> & SyncUpdate<S> & Restore & Subscribe<S>;
+export type StoreUtils<S extends PrimitiveState> = ConciseStoreUtils<S> & SetOptions;
 
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
 
@@ -200,8 +218,8 @@ export type InitialStateType<S extends PrimitiveState> = S & ThisType<Store<S>> 
  * 增加了store的属性调用，为了完善最新数据值的获取，
  * 弥补了useState对于最新数据值获取不足的缺陷
  */
-export type ConciseStore<S extends PrimitiveState> = Store<S> & {
-  readonly store: Store<S>;
+export type ConciseStore<S extends PrimitiveState> = S & ConciseStoreUtils<S> & {
+  readonly store: ConciseStore<S>;
 };
 
 // 将resy生成的store容器数据映射挂载到组件props的state属性上
@@ -214,8 +232,6 @@ export type MapStateToProps<S extends PrimitiveState, P extends PrimitiveState =
  * @description 调度类型
  */
 export interface Scheduler<S extends PrimitiveState = {}> {
-  // setState的回调函数callback的任务执行中
-  isCalling: true | null;
   // 更新进行中
   isUpdating: Promise<void> | null;
   // 将要更新执行的标识
@@ -239,16 +255,16 @@ export interface Scheduler<S extends PrimitiveState = {}> {
  * @description createStore该API第二个参数配置项
  * 目前配置项不多，且常用主要配置也是initialReset
  */
-export type CreateStoreOptions = {
+export type CreateStoreOptions = Readonly<{
   /**
-   * @description 1、 该参数主要是为了在某模块mount初始化阶段自动重置数据的，
+   * @description 1、该参数主要是为了在某模块mount初始化阶段自动重置数据的，
    * 如遇到登录信息、主题等这样的全局数据而言才会设置为false，
    * 这样可以使得生成的loginStore或者themeStore系统的全局生效
    * 2、对象接口式的写法是为了兼容未来可能的未知的配置功能的增加
    * @default true
    */
-  initialReset?: boolean;
-};
+  initialReset: boolean;
+}>;
 
 // view中equal函数的参数类型，props与state的类型合集
 export type PS<P extends PrimitiveState = {}, S extends PrimitiveState = {}> = Readonly<{

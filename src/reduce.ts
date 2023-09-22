@@ -259,32 +259,26 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
       // 防止之前的数据被后续subscribe或者callback中的更新给改动了，这里及时取出保证之前的数据的阶段状态的对应
       const prevStateTemp = followUpMap(prevState);
 
-      if (taskDataMap.size !== 0) {
-        batchUpdate(() => {
+      batchUpdate(() => {
+        if (taskDataMap.size !== 0) {
           taskQueueMap.forEach(task => {
             task();
           });
-
-          /**
-           * @description 这里也顺便统一更新订阅中的更新了，
-           * 更重要的是它合并了subscribe中的更新，尽管它看起来是一个激进的做法，
-           * 但实际运用中会发现合并subscribe监听订阅中的内部更新不影响外部触发的逻辑性，
-           * 也符合触发变动执行的逻辑执行
-           * 而实际生产运用中都是需要在subscribe当中去更新数据的，
-           * 所以这一点很必要也很自然
-           */
-          batchDispatchListener(prevStateTemp, mapToObject(taskDataMap), stateMap, listenerSet);
-
-          // 同时也顺便把回掉中可能的更新也统一批量处理了
-          if (setStateCallbackStackSet.size) {
-            // 先更新，再执行回调，循环调用回调
-            setStateCallbackStackSet.forEach(({ callback, nextState }) => {
-              callback(nextState);
-            });
-            setStateCallbackStackSet.clear();
-          }
-        });
-      }
+        }
+        /**
+         * @description 订阅监听中的更新逻辑上应该合并在批处理中
+         * 且批处理也符合逻辑自洽，减少额外多余更新的负担
+         */
+        batchDispatchListener(prevStateTemp, mapToObject(taskDataMap), stateMap, listenerSet);
+        // 同时也顺便把回掉中可能的更新也统一批量处理了
+        if (setStateCallbackStackSet.size) {
+          // 先更新，再执行回调，循环调用回调
+          setStateCallbackStackSet.forEach(({ callback, nextState }) => {
+            callback(nextState);
+          });
+          setStateCallbackStackSet.clear();
+        }
+      });
     }));
   }
 };

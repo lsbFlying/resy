@@ -6,7 +6,9 @@ import {
   MapType, ObjectMapType, ObjectType, PrimitiveState, PS, Store, Stores,
   StoreViewMapType, StoreViewMapValue, Unsubscribe, ValueOf, ViewStateMapType,
 } from "./model";
-import { mapToObject, objectToMap, protoPointStoreErrorHandle, storeErrorHandle } from "./utils";
+import {
+  mapToObject, objectToMap, protoPointStoreErrorHandle, storeErrorHandle, hasOwnProperty,
+} from "./utils";
 import { REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY } from "./static";
 
 /**
@@ -40,7 +42,7 @@ export const getLatestStateMap = <S extends PrimitiveState = {}>(store?: Store<S
 export const viewStoresToLatestState = <S extends PrimitiveState>(stores: Stores<S>) => {
   const latestStateTemp = {} as { [key in keyof Stores<S>]: ValueOf<S> };
   for (const storesKey in stores) {
-    if (Object.prototype.hasOwnProperty.call(stores, storesKey)) {
+    if (hasOwnProperty.call(stores, storesKey)) {
       latestStateTemp[storesKey] = mapToObject(getLatestStateMap(stores[storesKey]));
     }
   }

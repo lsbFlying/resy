@@ -21,7 +21,8 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * view连接store内部数据引用的自增指针处理
  */
 const storeStateRefSetMark = (storeStateRefSet: Set<number>) => {
-  const lastTemp = [...storeStateRefSet].at(-1);
+  const storeStateRefSetArray = [...storeStateRefSet];
+  const lastTemp = storeStateRefSetArray[storeStateRefSetArray.length - 1] as (number | undefined);
   // 索引自增
   const lastItem = typeof lastTemp === "number" ? lastTemp + 1 : 0;
   // 做一个引用占位符，表示有一处引用，便于最后初始化逻辑执行的size判别
@@ -240,41 +241,49 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
     /**
      * @description 采用微任务结合开关标志控制的方式达到批量更新的效果，
      * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
-     * detail course:
-     * isUpdating、willUpdating的标志位重置必须放在batchUpdate之前重置，因为batchUpdate会有异步情况，
-     * 而batchUpdate里面的batchDispatchListener会存在同步更新数据的情况，
-     * 本身isUpdating的微任务执行方式已经是异步，而其内部的异步执行不会被等待阻塞，
-     * 所以及时重置标识位可以不阻塞别的更新流程，同时这种情况下显得prevStateTemp的必要性是存在有意义的。
      */
     schedulerProcessor.set("isUpdating", Promise.resolve().then(() => {
-      // 重置更新进行标识
+      /**
+       * 重置更新进行标识、重置当前轮的即将更新的标识
+       * 这里需要将这两个标志位以及schedulerProcessor中的任务队列清空
+       * 能够使得subscribe以及callback中的更新即使得到正常流程的运转
+       */
       schedulerProcessor.set("isUpdating", null);
-      // 重置当前轮的即将更新的标识
       schedulerProcessor.set("willUpdating", null);
 
-      // 防止之前的数据被别的更新改动，这里及时取出保证之前的数据的阶段状态的对应
-      const prevStateTemp = followUpMap(prevState);
-
       const { taskDataMap, taskQueueMap } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
+
       // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
       (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
+
+      // 防止之前的数据被后续subscribe或者callback中的更新给改动了，这里及时取出保证之前的数据的阶段状态的对应
+      const prevStateTemp = followUpMap(prevState);
 
       if (taskDataMap.size !== 0) {
         batchUpdate(() => {
           taskQueueMap.forEach(task => {
             task();
           });
-          // 不管batchUpdate是在何种模式下，同步还是异步，这里也顺便统一更新订阅中的更新了
-          batchDispatchListener(prevStateTemp, mapToObject(taskDataMap), stateMap, listenerSet);
-        });
-      }
 
-      if (setStateCallbackStackSet.size) {
-        // 先更新，再执行回调，循环调用回调
-        setStateCallbackStackSet.forEach(({ callback, nextState }) => {
-          callback(nextState);
+          /**
+           * @description 这里也顺便统一更新订阅中的更新了，
+           * 更重要的是它合并了subscribe中的更新，尽管它看起来是一个激进的做法，
+           * 但实际运用中会发现合并subscribe监听订阅中的内部更新不影响外部触发的逻辑性，
+           * 也符合触发变动执行的逻辑执行
+           * 而实际生产运用中都是需要在subscribe当中去更新数据的，
+           * 所以这一点很必要也很自然
+           */
+          batchDispatchListener(prevStateTemp, mapToObject(taskDataMap), stateMap, listenerSet);
+
+          // 同时也顺便把回掉中可能的更新也统一批量处理了
+          if (setStateCallbackStackSet.size) {
+            // 先更新，再执行回调，循环调用回调
+            setStateCallbackStackSet.forEach(({ callback, nextState }) => {
+              callback(nextState);
+            });
+            setStateCallbackStackSet.clear();
+          }
         });
-        setStateCallbackStackSet.clear();
       }
     }));
   }

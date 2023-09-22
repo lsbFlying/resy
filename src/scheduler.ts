@@ -14,7 +14,7 @@ import { followUpMap } from "./utils";
  * 恰好又因为proxy代理获取到了前置更进的新数据状态而在这一批次的更新渲染中得到触发渲染
  * 后续store的更新执行到useSyncExternalStore内部的checkIfSnapshotChanged方法时
  * 会发现前后数据一直而没有产生新一轮的强制更新，
- * 这个特性是 useSyncExternalStore + proxy + 前置数据 + Promise微任务执行 一起产生的额外惊喜效应
+ * 这个特性是 useSyncExternalStore + proxy + 前置数据 + Promise微任务执行 一起产生的额外联动效应
  */
 const scheduler = () => {
   // 更新的任务队列

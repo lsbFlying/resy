@@ -67,7 +67,7 @@
     "no-console": "off",
     "spaced-comment": "error",
     "arrow-body-style": ["error", "as-needed"],
-    "array-callback-return": ["warn", { "allowImplicit": true, "checkForEach": true }],
+    "array-callback-return": ["error", { "allowImplicit": true, "checkForEach": true }],
     "no-unused-expressions": [
       "error",
       {

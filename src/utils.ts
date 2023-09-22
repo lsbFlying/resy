@@ -14,6 +14,8 @@ export const mapToObject = <S extends PrimitiveState>(map: MapType<S>): S => {
   return object;
 };
 
+export const hasOwnProperty = Object.prototype.hasOwnProperty;
+
 /**
  * object转map
  * @description 相较于简洁的object.entries方式效率更高
@@ -21,7 +23,7 @@ export const mapToObject = <S extends PrimitiveState>(map: MapType<S>): S => {
 export const objectToMap = <S extends PrimitiveState>(object: S) => {
   const map: MapType<S> = new Map();
   for (const key in object) {
-    if (Object.prototype.hasOwnProperty.call(object, key)) {
+    if (hasOwnProperty.call(object, key)) {
       map.set(key, object[key]);
     }
   }
@@ -37,14 +39,16 @@ export const storeErrorHandle = <S extends PrimitiveState>(store: S, funcName: "
   }
 };
 
+const toString = Object.prototype.toString;
+
 // 数据更新参数报错处理
 export const stateErrorHandle = <S extends PrimitiveState>(
   stateParams: State<S>,
   funcName: "setState" | "syncUpdate" | "createStore",
 ) => {
   if (
-    Object.prototype.toString.call(stateParams) !== "[object Object]"
-    && Object.prototype.toString.call(stateParams) !== "[object Function]"
+    toString.call(stateParams) !== "[object Object]"
+    && toString.call(stateParams) !== "[object Function]"
   ) {
     throw new Error(
       `resy's ${funcName}(...): takes an object of state variables to update or`
@@ -52,7 +56,7 @@ export const stateErrorHandle = <S extends PrimitiveState>(
     );
   }
   if (
-    Object.prototype.toString.call(stateParams) === "[object Object]"
+    toString.call(stateParams) === "[object Object]"
     && (stateParams as Partial<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]
   ) {
     throw new Error(
@@ -104,7 +108,7 @@ export const followUpMap = <K, V>(map: Map<K, V>) => {
 // 清空对象
 export const clearObject = <S extends PrimitiveState>(object: S) => {
   for (const key in object) {
-    if (Object.prototype.hasOwnProperty.call(object, key)) {
+    if (hasOwnProperty.call(object, key)) {
       delete object[key];
     }
   }

@@ -13,6 +13,15 @@
 
 </div>
 
+<details>
+<summary>The reason for naming resy</summary>
+First of all, the original meaning of "resy" is "react state easy",
+and secondly, data sharing within "resy" is not the drilling of data,
+but the acquisition of data sources from containers for traceability and regeneration.
+More like a regeneration system, which happens to take the name "resy",
+formed by the combination of the first and last letters of the two letters.
+</details>
+
 ### Features
 - 😎 Create simple
 - 😎 Sharing freedom

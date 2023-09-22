@@ -230,6 +230,9 @@ export type MapStateToProps<S extends PrimitiveState, P extends PrimitiveState =
 /**
  * resy的调度类型接口
  * @description 调度类型
+ * 原本调度中还有针对setState的callback回掉进行处理的开关标识isCalling
+ * 后来发现是多余不必要的，因为本身回掉Set在遍历执行的过程中即使
+ * 内部再有回掉执行，也会放在Set后续尾部调用，所以这里是天然直接遍历即可
  */
 export interface Scheduler<S extends PrimitiveState = {}> {
   // 更新进行中

@@ -10,7 +10,8 @@ import {
   batchUpdate, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, REGENERATIVE_SYSTEM_KEY,
 } from "./static";
 import {
-  stateErrorHandle, mapToObject, objectToMap, protoPointStoreErrorHandle, followUpMap, clearObject, optionsErrorHandle,
+  stateErrorHandle, mapToObject, objectToMap, protoPointStoreErrorHandle,
+  followUpMap, clearObject, optionsErrorHandle, hasOwnProperty,
 } from "./utils";
 import {
   genViewConnectStoreMap, connectStore, batchDispatchListener,
@@ -190,7 +191,7 @@ export const createStore = <S extends PrimitiveState>(
         const originValue = reducerState[key];
 
         if (!Object.is(originValue, stateMap.get(key))) {
-          Object.prototype.hasOwnProperty.call(reducerState, key)
+          hasOwnProperty.call(reducerState, key)
             ? stateMap.set(key, reducerState[key])
             : stateMap.delete(key);
 

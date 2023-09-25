@@ -7,7 +7,7 @@ import type {
   PrimitiveState, StoreViewMapType, ValueOf, MapType, Callback, SetStateCallbackItem,
   StoreMapValue, StoreMapValueType, Listener, Scheduler, StoreMap, StateRestoreAccomplishMapType,
 } from "./model";
-import { followUpMap, mapToObject } from "./utils";
+import { followUpMap, hasOwnProperty, mapToObject } from "./utils";
 
 /**
  * 从use-sync-external-store包的导入方式到下面的引用方式
@@ -31,16 +31,22 @@ const storeStateRefSetMark = (storeStateRefSet: Set<number>) => {
 };
 
 /**
- * @description stateMap的恢复（复位）初始化
- * 同时相较于直接复制 stateMap = new Map(state)的方式效率更快
+ * 获取目前所有的keys
+ * 防止store可能delete属性导致属性个数小于原始属性个数
+ * 这样会导致数据没有重置处理完全，所以兼并处理
  */
-const stateMapRestore = <S extends PrimitiveState>(state: S, stateMap: MapType<S>) => {
-  // 因为不确定key的原始状态，所以直接先清楚所有key后面再添加
-  stateMap.clear();
-  Object.entries(state).forEach(([key, value]) => {
-    stateMap.set(key, value);
-  });
-};
+export const mergeStateKeys = <S extends PrimitiveState>(
+  state: S,
+  stateMap: MapType<S>,
+) => Array.from(
+    new Set(
+      (
+        Object.keys(state) as (keyof S)[]
+      ).concat(
+        Array.from(stateMap.keys())
+      )
+    )
+  );
 
 /**
  * 初始化渲染恢复重置数据处理
@@ -62,14 +68,25 @@ const initialRenderRestore = <S extends PrimitiveState>(
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
   stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
+  schedulerProcessor: MapType<Scheduler>,
 ) => {
   if (initialReset && !storeStateRefSet.size && !stateRestoreAccomplishMap.get("stateRestoreAccomplish")) {
     stateRestoreAccomplishMap.set("stateRestoreAccomplish", true);
     /**
-     * 重置数据状态（一次性全部重置）
+     * 重置数据状态（一次性全部重置）相较于直接复制 stateMap = new Map(state)的方式效率更快
      * 之所以选择全部重置是因为防止某些模块未被及时渲染导致后续数据没有被初始化恢复
+     * 但是要注意此时任务队列是否有数据，如果有（一般都是同步代码中添加的更新），需要跳过
      */
-    stateMapRestore(state, stateMap);
+    const { taskQueueMap } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
+    const ignoreKeys = Array.from(taskQueueMap.keys());
+    mergeStateKeys(state, stateMap).forEach(key => {
+      // 不是任务队列中的key则可以重置
+      if (!ignoreKeys.includes(key)) {
+        hasOwnProperty.call(state, key)
+          ? stateMap.set(key, state[key])
+          : stateMap.delete(key);
+      }
+    });
   }
 };
 
@@ -79,11 +96,12 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
   stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
+  schedulerProcessor: MapType<Scheduler>,
 ) => {
   const viewConnectStoreMap: StoreViewMapType<S> = new Map();
   viewConnectStoreMap.set("getStateMap", stateMap);
   viewConnectStoreMap.set("viewInitialReset", () => {
-    initialRenderRestore(initialReset, state, stateMap, storeStateRefSet, stateRestoreAccomplishMap);
+    initialRenderRestore(initialReset, state, stateMap, storeStateRefSet, stateRestoreAccomplishMap, schedulerProcessor);
   });
   viewConnectStoreMap.set("viewConnectStore", () => {
     const storeRefIncreaseItem = storeStateRefSetMark(storeStateRefSet);
@@ -109,6 +127,7 @@ export const connectStore = <S extends PrimitiveState>(
   storeStateRefSet: Set<number>,
   storeMap: StoreMap<S>,
   stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
+  schedulerProcessor: MapType<Scheduler>,
 ) => {
   // 解决初始化属性泛型有?判断符，即一开始没有初始化的数据属性
   if (storeMap.has(key)) return storeMap;
@@ -145,7 +164,7 @@ export const connectStore = <S extends PrimitiveState>(
   });
 
   storeMapValue.set("useOriginState", () => {
-    initialRenderRestore(initialReset, state, stateMap, storeStateRefSet, stateRestoreAccomplishMap);
+    initialRenderRestore(initialReset, state, stateMap, storeStateRefSet, stateRestoreAccomplishMap, schedulerProcessor);
     return useSyncExternalStore(
       (storeMap.get(key) as StoreMapValue<S>).get("subscribeOriginState") as StoreMapValueType<S>["subscribeOriginState"],
       (storeMap.get(key) as StoreMapValue<S>).get("getOriginState") as StoreMapValueType<S>["getOriginState"],
@@ -209,7 +228,7 @@ export const pushTask = <S extends PrimitiveState>(
       () => (
         (
           connectStore(
-            key, initialReset, state, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
+            key, initialReset, state, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap, schedulerProcessor,
           ).get(key) as StoreMapValue<S>
         ).get("updater") as StoreMapValueType<S>["updater"]
       )(),

@@ -29,11 +29,11 @@ const curDay = curDate.getDate();
 // 打包文件的头部声明
 const banner =
   "/**\n" +
-  ` * resy\n` +
-  ` * 一款简单易用的React数据状态管理器\n` +
-  ` * created by liushanbao <1262300490@qq.com>\n` +
+  " * resy\n" +
+  " * 一款简单易用的React数据状态管理器\n" +
+  " * created by liushanbao <1262300490@qq.com>\n" +
   ` * (c) 2020-05-05-${curDate.getFullYear()}-${curDate.getMonth() + 1}-${curDay < 10 ? `0${curDay}` : curDay}\n` +
-  ` * Released under the MIT License.\n` +
+  " * Released under the MIT License.\n" +
   " */";
 
 export default [

@@ -15,7 +15,7 @@ import {
 } from "./utils";
 import {
   genViewConnectStoreMap, connectStore, batchDispatchListener,
-  pushTask, finallyBatchHandle, willUpdatingHandle,
+  pushTask, finallyBatchHandle, willUpdatingHandle, mergeStateKeys,
 } from "./reduce";
 import type {
   ExternalMapType, ExternalMapValue, PrimitiveState, StateFuncType, StoreMap, StoreMapValue,
@@ -88,7 +88,7 @@ export const createStore = <S extends PrimitiveState>(
 
   // 处理view连接store、以及获取最新state数据的相关处理Map
   const viewConnectStoreMap = genViewConnectStoreMap(
-    optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet, stateRestoreAccomplishMap,
+    optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet, stateRestoreAccomplishMap, schedulerProcessor,
   );
 
   // 数据存储容器storeMap
@@ -124,7 +124,8 @@ export const createStore = <S extends PrimitiveState>(
           (
             (
               connectStore(
-                key, optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
+                key, optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet,
+                storeMap, stateRestoreAccomplishMap, schedulerProcessor,
               ).get(key) as StoreMapValue<S>
             ).get("updater") as StoreMapValueType<S>["updater"]
           )();
@@ -187,12 +188,12 @@ export const createStore = <S extends PrimitiveState>(
     batchUpdate(() => {
       let effectState: Partial<S> | null = null;
 
-      prevStateTemp.forEach((_, key) => {
+      mergeStateKeys(reducerState, prevStateTemp).forEach(key => {
         const originValue = reducerState[key];
 
         if (!Object.is(originValue, stateMap.get(key))) {
           hasOwnProperty.call(reducerState, key)
-            ? stateMap.set(key, reducerState[key])
+            ? stateMap.set(key, originValue)
             : stateMap.delete(key);
 
           !effectState && (effectState = {});
@@ -201,7 +202,8 @@ export const createStore = <S extends PrimitiveState>(
           (
             (
               connectStore(
-                key, optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
+                key, optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet,
+                storeMap, stateRestoreAccomplishMap, schedulerProcessor,
               ).get(key) as StoreMapValue<S>
             ).get("updater") as StoreMapValueType<S>["updater"]
           )();
@@ -290,7 +292,8 @@ export const createStore = <S extends PrimitiveState>(
         (
           (
             connectStore(
-              key, optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
+              key, optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet,
+              storeMap, stateRestoreAccomplishMap, schedulerProcessor,
             ) as StoreMap<S>
           ).get(key) as StoreMapValue<S>
         ).get("useOriginState") as StoreMapValueType<S>["useOriginState"]
@@ -346,7 +349,8 @@ export const createStore = <S extends PrimitiveState>(
         (
           (
             connectStore(
-              key, optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet, storeMap, stateRestoreAccomplishMap,
+              key, optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet,
+              storeMap, stateRestoreAccomplishMap, schedulerProcessor,
             ) as StoreMap<S>
           ).get(key) as StoreMapValue<S>
         ).get("useOriginState") as StoreMapValueType<S>["useOriginState"]

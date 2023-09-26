@@ -1,4 +1,6 @@
-import { VIEW_CONNECT_STORE_KEY, USE_CONCISE_STORE_KEY, USE_STORE_KEY, REGENERATIVE_SYSTEM_KEY } from "./static";
+import {
+  VIEW_CONNECT_STORE_KEY, USE_CONCISE_STORE_KEY, USE_STORE_KEY, REGENERATIVE_SYSTEM_KEY,
+} from "./static";
 
 // 普通意义上的回调函数类型
 export type Callback = () => void;
@@ -13,27 +15,23 @@ export type PrimitiveState = Record<number | string, any>;
  * @description resy的storeMap接口类型
  * subscribeOriginState与getOriginState是useSyncExternalStore参数接口
  * 其中subscribeOriginState的onOriginStateChange参数回调包含数据更新操作
- * 将这些数据更新操作的函数储存在某个既定的Set中，然后在update中去进行forEach循环更新
- * getOriginState单纯是获取resy整个内部静态数据的函数
+ * 将这些数据更新操作的函数储存在某个既定的Set中，
+ * 然后需要更新的时候在batchUpdate内部forEach循环批量更新即可
+ * getOriginState对应到useSyncExternalStore的getSnapshot
  */
 export type StoreMapValueType<S extends PrimitiveState> = {
   // 当前源数据的状态变化事件的订阅，useSyncExternalStore的订阅
   subscribeOriginState: (onOriginStateChange: Callback) => Callback;
-  // 获取当前源数据(独立单独的数据状态)
+  // 获取当前源数据(单个数据属性状态)
   getOriginState: () => ValueOf<S>;
-  // 更新源数据的更新器
-  updater: () => void;
   /**
-   * 使用当前源数据，即useSyncExternalStore的useSnapshot，
+   * @description 使用当前源数据，即useSyncExternalStore的useSnapshot，
    * 可以简单理解为useState的效果，具备驱动页面更新渲染的能力。
    */
   useOriginState: () => ValueOf<S>;
 };
 
-export type StoreMapValue<S extends PrimitiveState> = Map<
-  keyof StoreMapValueType<S>,
-  StoreMapValueType<S>[keyof StoreMapValueType<S>]
->;
+export type StoreMapValue<S extends PrimitiveState> = MapType<StoreMapValueType<S>>;
 // createStore的storeMap数据类型
 export type StoreMap<S extends PrimitiveState> = Map<keyof S, StoreMapValue<S>>;
 
@@ -60,10 +58,7 @@ export interface StoreViewMapValue<S extends PrimitiveState> {
 }
 
 // 供view使用的核心连接容器Map，包括处理内部stateMap数据以及重置初始化数据的方法
-export type StoreViewMapType<S extends PrimitiveState> = Map<
-  keyof StoreViewMapValue<S>,
-  StoreViewMapValue<S>[keyof StoreViewMapValue<S>]
->;
+export type StoreViewMapType<S extends PrimitiveState> = MapType<StoreViewMapValue<S>>;
 
 export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & {
   [VIEW_CONNECT_STORE_KEY]: StoreViewMapType<S>;
@@ -73,10 +68,7 @@ export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & {
 };
 
 // 扩展map的类型
-export type ExternalMapType<S extends PrimitiveState> = Map<
-  keyof ExternalMapValue<S>,
-  ExternalMapValue<S>[keyof ExternalMapValue<S>]
->;
+export type ExternalMapType<S extends PrimitiveState> = MapType<ExternalMapValue<S>>;
 
 export type ConciseExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & {
   readonly store: Store<S>;
@@ -84,10 +76,7 @@ export type ConciseExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & 
 };
 
 // concise扩展map的类型
-export type ConciseExternalMapType<S extends PrimitiveState> = Map<
-  keyof ConciseExternalMapValue<S>,
-  ConciseExternalMapValue<S>[keyof ConciseExternalMapValue<S>]
->;
+export type ConciseExternalMapType<S extends PrimitiveState> = MapType<ConciseExternalMapValue<S>>;
 
 export type State<S extends PrimitiveState> = Partial<S> | S | null;
 
@@ -239,19 +228,12 @@ export interface Scheduler<S extends PrimitiveState = {}> {
   isUpdating: Promise<void> | null;
   // 将要更新执行的标识
   willUpdating: true | null;
-  // 新增直接更新数据的key/value以及相应的任务函数
-  add(
-    task: Callback,
-    key: keyof S,
-    val: ValueOf<S>,
-  ): void;
+  // 入栈更新数据的key/value
+  pushTaskData(key: keyof S, val: ValueOf<S>): void;
   // 冲刷任务数据与任务队列
   flush(): void;
-  // 获取任务数据与任务队列
-  getTasks(): {
-    taskDataMap: Map<keyof S, ValueOf<S>>;
-    taskQueueMap: Map<keyof S, Callback>;
-  };
+  // 获取任务数据
+  getTaskData(): Map<keyof S, ValueOf<S>>;
 }
 
 /**

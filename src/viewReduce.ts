@@ -75,7 +75,7 @@ export const initialStateHandle = <S extends PrimitiveState>(
   const stateMap: ViewStateMapType<S> = getLatestStateMap(stores) as MapType<S>;
 
   /**
-   * 如果是有store的情况则可以通过props.state的方式进行数据渲染及操作
+   * @description 如果是有store的情况则可以通过props.state的方式进行数据渲染及操作
    * 且props.state的方式兼容于函数组件与class组件
    * 但是如果是在class组件中则必须使用props.state的方式
    * 而函数组件则两种方式都可以

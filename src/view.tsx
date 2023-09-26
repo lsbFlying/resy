@@ -25,9 +25,9 @@ export const view = <P extends PrimitiveState = {}, S extends PrimitiveState = {
 
   return memo((props: P) => {
     /**
+     * @description 引用数据的代理Set
      * 需要将innerUseStateMapSet与stateMap放在内部执行，
      * 这样每次更新的时候可以得到最新的数据引用与数据stateMap
-     * @description 引用数据的代理Set
      */
     const innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>> =
       (!stores || (stores as Store<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]) ? new Set() : new Map();

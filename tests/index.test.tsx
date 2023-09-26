@@ -131,8 +131,19 @@ test("resy-basic", async () => {
         <button onClick={() => {
           // 不产生更新
           store.setState({});
-          // store.setState(() => ({}));
         }}>btn10</button>
+        <button onClick={() => {
+          // 不产生更新
+          store.setState(() => ({}));
+        }}>btn11</button>
+        <button onClick={() => {
+          // 不产生更新
+          store.setState(null);
+        }}>btn12</button>
+        <button onClick={() => {
+          // 不产生更新
+          store.setState(store);
+        }}>btn13</button>
       </>
     );
   };
@@ -197,6 +208,24 @@ test("resy-basic", async () => {
   });
 
   fireEvent.click(getByText("btn10"));
+  await waitFor(() => {
+    console.log("btn10", index); // btn10, 9
+    expect(index === 9).toBeTruthy();
+  });
+
+  fireEvent.click(getByText("btn11"));
+  await waitFor(() => {
+    console.log("btn10", index); // btn10, 9
+    expect(index === 9).toBeTruthy();
+  });
+
+  fireEvent.click(getByText("btn12"));
+  await waitFor(() => {
+    console.log("btn10", index); // btn10, 9
+    expect(index === 9).toBeTruthy();
+  });
+
+  fireEvent.click(getByText("btn13"));
   await waitFor(() => {
     console.log("btn10", index); // btn10, 9
     expect(index === 9).toBeTruthy();

@@ -4,6 +4,9 @@ import type { PrimitiveState, MapType, State, CreateStoreOptions } from "./model
 /**
  * map转object
  * @description 解决回调参数如果是map的proxy代理的话无法做扩展运算的问题
+ * 使用map的foreach也可以，并且在数据量较大的时候比for of更快，
+ * 但是这里一般数据量认为不过过大达到百万级别，且在大数据量的时候并没有拉开足够的差距
+ * 所以for of的方式依旧是众多方式中最综合高效的方式
  */
 export const mapToObject = <S extends PrimitiveState>(map: MapType<S>): S => {
   const object = {} as S;
@@ -13,21 +16,17 @@ export const mapToObject = <S extends PrimitiveState>(map: MapType<S>): S => {
   return object;
 };
 
-export const hasOwnProperty = Object.prototype.hasOwnProperty;
-
 /**
  * object转map
- * @description 相较于简洁的object.entries方式效率更高
+ * @description 性能相对较高的浅转换
  */
-export const objectToMap = <S extends PrimitiveState>(object: S) => {
-  const map: MapType<S> = new Map();
-  for (const key in object) {
-    if (hasOwnProperty.call(object, key)) {
-      map.set(key, object[key]);
-    }
-  }
-  return map;
-};
+export const objectToMap = <S extends PrimitiveState>(object: S) => Object.keys(object)
+  .reduce((prev, key) => {
+    prev.set(key, object[key]);
+    return prev;
+  }, new Map());
+
+export const hasOwnProperty = Object.prototype.hasOwnProperty;
 
 // store传的不是由resy本身的createStore创建产生的store的错误处理
 export const storeErrorHandle = <S extends PrimitiveState>(store: S, funcName: "useStore" | "view") => {
@@ -100,7 +99,12 @@ export const followUpMap = <K, V>(map: Map<K, V>) => {
   return mapTemp;
 };
 
-// 清空对象
+/**
+ * 清空对象
+ * @description 在未达到百万级别的数据量的时候该实现方式相对具有较大优势
+ * 且在即使接近或者达到甚至超过百万级别的数据量的情况下该方式仍然与其他实现方式相差性能不大
+ * 所以下面的实现方式仍然是相对最优解
+ */
 export const clearObject = <S extends PrimitiveState>(object: S) => {
   for (const key in object) {
     if (hasOwnProperty.call(object, key)) {

@@ -47,7 +47,9 @@ export const createStore = <S extends PrimitiveState>(
    * @description 这里不能用let定义reducerState以及后续restore这个api中
    * 对reducerState直接的赋值重置会影响reducerState本身的数据引用
    * 对于reduce文件里面的reducerState的state参数的引用追踪的状态变化会有影响
-   * 所以之类使用const定义，且后续清空使用clearObject遍历清空
+   * 所以这里使用const定义，且后续清空使用clearObject遍历清空
+   * 这么做是为了节省内存，否则reduce里面拆分的很多方法就必须写在createStore内部了
+   * 那样一来每次createStore就会生成很多reduce里面的重复函数占用很多内存
    */
   const reducerState = initialState === undefined
     ? ({} as S)
@@ -74,10 +76,14 @@ export const createStore = <S extends PrimitiveState>(
   const stateRestoreAccomplishMap: StateRestoreAccomplishMapType = new Map();
 
   /**
-   * @description 由于proxy读取数据本身相较于原型链读取数据要慢，
-   * 所以在不改变传参state的情况下，同时resy使用Map与Set提升性能，来弥补proxy的性能缺陷
-   * 同时更重要的是转换给map，做一层引用类型数据的安全保护层，
+   * @description 在不改变传参state的情况下，同时resy使用Map与Set提升性能，且Map、Set在内存也会占优
+   * 同时更重要的是转换给map，做一层引用类型数据的安全保护层的浅拷贝
    * 这样即使外部的initialState数据的引用数据恶意错误变化，也不会影响内部map数据的恶意变化
+   * 但是如果reducerState、initialState要在一级以上的内层数据做脏更改的话这里也是难以保护的
+   * 本身js是若类型语言，很难做到类型级数据更改安全，除非全量的深拷贝，但是深拷贝对于大对象过于耗费性能，这里不做考量
+   * 且resy同样保持react一贯的更新设定，即不支持二级属性更新，使用全新属性值进行数据更新
+   * 虽然map、object之间的转换可能会耗费一些性能，但是在数据量不大的情况下影响不大
+   * 且涉及map、object转换的都属于高阶使用方式，常规使用不涉及这种消耗转换，所以总体来说使用Map获取的性能收益是划算的
    */
   const stateMap: MapType<S> = objectToMap(reducerState);
   // 由于stateMap的设置前置了，优化了同步数据的获取，但是对于之前的数据状态也会需要前置处理

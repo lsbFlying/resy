@@ -37,12 +37,12 @@ const storeStateRefSetMark = (storeStateRefSet: Set<number>) => {
  * 这样会导致数据没有重置处理完全，所以兼并处理
  */
 export const mergeStateKeys = <S extends PrimitiveState>(
-  state: S,
+  reducerState: S,
   stateMap: MapType<S>,
 ) => Array.from(
     new Set(
       (
-        Object.keys(state) as (keyof S)[]
+        Object.keys(reducerState) as (keyof S)[]
       ).concat(
         Array.from(stateMap.keys())
       )
@@ -51,7 +51,7 @@ export const mergeStateKeys = <S extends PrimitiveState>(
 
 // 获取还原出来的state
 export const handleReducerState = <S extends PrimitiveState>(
-  state: S,
+  reducerState: S,
   initialState?: InitialStateType<S>,
 ) => {
   /**
@@ -59,9 +59,9 @@ export const handleReducerState = <S extends PrimitiveState>(
    * 防止因为初始化函数的内部逻辑导致重置恢复的数据不符合初始化的数据逻辑
    */
   if (typeof initialState === "function") {
-    clearObject(state);
+    clearObject(reducerState);
     Object.entries(initialState()).forEach(([key, value]) => {
-      state[key as keyof S] = value;
+      reducerState[key as keyof S] = value;
     });
   }
 };
@@ -102,7 +102,7 @@ export const handleReducerState = <S extends PrimitiveState>(
  */
 const initialRenderReset = <S extends PrimitiveState>(
   initialReset: boolean,
-  state: S,
+  reducerState: S,
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
   stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
@@ -111,7 +111,7 @@ const initialRenderReset = <S extends PrimitiveState>(
 ) => {
   if (initialReset && !storeStateRefSet.size && !stateRestoreAccomplishMap.get("stateRestoreAccomplish")) {
     stateRestoreAccomplishMap.set("stateRestoreAccomplish", true);
-    handleReducerState(state, initialState);
+    handleReducerState(reducerState, initialState);
     /**
      * @description 重置数据状态（一次性全部重置）相较于直接复制 stateMap = new Map(state)的方式效率更快
      * 之所以选择全部重置是因为防止某些模块未被及时渲染导致后续数据没有被初始化恢复
@@ -119,11 +119,11 @@ const initialRenderReset = <S extends PrimitiveState>(
      */
     const taskDataMap = (schedulerProcessor.get("getTaskData") as Scheduler<S>["getTaskData"])();
     const ignoreKeys = Array.from(taskDataMap.keys());
-    mergeStateKeys(state, stateMap).forEach(key => {
+    mergeStateKeys(reducerState, stateMap).forEach(key => {
       // 不是任务队列中的key则可以重置
       if (!ignoreKeys.includes(key)) {
-        hasOwnProperty.call(state, key)
-          ? stateMap.set(key, state[key])
+        hasOwnProperty.call(reducerState, key)
+          ? stateMap.set(key, reducerState[key])
           : stateMap.delete(key);
       }
     });
@@ -132,7 +132,7 @@ const initialRenderReset = <S extends PrimitiveState>(
 
 export const genViewConnectStoreMap = <S extends PrimitiveState>(
   initialReset: boolean,
-  state: S,
+  reducerState: S,
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
   stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
@@ -143,7 +143,7 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
   viewConnectStoreMap.set("getStateMap", stateMap);
   viewConnectStoreMap.set("viewInitialReset", () => {
     initialRenderReset(
-      initialReset, state, stateMap, storeStateRefSet,
+      initialReset, reducerState, stateMap, storeStateRefSet,
       stateRestoreAccomplishMap, schedulerProcessor, initialState,
     );
   });
@@ -166,7 +166,7 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
 export const connectStore = <S extends PrimitiveState>(
   key: keyof S,
   initialReset: boolean,
-  state: S,
+  reducerState: S,
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
   storeMap: StoreMap<S>,
@@ -200,7 +200,7 @@ export const connectStore = <S extends PrimitiveState>(
 
   storeMapValue.set("useOriginState", () => {
     initialRenderReset(
-      initialReset, state, stateMap, storeStateRefSet,
+      initialReset, reducerState, stateMap, storeStateRefSet,
       stateRestoreAccomplishMap, schedulerProcessor, initialState,
     );
     return useSyncExternalStore(

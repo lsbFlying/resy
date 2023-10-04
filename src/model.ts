@@ -51,8 +51,8 @@ export type Listener<S extends PrimitiveState> = (data: ListenerParams<S>) => vo
 export interface StoreViewMapValue<S extends PrimitiveState> {
   // store内部的stateMap数据对象
   getStateMap: MapType<S>;
-  // view初始化数据
-  viewInitialReset: Callback;
+  // view卸载检查重置数据
+  viewUnmountReset: Callback;
   // view的props数据使用方式的数据生命周期与store关联同步
   viewConnectStore: () => Unsubscribe;
 }
@@ -175,7 +175,7 @@ export type Restore = Readonly<{
  * @description 之所以可以允许改变CreateStoreOptions，是因为业务场景的需要
  * 同时也是开放通道灵活开发，因为本身createStore的静态执行是一种限制
  * 如果需要在某种场景下的突然变动而无法使得静态参数设置变得可更改是一种束缚
- * 比如我有一个store初始场景是不需要initialReset为false，即常规下不需要永存状态信息
+ * 比如我有一个store初始场景是不需要unmountReset为false，即常规下不需要永存状态信息
  * 但是突然因为业务场景的需求需要变更为我需要永存状态信息以便于在下次回到该store的运用情况的时候
  * 还能仍然保持之前的数据状态信息，这种情况是有必要的，主要是不想让CreateStoreOptions成为一种限制
  * 应该使得其作为一种辅助，但一般而言CreateStoreOptions本身的配置能够符合且满足绝大多数场景
@@ -238,7 +238,7 @@ export interface Scheduler<S extends PrimitiveState = {}> {
 
 /**
  * @description createStore该API第二个参数配置项
- * 目前配置项不多，且常用主要配置也是initialReset
+ * 目前配置项不多，且常用主要配置也是unmountReset
  */
 export type CreateStoreOptions = Readonly<{
   /**
@@ -248,7 +248,7 @@ export type CreateStoreOptions = Readonly<{
    * 2、对象接口式的写法是为了兼容未来可能的未知的配置功能的增加
    * @default true
    */
-  initialReset: boolean;
+  unmountReset: boolean;
 }>;
 
 // view中equal函数的参数类型，props与state的类型合集
@@ -275,7 +275,7 @@ export type ObjectType<S extends PrimitiveState> = { [key in keyof S]: S[key] };
 // object值类型是map的类型推断
 export type ObjectMapType<S extends PrimitiveState> = { [key in keyof S]: MapType<S> };
 
-// stateMap恢复的状态开关标识map类型
+// stateMap恢复的状态开关标识map类型（防止卸载重置多次执行）
 export type StateRestoreAccomplishMapType = MapType<{ stateRestoreAccomplish: boolean | null }>;
 
 // view返回函数的参数类型

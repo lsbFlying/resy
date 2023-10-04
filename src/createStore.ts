@@ -61,8 +61,8 @@ export const createStore = <S extends PrimitiveState>(
 
   optionsErrorHandle(options);
   const optionsTemp = options
-    ? { initialReset: options.initialReset }
-    : { initialReset: true };
+    ? { unmountReset: options.unmountReset }
+    : { unmountReset: true };
 
   // 当前store的调度处理器
   const schedulerProcessor = scheduler();
@@ -100,7 +100,7 @@ export const createStore = <S extends PrimitiveState>(
 
   // 处理view连接store、以及获取最新state数据的相关处理Map
   const viewConnectStoreMap = genViewConnectStoreMap(
-    optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet,
+    optionsTemp.unmountReset, reducerState, stateMap, storeStateRefSet,
     stateRestoreAccomplishMap, schedulerProcessor, initialState,
   );
 
@@ -237,10 +237,10 @@ export const createStore = <S extends PrimitiveState>(
     };
   };
 
-  // 更改设置initialReset参数配置
+  // 更改设置unmountReset参数配置
   const setOptions = (options?: CreateStoreOptions) => {
     optionsErrorHandle(options);
-    optionsTemp.initialReset = options?.initialReset ?? optionsTemp.initialReset;
+    optionsTemp.unmountReset = options?.unmountReset ?? optionsTemp.unmountReset;
   };
 
   // 单个属性数据更新
@@ -293,7 +293,7 @@ export const createStore = <S extends PrimitiveState>(
         (
           (
             connectStore(
-              key, optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet, storeMap,
+              key, optionsTemp.unmountReset, reducerState, stateMap, storeStateRefSet, storeMap,
               stateRestoreAccomplishMap, schedulerProcessor, storeChangeSet, initialState,
             ) as StoreMap<S>
           ).get(key) as StoreMapValue<S>
@@ -354,7 +354,7 @@ export const createStore = <S extends PrimitiveState>(
         (
           (
             connectStore(
-              key, optionsTemp.initialReset, reducerState, stateMap, storeStateRefSet, storeMap,
+              key, optionsTemp.unmountReset, reducerState, stateMap, storeStateRefSet, storeMap,
               stateRestoreAccomplishMap, schedulerProcessor, storeChangeSet, initialState,
             ) as StoreMap<S>
           ).get(key) as StoreMapValue<S>

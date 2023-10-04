@@ -38,7 +38,9 @@ export const view = <P extends PrimitiveState = {}, S extends PrimitiveState = {
      * 扩展运算符...会读取所有的属性数据，导致内部关联使用数据属性失去准确性
      * 所以只能挂载到一个集中的属性上，这里选择来props的state属性上
      */
-    const [state, setState] = useState<S | { [key in keyof Stores<S>]: S }>(() => initialStateHandle(
+    const [state, setState] = useState<
+      S | { [key in keyof Stores<S>]: S }
+    >(() => initialStateHandle(
       innerUseStateMapSet,
       stores,
     ));

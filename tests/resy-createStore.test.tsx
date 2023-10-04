@@ -20,7 +20,7 @@ test("resy-createStore", async () => {
     show: true,
     loginInfo: {},
   }, {
-    initialReset: false,
+    unmountReset: false,
   });
 
   function LoginInfo() {
@@ -64,7 +64,7 @@ test("resy-createStore", async () => {
           store.show = !store.show;
           store0.count++;
           storeFn.restore();
-        }}>initialResetBtn</button>
+        }}>restoreBtn</button>
         <p>
           {show ? <LoginInfo /> : <TimeCheck />}
         </p>
@@ -79,7 +79,7 @@ test("resy-createStore", async () => {
     getByText("text:hello-restore");
   });
 
-  fireEvent.click(getByText("initialResetBtn"));
+  fireEvent.click(getByText("restoreBtn"));
   await waitFor(() => {
     getByText("LoginInfo-Null");
     getByText("text:");
@@ -87,13 +87,13 @@ test("resy-createStore", async () => {
     expect(store0.count === 999).toBeTruthy();
   });
 
-  fireEvent.click(getByText("initialResetBtn"));
+  fireEvent.click(getByText("restoreBtn"));
   await waitFor(() => {
-    expect(store0.count === 998).toBeTruthy();
+    expect(store0.count === 1000).toBeTruthy();
   });
 
-  fireEvent.click(getByText("initialResetBtn"));
+  fireEvent.click(getByText("restoreBtn"));
   await waitFor(() => {
-    expect(store0.count === 999).toBeTruthy();
+    expect(store0.count === 1001).toBeTruthy();
   });
 });

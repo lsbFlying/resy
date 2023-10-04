@@ -74,34 +74,11 @@ export const handleReducerState = <S extends PrimitiveState>(
  * 完整的卸载周期对应表达的是整个store的使用周期
  *
  * most important
- * detail course 1: 原本将初始化重置放在subscribe中不稳定，
- * 可能形成数据更新的撕裂，
- * 放在useOriginState中同步执行一次解决数据撕裂的安全问题，
- *
- * detail course 2: 本质上其实是因为一个originState的数据源可能是有很多个组件使用的
- * 如果因为某一个或者部分组件的卸载而进行重置是不符合逻辑的
- * 那么即使同一个数据源的所有组件都卸载而进行重置该数据源呢
- * 事实上这样也是不符合整个store的运行逻辑的
- * 因为以整个store的角度来看，某一个数据源的全部卸载
- * 并不意味着这个数据源不会因为逻辑在后续时间内突然再次重新出现渲染加载的情况
- * 那么此时你再次加载出现就会因为之前的逻辑重置而导致数据源的状态不对应的错误
- * 比如我有一个组件需要在某一段时间内加载渲染，而其余大部分时间是不加载的
- * 那么此时它的数据源可能因为加载为0（引用为0或者全部卸载）而进行重置的话
- * 那么后续它应该加载出现的时间段内的引用数据源就会因为发生重置变更而导致数据错误
- *
- * detail course 3: 然而如果把数据的重置逻辑绑定对应到整个store上面就会变得安全
- * 可能还没反应过来，感觉按照 “detail course 2” 的思路好像还是无法解决数据错误
- * 其实仔细想想对应到整个store上是可以的，因为 “detail course 2” 的思路
- * 是你的整个store上有一个数据源被引用才会出现某一时间段的条件逻辑加载渲染
- * 如果整个store的引用都为0或者全部卸载就意味着没有任何组件再使用store的数据源
- * 此时不会存在说还有一个store的数据源可能控制着store存在组件的加载
- * 除非是外在store的数据源控制这另一个store存在的组件的加载渲染，
- * 那么即使是这种情况进行重置也是合理的，就算你用原生的useState去写一个组件被卸载
- * 然后条件重新加载它的state数据也是重置的，所以即使归论到这种情况
- * 我们对应到整个store的数据源的引用重置的逻辑也是非常合理且又安全的
+ * detail course: 经过多次的临项实验
+ * 最终确认放在卸载过程重置同时结合store整体的数据引用才是安全的
  */
-const initialRenderReset = <S extends PrimitiveState>(
-  initialReset: boolean,
+const unmountResetHandle = <S extends PrimitiveState>(
+  unmountReset: boolean,
   reducerState: S,
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
@@ -109,7 +86,7 @@ const initialRenderReset = <S extends PrimitiveState>(
   schedulerProcessor: MapType<Scheduler>,
   initialState?: InitialStateType<S>,
 ) => {
-  if (initialReset && !storeStateRefSet.size && !stateRestoreAccomplishMap.get("stateRestoreAccomplish")) {
+  if (unmountReset && !storeStateRefSet.size && !stateRestoreAccomplishMap.get("stateRestoreAccomplish")) {
     stateRestoreAccomplishMap.set("stateRestoreAccomplish", true);
     handleReducerState(reducerState, initialState);
     /**
@@ -131,7 +108,7 @@ const initialRenderReset = <S extends PrimitiveState>(
 };
 
 export const genViewConnectStoreMap = <S extends PrimitiveState>(
-  initialReset: boolean,
+  unmountReset: boolean,
   reducerState: S,
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
@@ -141,9 +118,9 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
 ) => {
   const viewConnectStoreMap: StoreViewMapType<S> = new Map();
   viewConnectStoreMap.set("getStateMap", stateMap);
-  viewConnectStoreMap.set("viewInitialReset", () => {
-    initialRenderReset(
-      initialReset, reducerState, stateMap, storeStateRefSet,
+  viewConnectStoreMap.set("viewUnmountReset", () => {
+    unmountResetHandle(
+      unmountReset, reducerState, stateMap, storeStateRefSet,
       stateRestoreAccomplishMap, schedulerProcessor, initialState,
     );
   });
@@ -165,7 +142,7 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
  */
 export const connectStore = <S extends PrimitiveState>(
   key: keyof S,
-  initialReset: boolean,
+  unmountReset: boolean,
   reducerState: S,
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
@@ -192,23 +169,21 @@ export const connectStore = <S extends PrimitiveState>(
       storeStateRefSet.delete(storeRefIncreaseItem);
       if (storeStateRefSet.size === 0) {
         stateRestoreAccomplishMap.set("stateRestoreAccomplish", null);
+        unmountResetHandle(
+          unmountReset, reducerState, stateMap, storeStateRefSet,
+          stateRestoreAccomplishMap, schedulerProcessor, initialState,
+        );
       }
     };
   });
 
   storeMapValue.set("getOriginState", () => stateMap.get(key)!);
 
-  storeMapValue.set("useOriginState", () => {
-    initialRenderReset(
-      initialReset, reducerState, stateMap, storeStateRefSet,
-      stateRestoreAccomplishMap, schedulerProcessor, initialState,
-    );
-    return useSyncExternalStore(
-      (storeMap.get(key) as StoreMapValue<S>).get("subscribeOriginState") as StoreMapValueType<S>["subscribeOriginState"],
-      (storeMap.get(key) as StoreMapValue<S>).get("getOriginState") as StoreMapValueType<S>["getOriginState"],
-      (storeMap.get(key) as StoreMapValue<S>).get("getOriginState") as StoreMapValueType<S>["getOriginState"],
-    );
-  });
+  storeMapValue.set("useOriginState", () => useSyncExternalStore(
+    (storeMap.get(key) as StoreMapValue<S>).get("subscribeOriginState") as StoreMapValueType<S>["subscribeOriginState"],
+    (storeMap.get(key) as StoreMapValue<S>).get("getOriginState") as StoreMapValueType<S>["getOriginState"],
+    (storeMap.get(key) as StoreMapValue<S>).get("getOriginState") as StoreMapValueType<S>["getOriginState"],
+  ));
 
   storeMap.set(key, storeMapValue);
 

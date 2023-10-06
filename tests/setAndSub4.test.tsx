@@ -5,7 +5,7 @@ import { fireEvent, render, waitFor } from "@testing-library/react";
 
 let gCount = 0;
 
-test("resy-set-and-sub4", async () => {
+test("setAndSub4", async () => {
   const store = createStore({ count: 0, text: "poiu", text2: "qwe" });
   const App = () => {
     const { count, text, text2 } = useStore(store);

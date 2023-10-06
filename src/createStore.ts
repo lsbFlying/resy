@@ -100,8 +100,8 @@ export const createStore = <S extends PrimitiveState>(
 
   // 处理view连接store、以及获取最新state数据的相关处理Map
   const viewConnectStoreMap = genViewConnectStoreMap(
-    optionsTemp.unmountReset, reducerState, stateMap, storeStateRefSet,
-    stateRestoreAccomplishMap, schedulerProcessor, initialState,
+    optionsTemp.unmountReset, reducerState, stateMap,
+    storeStateRefSet, stateRestoreAccomplishMap, initialState,
   );
 
   // 数据存储容器storeMap
@@ -293,8 +293,8 @@ export const createStore = <S extends PrimitiveState>(
         (
           (
             connectStore(
-              key, optionsTemp.unmountReset, reducerState, stateMap, storeStateRefSet, storeMap,
-              stateRestoreAccomplishMap, schedulerProcessor, storeChangeSet, initialState,
+              key, optionsTemp.unmountReset, reducerState, stateMap, storeStateRefSet,
+              storeMap, stateRestoreAccomplishMap, storeChangeSet, initialState,
             ) as StoreMap<S>
           ).get(key) as StoreMapValue<S>
         ).get("useOriginState") as StoreMapValueType<S>["useOriginState"]
@@ -354,8 +354,8 @@ export const createStore = <S extends PrimitiveState>(
         (
           (
             connectStore(
-              key, optionsTemp.unmountReset, reducerState, stateMap, storeStateRefSet, storeMap,
-              stateRestoreAccomplishMap, schedulerProcessor, storeChangeSet, initialState,
+              key, optionsTemp.unmountReset, reducerState, stateMap, storeStateRefSet,
+              storeMap, stateRestoreAccomplishMap, storeChangeSet, initialState,
             ) as StoreMap<S>
           ).get(key) as StoreMapValue<S>
         ).get("useOriginState") as StoreMapValueType<S>["useOriginState"]

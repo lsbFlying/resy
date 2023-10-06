@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { createStore, useStore, MapStateToProps, view } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 
-test("resy-view-2", async () => {
+test("view2", async () => {
 
   type State = {
     count: number;

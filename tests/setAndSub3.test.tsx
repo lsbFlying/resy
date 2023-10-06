@@ -4,7 +4,7 @@ import { createStore, useStore } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 import { batchUpdateShimRun } from "../src/static";
 
-test("resy-set-and-sub3", async () => {
+test("setAndSub3", async () => {
   const store = createStore({ text: "poiu" });
 
   const App = () => {

@@ -5,7 +5,7 @@ import { fireEvent, render, waitFor } from "@testing-library/react";
 
 const originTime = `${Date.now()}${Math.random() * 100}`;
 
-test("resy-createStore", async () => {
+test("createStore", async () => {
   const storeFn = createStore<{ time: string; text?: string }>(() => {
     const curTime = `${Date.now()}${Math.random() * 100}`;
     return {
@@ -84,16 +84,22 @@ test("resy-createStore", async () => {
     getByText("LoginInfo-Null");
     getByText("text:");
     expect(JSON.stringify(store.loginInfo) === "{\"name\":\"L\",\"age\":28,\"msg\":\"Hello, createStore\"}").toBeTruthy();
+    expect(store0.count === 998).toBeTruthy();
+  });
+
+  fireEvent.click(getByText("restoreBtn"));
+  await waitFor(() => {
     expect(store0.count === 999).toBeTruthy();
   });
 
   fireEvent.click(getByText("restoreBtn"));
-  await waitFor(() => {
-    expect(store0.count === 1000).toBeTruthy();
-  });
-
-  fireEvent.click(getByText("restoreBtn"));
-  await waitFor(() => {
-    expect(store0.count === 1001).toBeTruthy();
+  await waitFor(async () => {
+    /**
+     * todo 这里打印也可能是1000，因为react18对于更新调度执行的时机以及useEffect的清楚副作用的执行时机做了调整
+     * 这里如果是react18就会是998，而如果是react18以下就会是1000
+     * 但本质上不影响最终结果的计算执行，只是这里异步等待执行结果的影响
+     */
+    // console.log(store0.count);
+    expect(store0.count === 998).toBeTruthy();
   });
 });

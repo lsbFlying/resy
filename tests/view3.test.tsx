@@ -3,7 +3,7 @@ import { test } from "vitest";
 import { createStore, useStore, MapStateToProps, view } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 
-test("resy-view-3", async () => {
+test("view3", async () => {
 
   type LoginState = {
     userId: number;

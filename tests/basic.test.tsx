@@ -3,7 +3,7 @@ import { test, expect } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { createStore, useStore } from "../src";
 
-test("resy-basic", async () => {
+test("basic", async () => {
   // 数据范型类型接口
   type Store = {
     count: number;

@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { useConciseState } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 
-test("resy-useConciseState", async () => {
+test("useConciseState", async () => {
   const initialState = {
     count: 123,
     text: "QWE",

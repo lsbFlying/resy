@@ -3,7 +3,7 @@ import { test } from "vitest";
 import { createStore, useStore } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 
-test("resy-set-and-sub2", async () => {
+test("setAndSub2", async () => {
   const store = createStore({ count: 0, text: "poiu" });
   const App = () => {
     const { setState, subscribe } = store;

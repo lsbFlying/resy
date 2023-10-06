@@ -11,7 +11,7 @@ type State = {
   testFuncText(): void;
 };
 
-test("resy-func-prop-inner-this", async () => {
+test("fnThis", async () => {
   const store = createStore<State>({
     count: 1,
     text: "Hello-resy",

@@ -8,7 +8,7 @@ type State = {
   test: Function;
 };
 
-test("resy-simple2", async () => {
+test("unnormal2", async () => {
   const store = createStore<State>({
     count: 0,
     test() {

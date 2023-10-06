@@ -7,7 +7,7 @@ type State = {
   now: string;
 };
 
-test("resy-simple3", async () => {
+test("unnormal3", async () => {
   const store = createStore<State>(() => ({
     now: `${Date.now()}-${Math.random().toString().substring(2)}`,
   }));
@@ -22,12 +22,6 @@ test("resy-simple3", async () => {
       console.log("restore");
       store.restore();
     }, []);
-
-    /**
-     * The value of the data attribute "now" rendered by store in different lifecycles is different,
-     * because the combination of the value of "now" returned by the initialized function with "restore"
-     * requires this immediate reset.
-     */
     console.log("now:", now);
     return (
       <>

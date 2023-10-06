@@ -11,7 +11,7 @@ type State = {
   test(): number;
 };
 
-test("resy-simple1", async () => {
+test("unnormal1", async () => {
   const store = createStore<State>({
     count: 0,
     name: "resy-simple",

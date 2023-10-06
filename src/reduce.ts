@@ -83,7 +83,6 @@ const unmountResetHandle = <S extends PrimitiveState>(
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
   stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
-  schedulerProcessor: MapType<Scheduler>,
   initialState?: InitialStateType<S>,
 ) => {
   if (unmountReset && !storeStateRefSet.size && !stateRestoreAccomplishMap.get("stateRestoreAccomplish")) {
@@ -92,17 +91,11 @@ const unmountResetHandle = <S extends PrimitiveState>(
     /**
      * @description 重置数据状态（一次性全部重置）相较于直接复制 stateMap = new Map(state)的方式效率更快
      * 之所以选择全部重置是因为防止某些模块未被及时渲染导致后续数据没有被初始化恢复
-     * 但是要注意此时任务队列是否有数据，如果有（一般都是同步代码中添加的更新），需要跳过
      */
-    const taskDataMap = (schedulerProcessor.get("getTaskData") as Scheduler<S>["getTaskData"])();
-    const ignoreKeys = Array.from(taskDataMap.keys());
     mergeStateKeys(reducerState, stateMap).forEach(key => {
-      // 不是任务队列中的key则可以重置
-      if (!ignoreKeys.includes(key)) {
-        hasOwnProperty.call(reducerState, key)
-          ? stateMap.set(key, reducerState[key])
-          : stateMap.delete(key);
-      }
+      hasOwnProperty.call(reducerState, key)
+        ? stateMap.set(key, reducerState[key])
+        : stateMap.delete(key);
     });
   }
 };
@@ -113,7 +106,6 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
   stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
-  schedulerProcessor: MapType<Scheduler>,
   initialState?: InitialStateType<S>,
 ) => {
   const viewConnectStoreMap: StoreViewMapType<S> = new Map();
@@ -121,7 +113,7 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
   viewConnectStoreMap.set("viewUnmountReset", () => {
     unmountResetHandle(
       unmountReset, reducerState, stateMap, storeStateRefSet,
-      stateRestoreAccomplishMap, schedulerProcessor, initialState,
+      stateRestoreAccomplishMap, initialState,
     );
   });
   viewConnectStoreMap.set("viewConnectStore", () => {
@@ -148,7 +140,6 @@ export const connectStore = <S extends PrimitiveState>(
   storeStateRefSet: Set<number>,
   storeMap: StoreMap<S>,
   stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
-  schedulerProcessor: MapType<Scheduler>,
   storeChangeSet: Set<Callback>,
   initialState?: InitialStateType<S>,
 ) => {
@@ -171,7 +162,7 @@ export const connectStore = <S extends PrimitiveState>(
         stateRestoreAccomplishMap.set("stateRestoreAccomplish", null);
         unmountResetHandle(
           unmountReset, reducerState, stateMap, storeStateRefSet,
-          stateRestoreAccomplishMap, schedulerProcessor, initialState,
+          stateRestoreAccomplishMap, initialState,
         );
       }
     };

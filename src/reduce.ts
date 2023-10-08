@@ -122,7 +122,7 @@ const unmountRestoreHandle = <S extends PrimitiveState>(
 };
 
 // initialState是函数的情况下的刷新恢复处理（与unmountRestoreHandle分开处理避免开关状态的混乱产生执行逻辑错误）
-const initialStateFuncRestoreHandle = <S extends PrimitiveState>(
+const initialStateFnRestoreHandle = <S extends PrimitiveState>(
   reducerState: S,
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
@@ -132,9 +132,9 @@ const initialStateFuncRestoreHandle = <S extends PrimitiveState>(
   if (
     typeof initialState === "function"
     && !storeStateRefSet.size
-    && !stateRestoreAccomplishedMap.get("initialStateFuncRestoreAccomplished")
+    && !stateRestoreAccomplishedMap.get("initialStateFnRestoreAccomplished")
   ) {
-    stateRestoreAccomplishedMap.set("initialStateFuncRestoreAccomplished", true);
+    stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", true);
     restoreHandle(reducerState, stateMap, initialState);
   }
 };
@@ -156,8 +156,8 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
       stateRestoreAccomplishedMap, initialState,
     );
   });
-  viewConnectStoreMap.set("viewInitialStateFuncRestore", () => {
-    initialStateFuncRestoreHandle(
+  viewConnectStoreMap.set("viewInitialStateFnRestore", () => {
+    initialStateFnRestoreHandle(
       reducerState, stateMap, storeStateRefSet,
       stateRestoreAccomplishedMap, initialState,
     );
@@ -168,7 +168,7 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
       storeStateRefSet.delete(storeRefIncreaseItem);
       if (!storeStateRefSet.size) {
         stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", null);
-        stateRestoreAccomplishedMap.set("initialStateFuncRestoreAccomplished", null);
+        stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", null);
       }
     };
   });
@@ -212,7 +212,7 @@ export const connectStore = <S extends PrimitiveState>(
       if (!storeStateRefSet.size) {
         // 打开开关执行刷新恢复数据
         stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", null);
-        stateRestoreAccomplishedMap.set("initialStateFuncRestoreAccomplished", null);
+        stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", null);
         unmountRestoreHandle(
           unmountRestore, reducerState, stateMap, storeStateRefSet,
           stateRestoreAccomplishedMap, initialState,
@@ -247,7 +247,7 @@ export const connectHookUse = <S extends PrimitiveState>(
   initialState?: InitialStateType<S>,
 ) => {
   // 如果initialState是函数则强制执行刷新恢复的逻辑，initialState是函数的情况下权重高于unmountRestore
-  initialStateFuncRestoreHandle(
+  initialStateFnRestoreHandle(
     reducerState, stateMap, storeStateRefSet,
     stateRestoreAccomplishedMap, initialState,
   );

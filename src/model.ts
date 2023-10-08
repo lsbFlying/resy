@@ -54,7 +54,7 @@ export interface StoreViewMapValue<S extends PrimitiveState> {
   // view卸载检查重置数据
   viewUnmountRestore: Callback;
   // view初始化刷新恢复（createStore的initialState是函数的情况下）
-  viewInitialStateFuncRestore: Callback;
+  viewInitialStateFnRestore: Callback;
   // view的props数据使用方式的数据生命周期与store关联同步
   viewConnectStore: () => Unsubscribe;
 }
@@ -89,7 +89,7 @@ export type SetState<S extends PrimitiveState> = Readonly<{
    * @param callback
    */
   setState(
-    state: State<S> | StateFuncType<S>,
+    state: State<S> | StateFnType<S>,
     callback?: SetStateCallback<S>,
   ): void;
 }>;
@@ -111,7 +111,7 @@ export type SetState<S extends PrimitiveState> = Readonly<{
  *   };
  * });
  */
-export type StateFuncType<S extends PrimitiveState> = (prevState: Readonly<S>) => State<S>;
+export type StateFnType<S extends PrimitiveState> = (prevState: Readonly<S>) => State<S>;
 
 /**
  * setState的回调函数的类型
@@ -140,7 +140,7 @@ export type SyncUpdate<S extends PrimitiveState> = Readonly<{
    * @param state
    */
   syncUpdate(
-    state: State<S> | StateFuncType<S>,
+    state: State<S> | StateFnType<S>,
   ): void;
 }>;
 
@@ -280,7 +280,7 @@ export type ObjectMapType<S extends PrimitiveState> = { [key in keyof S]: MapTyp
 // stateMap恢复的状态开关标识map类型（开关标识减少多次执行带来的可能产生的额外的渲染更新）
 export type StateRestoreAccomplishedMapType = MapType<{
   unmountRestoreAccomplished?: boolean | null;
-  initialStateFuncRestoreAccomplished?: boolean | null;
+  initialStateFnRestoreAccomplished?: boolean | null;
 }>;
 
 // view返回函数的参数类型

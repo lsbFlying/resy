@@ -6,40 +6,40 @@ import { fireEvent, render, waitFor } from "@testing-library/react";
 type State = {
   count: number;
   text: string;
-  testFuncAdd(): void;
-  testFuncReduce(): void;
-  testFuncText(): void;
+  testFnAdd(): void;
+  testFnReduce(): void;
+  testFnText(): void;
 };
 
 test("fnThis", async () => {
   const store = createStore<State>({
     count: 1,
     text: "Hello-resy",
-    testFuncAdd() {
+    testFnAdd() {
       this.count++;
     },
-    testFuncReduce() {
+    testFnReduce() {
       this.count--;
-      this.testFuncText();
+      this.testFnText();
     },
-    testFuncText() {
+    testFnText() {
       this.text = "Hello-ok";
     },
   });
 
   function Count1() {
-    const { testFuncAdd } = store;
+    const { testFnAdd } = store;
     return (
-      <button onClick={() => { testFuncAdd(); }}>
+      <button onClick={() => { testFnAdd(); }}>
         count1-btn
       </button>
     );
   }
 
   function Count2() {
-    const { testFuncAdd } = useStore(store);
+    const { testFnAdd } = useStore(store);
     return (
-      <button onClick={() => { testFuncAdd(); }}>
+      <button onClick={() => { testFnAdd(); }}>
         count2-btn
       </button>
     );
@@ -47,7 +47,7 @@ test("fnThis", async () => {
 
   function Count3() {
     return (
-      <button onClick={() => { store.testFuncReduce(); }}>
+      <button onClick={() => { store.testFnReduce(); }}>
         count3-btn
       </button>
     );

@@ -68,7 +68,7 @@ const viewStoresStateUpdateHandle = <S extends PrimitiveState>(
 };
 
 const viewRestoreHandle = <S extends PrimitiveState>(
-  action: "viewUnmountRestore" | "viewInitialStateFuncRestore",
+  action: "viewUnmountRestore" | "viewInitialStateFnRestore",
   stores?: Store<S> | Stores<S>,
 ) => {
   if (!stores) return;
@@ -96,7 +96,7 @@ export const initialStateHandle = <S extends PrimitiveState>(
   innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>>,
   stores?: Store<S> | Stores<S>,
 ) => {
-  viewRestoreHandle("viewInitialStateFuncRestore", stores);
+  viewRestoreHandle("viewInitialStateFnRestore", stores);
   // 需要使用getState获取store内部的即时最新数据值（默认无store，同时默认兼容处理多store的返回情况）
   const stateMap: ViewStateMapType<S> = getLatestStateMap(stores) as MapType<S>;
 

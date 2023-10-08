@@ -18,7 +18,7 @@ import {
   finallyBatchHandle, willUpdatingHandle, mergeStateKeys, handleReducerState,
 } from "./reduce";
 import type {
-  ExternalMapType, ExternalMapValue, PrimitiveState, StateFuncType, StoreMap,
+  ExternalMapType, ExternalMapValue, PrimitiveState, StateFnType, StoreMap,
   Unsubscribe, Listener, CreateStoreOptions, Store, AnyFn, ConciseExternalMapType,
   ConciseExternalMapValue, SetStateCallback, SetStateCallbackItem,
   MapType, ValueOf, State, StateRestoreAccomplishedMapType, InitialStateType, Callback,
@@ -118,10 +118,10 @@ export const createStore = <S extends PrimitiveState>(
    * @description todo 更多意义上是为了解决input无法输入非英文语言bug的无奈
    * bug原因是react的更新调度机制不满足在微任务中执行的问题，vue中是可以的，后续待优化
    */
-  const syncUpdate = (state: State<S> | StateFuncType<S>) => {
+  const syncUpdate = (state: State<S> | StateFnType<S>) => {
     let stateTemp = state;
     if (typeof state === "function") {
-      stateTemp = (state as StateFuncType<S>)(mapToObject(prevState));
+      stateTemp = (state as StateFnType<S>)(mapToObject(prevState));
     }
 
     if (stateTemp === null) return;
@@ -152,7 +152,7 @@ export const createStore = <S extends PrimitiveState>(
   };
 
   // 可对象数据更新的函数
-  const setState = (state: State<S> | StateFuncType<S>, callback?: SetStateCallback<S>) => {
+  const setState = (state: State<S> | StateFnType<S>, callback?: SetStateCallback<S>) => {
     // 调度处理器内部的willUpdating需要在更新之前开启，这里不管是否有变化需要更新，
     // 先打开缓存一下prevState方便后续订阅事件的触发执行
     willUpdatingHandle(schedulerProcessor, prevState, stateMap);
@@ -160,7 +160,7 @@ export const createStore = <S extends PrimitiveState>(
     let stateTemp = state;
 
     if (typeof state === "function") {
-      stateTemp = (state as StateFuncType<S>)(mapToObject(prevState));
+      stateTemp = (state as StateFnType<S>)(mapToObject(prevState));
     }
 
     if (stateTemp !== null) {

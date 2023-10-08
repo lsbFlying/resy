@@ -96,6 +96,7 @@ export const initialStateHandle = <S extends PrimitiveState>(
   innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>>,
   stores?: Store<S> | Stores<S>,
 ) => {
+  // 在最开始执行，赶在storeStateRefSet加载之前
   viewRestoreHandle("viewInitialStateFnRestore", stores);
   // 需要使用getState获取store内部的即时最新数据值（默认无store，同时默认兼容处理多store的返回情况）
   const stateMap: ViewStateMapType<S> = getLatestStateMap(stores) as MapType<S>;
@@ -208,8 +209,8 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
   }
 };
 
-// 组件加载完成后的处理
-export const mountedHandle = <S extends PrimitiveState, P extends PrimitiveState = {}>(
+// 组件useEffect异步只执行一次的相关处理
+export const effectedHandle = <S extends PrimitiveState, P extends PrimitiveState = {}>(
   innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>>,
   state: S | { [key in keyof Stores<S>]: S },
   setState: Dispatch<SetStateAction<S | { [key in keyof Stores<S>]: S }>>,
@@ -253,7 +254,6 @@ export const mountedHandle = <S extends PrimitiveState, P extends PrimitiveState
   }
 
   return () => {
-    viewRestoreHandle("viewUnmountRestore", stores);
     typeof unsubscribe === "function"
       ? unsubscribe()
       : unsubscribe.forEach(item => {
@@ -263,5 +263,7 @@ export const mountedHandle = <S extends PrimitiveState, P extends PrimitiveState
       unsubscribe();
     });
     innerUseStateMapSet.clear();
+    // 需要在最后执行，等待storeStateRefSet卸载完成
+    viewRestoreHandle("viewUnmountRestore", stores);
   };
 };

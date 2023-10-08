@@ -2,7 +2,7 @@ import React, { memo, useEffect, useState } from "react";
 import { REGENERATIVE_SYSTEM_KEY } from "./static";
 import { mapToObject } from "./utils";
 import {
-  getLatestStateMap, viewStoresToLatestState, initialStateHandle, mountedHandle,
+  getLatestStateMap, viewStoresToLatestState, initialStateHandle, effectedHandle,
 } from "./viewReduce";
 import type {
   PrimitiveState, MapStateToProps, Store, Stores, ViewOptionsType,
@@ -46,7 +46,7 @@ export const view = <P extends PrimitiveState = {}, S extends PrimitiveState = {
     ));
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => mountedHandle(innerUseStateMapSet, state, setState, props, stores, equal), []);
+    useEffect(() => effectedHandle(innerUseStateMapSet, state, setState, props, stores, equal), []);
 
     return <Comp {...props} state={state} />;
   }, equal ? (prevProps: P, nextProps: P) => {

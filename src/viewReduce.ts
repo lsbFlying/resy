@@ -3,6 +3,7 @@
  */
 import type { Dispatch, SetStateAction } from "react";
 import {
+  Callback,
   MapType, ObjectMapType, ObjectType, PrimitiveState, PS, Store, Stores,
   StoreViewMapType, StoreViewMapValue, Unsubscribe, ValueOf, ViewStateMapType,
 } from "./model";
@@ -66,11 +67,36 @@ const viewStoresStateUpdateHandle = <S extends PrimitiveState>(
   return stateTemp;
 };
 
+const viewRestoreHandle = <S extends PrimitiveState>(
+  action: "viewUnmountRestore" | "viewInitialStateFuncRestore",
+  stores?: Store<S> | Stores<S>,
+) => {
+  if (!stores) return;
+  // 单个Store
+  if ((stores as Store<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]) {
+    (
+      (
+        (stores as Store<S>)?.[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
+      )?.get(action) as Callback
+    )?.();
+  } else {
+    (Object.keys(stores) as (keyof Stores<S>)[]).forEach(storesKey => {
+      const storeItem = (stores as Stores<S>)[storesKey] as Store<S>;
+      (
+        (
+          storeItem?.[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
+        )?.get(action) as Callback
+      )?.();
+    });
+  }
+};
+
 // 初始化state数据处理函数
 export const initialStateHandle = <S extends PrimitiveState>(
   innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>>,
   stores?: Store<S> | Stores<S>,
 ) => {
+  viewRestoreHandle("viewInitialStateFuncRestore", stores);
   // 需要使用getState获取store内部的即时最新数据值（默认无store，同时默认兼容处理多store的返回情况）
   const stateMap: ViewStateMapType<S> = getLatestStateMap(stores) as MapType<S>;
 
@@ -193,24 +219,6 @@ export const mountedHandle = <S extends PrimitiveState, P extends PrimitiveState
 ) => {
   if (!stores) return;
 
-  // 单个Store
-  if ((stores as Store<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]) {
-    (
-      (
-        (stores as Store<S>)?.[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
-      )?.get("viewUnmountReset") as StoreViewMapValue<S>["viewUnmountReset"]
-    )?.();
-  } else {
-    (Object.keys(stores) as (keyof Stores<S>)[]).forEach(storesKey => {
-      const storeItem = (stores as Stores<S>)[storesKey] as Store<S>;
-      (
-        (
-          storeItem?.[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
-        )?.get("viewUnmountReset") as StoreViewMapValue<S>["viewUnmountReset"]
-      )?.();
-    });
-  }
-
   // 因为useEffect是异步的，所以后续访问 innerUseStateMapSet 时会有数据而不是空
   const viewConnectStoreSet = new Set<Unsubscribe>();
 
@@ -245,6 +253,7 @@ export const mountedHandle = <S extends PrimitiveState, P extends PrimitiveState
   }
 
   return () => {
+    viewRestoreHandle("viewUnmountRestore", stores);
     typeof unsubscribe === "function"
       ? unsubscribe()
       : unsubscribe.forEach(item => {

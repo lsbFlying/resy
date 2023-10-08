@@ -20,7 +20,7 @@ test("createStore", async () => {
     show: true,
     loginInfo: {},
   }, {
-    unmountReset: false,
+    unmountRestore: false,
   });
 
   function LoginInfo() {

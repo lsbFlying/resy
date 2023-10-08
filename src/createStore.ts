@@ -14,14 +14,14 @@ import {
   followUpMap, optionsErrorHandle, hasOwnProperty,
 } from "./utils";
 import {
-  genViewConnectStoreMap, connectStore, batchDispatchListener, pushTask,
+  genViewConnectStoreMap, batchDispatchListener, pushTask, connectHookUse,
   finallyBatchHandle, willUpdatingHandle, mergeStateKeys, handleReducerState,
 } from "./reduce";
 import type {
-  ExternalMapType, ExternalMapValue, PrimitiveState, StateFuncType, StoreMap, StoreMapValue,
-  StoreMapValueType, Unsubscribe, Listener, CreateStoreOptions, Store, AnyFn,
-  ConciseExternalMapType, ConciseExternalMapValue, SetStateCallback, SetStateCallbackItem,
-  MapType, ValueOf, State, StateRestoreAccomplishMapType, InitialStateType, Callback,
+  ExternalMapType, ExternalMapValue, PrimitiveState, StateFuncType, StoreMap,
+  Unsubscribe, Listener, CreateStoreOptions, Store, AnyFn, ConciseExternalMapType,
+  ConciseExternalMapValue, SetStateCallback, SetStateCallbackItem,
+  MapType, ValueOf, State, StateRestoreAccomplishedMapType, InitialStateType, Callback,
 } from "./model";
 
 /**
@@ -61,8 +61,8 @@ export const createStore = <S extends PrimitiveState>(
 
   optionsErrorHandle(options);
   const optionsTemp = options
-    ? { unmountReset: options.unmountReset }
-    : { unmountReset: true };
+    ? { unmountRestore: options.unmountRestore }
+    : { unmountRestore: true };
 
   // 当前store的调度处理器
   const schedulerProcessor = scheduler();
@@ -73,7 +73,7 @@ export const createStore = <S extends PrimitiveState>(
    * @description storeStateRef的引用清空的状态对应了整个store的数据状态的恢复到初始化的情况，
    * 这里是恢复初始化成功与否的开关标识，以防止代码多次执行重复的动作，减轻冗余负担
    */
-  const stateRestoreAccomplishMap: StateRestoreAccomplishMapType = new Map();
+  const stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType = new Map();
 
   /**
    * @description 在不改变传参state的情况下，同时resy使用Map与Set提升性能，且Map、Set在内存也会占优
@@ -100,8 +100,8 @@ export const createStore = <S extends PrimitiveState>(
 
   // 处理view连接store、以及获取最新state数据的相关处理Map
   const viewConnectStoreMap = genViewConnectStoreMap(
-    optionsTemp.unmountReset, reducerState, stateMap,
-    storeStateRefSet, stateRestoreAccomplishMap, initialState,
+    optionsTemp.unmountRestore, reducerState, stateMap,
+    storeStateRefSet, stateRestoreAccomplishedMap, initialState,
   );
 
   // 数据存储容器storeMap
@@ -237,10 +237,10 @@ export const createStore = <S extends PrimitiveState>(
     };
   };
 
-  // 更改设置unmountReset参数配置
+  // 更改设置unmountRestore参数配置
   const setOptions = (options?: CreateStoreOptions) => {
     optionsErrorHandle(options);
-    optionsTemp.unmountReset = options?.unmountReset ?? optionsTemp.unmountReset;
+    optionsTemp.unmountRestore = options?.unmountRestore ?? optionsTemp.unmountRestore;
   };
 
   // 单个属性数据更新
@@ -287,18 +287,17 @@ export const createStore = <S extends PrimitiveState>(
   const storeProxy = new Proxy(storeMap, {
     get(_, key: keyof S) {
       if (typeof stateMap.get(key) === "function") {
+        // 也做一个函数数据hook的调用，给予函数数据更新渲染的能力
+        connectHookUse(
+          key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
+          storeMap, stateRestoreAccomplishedMap, storeChangeSet, initialState,
+        );
         return (stateMap.get(key) as AnyFn).bind(store);
       }
-      return externalMap.get(key as keyof ExternalMapValue<S>) || (
-        (
-          (
-            connectStore(
-              key, optionsTemp.unmountReset, reducerState, stateMap, storeStateRefSet,
-              storeMap, stateRestoreAccomplishMap, storeChangeSet, initialState,
-            ) as StoreMap<S>
-          ).get(key) as StoreMapValue<S>
-        ).get("useOriginState") as StoreMapValueType<S>["useOriginState"]
-      )();
+      return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
+        key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
+        storeMap, stateRestoreAccomplishedMap, storeChangeSet, initialState,
+      );
     },
   } as ProxyHandler<StoreMap<S>>);
 
@@ -344,22 +343,24 @@ export const createStore = <S extends PrimitiveState>(
    * @description 给useConciseState的驱动更新代理，与useStore分开，因为二者承担功能点有些区别
    * useStore中不需要store属性，而useConciseState可以有store属性
    * useStore中使用的store可以使用setOptions，而useConciseState中的store属性不能使用setOptions
+   * 因为useConciseState本质上是createStore的memo包裹，所以重新渲染的时候无法使用静态createStore的已存在store
+   * 而是createStore生成的新的store，而它只能是unmountRestore是true，必然会是useState一样的数据渲染效果
+   * 所以自然也就不像具备全局性的createStore那样存在setOptions方法
    */
   const conciseStoreProxy = new Proxy(storeMap, {
     get(_, key: keyof S) {
       if (typeof stateMap.get(key) === "function") {
+        // 也做一个函数数据hook的调用，给予函数数据更新渲染的能力
+        connectHookUse(
+          key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
+          storeMap, stateRestoreAccomplishedMap, storeChangeSet, initialState,
+        );
         return (stateMap.get(key) as AnyFn).bind(store);
       }
-      return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || (
-        (
-          (
-            connectStore(
-              key, optionsTemp.unmountReset, reducerState, stateMap, storeStateRefSet,
-              storeMap, stateRestoreAccomplishMap, storeChangeSet, initialState,
-            ) as StoreMap<S>
-          ).get(key) as StoreMapValue<S>
-        ).get("useOriginState") as StoreMapValueType<S>["useOriginState"]
-      )();
+      return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || connectHookUse(
+        key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
+        storeMap, stateRestoreAccomplishedMap, storeChangeSet, initialState,
+      );
     },
   } as ProxyHandler<StoreMap<S>>);
 

@@ -6,7 +6,7 @@ import { batchUpdate } from "./static";
 import type {
   PrimitiveState, StoreViewMapType, ValueOf, MapType, Callback,
   SetStateCallbackItem, StoreMapValue, StoreMapValueType, Listener,
-  Scheduler, StoreMap, StateRestoreAccomplishMapType, InitialStateType,
+  Scheduler, StoreMap, StateRestoreAccomplishedMapType, InitialStateType,
 } from "./model";
 import { followUpMap, hasOwnProperty, mapToObject, clearObject } from "./utils";
 
@@ -57,6 +57,9 @@ export const handleReducerState = <S extends PrimitiveState>(
   /**
    * @description 如果是函数返回的初始化状态数据，则需要再次执行初始化函数来获取内部初始化的逻辑数据
    * 防止因为初始化函数的内部逻辑导致重置恢复的数据不符合初始化的数据逻辑
+   *
+   * 卸载的情况下也选择函数刷新执行恢复，是因为我们很难把控到initialState参数作为函数的情况下
+   * 它的内部逻辑有怎样的需求设定会执行我们难以预料的一些逻辑操作，所以为了安全起见选择卸载的情况下也执行一下函数刷新恢复
    */
   if (typeof initialState === "function") {
     clearObject(reducerState);
@@ -64,6 +67,24 @@ export const handleReducerState = <S extends PrimitiveState>(
       reducerState[key as keyof S] = value;
     });
   }
+};
+
+const restoreHandle = <S extends PrimitiveState>(
+  reducerState: S,
+  stateMap: MapType<S>,
+  initialState?: InitialStateType<S>,
+) => {
+  // 进一步获取最新的还原状态数据
+  handleReducerState(reducerState, initialState);
+  /**
+   * @description 重置数据状态（一次性全部重置）相较于直接复制 stateMap = new Map(state)的方式效率更快
+   * 之所以选择全部重置是因为防止某些模块未被及时渲染导致后续数据没有被初始化恢复
+   */
+  mergeStateKeys(reducerState, stateMap).forEach(key => {
+    hasOwnProperty.call(reducerState, key)
+      ? stateMap.set(key, reducerState[key])
+      : stateMap.delete(key);
+  });
 };
 
 /**
@@ -76,52 +97,78 @@ export const handleReducerState = <S extends PrimitiveState>(
  * most important
  * detail course: 经过多次的临项实验
  * 最终确认放在卸载过程重置同时结合store整体的数据引用才是安全的
+ *
+ * 与此同时需要注意的是，如果initialState是函数，
+ * 那么后续重新渲染的时候需要重新执行initialState函数恢复初始化状态数据reducerState
+ *
+ * 所以restoreHandle运用在两个阶段，一是卸载阶段，一是初始化阶段
  */
-const unmountResetHandle = <S extends PrimitiveState>(
-  unmountReset: boolean,
+const unmountRestoreHandle = <S extends PrimitiveState>(
+  unmountRestore: boolean,
   reducerState: S,
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
-  stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
+  stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   initialState?: InitialStateType<S>,
 ) => {
-  if (unmountReset && !storeStateRefSet.size && !stateRestoreAccomplishMap.get("stateRestoreAccomplish")) {
-    stateRestoreAccomplishMap.set("stateRestoreAccomplish", true);
-    handleReducerState(reducerState, initialState);
-    /**
-     * @description 重置数据状态（一次性全部重置）相较于直接复制 stateMap = new Map(state)的方式效率更快
-     * 之所以选择全部重置是因为防止某些模块未被及时渲染导致后续数据没有被初始化恢复
-     */
-    mergeStateKeys(reducerState, stateMap).forEach(key => {
-      hasOwnProperty.call(reducerState, key)
-        ? stateMap.set(key, reducerState[key])
-        : stateMap.delete(key);
-    });
+  if (
+    unmountRestore
+    && !storeStateRefSet.size
+    && !stateRestoreAccomplishedMap.get("unmountRestoreAccomplished")
+  ) {
+    stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", true);
+    restoreHandle(reducerState, stateMap, initialState);
   }
 };
 
-export const genViewConnectStoreMap = <S extends PrimitiveState>(
-  unmountReset: boolean,
+// initialState是函数的情况下的刷新恢复处理（与unmountRestoreHandle分开处理避免开关状态的混乱产生执行逻辑错误）
+const initialStateFuncRestoreHandle = <S extends PrimitiveState>(
   reducerState: S,
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
-  stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
+  stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
+  initialState?: InitialStateType<S>,
+) => {
+  if (
+    typeof initialState === "function"
+    && !storeStateRefSet.size
+    && !stateRestoreAccomplishedMap.get("initialStateFuncRestoreAccomplished")
+  ) {
+    stateRestoreAccomplishedMap.set("initialStateFuncRestoreAccomplished", true);
+    restoreHandle(reducerState, stateMap, initialState);
+  }
+};
+
+// 生成view连接store的map对象
+export const genViewConnectStoreMap = <S extends PrimitiveState>(
+  unmountRestore: boolean,
+  reducerState: S,
+  stateMap: MapType<S>,
+  storeStateRefSet: Set<number>,
+  stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   initialState?: InitialStateType<S>,
 ) => {
   const viewConnectStoreMap: StoreViewMapType<S> = new Map();
   viewConnectStoreMap.set("getStateMap", stateMap);
-  viewConnectStoreMap.set("viewUnmountReset", () => {
-    unmountResetHandle(
-      unmountReset, reducerState, stateMap, storeStateRefSet,
-      stateRestoreAccomplishMap, initialState,
+  viewConnectStoreMap.set("viewUnmountRestore", () => {
+    unmountRestoreHandle(
+      unmountRestore, reducerState, stateMap, storeStateRefSet,
+      stateRestoreAccomplishedMap, initialState,
+    );
+  });
+  viewConnectStoreMap.set("viewInitialStateFuncRestore", () => {
+    initialStateFuncRestoreHandle(
+      reducerState, stateMap, storeStateRefSet,
+      stateRestoreAccomplishedMap, initialState,
     );
   });
   viewConnectStoreMap.set("viewConnectStore", () => {
     const storeRefIncreaseItem = storeStateRefSetMark(storeStateRefSet);
     return () => {
       storeStateRefSet.delete(storeRefIncreaseItem);
-      if (storeStateRefSet.size === 0) {
-        stateRestoreAccomplishMap.set("stateRestoreAccomplish", null);
+      if (!storeStateRefSet.size) {
+        stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", null);
+        stateRestoreAccomplishedMap.set("initialStateFuncRestoreAccomplished", null);
       }
     };
   });
@@ -131,15 +178,19 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
 /**
  * @description 为每一个数据字段储存连接到store容器中
  * 既解决了初始化数据属性为undefined的情况，又节省了内存
+ * 🌟：对于参数的传入虽然可以用...args扩展Rest parameters（剩余参数）语法，
+ * 将所有参数捆绑为一个数组，然后将数组类型定义为元组类型；
+ * 但是这种方式不及直接传入参数使用高效，中间多了数据解构的过程会降低代码执行效率
+ * 直接参数的传入虽然写法更繁琐，但是效率高，作为底层建设库建议使用这种方式
  */
 export const connectStore = <S extends PrimitiveState>(
   key: keyof S,
-  unmountReset: boolean,
+  unmountRestore: boolean,
   reducerState: S,
   stateMap: MapType<S>,
   storeStateRefSet: Set<number>,
   storeMap: StoreMap<S>,
-  stateRestoreAccomplishMap: StateRestoreAccomplishMapType,
+  stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   storeChangeSet: Set<Callback>,
   initialState?: InitialStateType<S>,
 ) => {
@@ -158,11 +209,13 @@ export const connectStore = <S extends PrimitiveState>(
     return () => {
       storeChangeSet.delete(onOriginStateChange);
       storeStateRefSet.delete(storeRefIncreaseItem);
-      if (storeStateRefSet.size === 0) {
-        stateRestoreAccomplishMap.set("stateRestoreAccomplish", null);
-        unmountResetHandle(
-          unmountReset, reducerState, stateMap, storeStateRefSet,
-          stateRestoreAccomplishMap, initialState,
+      if (!storeStateRefSet.size) {
+        // 打开开关执行刷新恢复数据
+        stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", null);
+        stateRestoreAccomplishedMap.set("initialStateFuncRestoreAccomplished", null);
+        unmountRestoreHandle(
+          unmountRestore, reducerState, stateMap, storeStateRefSet,
+          stateRestoreAccomplishedMap, initialState,
         );
       }
     };
@@ -179,6 +232,31 @@ export const connectStore = <S extends PrimitiveState>(
   storeMap.set(key, storeMapValue);
 
   return storeMap;
+};
+
+// useState的变相调用
+export const connectHookUse = <S extends PrimitiveState>(
+  key: keyof S,
+  unmountRestore: boolean,
+  reducerState: S,
+  stateMap: MapType<S>,
+  storeStateRefSet: Set<number>,
+  storeMap: StoreMap<S>,
+  stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
+  storeChangeSet: Set<Callback>,
+  initialState?: InitialStateType<S>,
+) => {
+  // 如果initialState是函数则强制执行刷新恢复的逻辑，initialState是函数的情况下权重高于unmountRestore
+  initialStateFuncRestoreHandle(
+    reducerState, stateMap, storeStateRefSet,
+    stateRestoreAccomplishedMap, initialState,
+  );
+  return (
+    connectStore(
+      key, unmountRestore, reducerState, stateMap, storeStateRefSet,
+      storeMap, stateRestoreAccomplishedMap, storeChangeSet, initialState,
+    ).get(key)!.get("useOriginState") as StoreMapValueType<S>["useOriginState"]
+  )();
 };
 
 // 批量触发订阅监听的数据变动

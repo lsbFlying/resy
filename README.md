@@ -156,7 +156,7 @@ const store = createStore<StateType>({
 
 ##### the global significance of store
 <details>
-<summary>about the unmountReset settings item</summary>
+<summary>about the unmountRestore settings item</summary>
     We usually think that the store of the state manager should be globally existed and shared all the time,
 but in fact, in the process of development, the division of each module applied in our system is different from the existing stage.
 Many times, some modules or most of the modules do not need to exist all the time, just like the view of the world in quantum mechanics,
@@ -171,14 +171,14 @@ rather than the state presentation when it leaves before the routing switch.
 This is my understanding of the general state presentation. At the same time, if it is separated from a certain module,
 or there is a globally shared module, such as the user login information loginStore of the user login module,
 or the global style themeStore. For this kind of real global store, it needs to exist all the time for the whole system application,
-so we will set it to false through the unmountReset setting item of the second parameter of createStore, otherwise,
-the general module is set to true by default, and the unmountReset setting item itself defaults to true.
+so we will set it to false through the unmountRestore setting item of the second parameter of createStore, otherwise,
+the general module is set to true by default, and the unmountRestore setting item itself defaults to true.
 Therefore, if it is not similar to the global state of login and theme, it generally does not need to be specially set.
 </details>
 
-##### createStore options item - unmountReset
+##### createStore options item - unmountRestore
 for states that need to exist globally, such as login or theme,
-you need to set unmountReset to true.
+you need to set unmountRestore to true.
 ```tsx
 const loginStore = createStore<{ userName: string; userId: number }>(
   {
@@ -186,7 +186,7 @@ const loginStore = createStore<{ userName: string; userId: number }>(
     userId: 0,
   },
   {
-    unmountReset: false,
+    unmountRestore: false,
   },
 );
 const themeStore = createStore<{ themeStyle: "dark" | "light" }>(
@@ -194,7 +194,7 @@ const themeStore = createStore<{ themeStyle: "dark" | "light" }>(
     themeStyle: "dark",
   },
   {
-    unmountReset: false,
+    unmountRestore: false,
   },
 );
 ```
@@ -204,8 +204,8 @@ const themeStore = createStore<{ themeStyle: "dark" | "light" }>(
 function App() {
   return (
     <button onClick={() => {
-      // You can change the unmountReset parameter setting of createStore
-      store.setOptions({ unmountReset: false });
+      // You can change the unmountRestore parameter setting of createStore
+      store.setOptions({ unmountRestore: false });
     }}>btn</button>
   );
 }

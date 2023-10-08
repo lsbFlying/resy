@@ -62,7 +62,7 @@ test("setOptions", async () => {
     const [show, setShow] = useState(true);
     useMemo(() => {
       // 模拟业务需求设置为永久状态容器
-      store2.setOptions({ unmountReset: false });
+      store2.setOptions({ unmountRestore: false });
     }, []);
     return (
       <>

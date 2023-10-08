@@ -33,7 +33,7 @@ const scheduler = <S extends PrimitiveState = {}>() => {
   schedulerProcessor.set(
     "pushTaskData",
     (
-      key: never,
+      key: keyof S,
       val: any,
     ) => {
       taskDataMap.set(key, val);

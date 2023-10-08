@@ -61,7 +61,7 @@ export const stateErrorHandle = <S extends PrimitiveState>(
 
 // createStore的options配置错误处理
 export const optionsErrorHandle = (options?: CreateStoreOptions) => {
-  if (options && typeof options?.unmountRestore !== "boolean") {
+  if (options !== undefined && typeof options?.unmountRestore !== "boolean") {
     throw new Error("The parameter item unmountRestore of options needs to be a boolean value.");
   }
 };

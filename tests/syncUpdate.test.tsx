@@ -101,5 +101,11 @@ test("syncUpdate", async () => {
   // @ts-ignore
   expect(() => store.syncUpdate(new Set())).toThrowError();
   // @ts-ignore
+  expect(() => store.syncUpdate(new WeakMap())).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(new WeakSet())).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(new WeakRef())).toThrowError();
+  // @ts-ignore
   expect(() => store.syncUpdate(undefined)).toThrowError();
 });

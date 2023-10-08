@@ -97,5 +97,11 @@ test("setAndSub1", async () => {
   // @ts-ignore
   expect(() => store.setState(new Set())).toThrowError();
   // @ts-ignore
+  expect(() => store.setState(new WeakMap())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState(new WeakSet())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState(new WeakRef())).toThrowError();
+  // @ts-ignore
   expect(() => store.setState(undefined)).toThrowError();
 });

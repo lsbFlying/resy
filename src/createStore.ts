@@ -238,7 +238,7 @@ export const createStore = <S extends PrimitiveState>(
   };
 
   // 更改设置unmountRestore参数配置
-  const setOptions = (options?: CreateStoreOptions) => {
+  const setOptions = (options: CreateStoreOptions) => {
     optionsErrorHandle(options);
     optionsTemp.unmountRestore = options?.unmountRestore ?? optionsTemp.unmountRestore;
   };

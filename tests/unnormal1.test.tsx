@@ -71,7 +71,51 @@ test("unnormal1", async () => {
   expect(() => createStore(NaN)).toThrowError();
   // @ts-ignore
   expect(() => createStore("")).toThrowError();
+  // @ts-ignore
+  expect(() => createStore([])).toThrowError();
+  // @ts-ignore
+  expect(() => createStore(Symbol("empty-symbol"))).toThrowError();
+  expect(() => createStore(new Set())).toThrowError();
+  // @ts-ignore
+  expect(() => createStore(new Map())).toThrowError();
+  // @ts-ignore
+  expect(() => createStore(new WeakSet())).toThrowError();
+  // @ts-ignore
+  expect(() => createStore(new WeakMap())).toThrowError();
+  // @ts-ignore
+  expect(() => createStore(new WeakRef())).toThrowError();
   /** 测试初始化入参报错 end */
+
+  /** 测试初始化options入参报错 start */
+  // @ts-ignore
+  expect(() => createStore({}, 0)).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, 1)).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, null)).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, false)).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, NaN)).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, "")).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, {})).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, [])).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, Symbol("empty-symbol"))).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, new Set())).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, new Map())).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, new WeakSet())).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, new WeakMap())).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, new WeakRef())).toThrowError();
+  /** 测试初始化options入参报错 end */
 
   /** 测试store类型报错 start */
   // @ts-ignore
@@ -99,6 +143,12 @@ test("unnormal1", async () => {
   expect(() => useStore(new Map())).toThrowError();
   // @ts-ignore
   expect(() => useStore(new Set())).toThrowError();
+  // @ts-ignore
+  expect(() => useStore(new WeakMap())).toThrowError();
+  // @ts-ignore
+  expect(() => useStore(new WeakSet())).toThrowError();
+  // @ts-ignore
+  expect(() => useStore(new WeakRef())).toThrowError();
   /** 测试store类型报错 end */
 
   /** 测试store类型报错 start */
@@ -127,6 +177,12 @@ test("unnormal1", async () => {
   expect(() => useConciseState(new Map())).toThrowError();
   // @ts-ignore
   expect(() => useConciseState(new Set())).toThrowError();
+  // @ts-ignore
+  expect(() => useConciseState(new WeakMap())).toThrowError();
+  // @ts-ignore
+  expect(() => useConciseState(new WeakSet())).toThrowError();
+  // @ts-ignore
+  expect(() => useConciseState(new WeakRef())).toThrowError();
   /** 测试store类型报错 end */
 
   const { getByText } = render(<App />);

@@ -184,7 +184,7 @@ export type Restore = Readonly<{
  * 所以SetOptions的使用场景还是较少概率的。
  */
 export type SetOptions = Readonly<{
-  setOptions(options?: CreateStoreOptions): void;
+  setOptions(options: CreateStoreOptions): void;
 }>;
 
 // ConciseStore的工具方法类型

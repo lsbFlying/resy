@@ -1,9 +1,60 @@
 import React, { useMemo, useState } from "react";
-import { test } from "vitest";
+import { expect, test } from "vitest";
 import { createStore, useStore } from "../src";
 import { fireEvent, render, waitFor } from "@testing-library/react";
 
 test("setOptions", async () => {
+  const store0 = createStore({
+    count: 0,
+  });
+
+  const App0 = () => {
+    const { count } = useStore(store0);
+    return (
+      <p>App0-count:{count}</p>
+    );
+  };
+
+  const AppOrigin0 = () => {
+    const [show, setShow] = useState(true);
+    useMemo(() => {
+      // no effect
+      // @ts-ignore
+      store0.setOptions();
+      // no effect
+      // @ts-ignore
+      store0.setOptions(undefined);
+    }, []);
+    return (
+      <>
+        <p>AppOrigin0:{show ? "App0" : "null"}</p>
+        {show && <App0 />}
+        <button
+          onClick={() => {
+            store0.count++;
+          }}
+        >
+          btn-01
+        </button>
+        <button
+          onClick={() => {
+            setShow(!show);
+            store0.count++;
+          }}
+        >
+          btn-02
+        </button>
+        <button
+          onClick={() => {
+            setShow(!show);
+          }}
+        >
+          btn-03
+        </button>
+      </>
+    );
+  };
+
   const store1 = createStore({
     count: 0,
   });
@@ -61,6 +112,34 @@ test("setOptions", async () => {
   const AppOrigin2 = () => {
     const [show, setShow] = useState(true);
     useMemo(() => {
+      // @ts-ignore
+      expect(() => store2.setOptions(0)).toThrowError();
+      // @ts-ignore
+      expect(() => store2.setOptions(1)).toThrowError();
+      // @ts-ignore
+      expect(() => store2.setOptions(null)).toThrowError();
+      // @ts-ignore
+      expect(() => store2.setOptions(false)).toThrowError();
+      // @ts-ignore
+      expect(() => store2.setOptions(NaN)).toThrowError();
+      // @ts-ignore
+      expect(() => store2.setOptions("")).toThrowError();
+      // @ts-ignore
+      expect(() => store2.setOptions({})).toThrowError();
+      // @ts-ignore
+      expect(() => store2.setOptions([])).toThrowError();
+      // @ts-ignore
+      expect(() => store2.setOptions(Symbol("empty-symbol"))).toThrowError();
+      // @ts-ignore
+      expect(() => store2.setOptions(new Set())).toThrowError();
+      // @ts-ignore
+      expect(() => store2.setOptions(new Map())).toThrowError();
+      // @ts-ignore
+      expect(() => store2.setOptions(new WeakSet())).toThrowError();
+      // @ts-ignore
+      expect(() => store2.setOptions(new WeakMap())).toThrowError();
+      // @ts-ignore
+      expect(() => store2.setOptions(new WeakRef())).toThrowError();
       // 模拟业务需求设置为永久状态容器
       store2.setOptions({ unmountRestore: false });
     }, []);
@@ -96,10 +175,31 @@ test("setOptions", async () => {
 
   const { getByText } = render(
     <>
+      <AppOrigin0 />
       <AppOrigin1 />
       <AppOrigin2 />
     </>
   );
+
+  fireEvent.click(getByText("btn-01"));
+  await waitFor(() => {
+    console.log("01", store0.count);
+    getByText("App0-count:1");
+    getByText("AppOrigin0:App0");
+  });
+
+  fireEvent.click(getByText("btn-02"));
+  await waitFor(() => {
+    console.log("02", store0.count);
+    getByText("AppOrigin0:null");
+  });
+
+  fireEvent.click(getByText("btn-03"));
+  await waitFor(() => {
+    console.log("03", store0.count);
+    getByText("App0-count:0");
+    getByText("AppOrigin0:App0");
+  });
 
   fireEvent.click(getByText("btn-1"));
   await waitFor(() => {
@@ -116,7 +216,7 @@ test("setOptions", async () => {
 
   fireEvent.click(getByText("btn-3"));
   await waitFor(() => {
-    console.log(3, store2.count);
+    console.log(3, store1.count);
     getByText("App2-count:0");
     getByText("AppOrigin2:App2");
   });

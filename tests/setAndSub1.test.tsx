@@ -185,4 +185,35 @@ test("setAndSub1", async () => {
   // @ts-ignore
   // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
   expect(() => store.subscribe(() => {}, NaN)).toThrowError();
+
+  // @ts-ignore
+  expect(() => store.setState({}, null)).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, "")).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, "string")).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, 0)).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, 1)).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, new Set())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, new Map())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, new WeakSet())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, new WeakMap())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, new WeakRef())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, Symbol())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, {})).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, false)).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, true)).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, NaN)).toThrowError();
 });

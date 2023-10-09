@@ -11,7 +11,7 @@ import {
 } from "./static";
 import {
   stateErrorHandle, mapToObject, objectToMap, protoPointStoreErrorHandle,
-  followUpMap, optionsErrorHandle, hasOwnProperty, subscribeErrorHandle,
+  followUpMap, optionsErrorHandle, hasOwnProperty, subscribeErrorHandle, setStateCallbackErrorHandle,
 } from "./utils";
 import {
   genViewConnectStoreMap, batchDispatchListener, pushTask, connectHookUse,
@@ -59,7 +59,7 @@ export const createStore = <S extends PrimitiveState>(
 
   stateErrorHandle(reducerState, "createStore");
 
-  optionsErrorHandle(options);
+  optionsErrorHandle("createStore", options);
   const optionsTemp = options
     ? { unmountRestore: options.unmountRestore }
     : { unmountRestore: true };
@@ -154,6 +154,8 @@ export const createStore = <S extends PrimitiveState>(
 
   // 可对象数据更新的函数
   const setState = (state: State<S> | StateFnType<S>, callback?: SetStateCallback<S>) => {
+    setStateCallbackErrorHandle(callback);
+
     // 调度处理器内部的willUpdating需要在更新之前开启，这里不管是否有变化需要更新，
     // 先打开缓存一下prevState方便后续订阅事件的触发执行
     willUpdatingHandle(schedulerProcessor, prevState, stateMap);
@@ -241,7 +243,7 @@ export const createStore = <S extends PrimitiveState>(
 
   // 更改设置unmountRestore参数配置
   const setOptions = (options: CreateStoreOptions) => {
-    optionsErrorHandle(options);
+    optionsErrorHandle("setOptions", options);
     optionsTemp.unmountRestore = options?.unmountRestore ?? optionsTemp.unmountRestore;
   };
 

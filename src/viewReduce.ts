@@ -145,7 +145,7 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
   singleStore?: boolean,
   storesKeyTemp?: keyof Stores<S>,
 ) => {
-  // 在mounted进行一次的store校验
+  // 进行store校验（这里是单独的store，多个store也是遍历单独执行handleStoreSubscribe传入的，它与singleStore是不相关的判断逻辑）
   storeErrorHandle(store, "view");
 
   if (singleStore) {
@@ -168,7 +168,12 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
       if (
         // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
         Array.from(innerUseStateMapSet as Set<keyof S>).some(key => effectStateFields.includes(key as string))
-        && (!equal || !equal({ props, state: nextState }, { props, state: prevState }))
+        && (
+          !equal || (
+            typeof equal === "function"
+            && !equal({ props, state: nextState }, { props, state: prevState })
+          )
+        )
       ) {
         setState(stateRefByProxyHandle(objectToMap(nextState), innerUseStateMapSet as Set<keyof S>));
       }
@@ -201,7 +206,12 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
       if (
         // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
         Array.from(innerUseStateSet).some(key => effectStateFields.includes(key as string))
-        && (!equal || !equal({ props, state: nextState }, { props, state: prevState }))
+        && (
+          !equal || (
+            typeof equal === "function"
+            && !equal({ props, state: nextState }, { props, state: prevState })
+          )
+        )
       ) {
         setState(viewStoresStateUpdateHandle(state, innerUseStateSet, nextState, storesKeyTemp));
       }

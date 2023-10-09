@@ -80,6 +80,7 @@ export type ConciseExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & 
 // concise扩展map的类型
 export type ConciseExternalMapType<S extends PrimitiveState> = MapType<ConciseExternalMapValue<S>>;
 
+// 兼容null是出于后端最常用返回的数据格式null居多的考虑
 export type State<S extends PrimitiveState> = Partial<S> | S | null;
 
 // setState —————— 更新数据的函数
@@ -213,7 +214,14 @@ export type ConciseStore<S extends PrimitiveState> = S & ConciseStoreUtils<S> & 
   readonly store: ConciseStore<S>;
 };
 
-// 将resy生成的store容器数据映射挂载到组件props的state属性上
+/**
+ * 将resy生成的store容器数据映射挂载到组件props的state属性上
+ * @description 对于挂在属性数据的接口类型的命名，期间甚至考虑过MapStoreToProps
+ * 但是这样以来会使得需要从store中解构数据进行使用，这与createStore的store相冲突
+ * 所以放弃了这一考量，然后this.props.state与this.state可能会使得未解触过react的萌新产生疑惑
+ * 但是又没有别的更好的名称，同时MapStateToProps与redux的connect的参数名相同
+ * 且大体含义理解相近，在社区有公共的认知考量，所以出于resy本身低学习成本的考虑综合而言还是选择了MapStateToProps这个名称
+ */
 export type MapStateToProps<S extends PrimitiveState, P extends PrimitiveState = {}> = P & {
   readonly state: S;
 }

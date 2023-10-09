@@ -11,7 +11,7 @@ import {
 } from "./static";
 import {
   stateErrorHandle, mapToObject, objectToMap, protoPointStoreErrorHandle,
-  followUpMap, optionsErrorHandle, hasOwnProperty,
+  followUpMap, optionsErrorHandle, hasOwnProperty, subscribeErrorHandle,
 } from "./utils";
 import {
   genViewConnectStoreMap, batchDispatchListener, pushTask, connectHookUse,
@@ -131,14 +131,13 @@ export const createStore = <S extends PrimitiveState>(
     const prevStateTemp: MapType<S> = followUpMap(stateMap);
 
     batchUpdate(() => {
-      let effectState: Partial<S> | null = null;
+      const effectState: Partial<S> = {};
 
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         const val = (stateTemp as Partial<S> | S)[key];
 
         if (!Object.is(val, stateMap.get(key))) {
           stateMap.set(key, val);
-          !effectState && (effectState = {});
           effectState[key as keyof S] = val;
           // 更新
           storeChangeSet.forEach(storeChange => {
@@ -147,7 +146,9 @@ export const createStore = <S extends PrimitiveState>(
         }
       });
 
-      effectState && batchDispatchListener(prevStateTemp, effectState, stateMap, listenerSet);
+      if (Object.keys(effectState).length > 0 && listenerSet.size > 0) {
+        batchDispatchListener(prevStateTemp, effectState, stateMap, listenerSet);
+      }
     });
   };
 
@@ -178,7 +179,7 @@ export const createStore = <S extends PrimitiveState>(
       setStateCallbackStackSet.add({ nextState, callback });
     }
 
-    stateTemp !== null && finallyBatchHandle(
+    finallyBatchHandle(
       schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackSet, storeChangeSet,
     );
   };
@@ -189,7 +190,7 @@ export const createStore = <S extends PrimitiveState>(
     handleReducerState(reducerState, initialState);
 
     batchUpdate(() => {
-      let effectState: Partial<S> | null = null;
+      const effectState: Partial<S> = {};
 
       mergeStateKeys(reducerState, prevStateTemp).forEach(key => {
         const originValue = reducerState[key];
@@ -198,8 +199,6 @@ export const createStore = <S extends PrimitiveState>(
           hasOwnProperty.call(reducerState, key)
             ? stateMap.set(key, originValue)
             : stateMap.delete(key);
-
-          !effectState && (effectState = {});
           effectState[key as keyof S] = originValue;
 
           storeChangeSet.forEach(storeChange => {
@@ -208,24 +207,26 @@ export const createStore = <S extends PrimitiveState>(
         }
       });
 
-      effectState && batchDispatchListener(prevStateTemp, effectState, stateMap, listenerSet);
+      if (Object.keys(effectState).length > 0 && listenerSet.size > 0) {
+        batchDispatchListener(prevStateTemp, effectState, stateMap, listenerSet);
+      }
     });
   };
 
   // 订阅函数
   const subscribe = (listener: Listener<S>, stateKeys?: (keyof S)[]): Unsubscribe => {
-    const listenerWrap: Listener<S> = data => {
-      const listenerKeysIsEmpty = stateKeys === undefined || !(stateKeys && stateKeys.length !== 0);
+    subscribeErrorHandle(listener, stateKeys);
+    let listenerWrap: Listener<S> | null = data => {
+      const listenerKeysExist = stateKeys && stateKeys?.length > 0;
       /**
        * @description 事实上最终订阅触发时，每一个订阅的这个外层listener都被触发了，
        * 只是这里在最终执行内层listener的时候做了数据变化的判断才实现了subscribe中的listener的是否执行
        */
       if (
-        listenerKeysIsEmpty
-        || (
-          !listenerKeysIsEmpty
+        (
+          listenerKeysExist
           && Object.keys(data.effectState).some(key => stateKeys.includes(key))
-        )
+        ) || !listenerKeysExist
       ) listener(data);
     };
 
@@ -233,7 +234,8 @@ export const createStore = <S extends PrimitiveState>(
 
     // 显示返回解除订阅函数供用户自行选择是否解除订阅，因为也有可能用户想要一个订阅一直生效
     return () => {
-      listenerSet.delete(listenerWrap);
+      listenerSet.delete(listenerWrap as Listener<S>);
+      listenerWrap = null;
     };
   };
 

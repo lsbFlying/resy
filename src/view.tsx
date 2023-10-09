@@ -19,7 +19,7 @@ export const view = <P extends PrimitiveState = {}, S extends PrimitiveState = {
   // any用于兼容某些HOC导致的类型不合一问题，比如withRouter(低版本的react-router还是存在该HOC)
   // tslint:disable-next-line:variable-name
   Comp: React.ComponentType<MapStateToProps<S, P> | any>,
-  options: ViewOptionsType<P, S> = {}
+  options: ViewOptionsType<P, S> = {},
 ) => {
   const { stores, equal } = options;
 

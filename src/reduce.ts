@@ -266,15 +266,13 @@ export const batchDispatchListener = <S extends PrimitiveState>(
   stateMap: MapType<S>,
   listenerSet: Set<Listener<S>>,
 ) => {
-  if (listenerSet.size > 0) {
-    listenerSet.forEach(item => {
-      item({
-        effectState,
-        nextState: mapToObject(stateMap),
-        prevState: mapToObject(prevState),
-      });
+  listenerSet.forEach(item => {
+    item({
+      effectState,
+      nextState: mapToObject(stateMap),
+      prevState: mapToObject(prevState),
     });
-  }
+  });
 };
 
 // 更新任务添加入栈
@@ -324,7 +322,7 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
 ) => {
   // 如果当前这一条更新没有变化也就没有任务队列入栈，则不需要更新就没有必要再往下执行多余的代码了
   const taskDataMap = (schedulerProcessor.get("getTaskData") as Scheduler<S>["getTaskData"])();
-  if (taskDataMap.size && !schedulerProcessor.get("isUpdating")) {
+  if (taskDataMap.size > 0 && !schedulerProcessor.get("isUpdating")) {
     /**
      * @description 采用微任务结合开关标志控制的方式达到批量更新的效果，
      * 完善兼容了reactV18以下的版本在微任务、宏任务中无法批量更新的缺陷
@@ -347,7 +345,7 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
       const prevStateTemp = followUpMap(prevState);
 
       batchUpdate(() => {
-        if (taskDataMap.size !== 0) {
+        if (taskDataMap.size > 0) {
           storeChangeSet.forEach(storeChange => {
             storeChange();
           });
@@ -356,9 +354,12 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
          * @description 订阅监听中的更新逻辑上应该合并在批处理中
          * 且批处理也符合逻辑自洽，减少额外多余更新的负担
          */
-        batchDispatchListener(prevStateTemp, mapToObject(taskDataMap), stateMap, listenerSet);
+        if (listenerSet.size > 0) {
+          batchDispatchListener(prevStateTemp, mapToObject(taskDataMap), stateMap, listenerSet);
+        }
+
         // 同时也顺便把回掉中可能的更新也统一批量处理了
-        if (setStateCallbackStackSet.size) {
+        if (setStateCallbackStackSet.size > 0) {
           // 先更新，再执行回调，循环调用回调
           setStateCallbackStackSet.forEach(({ callback, nextState }) => {
             callback(nextState);

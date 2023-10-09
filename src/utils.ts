@@ -1,6 +1,7 @@
 import { REGENERATIVE_SYSTEM_KEY } from "./static";
-import type { PrimitiveState, MapType, State, CreateStoreOptions } from "./model";
-import { Listener, SetStateCallback } from "./model";
+import type {
+  PrimitiveState, MapType, State, CreateStoreOptions, Listener, SetStateCallback,
+} from "./model";
 
 export const hasOwnProperty = Object.prototype.hasOwnProperty;
 

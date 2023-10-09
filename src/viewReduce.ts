@@ -7,9 +7,8 @@ import {
   MapType, ObjectMapType, ObjectType, PrimitiveState, PS, Store, Stores,
   StoreViewMapType, StoreViewMapValue, Unsubscribe, ValueOf, ViewStateMapType,
 } from "./model";
-import {
-  mapToObject, objectToMap, protoPointStoreErrorHandle, storeErrorHandle, hasOwnProperty,
-} from "./utils";
+import { mapToObject, objectToMap, hasOwnProperty } from "./utils";
+import { protoPointStoreErrorHandle, storeErrorHandle } from "./errorHandle";
 import { REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY } from "./static";
 
 /**

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { USE_STORE_KEY, USE_CONCISE_STORE_KEY } from "./static";
 import { createStore } from "./createStore";
-import { storeErrorHandle } from "./utils";
+import { storeErrorHandle } from "./errorHandle";
 import type { PrimitiveState, ConciseStore, InitialStateType } from "./model";
 
 /**

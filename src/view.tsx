@@ -4,9 +4,7 @@ import { mapToObject } from "./utils";
 import {
   getLatestStateMap, viewStoresToLatestState, initialStateHandle, effectedHandle,
 } from "./viewReduce";
-import type {
-  PrimitiveState, MapStateToProps, Store, Stores, ViewOptionsType,
-} from "./model";
+import type { PrimitiveState, MapStateToProps, Store, Stores, ViewOptionsType } from "./model";
 
 /**
  * 自动memo与SCU的高阶HOC

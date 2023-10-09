@@ -9,10 +9,11 @@ import scheduler from "./scheduler";
 import {
   batchUpdate, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, REGENERATIVE_SYSTEM_KEY,
 } from "./static";
+import { mapToObject, objectToMap, followUpMap, hasOwnProperty } from "./utils";
 import {
-  stateErrorHandle, mapToObject, objectToMap, protoPointStoreErrorHandle,
-  followUpMap, optionsErrorHandle, hasOwnProperty, subscribeErrorHandle, setStateCallbackErrorHandle,
-} from "./utils";
+  stateErrorHandle, protoPointStoreErrorHandle, optionsErrorHandle,
+  subscribeErrorHandle, setStateCallbackErrorHandle,
+} from "./errorHandle";
 import {
   genViewConnectStoreMap, batchDispatchListener, pushTask, connectHookUse,
   finallyBatchHandle, willUpdatingHandle, mergeStateKeys, handleReducerState,

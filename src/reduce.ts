@@ -23,6 +23,7 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  */
 const storeStateRefSetMark = (storeStateRefSet: Set<number>) => {
   const storeStateRefSetArray = [...storeStateRefSet];
+  // at(-1)的兼容性不太好，Safari貌似就没有...
   const lastTemp = storeStateRefSetArray[storeStateRefSetArray.length - 1] as (number | undefined);
   // 索引自增
   const lastItem = typeof lastTemp === "number" ? lastTemp + 1 : 0;
@@ -202,12 +203,25 @@ export const connectStore = <S extends PrimitiveState>(
    * 保持参数不变，减少useSyncExternalStore的内部effect执行变更
    */
   const storeMapValue: StoreMapValue<S> = new Map();
+  // 单个属性的渲染使用标记Set储存
+  const singlePropStoreChangeSet = new Set<number>();
 
   storeMapValue.set("subscribeOriginState", (onOriginStateChange: Callback) => {
     storeChangeSet.add(onOriginStateChange);
+
     const storeRefIncreaseItem = storeStateRefSetMark(storeStateRefSet);
+
+    /**
+     * 单个属性的渲染使用标记 + 1，最终通过singlePropStoreChangeSet.size识别标记是否清楚是否存在
+     * 当singlePropStoreChangeSet.size === 0没有标记时即当前属性key没有渲染使用，
+     * 即可移除storeMapValue对象，delete卸载删除释放内存，减轻内存占用，提高内存使用效率
+     */
+    singlePropStoreChangeSet.add(storeRefIncreaseItem);
+
     return () => {
       storeChangeSet.delete(onOriginStateChange);
+      singlePropStoreChangeSet.delete(storeRefIncreaseItem);
+
       storeStateRefSet.delete(storeRefIncreaseItem);
       if (!storeStateRefSet.size) {
         // 打开开关执行刷新恢复数据
@@ -218,6 +232,9 @@ export const connectStore = <S extends PrimitiveState>(
           stateRestoreAccomplishedMap, initialState,
         );
       }
+
+      // 释放内存
+      if (!singlePropStoreChangeSet.size) storeMap.delete(key);
     };
   });
 
@@ -353,6 +370,13 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
         /**
          * @description 订阅监听中的更新逻辑上应该合并在批处理中
          * 且批处理也符合逻辑自洽，减少额外多余更新的负担
+         *
+         * 这里的巧妙之处在于它不仅仅是监听订阅函数的执行触发，
+         * 更重要的是view中监听订阅的数据变动函数在这里得到了执行更新
+         * 所以在subscribeOriginState里面进行相关数据的delete的操作是不会影响view中数据的更新的
+         *
+         * 因为view中的数据是自身的useState产生的，
+         * 它的更新动力只是借助了这里的监听订阅的数据触发驱动而已
          */
         if (listenerSet.size > 0) {
           batchDispatchListener(prevStateTemp, mapToObject(taskDataMap), stateMap, listenerSet);

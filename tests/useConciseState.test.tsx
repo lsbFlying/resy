@@ -25,10 +25,6 @@ test("useConciseState", async () => {
      */
     const { count, text, testFun, store, setState } = useConciseState(initialState);
 
-    expect(() => {
-      Object.setPrototypeOf(store, {});
-    }).toThrowError();
-
     return (
       <>
         <p>{count === undefined ? "count prop has deleted" : ""}</p>

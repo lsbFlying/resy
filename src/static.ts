@@ -34,3 +34,9 @@ export const USE_CONCISE_STORE_KEY = Symbol("useConciseStoreKey");
 
 // resy的内部特殊标识
 export const REGENERATIVE_SYSTEM_KEY = Symbol("regenerativeSystemKey");
+
+const NODE_ENV = process.env.NODE_ENV;
+
+if (!NODE_ENV) console.error("NODE_ENV not set");
+
+export const __DEV__ = NODE_ENV === "development";

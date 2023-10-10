@@ -62,6 +62,7 @@ export const createStore = <S extends PrimitiveState>(
 
   optionsErrorHandle("createStore", options);
   const optionsTemp = options
+    // 便于脱离后续setOptions的ReadOnly的类型校验
     ? { unmountRestore: options.unmountRestore }
     : { unmountRestore: true };
 
@@ -155,8 +156,6 @@ export const createStore = <S extends PrimitiveState>(
 
   // 可对象数据更新的函数
   const setState = (state: State<S> | StateFnType<S>, callback?: SetStateCallback<S>) => {
-    setStateCallbackErrorHandle(callback);
-
     // 调度处理器内部的willUpdating需要在更新之前开启，这里不管是否有变化需要更新，
     // 先打开缓存一下prevState方便后续订阅事件的触发执行
     willUpdatingHandle(schedulerProcessor, prevState, stateMap);
@@ -177,7 +176,9 @@ export const createStore = <S extends PrimitiveState>(
     }
 
     // 异步回调添加入栈
-    if (callback) {
+    if (callback !== undefined) {
+      setStateCallbackErrorHandle(callback);
+
       const nextState: S = Object.assign({}, mapToObject(stateMap), stateTemp);
       setStateCallbackStackSet.add({ nextState, callback });
     }
@@ -219,7 +220,7 @@ export const createStore = <S extends PrimitiveState>(
   // 订阅函数
   const subscribe = (listener: Listener<S>, stateKeys?: (keyof S)[]): Unsubscribe => {
     subscribeErrorHandle(listener, stateKeys);
-    let listenerWrap: Listener<S> | null = data => {
+    const listenerWrap: Listener<S> | null = data => {
       const listenerKeysExist = stateKeys && stateKeys?.length > 0;
       /**
        * @description 事实上最终订阅触发时，每一个订阅的这个外层listener都被触发了，
@@ -236,10 +237,7 @@ export const createStore = <S extends PrimitiveState>(
     listenerSet.add(listenerWrap);
 
     // 显示返回解除订阅函数供用户自行选择是否解除订阅，因为也有可能用户想要一个订阅一直生效
-    return () => {
-      listenerSet.delete(listenerWrap as Listener<S>);
-      listenerWrap = null;
-    };
+    return () => listenerSet.delete(listenerWrap as Listener<S>);
   };
 
   // 更改设置unmountRestore参数配置
@@ -283,9 +281,6 @@ export const createStore = <S extends PrimitiveState>(
     set: singlePropUpdate,
     // delete 也会起到更新作用
     deleteProperty: (_: S, key: keyof S) => singlePropUpdate(_, key, undefined as ValueOf<S>),
-    setPrototypeOf: () => {
-      throw new Error("Changing the prototype of store is forbidden!");
-    },
   } as any as ProxyHandler<StoreMap<S>>) as any as Store<S>;
 
   // 给useStore的驱动更新代理
@@ -337,9 +332,6 @@ export const createStore = <S extends PrimitiveState>(
     },
     set: singlePropUpdate,
     deleteProperty: (_: S, key: keyof S) => singlePropUpdate(_, key, undefined as ValueOf<S>),
-    setPrototypeOf: () => {
-      throw new Error("Changing the prototype of store is forbidden!");
-    },
   } as any as ProxyHandler<StoreMap<S>>) as any as Store<S>;
 
   conciseExternalMap.set("store", conciseExtraStore);

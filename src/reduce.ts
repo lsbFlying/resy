@@ -192,7 +192,6 @@ export const connectStore = <S extends PrimitiveState>(
   storeStateRefSet: Set<number>,
   storeMap: StoreMap<S>,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
-  storeChangeSet: Set<Callback>,
   initialState?: InitialStateType<S>,
 ) => {
   // 解决初始化属性泛型有?判断符，即一开始没有初始化的数据属性
@@ -204,23 +203,21 @@ export const connectStore = <S extends PrimitiveState>(
    */
   const storeMapValue: StoreMapValue<S> = new Map();
   // 单个属性的渲染使用标记Set储存
-  const singlePropStoreChangeSet = new Set<number>();
+  const singlePropStoreChangeSet = new Set<Callback>();
 
   storeMapValue.set("subscribeOriginState", (onOriginStateChange: Callback) => {
-    storeChangeSet.add(onOriginStateChange);
+    /**
+     * @description 单个属性的渲染使用标记 + 1，最终通过singlePropStoreChangeSet.size识别标记是否清楚是否存在
+     * 当singlePropStoreChangeSet.size === 0没有标记时即当前属性key没有渲染使用，
+     * 即可移除storeMapValue对象，delete卸载删除释放内存，减轻内存占用，提高内存使用效率
+     * 同时源数据属性更新队列没有放在全局当中，即更即取即消的处理方式对于运行内存以及运算优势更加迅速
+     */
+    singlePropStoreChangeSet.add(onOriginStateChange);
 
     const storeRefIncreaseItem = storeStateRefSetMark(storeStateRefSet);
 
-    /**
-     * 单个属性的渲染使用标记 + 1，最终通过singlePropStoreChangeSet.size识别标记是否清楚是否存在
-     * 当singlePropStoreChangeSet.size === 0没有标记时即当前属性key没有渲染使用，
-     * 即可移除storeMapValue对象，delete卸载删除释放内存，减轻内存占用，提高内存使用效率
-     */
-    singlePropStoreChangeSet.add(storeRefIncreaseItem);
-
     return () => {
-      storeChangeSet.delete(onOriginStateChange);
-      singlePropStoreChangeSet.delete(storeRefIncreaseItem);
+      singlePropStoreChangeSet.delete(onOriginStateChange);
 
       storeStateRefSet.delete(storeRefIncreaseItem);
       if (!storeStateRefSet.size) {
@@ -246,6 +243,12 @@ export const connectStore = <S extends PrimitiveState>(
     (storeMap.get(key) as StoreMapValue<S>).get("getOriginState") as StoreMapValueType<S>["getOriginState"],
   ));
 
+  storeMapValue.set("updater", () => {
+    singlePropStoreChangeSet.forEach(storeChange => {
+      storeChange();
+    });
+  });
+
   storeMap.set(key, storeMapValue);
 
   return storeMap;
@@ -260,7 +263,6 @@ export const connectHookUse = <S extends PrimitiveState>(
   storeStateRefSet: Set<number>,
   storeMap: StoreMap<S>,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
-  storeChangeSet: Set<Callback>,
   initialState?: InitialStateType<S>,
 ) => {
   // 如果initialState是函数则强制执行刷新恢复的逻辑，initialState是函数的情况下权重高于unmountRestore
@@ -271,7 +273,7 @@ export const connectHookUse = <S extends PrimitiveState>(
   return (
     connectStore(
       key, unmountRestore, reducerState, stateMap, storeStateRefSet,
-      storeMap, stateRestoreAccomplishedMap, storeChangeSet, initialState,
+      storeMap, stateRestoreAccomplishedMap, initialState,
     ).get(key)!.get("useOriginState") as StoreMapValueType<S>["useOriginState"]
   )();
 };
@@ -298,6 +300,12 @@ export const pushTask = <S extends PrimitiveState>(
   val: ValueOf<S>,
   stateMap: MapType<S>,
   schedulerProcessor: MapType<Scheduler>,
+  unmountRestore: boolean,
+  reducerState: S,
+  storeStateRefSet: Set<number>,
+  storeMap: StoreMap<S>,
+  stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
+  initialState?: InitialStateType<S>,
 ) => {
   /**
    * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
@@ -316,7 +324,14 @@ export const pushTask = <S extends PrimitiveState>(
      */
     stateMap.set(key, val);
 
-    (schedulerProcessor.get("pushTaskData") as Scheduler<S>["pushTaskData"])(key, val);
+    (schedulerProcessor.get("pushTask") as Scheduler<S>["pushTask"])(
+      key,
+      val,
+      connectStore(
+        key, unmountRestore, reducerState, stateMap, storeStateRefSet,
+        storeMap, stateRestoreAccomplishedMap, initialState,
+      ).get(key)!.get("updater") as StoreMapValueType<S>["updater"],
+    );
   }
 };
 
@@ -335,10 +350,9 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
   stateMap: MapType<S>,
   listenerSet: Set<Listener<S>>,
   setStateCallbackStackSet: Set<SetStateCallbackItem<S>>,
-  storeChangeSet: Set<Callback>,
 ) => {
   // 如果当前这一条更新没有变化也就没有任务队列入栈，则不需要更新就没有必要再往下执行多余的代码了
-  const taskDataMap = (schedulerProcessor.get("getTaskData") as Scheduler<S>["getTaskData"])();
+  const { taskDataMap } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
   if (taskDataMap.size > 0 && !schedulerProcessor.get("isUpdating")) {
     /**
      * @description 采用微任务结合开关标志控制的方式达到批量更新的效果，
@@ -353,7 +367,7 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
       schedulerProcessor.set("isUpdating", null);
       schedulerProcessor.set("willUpdating", null);
 
-      const taskDataMap = (schedulerProcessor.get("getTaskData") as Scheduler<S>["getTaskData"])();
+      const { taskDataMap, taskQueueSet } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
 
       // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
       (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
@@ -363,8 +377,8 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
 
       batchUpdate(() => {
         if (taskDataMap.size > 0) {
-          storeChangeSet.forEach(storeChange => {
-            storeChange();
+          taskQueueSet.forEach(task => {
+            task();
           });
         }
         /**

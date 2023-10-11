@@ -29,6 +29,12 @@ export type StoreMapValueType<S extends PrimitiveState> = {
    * 可以简单理解为useState的效果，具备驱动页面更新渲染的能力。
    */
   useOriginState: () => ValueOf<S>;
+  /**
+   * 更新源数据的更新器
+   * @description 相比放在全局一个更新队列中把每一个源数据属性队列中的方式能极大程度的减缓数据过大后大致的全局更新队列的冗余庞大
+   * 显然这种方式更减轻内存负担，同时即更即取即消的处理方式对于运行内存以及运算优势更加迅速
+   */
+  updater: Callback;
 };
 
 export type StoreMapValue<S extends PrimitiveState> = MapType<StoreMapValueType<S>>;
@@ -238,12 +244,15 @@ export interface Scheduler<S extends PrimitiveState = {}> {
   isUpdating: Promise<void> | null;
   // 将要更新执行的标识
   willUpdating: true | null;
-  // 入栈更新数据的key/value
-  pushTaskData(key: keyof S, val: ValueOf<S>): void;
+  // 入栈更新数据的key/value以及更新任函数务队列
+  pushTask(key: keyof S, val: ValueOf<S>, task: Callback): void;
   // 冲刷任务数据与任务队列
   flush(): void;
-  // 获取任务数据
-  getTaskData(): Map<keyof S, ValueOf<S>>;
+  // 获取当前一轮的更新任务及数据
+  getTasks(): {
+    taskDataMap: MapType<S>;
+    taskQueueSet: Set<Callback>;
+  };
 }
 
 /**

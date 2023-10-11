@@ -1,5 +1,5 @@
-import type { MapType, Scheduler, PrimitiveState } from "./model";
-import { followUpMap } from "./utils";
+import type { MapType, Scheduler, PrimitiveState, Callback, ValueOf } from "./model";
+import { followUpMap, followUpSet } from "./utils";
 
 /**
  * @description 调度处理器针对每一个store的私有化
@@ -19,6 +19,8 @@ import { followUpMap } from "./utils";
 const scheduler = <S extends PrimitiveState = {}>() => {
   // 更新的任务数据
   const taskDataMap: MapType<S> = new Map();
+  // 更新任务队列
+  const taskQueueSet: Set<Callback> = new Set();
 
   /**
    * @description 批量处理更新的调度Map
@@ -31,12 +33,14 @@ const scheduler = <S extends PrimitiveState = {}>() => {
   schedulerProcessor.set("willUpdating", null);
 
   schedulerProcessor.set(
-    "pushTaskData",
+    "pushTask",
     (
       key: keyof S,
-      val: any,
+      val: ValueOf<S>,
+      task: Callback,
     ) => {
       taskDataMap.set(key, val);
+      taskQueueSet.add(task);
     },
   );
 
@@ -44,12 +48,16 @@ const scheduler = <S extends PrimitiveState = {}>() => {
     "flush",
     () => {
       taskDataMap.clear();
+      taskQueueSet.clear();
     },
   );
 
   schedulerProcessor.set(
-    "getTaskData",
-    () => followUpMap(taskDataMap),
+    "getTasks",
+    () => ({
+      taskDataMap: followUpMap(taskDataMap),
+      taskQueueSet: followUpSet(taskQueueSet),
+    }),
   );
 
   return schedulerProcessor;

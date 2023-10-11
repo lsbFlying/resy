@@ -15,14 +15,14 @@ import {
   subscribeErrorHandle, setStateCallbackErrorHandle,
 } from "./errorHandle";
 import {
-  genViewConnectStoreMap, batchDispatchListener, pushTask, connectHookUse,
-  finallyBatchHandle, willUpdatingHandle, mergeStateKeys, handleReducerState,
+  genViewConnectStoreMap, batchDispatchListener, pushTask, connectHookUse, finallyBatchHandle,
+  willUpdatingHandle, mergeStateKeys, handleReducerState, connectStore,
 } from "./reduce";
 import type {
   ExternalMapType, ExternalMapValue, PrimitiveState, StateFnType, StoreMap,
   Unsubscribe, Listener, CreateStoreOptions, Store, AnyFn, ConciseExternalMapType,
-  ConciseExternalMapValue, SetStateCallback, SetStateCallbackItem,
-  MapType, ValueOf, State, StateRestoreAccomplishedMapType, InitialStateType, Callback,
+  ConciseExternalMapValue, SetStateCallback, SetStateCallbackItem, StoreMapValueType,
+  MapType, ValueOf, State, StateRestoreAccomplishedMapType, InitialStateType,
 } from "./model";
 
 /**
@@ -110,12 +110,6 @@ export const createStore = <S extends PrimitiveState>(
   const storeMap: StoreMap<S> = new Map();
 
   /**
-   * @description store内部数据的change更新回调的Set集合
-   * 包含整个store数据的变化更新的回调函数，采用Set储存相对简单高效
-   */
-  const storeChangeSet = new Set<Callback>();
-
-  /**
    * 同步更新
    * @description todo 更多意义上是为了解决input无法输入非英文语言bug的无奈
    * bug原因是react的更新调度机制不满足在微任务中执行的问题，vue中是可以的，后续待优化
@@ -142,9 +136,12 @@ export const createStore = <S extends PrimitiveState>(
           stateMap.set(key, val);
           effectState[key as keyof S] = val;
           // 更新
-          storeChangeSet.forEach(storeChange => {
-            storeChange();
-          });
+          (
+            connectStore(
+              key, optionsTemp.unmountRestore, reducerState, stateMap,
+              storeStateRefSet, storeMap, stateRestoreAccomplishedMap,
+            ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
+          )();
         }
       });
 
@@ -171,7 +168,10 @@ export const createStore = <S extends PrimitiveState>(
 
       // 更新添加入栈，后续统一批次合并更新
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
-        pushTask(key, (stateTemp as S)[key], stateMap, schedulerProcessor);
+        pushTask(
+          key, (stateTemp as S)[key], stateMap, schedulerProcessor, optionsTemp.unmountRestore,
+          reducerState, storeStateRefSet, storeMap, stateRestoreAccomplishedMap, initialState,
+        );
       });
     }
 
@@ -184,7 +184,7 @@ export const createStore = <S extends PrimitiveState>(
     }
 
     finallyBatchHandle(
-      schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackSet, storeChangeSet,
+      schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackSet,
     );
   };
 
@@ -205,9 +205,13 @@ export const createStore = <S extends PrimitiveState>(
             : stateMap.delete(key);
           effectState[key as keyof S] = originValue;
 
-          storeChangeSet.forEach(storeChange => {
-            storeChange();
-          });
+          // 更新
+          (
+            connectStore(
+              key, optionsTemp.unmountRestore, reducerState, stateMap,
+              storeStateRefSet, storeMap, stateRestoreAccomplishedMap,
+            ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
+          )();
         }
       });
 
@@ -249,9 +253,12 @@ export const createStore = <S extends PrimitiveState>(
   // 单个属性数据更新
   const singlePropUpdate = (_: S, key: keyof S, val: ValueOf<S>) => {
     willUpdatingHandle(schedulerProcessor, prevState, stateMap);
-    pushTask(key, val, stateMap, schedulerProcessor);
+    pushTask(
+      key, val, stateMap, schedulerProcessor, optionsTemp.unmountRestore, reducerState,
+      storeStateRefSet, storeMap, stateRestoreAccomplishedMap, initialState,
+    );
     finallyBatchHandle(
-      schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackSet, storeChangeSet,
+      schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackSet,
     );
     return true;
   };
@@ -290,13 +297,13 @@ export const createStore = <S extends PrimitiveState>(
         // 也做一个函数数据hook的调用，给予函数数据更新渲染的能力
         connectHookUse(
           key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
-          storeMap, stateRestoreAccomplishedMap, storeChangeSet, initialState,
+          storeMap, stateRestoreAccomplishedMap, initialState,
         );
         return (stateMap.get(key) as AnyFn).bind(store);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
         key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
-        storeMap, stateRestoreAccomplishedMap, storeChangeSet, initialState,
+        storeMap, stateRestoreAccomplishedMap, initialState,
       );
     },
   } as ProxyHandler<StoreMap<S>>);
@@ -350,13 +357,13 @@ export const createStore = <S extends PrimitiveState>(
         // 也做一个函数数据hook的调用，给予函数数据更新渲染的能力
         connectHookUse(
           key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
-          storeMap, stateRestoreAccomplishedMap, storeChangeSet, initialState,
+          storeMap, stateRestoreAccomplishedMap, initialState,
         );
         return (stateMap.get(key) as AnyFn).bind(store);
       }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || connectHookUse(
         key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
-        storeMap, stateRestoreAccomplishedMap, storeChangeSet, initialState,
+        storeMap, stateRestoreAccomplishedMap, initialState,
       );
     },
   } as ProxyHandler<StoreMap<S>>);

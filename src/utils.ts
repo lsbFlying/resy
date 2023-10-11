@@ -1,10 +1,12 @@
-import type { PrimitiveState, MapType } from "./model";
+import type { PrimitiveState, MapType, Callback } from "./model";
 
 export const hasOwnProperty = Object.prototype.hasOwnProperty;
 
 /**
  * @description 跟进状态map
  * 相较于直接赋值新值的方式也更快
+ * forEach在少量数据情况下较for of略有优势
+ * 但是无法承载大数据情况下的优势，所以使用forEach
  */
 export const followUpMap = <K, V>(map: Map<K, V>) => {
   const mapTemp: Map<K, V> = new Map();
@@ -12,6 +14,15 @@ export const followUpMap = <K, V>(map: Map<K, V>) => {
     mapTemp.set(key, value);
   });
   return mapTemp;
+};
+
+// for of在Set的情况使用下却是firEach更快，且同时能保证少量数据与大数据都占优势
+export const followUpSet = (set: Set<Callback>) => {
+  const setTemp = new Set<Callback>();
+  for (const item of set) {
+    setTemp.add(item);
+  }
+  return setTemp;
 };
 
 /**

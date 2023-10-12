@@ -868,7 +868,7 @@ class ClassComProps extends React.Component<
 }
 
 // you can add a props type interface to the generic type of view.
-const TestComPropsView = view<ComPropsType>(ClassComProps)({ stores: store });
+const TestComPropsView = view<ComPropsType>(ClassComProps, { stores: store });
 
 function App() {
    return (
@@ -883,7 +883,7 @@ of React.memo's propsAreEqual function,
 which is essentially a custom comparison of the similarities
 and differences between props and state.
 ```tsx
-const TestEqualView = view<ComPropsType, StateType>(ClassComProps)({
+const TestEqualView = view<ComPropsType, StateType>(ClassComProps, {
   stores: store,
   // it is similar to React.memo's propsAreEqual.
   equal: (next, prev) => {
@@ -891,14 +891,14 @@ const TestEqualView = view<ComPropsType, StateType>(ClassComProps)({
     const { props: prevProps, state: prevState } = prev;
     // some conditon
     if (
-      nextProps.name === "ClassComPropsName"
-      || prevProps.name === "ClassComPropsName"
+            nextProps.name === "ClassComPropsName"
+            || prevProps.name === "ClassComPropsName"
     ) {
       return false;
     }
     return (
-      nextState.count === prevState.count
-      || nextState.text === prevState.text
+            nextState.count === prevState.count
+            || nextState.text === prevState.text
     );
   },
 });
@@ -947,7 +947,7 @@ class ClassCom2 extends React.Component<
   }
 }
 
-const TestView4 = view<ClassCom2Props, MultipleStateType>(ClassCom2)({
+const TestView4 = view<ClassCom2Props, MultipleStateType>(ClassCom2, {
   stores: { loginState: loginStore, themeState: themeStore },
   equal: (next, prev) => {
     console.log(next.state.loginState.userName, prev.props.value);

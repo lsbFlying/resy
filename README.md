@@ -795,7 +795,7 @@ class ClassCom extends React.Component<MapStateToProps<StateType>> {
   }
 }
 
-const TestView = view(ClassCom)({ stores: store });
+const TestView = view(ClassCom, { stores: store });
 ```
 
 ##### view for hook mode I
@@ -809,7 +809,7 @@ function HookCom() {
     <div>{count}{text}</div>
   );
 }
-const TestView2 = view(HookCom)();
+const TestView2 = view(HookCom);
 ```
 
 * name data update, will not cause TestView re-render
@@ -845,7 +845,7 @@ function HookCom2(props: MapStateToProps<StateType>) {
     <div>{count}{text}</div>
   );
 }
-const TestView3 = view(HookCom2)({ stores: store });
+const TestView3 = view(HookCom2, { stores: store });
 ```
 
 ##### view api's type recognition support for props

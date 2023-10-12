@@ -23,7 +23,7 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  */
 const storeStateRefSetMark = (storeStateRefSet: Set<number>) => {
   const storeStateRefSetArray = [...storeStateRefSet];
-  // at(-1)的兼容性不太好，Safari貌似就没有...
+  // 原始方式比at(-1)快
   const lastTemp = storeStateRefSetArray[storeStateRefSetArray.length - 1] as (number | undefined);
   // 索引自增
   const lastItem = typeof lastTemp === "number" ? lastTemp + 1 : 0;

@@ -254,7 +254,12 @@ export const connectStore = <S extends PrimitiveState>(
   return storeMap;
 };
 
-// useState的变相调用
+/**
+ * @description useState的变相调用
+ * 不使用useXXX的命名方式是为了避免hook调用规则的类型检查报错，
+ * 这里无论是函数类型的数据还是其他类型的数据的hook数据规则的调用都是符合要求的
+ * 所以本质上不用担心hook调用规则的问题，可以看作就是hook的调用
+ */
 export const connectHookUse = <S extends PrimitiveState>(
   key: keyof S,
   unmountRestore: boolean,

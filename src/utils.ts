@@ -5,9 +5,10 @@ export const hasOwnProperty = Object.prototype.hasOwnProperty;
 /**
  * @description 跟进状态map
  * 相较于直接赋值新值的方式也更快
- * forEach在少量数据情况下较for of略有优势
- * 但在百万级大数据情况下的略输于for of，
- * 而一般情况下初始化数据并不会有那么大的场景，所以使用forEach
+ * forEach在少量数据情况下较for of略有劣势
+ * 但在数据较多情况下的会强于于for of，
+ * 考虑到for of只有100级别的小数据场景占优其余均劣势
+ * 所以使用forEach
  */
 export const followUpMap = <K, V>(map: Map<K, V>) => {
   const mapTemp: Map<K, V> = new Map();
@@ -20,9 +21,9 @@ export const followUpMap = <K, V>(map: Map<K, V>) => {
 /**
  * map转object
  * @description 解决回调参数如果是map的proxy代理的话无法做扩展运算的问题
- * 使用map的foreach也可以，并且在数据量较大的时候比for of更快，
- * 但是这里一般数据量认为不过过大达到百万级别，且在大数据量的时候并没有拉开足够的差距
- * 所以for of的方式依旧是众多方式中最综合高效的方式
+ * 使用map的forEach也可以，并且在数据量较大的时候比for of更快，
+ * 但是这里一般数据量认为不会过大达到百万级别，且在大数据量的时候并没有拉开足够的差距
+ * 以及forEach占优的场景比例较多，所以for of的方式依旧是众多方式中最综合高效的方式
  */
 export const mapToObject = <S extends PrimitiveState>(map: MapType<S>): S => {
   const object = {} as S;

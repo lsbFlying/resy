@@ -30,11 +30,11 @@ test("syncUpdate", async () => {
                 count: count + 1,
                 text: `hello-${count}`,
               }));
-            }}>btn</button>
+            }}>btn-1</button>
           </div>
           <button onClick={() => {
             store.syncUpdate(prevState => {
-              console.log("prevState", prevState);  // prevState { text: 'qwe', count: 0 }
+              console.log("prevState", prevState);  // prevState { text: "hello-0", count: 1 }
               if (prevState.count > 0) {
                 return {
                   count: 999,
@@ -66,18 +66,18 @@ test("syncUpdate", async () => {
   expect(textRes === store.text).toBeTruthy();
   expect("ASDZXC" === store.text).toBeTruthy();
 
-  fireEvent.click(getByText("btn"));
+  fireEvent.click(getByText("btn-1"));
   getByText("count:1");
   expect("hello-0" === store.text).toBeTruthy();
 
   fireEvent.click(getByText("btn-2"));
-  getByText("count:-999");
+  getByText("count:999");
 
   fireEvent.click(getByText("btn-3"));
-  getByText("count:-999");
+  getByText("count:999");
 
   fireEvent.click(getByText("btn-4"));
-  getByText("count:-999");
+  getByText("count:999");
 
   // @ts-ignore
   expect(() => store.syncUpdate(0)).toThrowError();

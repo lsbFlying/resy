@@ -1,5 +1,4 @@
 import type { MapType, Scheduler, PrimitiveState, Callback, ValueOf } from "./model";
-import { followUpMap, followUpSet } from "./utils";
 
 /**
  * @description 调度处理器针对每一个store的私有化
@@ -55,8 +54,8 @@ const scheduler = <S extends PrimitiveState = {}>() => {
   schedulerProcessor.set(
     "getTasks",
     () => ({
-      taskDataMap: followUpMap(taskDataMap),
-      taskQueueSet: followUpSet(taskQueueSet),
+      taskDataMap,
+      taskQueueSet,
     }),
   );
 

@@ -1,4 +1,4 @@
-import type { PrimitiveState, MapType, Callback } from "./model";
+import type { PrimitiveState, MapType } from "./model";
 
 export const hasOwnProperty = Object.prototype.hasOwnProperty;
 
@@ -14,15 +14,6 @@ export const followUpMap = <K, V>(map: Map<K, V>) => {
     mapTemp.set(key, value);
   });
   return mapTemp;
-};
-
-// for of在Set的情况使用下却是firEach更快，且同时能保证少量数据与大数据都占优势
-export const followUpSet = (set: Set<Callback>) => {
-  const setTemp = new Set<Callback>();
-  for (const item of set) {
-    setTemp.add(item);
-  }
-  return setTemp;
 };
 
 /**

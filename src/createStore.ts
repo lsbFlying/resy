@@ -16,7 +16,7 @@ import {
 } from "./errorHandle";
 import {
   genViewConnectStoreMap, batchDispatchListener, pushTask, connectHookUse, finallyBatchHandle,
-  willUpdatingHandle, mergeStateKeys, handleReducerState, connectStore,
+  willUpdatingHandle, mergeStateKeys, handleReducerState, connectStore, prevStateFollowUpStateMap,
 } from "./reduce";
 import type {
   ExternalMapType, ExternalMapValue, PrimitiveState, StateFnType, StoreMap,
@@ -115,6 +115,8 @@ export const createStore = <S extends PrimitiveState>(
    * bug原因是react的更新调度机制不满足在微任务中执行的问题，vue中是可以的，后续待优化
    */
   const syncUpdate = (state: State<S> | StateFnType<S>) => {
+    prevStateFollowUpStateMap(prevState, stateMap);
+
     let stateTemp = state;
     if (typeof state === "function") {
       stateTemp = (state as StateFnType<S>)(mapToObject(prevState));
@@ -123,8 +125,6 @@ export const createStore = <S extends PrimitiveState>(
     if (stateTemp === null) return;
 
     stateErrorHandle(stateTemp, "syncUpdate");
-
-    const prevStateTemp: MapType<S> = followUpMap(stateMap);
 
     batchUpdate(() => {
       const effectState: Partial<S> = {};
@@ -146,7 +146,7 @@ export const createStore = <S extends PrimitiveState>(
       });
 
       if (Object.keys(effectState).length > 0 && listenerSet.size > 0) {
-        batchDispatchListener(prevStateTemp, effectState, stateMap, listenerSet);
+        batchDispatchListener(prevState, effectState, stateMap, listenerSet);
       }
     });
   };
@@ -190,13 +190,14 @@ export const createStore = <S extends PrimitiveState>(
 
   // 重置恢复初始化状态数据
   const restore = () => {
-    const prevStateTemp = followUpMap(stateMap);
+    prevStateFollowUpStateMap(prevState, stateMap);
+
     handleReducerState(reducerState, initialState);
 
     batchUpdate(() => {
       const effectState: Partial<S> = {};
 
-      mergeStateKeys(reducerState, prevStateTemp).forEach(key => {
+      mergeStateKeys(reducerState, prevState).forEach(key => {
         const originValue = reducerState[key];
 
         if (!Object.is(originValue, stateMap.get(key))) {
@@ -216,7 +217,7 @@ export const createStore = <S extends PrimitiveState>(
       });
 
       if (Object.keys(effectState).length > 0 && listenerSet.size > 0) {
-        batchDispatchListener(prevStateTemp, effectState, stateMap, listenerSet);
+        batchDispatchListener(prevState, effectState, stateMap, listenerSet);
       }
     });
   };

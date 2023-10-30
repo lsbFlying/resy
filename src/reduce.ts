@@ -8,7 +8,7 @@ import type {
   SetStateCallbackItem, StoreMapValue, StoreMapValueType, Listener,
   Scheduler, StoreMap, StateRestoreAccomplishedMapType, InitialStateType,
 } from "./model";
-import { followUpMap, hasOwnProperty, mapToObject, clearObject } from "./utils";
+import { hasOwnProperty, mapToObject, clearObject } from "./utils";
 
 /**
  * @description 从use-sync-external-store包的导入方式到下面的引用方式
@@ -291,6 +291,7 @@ export const batchDispatchListener = <S extends PrimitiveState>(
   listenerSet: Set<Listener<S>>,
 ) => {
   listenerSet.forEach(item => {
+    // 这里mapToObject的复制体让外部的订阅使用保持尽量的纯洁与安全性
     item({
       effectState,
       nextState: mapToObject(stateMap),
@@ -374,12 +375,6 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
 
       const { taskDataMap, taskQueueSet } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
 
-      // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
-      (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
-
-      // 防止之前的数据被后续subscribe或者callback中的更新给改动了，这里及时取出保证之前的数据的阶段状态的对应
-      const prevStateTemp = followUpMap(prevState);
-
       batchUpdate(() => {
         if (taskDataMap.size > 0) {
           taskQueueSet.forEach(task => {
@@ -398,7 +393,7 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
          * 它的更新动力只是借助了这里的监听订阅的数据触发驱动而已
          */
         if (listenerSet.size > 0) {
-          batchDispatchListener(prevStateTemp, mapToObject(taskDataMap), stateMap, listenerSet);
+          batchDispatchListener(prevState, mapToObject(taskDataMap), stateMap, listenerSet);
         }
 
         // 同时也顺便把回掉中可能的更新也统一批量处理了
@@ -409,6 +404,9 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
           });
           setStateCallbackStackSet.clear();
         }
+
+        // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备
+        (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
       });
     }));
   }
@@ -427,4 +425,14 @@ export const willUpdatingHandle = <S extends PrimitiveState>(
       prevState.set(key, value);
     });
   }
+};
+
+// prevState同步更进到stateMap
+export const prevStateFollowUpStateMap = <S extends PrimitiveState>(
+  prevState: MapType<S>,
+  stateMap: MapType<S>,
+) => {
+  stateMap.forEach((value, key) => {
+    prevState.set(key, value);
+  });
 };

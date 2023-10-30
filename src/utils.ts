@@ -6,7 +6,8 @@ export const hasOwnProperty = Object.prototype.hasOwnProperty;
  * @description 跟进状态map
  * 相较于直接赋值新值的方式也更快
  * forEach在少量数据情况下较for of略有优势
- * 但是无法承载大数据情况下的优势，所以使用forEach
+ * 但在百万级大数据情况下的略输于for of，
+ * 而一般情况下初始化数据并不会有那么大的场景，所以使用forEach
  */
 export const followUpMap = <K, V>(map: Map<K, V>) => {
   const mapTemp: Map<K, V> = new Map();

@@ -412,27 +412,28 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
   }
 };
 
+// prevState同步更进到stateMap
+export const prevStateFollowUpStateMap = <S extends PrimitiveState>(
+  prevState: MapType<S>,
+  stateMap: MapType<S>,
+  reducerState: S,
+) => {
+  // 防止之前可能有delete删除的方式更新
+  mergeStateKeys(reducerState, stateMap).forEach(key => {
+    prevState.set(key, stateMap.get(key) as ValueOf<S>);
+  });
+};
+
 // 更新之前的处理
 export const willUpdatingHandle = <S extends PrimitiveState>(
   schedulerProcessor: MapType<Scheduler>,
   prevState: MapType<S>,
   stateMap: MapType<S>,
+  reducerState: S,
 ) => {
   if (!schedulerProcessor.get("willUpdating")) {
     schedulerProcessor.set("willUpdating", true);
     // 在更新执行将更新之前的数据状态缓存下拉，以便于subscribe触发监听使用
-    stateMap.forEach((value, key) => {
-      prevState.set(key, value);
-    });
+    prevStateFollowUpStateMap(prevState, stateMap, reducerState);
   }
-};
-
-// prevState同步更进到stateMap
-export const prevStateFollowUpStateMap = <S extends PrimitiveState>(
-  prevState: MapType<S>,
-  stateMap: MapType<S>,
-) => {
-  stateMap.forEach((value, key) => {
-    prevState.set(key, value);
-  });
 };

@@ -115,7 +115,7 @@ export const createStore = <S extends PrimitiveState>(
    * bug原因是react的更新调度机制不满足在微任务中执行的问题，vue中是可以的，后续待优化
    */
   const syncUpdate = (state: State<S> | StateFnType<S>) => {
-    prevStateFollowUpStateMap(prevState, stateMap);
+    prevStateFollowUpStateMap(prevState, stateMap, reducerState);
 
     let stateTemp = state;
     if (typeof state === "function") {
@@ -155,7 +155,7 @@ export const createStore = <S extends PrimitiveState>(
   const setState = (state: State<S> | StateFnType<S>, callback?: SetStateCallback<S>) => {
     // 调度处理器内部的willUpdating需要在更新之前开启，这里不管是否有变化需要更新，
     // 先打开缓存一下prevState方便后续订阅事件的触发执行
-    willUpdatingHandle(schedulerProcessor, prevState, stateMap);
+    willUpdatingHandle(schedulerProcessor, prevState, stateMap, reducerState);
 
     let stateTemp = state;
 
@@ -190,7 +190,7 @@ export const createStore = <S extends PrimitiveState>(
 
   // 重置恢复初始化状态数据
   const restore = () => {
-    prevStateFollowUpStateMap(prevState, stateMap);
+    prevStateFollowUpStateMap(prevState, stateMap, reducerState);
 
     handleReducerState(reducerState, initialState);
 
@@ -253,7 +253,7 @@ export const createStore = <S extends PrimitiveState>(
 
   // 单个属性数据更新
   const singlePropUpdate = (_: S, key: keyof S, val: ValueOf<S>) => {
-    willUpdatingHandle(schedulerProcessor, prevState, stateMap);
+    willUpdatingHandle(schedulerProcessor, prevState, stateMap, reducerState);
     pushTask(
       key, val, stateMap, schedulerProcessor, optionsTemp.unmountRestore, reducerState,
       storeStateRefSet, storeMap, stateRestoreAccomplishedMap, initialState,

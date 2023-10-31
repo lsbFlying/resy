@@ -554,20 +554,17 @@ store.subscribe(() => {
 
 #### empty keys
 <details>
-<summary>empty keys subscribe state keys</summary>
+<summary>empty state keys</summary>
 You can also not add an array of monitoring subscription data keys,
 Both empty keys and no keys mean listening subscriptions to changes in the entire store data.
 </details>
 
 ```tsx
-// empty keys
 store.subscribe(() => {
   // ... to do anything
 }, []);
-```
-
-#### no keys
-```tsx
+// [] or no state keys is equal
+// no state keys
 store.subscribe(() => {
   // ... to do anything
 });
@@ -1014,8 +1011,9 @@ function App() {
 <details>
 <summary>timing of use</summary>
 combined with the previous introduction to the unmountRestore configuration items, to use the.
-As an author, I actually don't think much of the actual usage scenario.
-What I want more is that I don't want createStore to make the configuration item immutable because of the execution of static code,
+in fact, I don't think much of the actual usage scenario.
+What I want more is that I don't want createStore to make the configuration item immutable
+because of the execution of static code,
 which will cause an inexpressible panic in the future,
 although I'm not sure what kind of scenario causes what kind of problem.
 </details>

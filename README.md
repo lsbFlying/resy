@@ -1,6 +1,6 @@
-<div style="text-align: center">
+<div>
 <img src="./resy-logo.svg" alt="resy">
-<h3>A simple react state manager</h3>
+<h3>react state manager</h3>
 <h4>Support React Native、Mini Apps (such as taro, rax, remax etc.)</h4>
 
 [![GitHub license](https://img.shields.io/github/license/lsbFlying/resy?style=flat-square)](https://github.com/lsbFlying/resy/blob/master/LICENSE)
@@ -298,7 +298,7 @@ function App() {
 ##### Invalid update
 <details>
 <summary>
-chain update
+not supported chain update
 </summary>
 direct attribute chained updates are not allowed,
 because resy only maps the data attributes of the first layer.

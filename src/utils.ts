@@ -63,6 +63,10 @@ export const objectToMap = <S extends PrimitiveState>(object: S) => Object.keys(
  * 这样产生的冗余内存在一个系统中可能占用的内存是很可观的，优化这一部分内存占用是有必要的。
  * 总而言之，性能与内存就像物理学中的P=FV，对应到现实世界中就像力量与速度的结合，肌肉大则力量大但是速度降低，反之速度快但肌肉变小但是力量就会弱
  * 我们寻求的是一个FV的最大或者最综合全面的需求考虑，所以目前的考虑即是如此，后续有更优解再进一步加强
+ *
+ * 🌟另外clearObject这个逻辑操作本身是resy所必须要的执行，同时下面对于clearObject的实现方式是最快的
+ * 即使相对于map的clear操作或者map的遍历delete操作也是最快的，这也侧面体现了原生的某些方法的内部实现比如map.clear
+ * 可能也并非是最佳实现方式，至少从速率这一方面来看即是如此
  */
 export const clearObject = <S extends PrimitiveState>(object: S) => {
   for (const key in object) {

@@ -218,20 +218,30 @@ export const connectStore = <S extends PrimitiveState>(
 
     return () => {
       singlePropStoreChangeSet.delete(onOriginStateChange);
-
       storeStateRefSet.delete(storeRefIncreaseItem);
-      if (!storeStateRefSet.size) {
-        // 打开开关执行刷新恢复数据
-        stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", null);
-        stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", null);
-        unmountRestoreHandle(
-          unmountRestore, reducerState, stateMap, storeStateRefSet,
-          stateRestoreAccomplishedMap, initialState,
-        );
-      }
 
-      // 释放内存
-      if (!singlePropStoreChangeSet.size) storeMap.delete(key);
+      /**
+       * @description 为防止react的strictMode严格模式带来的两次渲染导致effect的return的注册函数会在中间执行一次导致storeMap释放内存
+       * 中间释放内存会移除之前的storeMapValue然后后续更新或者渲染会重新生成新的storeMapValue
+       * 而这导致updater函数中访问的singlePropStoreChangeSet是上一次生成旧的storeMapValue时候的singlePropStoreChangeSet地址
+       * 🌟而旧的singlePropStoreChangeSet早就被删除清空，导致不会有更新能力 ————（有点复杂有点绕，注意理解）
+       * 所以这里需要做一个微任务执行，让在执行卸载释放内存以及unmountRestore等一系列操作时有一个经历double-effect的缓冲执行时机
+       * 此时微任务中再执行singlePropStoreChangeSet以及storeStateRefSet在React.StrictMode情况下是有值的了，
+       * 因为double-effect第二次的执行会再次执行subscribeOriginState函数
+       */
+      Promise.resolve().then(() => {
+        if (!storeStateRefSet.size) {
+          // 打开开关执行刷新恢复数据
+          stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", null);
+          stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", null);
+          unmountRestoreHandle(
+            unmountRestore, reducerState, stateMap, storeStateRefSet,
+            stateRestoreAccomplishedMap, initialState,
+          );
+        }
+        // 释放内存
+        if (!singlePropStoreChangeSet.size) storeMap.delete(key);
+      });
     };
   });
 

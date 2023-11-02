@@ -66,6 +66,8 @@ resy requires the version of React v >= 16.8
 | setState        | Update data                                                  |
 | syncUpdate      | Synchronously update data                                    |
 
+### Detailed introduction of api
+
 <details>
 <summary>createStore</summary>
 
@@ -597,6 +599,8 @@ function App() {
 | restore         | Reset data of store, with re-render effect                   |
 | useConciseState | Concise version of useState                                  |
 | setOptions      | Set the options parameter of createStore                     |
+
+### Detailed introduction of api
 
 <details>
 <summary>subscribe</summary>

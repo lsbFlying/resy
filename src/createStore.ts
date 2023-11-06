@@ -115,7 +115,7 @@ export const createStore = <S extends PrimitiveState>(
    * bug原因是react的更新调度机制不满足在微任务中执行的问题，vue中是可以的，后续待优化
    */
   const syncUpdate = (state: State<S> | StateFnType<S>) => {
-    prevStateFollowUpStateMap(prevState, stateMap, reducerState);
+    prevStateFollowUpStateMap(prevState, stateMap);
 
     let stateTemp = state;
     if (typeof state === "function") {
@@ -130,11 +130,11 @@ export const createStore = <S extends PrimitiveState>(
       const effectState: Partial<S> = {};
 
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
-        const val = (stateTemp as Partial<S> | S)[key];
+        const value = (stateTemp as Partial<S> | S)[key];
 
-        if (!Object.is(val, stateMap.get(key))) {
-          stateMap.set(key, val);
-          effectState[key as keyof S] = val;
+        if (!Object.is(value, stateMap.get(key))) {
+          stateMap.set(key, value);
+          effectState[key as keyof S] = value;
           // 更新
           (
             connectStore(
@@ -155,7 +155,7 @@ export const createStore = <S extends PrimitiveState>(
   const setState = (state: State<S> | StateFnType<S>, callback?: SetStateCallback<S>) => {
     // 调度处理器内部的willUpdating需要在更新之前开启，这里不管是否有变化需要更新，
     // 先打开缓存一下prevState方便后续订阅事件的触发执行
-    willUpdatingHandle(schedulerProcessor, prevState, stateMap, reducerState);
+    willUpdatingHandle(schedulerProcessor, prevState, stateMap);
 
     let stateTemp = state;
 
@@ -190,7 +190,7 @@ export const createStore = <S extends PrimitiveState>(
 
   // 重置恢复初始化状态数据
   const restore = () => {
-    prevStateFollowUpStateMap(prevState, stateMap, reducerState);
+    prevStateFollowUpStateMap(prevState, stateMap);
 
     handleReducerState(reducerState, initialState);
 
@@ -252,11 +252,11 @@ export const createStore = <S extends PrimitiveState>(
   };
 
   // 单个属性数据更新
-  const singlePropUpdate = (_: S, key: keyof S, val: ValueOf<S>) => {
-    willUpdatingHandle(schedulerProcessor, prevState, stateMap, reducerState);
+  const singlePropUpdate = (key: keyof S, value: ValueOf<S>, isDelete?: true) => {
+    willUpdatingHandle(schedulerProcessor, prevState, stateMap);
     pushTask(
-      key, val, stateMap, schedulerProcessor, optionsTemp.unmountRestore, reducerState,
-      storeStateRefSet, storeMap, stateRestoreAccomplishedMap, initialState,
+      key, value, stateMap, schedulerProcessor, optionsTemp.unmountRestore, reducerState,
+      storeStateRefSet, storeMap, stateRestoreAccomplishedMap, initialState, isDelete,
     );
     finallyBatchHandle(
       schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackSet,
@@ -286,14 +286,14 @@ export const createStore = <S extends PrimitiveState>(
 
       return externalMap.get(key as keyof ExternalMapValue<S>) || stateMap.get(key);
     },
-    set: singlePropUpdate,
+    set: (_: S, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
     // delete 也会起到更新作用
-    deleteProperty: (_: S, key: keyof S) => singlePropUpdate(_, key, undefined as ValueOf<S>),
+    deleteProperty: (_: S, key: keyof S) => singlePropUpdate(key, undefined as ValueOf<S>, true),
   } as any as ProxyHandler<StoreMap<S>>) as any as Store<S>;
 
   // 给useStore的驱动更新代理
   const storeProxy = new Proxy(storeMap, {
-    get(_, key: keyof S) {
+    get: (_, key: keyof S) => {
       if (typeof stateMap.get(key) === "function") {
         // 也做一个函数数据hook的调用，给予函数数据更新渲染的能力
         connectHookUse(
@@ -329,7 +329,7 @@ export const createStore = <S extends PrimitiveState>(
    * 而使用这个额外的store来读取数据可以具有追溯性得到最新的数据状态
    */
   const conciseExtraStore = new Proxy(storeMap, {
-    get(_: StoreMap<S>, key: keyof S, receiver: any) {
+    get: (_: StoreMap<S>, key: keyof S, receiver: any) => {
       protoPointStoreErrorHandle(receiver, conciseExtraStore);
 
       if (typeof stateMap.get(key) === "function") {
@@ -338,8 +338,8 @@ export const createStore = <S extends PrimitiveState>(
 
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || stateMap.get(key);
     },
-    set: singlePropUpdate,
-    deleteProperty: (_: S, key: keyof S) => singlePropUpdate(_, key, undefined as ValueOf<S>),
+    set: (_: S, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
+    deleteProperty: (_: S, key: keyof S) => singlePropUpdate(key, undefined as ValueOf<S>, true),
   } as any as ProxyHandler<StoreMap<S>>) as any as Store<S>;
 
   conciseExternalMap.set("store", conciseExtraStore);
@@ -353,7 +353,7 @@ export const createStore = <S extends PrimitiveState>(
    * 所以自然也就不像具备全局性的createStore那样存在setOptions方法
    */
   const conciseStoreProxy = new Proxy(storeMap, {
-    get(_, key: keyof S) {
+    get: (_, key: keyof S) => {
       if (typeof stateMap.get(key) === "function") {
         // 也做一个函数数据hook的调用，给予函数数据更新渲染的能力
         connectHookUse(

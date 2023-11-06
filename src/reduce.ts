@@ -34,8 +34,13 @@ const storeStateRefSetMark = (storeStateRefSet: Set<number>) => {
 
 /**
  * @description 获取目前所有的keys
- * 防止store可能delete属性导致属性个数小于原始属性个数
- * 这样会导致数据没有重置处理完全，所以兼并处理
+ * 🌟这里需要合并处理key的问题，因为可能存在delete key的情况
+ * 这会导致字段属性数据不统一协调，存在缺失导致数据变化没有完全捕捉到
+ * 而restore回复到原始数据状态需要捕捉到所有的状态key然后才可以捕捉到所有的value变化
+ * 包括initialRestore或者unmountRestore都是如此
+ * 所以这里需要使用merge合并key进行数据属性以及状态的合并捕捉处理
+ * 这里也不用担心后续增加的key如果被删除的情况，因为每一次的delete操作也属于更新操作
+ * 并且会有相应的delete key的完善更进，所以这里的处理足以完成回复到初始状态的功能
  */
 export const mergeStateKeys = <S extends PrimitiveState>(
   reducerState: S,
@@ -313,7 +318,7 @@ export const batchDispatchListener = <S extends PrimitiveState>(
 // 更新任务添加入栈
 export const pushTask = <S extends PrimitiveState>(
   key: keyof S,
-  val: ValueOf<S>,
+  value: ValueOf<S>,
   stateMap: MapType<S>,
   schedulerProcessor: MapType<Scheduler>,
   unmountRestore: boolean,
@@ -322,12 +327,13 @@ export const pushTask = <S extends PrimitiveState>(
   storeMap: StoreMap<S>,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   initialState?: InitialStateType<S>,
+  isDelete?: true,
 ) => {
   /**
    * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更
    * 同时使用Object.is避免一些特殊情况，虽然实际业务上设置值为NaN/+0/-0的情况并不多见
    */
-  if (!Object.is(val, stateMap.get(key))) {
+  if (!Object.is(value, stateMap.get(key))) {
     /**
      * 需要在入栈前就将每一步结果累计出来
      * 比如遇到连续的数据操作就需要如此
@@ -338,11 +344,11 @@ export const pushTask = <S extends PrimitiveState>(
      * 加了三次，如果count初始化值是0，那么理论上结果需要是3
      * 同时这一步也是为了配合getOriginState，使得getOriginState可以获得最新值
      */
-    stateMap.set(key, val);
+    !isDelete ? stateMap.set(key, value) : stateMap.delete(key);
 
     (schedulerProcessor.get("pushTask") as Scheduler<S>["pushTask"])(
       key,
-      val,
+      value,
       connectStore(
         key, unmountRestore, reducerState, stateMap, storeStateRefSet,
         storeMap, stateRestoreAccomplishedMap, initialState,
@@ -426,11 +432,11 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
 export const prevStateFollowUpStateMap = <S extends PrimitiveState>(
   prevState: MapType<S>,
   stateMap: MapType<S>,
-  reducerState: S,
 ) => {
-  // 防止之前可能有delete删除的方式更新
-  mergeStateKeys(reducerState, stateMap).forEach(key => {
-    prevState.set(key, stateMap.get(key) as ValueOf<S>);
+  // 因为key的变化可能被删除，或者一开始不存在而后添加，所以这里先清空再设置
+  prevState.clear();
+  stateMap.forEach((value, key) => {
+    prevState.set(key, value);
   });
 };
 
@@ -439,11 +445,10 @@ export const willUpdatingHandle = <S extends PrimitiveState>(
   schedulerProcessor: MapType<Scheduler>,
   prevState: MapType<S>,
   stateMap: MapType<S>,
-  reducerState: S,
 ) => {
   if (!schedulerProcessor.get("willUpdating")) {
     schedulerProcessor.set("willUpdating", true);
-    // 在更新执行将更新之前的数据状态缓存下拉，以便于subscribe触发监听使用
-    prevStateFollowUpStateMap(prevState, stateMap, reducerState);
+    // 在更新执行将更新之前的数据状态缓存一下，以便于subscribe触发监听使用
+    prevStateFollowUpStateMap(prevState, stateMap);
   }
 };

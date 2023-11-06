@@ -35,10 +35,10 @@ const scheduler = <S extends PrimitiveState = {}>() => {
     "pushTask",
     (
       key: keyof S,
-      val: ValueOf<S>,
+      value: ValueOf<S>,
       task: Callback,
     ) => {
-      taskDataMap.set(key, val);
+      taskDataMap.set(key, value);
       taskQueueSet.add(task);
     },
   );

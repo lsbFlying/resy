@@ -245,7 +245,7 @@ export interface Scheduler<S extends PrimitiveState = {}> {
   // 将要更新执行的标识
   willUpdating: true | null;
   // 入栈更新数据的key/value以及更新任函数务队列
-  pushTask(key: keyof S, val: ValueOf<S>, task: Callback): void;
+  pushTask(key: keyof S, value: ValueOf<S>, task: Callback): void;
   // 冲刷任务数据与任务队列
   flush(): void;
   // 获取当前一轮的更新任务及数据

@@ -102,8 +102,8 @@ export const createStore = <S extends PrimitiveState>(
 
   // 处理view连接store、以及获取最新state数据的相关处理Map
   const viewConnectStoreMap = genViewConnectStoreMap(
-    optionsTemp.unmountRestore, reducerState, stateMap,
-    storeStateRefSet, stateRestoreAccomplishedMap, initialState,
+    optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
+    stateRestoreAccomplishedMap, schedulerProcessor, initialState,
   );
 
   // 数据存储容器storeMap
@@ -138,8 +138,8 @@ export const createStore = <S extends PrimitiveState>(
           // 更新
           (
             connectStore(
-              key, optionsTemp.unmountRestore, reducerState, stateMap,
-              storeStateRefSet, storeMap, stateRestoreAccomplishedMap,
+              key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
+              storeMap, stateRestoreAccomplishedMap, schedulerProcessor,
             ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
           )();
         }
@@ -209,8 +209,8 @@ export const createStore = <S extends PrimitiveState>(
           // 更新
           (
             connectStore(
-              key, optionsTemp.unmountRestore, reducerState, stateMap,
-              storeStateRefSet, storeMap, stateRestoreAccomplishedMap,
+              key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
+              storeMap, stateRestoreAccomplishedMap, schedulerProcessor,
             ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
           )();
         }
@@ -298,13 +298,13 @@ export const createStore = <S extends PrimitiveState>(
         // 也做一个函数数据hook的调用，给予函数数据更新渲染的能力
         connectHookUse(
           key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
-          storeMap, stateRestoreAccomplishedMap, initialState,
+          storeMap, stateRestoreAccomplishedMap, schedulerProcessor, initialState,
         );
         return (stateMap.get(key) as AnyFn).bind(store);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
         key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
-        storeMap, stateRestoreAccomplishedMap, initialState,
+        storeMap, stateRestoreAccomplishedMap, schedulerProcessor, initialState,
       );
     },
   } as ProxyHandler<StoreMap<S>>);
@@ -358,13 +358,13 @@ export const createStore = <S extends PrimitiveState>(
         // 也做一个函数数据hook的调用，给予函数数据更新渲染的能力
         connectHookUse(
           key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
-          storeMap, stateRestoreAccomplishedMap, initialState,
+          storeMap, stateRestoreAccomplishedMap, schedulerProcessor, initialState,
         );
         return (stateMap.get(key) as AnyFn).bind(store);
       }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || connectHookUse(
         key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
-        storeMap, stateRestoreAccomplishedMap, initialState,
+        storeMap, stateRestoreAccomplishedMap, schedulerProcessor, initialState,
       );
     },
   } as ProxyHandler<StoreMap<S>>);

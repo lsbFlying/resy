@@ -253,6 +253,8 @@ export interface Scheduler<S extends PrimitiveState = {}> {
     taskDataMap: MapType<S>;
     taskQueueSet: Set<Callback>;
   };
+  // 延迟useEffect的return 注册接触函数Destructor执行的标识
+  deferDestructorFlag: Promise<void> | null;
 }
 
 /**

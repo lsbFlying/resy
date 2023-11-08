@@ -30,6 +30,7 @@ const scheduler = <S extends PrimitiveState = {}>() => {
 
   schedulerProcessor.set("isUpdating", null);
   schedulerProcessor.set("willUpdating", null);
+  schedulerProcessor.set("deferDestructorFlag", null);
 
   schedulerProcessor.set(
     "pushTask",

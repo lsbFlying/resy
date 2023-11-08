@@ -268,11 +268,12 @@ export const effectedHandle = <S extends PrimitiveState, P extends PrimitiveStat
       : unsubscribe.forEach(item => {
         item();
       });
-    viewConnectStoreSet.forEach(unsubscribe => {
-      unsubscribe();
+    viewConnectStoreSet.forEach(unsubscribeItem => {
+      unsubscribeItem();
     });
-    innerUseStateMapSet.clear();
-    // 需要在最后执行，等待storeStateRefSet卸载完成
-    viewRestoreHandle("viewUnmountRestore", stores);
+    Promise.resolve().then(() => {
+      // 需要在最后执行，等待storeStateRefSet卸载完成
+      viewRestoreHandle("viewUnmountRestore", stores);
+    });
   };
 };

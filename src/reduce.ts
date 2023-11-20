@@ -459,11 +459,13 @@ export const prevStateFollowUpStateMap = <S extends PrimitiveState>(
 
 // 更新之前的处理
 export const willUpdatingHandle = <S extends PrimitiveState>(
+  listenerSet: Set<Listener<S>>,
   schedulerProcessor: MapType<Scheduler>,
   prevState: MapType<S>,
   stateMap: MapType<S>,
 ) => {
-  if (!schedulerProcessor.get("willUpdating")) {
+  // 若后续有订阅事件则缓存一下prevState
+  if (listenerSet.size > 0 && !schedulerProcessor.get("willUpdating")) {
     schedulerProcessor.set("willUpdating", true);
     // 在更新执行将更新之前的数据状态缓存一下，以便于subscribe触发监听使用
     prevStateFollowUpStateMap(prevState, stateMap);

@@ -153,9 +153,7 @@ export const createStore = <S extends PrimitiveState>(
 
   // 可对象数据更新的函数
   const setState = (state: State<S> | StateFnType<S>, callback?: SetStateCallback<S>) => {
-    // 调度处理器内部的willUpdating需要在更新之前开启，这里不管是否有变化需要更新，
-    // 先打开缓存一下prevState方便后续订阅事件的触发执行
-    willUpdatingHandle(schedulerProcessor, prevState, stateMap);
+    willUpdatingHandle(listenerSet, schedulerProcessor, prevState, stateMap);
 
     let stateTemp = state;
 
@@ -253,7 +251,7 @@ export const createStore = <S extends PrimitiveState>(
 
   // 单个属性数据更新
   const singlePropUpdate = (key: keyof S, value: ValueOf<S>, isDelete?: true) => {
-    willUpdatingHandle(schedulerProcessor, prevState, stateMap);
+    willUpdatingHandle(listenerSet, schedulerProcessor, prevState, stateMap);
     pushTask(
       key, value, stateMap, schedulerProcessor, optionsTemp.unmountRestore, reducerState,
       storeStateRefSet, storeMap, stateRestoreAccomplishedMap, initialState, isDelete,

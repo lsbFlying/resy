@@ -69,8 +69,9 @@ export const createStore = <S extends PrimitiveState>(
   // 当前store的调度处理器
   const schedulerProcessor = scheduler();
 
-  // 对应整个store的数据引用标记的set集合
-  const storeStateRefSet = new Set<number>();
+  // 对应整个store的数据引用标记的计数器
+  // eslint-disable-next-line
+  let storeStateRefCounter = 0;
   /**
    * @description storeStateRef的引用清空的状态对应了整个store的数据状态的恢复到初始化的情况，
    * 这里是恢复初始化成功与否的开关标识，以防止代码多次执行重复的动作，减轻冗余负担
@@ -102,7 +103,7 @@ export const createStore = <S extends PrimitiveState>(
 
   // 处理view连接store、以及获取最新state数据的相关处理Map
   const viewConnectStoreMap = genViewConnectStoreMap(
-    optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
+    optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounter,
     stateRestoreAccomplishedMap, schedulerProcessor, initialState,
   );
 
@@ -138,7 +139,7 @@ export const createStore = <S extends PrimitiveState>(
           // 更新
           (
             connectStore(
-              key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
+              key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounter,
               storeMap, stateRestoreAccomplishedMap, schedulerProcessor,
             ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
           )();
@@ -168,7 +169,7 @@ export const createStore = <S extends PrimitiveState>(
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         pushTask(
           key, (stateTemp as S)[key], stateMap, schedulerProcessor, optionsTemp.unmountRestore,
-          reducerState, storeStateRefSet, storeMap, stateRestoreAccomplishedMap, initialState,
+          reducerState, storeStateRefCounter, storeMap, stateRestoreAccomplishedMap, initialState,
         );
       });
     }
@@ -207,7 +208,7 @@ export const createStore = <S extends PrimitiveState>(
           // 更新
           (
             connectStore(
-              key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
+              key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounter,
               storeMap, stateRestoreAccomplishedMap, schedulerProcessor,
             ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
           )();
@@ -254,7 +255,7 @@ export const createStore = <S extends PrimitiveState>(
     willUpdatingHandle(schedulerProcessor, prevState, stateMap);
     pushTask(
       key, value, stateMap, schedulerProcessor, optionsTemp.unmountRestore, reducerState,
-      storeStateRefSet, storeMap, stateRestoreAccomplishedMap, initialState, isDelete,
+      storeStateRefCounter, storeMap, stateRestoreAccomplishedMap, initialState, isDelete,
     );
     finallyBatchHandle(
       schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackSet,
@@ -295,13 +296,13 @@ export const createStore = <S extends PrimitiveState>(
       if (typeof stateMap.get(key) === "function") {
         // 也做一个函数数据hook的调用，给予函数数据更新渲染的能力
         connectHookUse(
-          key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
+          key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounter,
           storeMap, stateRestoreAccomplishedMap, schedulerProcessor, initialState,
         );
         return (stateMap.get(key) as AnyFn).bind(store);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
-        key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
+        key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounter,
         storeMap, stateRestoreAccomplishedMap, schedulerProcessor, initialState,
       );
     },
@@ -355,13 +356,13 @@ export const createStore = <S extends PrimitiveState>(
       if (typeof stateMap.get(key) === "function") {
         // 也做一个函数数据hook的调用，给予函数数据更新渲染的能力
         connectHookUse(
-          key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
+          key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounter,
           storeMap, stateRestoreAccomplishedMap, schedulerProcessor, initialState,
         );
         return (stateMap.get(key) as AnyFn).bind(store);
       }
       return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || connectHookUse(
-        key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefSet,
+        key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounter,
         storeMap, stateRestoreAccomplishedMap, schedulerProcessor, initialState,
       );
     },

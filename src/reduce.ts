@@ -18,21 +18,6 @@ import { hasOwnProperty, mapToObject, clearObject } from "./utils";
 const { useSyncExternalStore } = useSyncExternalStoreExports;
 
 /**
- * @description storeStateRefSet自增处理
- * view连接store内部数据引用的自增指针处理
- */
-const storeStateRefSetMark = (storeStateRefSet: Set<number>) => {
-  const storeStateRefSetArray = [...storeStateRefSet];
-  // 原始方式比at(-1)快
-  const lastTemp = storeStateRefSetArray[storeStateRefSetArray.length - 1] as (number | undefined);
-  // 索引自增
-  const lastItem = typeof lastTemp === "number" ? lastTemp + 1 : 0;
-  // 做一个引用占位符，表示有一处引用，便于最后初始化逻辑执行的size判别
-  storeStateRefSet.add(lastItem);
-  return lastItem;
-};
-
-/**
  * @description 获取目前所有的keys
  * 🌟这里需要合并处理key的问题，因为可能存在delete key的情况
  * 这会导致字段属性数据不统一协调，存在缺失导致数据变化没有完全捕捉到
@@ -95,7 +80,7 @@ const restoreHandle = <S extends PrimitiveState>(
 
 /**
  * 初始化渲染恢复重置数据处理
- * @description 通过storeStateRefSet判断当前数据是否还有组件引用
+ * @description 通过storeStateRefCounter判断当前数据是否还有组件引用
  * 只要还有一个组件在引用当前数据，都不会重置数据，
  * 因为当前还在业务逻辑中，不属于完整的卸载
  * 完整的卸载周期对应表达的是整个store的使用周期
@@ -113,13 +98,13 @@ const unmountRestoreHandle = <S extends PrimitiveState>(
   unmountRestore: boolean,
   reducerState: S,
   stateMap: MapType<S>,
-  storeStateRefSet: Set<number>,
+  storeStateRefCounter: number,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   initialState?: InitialStateType<S>,
 ) => {
   if (
     unmountRestore
-    && !storeStateRefSet.size
+    && !storeStateRefCounter
     && !stateRestoreAccomplishedMap.get("unmountRestoreAccomplished")
   ) {
     stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", true);
@@ -131,13 +116,13 @@ const unmountRestoreHandle = <S extends PrimitiveState>(
 const initialStateFnRestoreHandle = <S extends PrimitiveState>(
   reducerState: S,
   stateMap: MapType<S>,
-  storeStateRefSet: Set<number>,
+  storeStateRefCounter: number,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   initialState?: InitialStateType<S>,
 ) => {
   if (
     typeof initialState === "function"
-    && !storeStateRefSet.size
+    && !storeStateRefCounter
     && !stateRestoreAccomplishedMap.get("initialStateFnRestoreAccomplished")
   ) {
     stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", true);
@@ -150,7 +135,7 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
   unmountRestore: boolean,
   reducerState: S,
   stateMap: MapType<S>,
-  storeStateRefSet: Set<number>,
+  storeStateRefCounter: number,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   schedulerProcessor: MapType<Scheduler>,
   initialState?: InitialStateType<S>,
@@ -159,24 +144,26 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
   viewConnectStoreMap.set("getStateMap", stateMap);
   viewConnectStoreMap.set("viewUnmountRestore", () => {
     unmountRestoreHandle(
-      unmountRestore, reducerState, stateMap, storeStateRefSet,
+      unmountRestore, reducerState, stateMap, storeStateRefCounter,
       stateRestoreAccomplishedMap, initialState,
     );
   });
   viewConnectStoreMap.set("viewInitialStateFnRestore", () => {
     initialStateFnRestoreHandle(
-      reducerState, stateMap, storeStateRefSet,
+      reducerState, stateMap, storeStateRefCounter,
       stateRestoreAccomplishedMap, initialState,
     );
   });
   viewConnectStoreMap.set("viewConnectStore", () => {
-    const storeRefIncreaseItem = storeStateRefSetMark(storeStateRefSet);
+    // eslint-disable-next-line no-param-reassign
+    ++storeStateRefCounter;
     return () => {
-      storeStateRefSet.delete(storeRefIncreaseItem);
+      // eslint-disable-next-line no-param-reassign
+      --storeStateRefCounter;
       if (!schedulerProcessor.get("deferDestructorFlag")) {
         schedulerProcessor.set("deferDestructorFlag", Promise.resolve().then(() => {
           schedulerProcessor.set("deferDestructorFlag", null);
-          if (!storeStateRefSet.size) {
+          if (!storeStateRefCounter) {
             stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", null);
             stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", null);
           }
@@ -200,7 +187,7 @@ export const connectStore = <S extends PrimitiveState>(
   unmountRestore: boolean,
   reducerState: S,
   stateMap: MapType<S>,
-  storeStateRefSet: Set<number>,
+  storeStateRefCounter: number,
   storeMap: StoreMap<S>,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   schedulerProcessor: MapType<Scheduler>,
@@ -226,11 +213,13 @@ export const connectStore = <S extends PrimitiveState>(
      */
     singlePropStoreChangeSet.add(onOriginStateChange);
 
-    const storeRefIncreaseItem = storeStateRefSetMark(storeStateRefSet);
+    // eslint-disable-next-line no-param-reassign
+    ++storeStateRefCounter;
 
     return () => {
       singlePropStoreChangeSet.delete(onOriginStateChange);
-      storeStateRefSet.delete(storeRefIncreaseItem);
+      // eslint-disable-next-line no-param-reassign
+      --storeStateRefCounter;
 
       /**
        * @description 为防止react的StrictMode严格模式带来的两次渲染导致effect的return的注册函数
@@ -239,23 +228,23 @@ export const connectStore = <S extends PrimitiveState>(
        * 而这导致updater函数中访问的singlePropStoreChangeSet是上一次
        * 生成旧的storeMapValue时候的singlePropStoreChangeSet地址
        * 🌟而旧的singlePropStoreChangeSet早就被删除清空，导致不会有更新能力 ————（有点复杂有点绕，注意理解）
-       * 同时storeStateRefSet的条件判断执行如果在StrictMode下两次渲染也是不合理的
+       * 同时storeStateRefCounter的条件判断执行如果在StrictMode下两次渲染也是不合理的
        * 同样困原因扰的还有view的viewConnectStore的Destructor的过渡执行
        * 以及view中effectedHandle的Destructor的过渡执行
        * 所以其余两处同样需要defer延迟处理
        *
        * 这里通过一个微任务执行，让在执行卸载释放内存以及unmountRestore等一系列操作时有一个经历double-effect的缓冲执行时机
-       * 此时微任务中再执行singlePropStoreChangeSet以及storeStateRefSet在React.StrictMode情况下是有值的了，
+       * 此时微任务中再执行singlePropStoreChangeSet以及storeStateRefCounter在React.StrictMode情况下是有值的了，
        */
       if (!schedulerProcessor.get("deferDestructorFlag")) {
         schedulerProcessor.set("deferDestructorFlag", Promise.resolve().then(() => {
           schedulerProcessor.set("deferDestructorFlag", null);
-          if (!storeStateRefSet.size) {
+          if (!storeStateRefCounter) {
             // 打开开关执行刷新恢复数据
             stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", null);
             stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", null);
             unmountRestoreHandle(
-              unmountRestore, reducerState, stateMap, storeStateRefSet,
+              unmountRestore, reducerState, stateMap, storeStateRefCounter,
               stateRestoreAccomplishedMap, initialState,
             );
           }
@@ -296,7 +285,7 @@ export const connectHookUse = <S extends PrimitiveState>(
   unmountRestore: boolean,
   reducerState: S,
   stateMap: MapType<S>,
-  storeStateRefSet: Set<number>,
+  storeStateRefCounter: number,
   storeMap: StoreMap<S>,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   schedulerProcessor: MapType<Scheduler>,
@@ -304,12 +293,12 @@ export const connectHookUse = <S extends PrimitiveState>(
 ) => {
   // 如果initialState是函数则强制执行刷新恢复的逻辑，initialState是函数的情况下权重高于unmountRestore
   initialStateFnRestoreHandle(
-    reducerState, stateMap, storeStateRefSet,
+    reducerState, stateMap, storeStateRefCounter,
     stateRestoreAccomplishedMap, initialState,
   );
   return (
     connectStore(
-      key, unmountRestore, reducerState, stateMap, storeStateRefSet,
+      key, unmountRestore, reducerState, stateMap, storeStateRefCounter,
       storeMap, stateRestoreAccomplishedMap, schedulerProcessor, initialState,
     ).get(key)!.get("useOriginState") as StoreMapValueType<S>["useOriginState"]
   )();
@@ -340,7 +329,7 @@ export const pushTask = <S extends PrimitiveState>(
   schedulerProcessor: MapType<Scheduler>,
   unmountRestore: boolean,
   reducerState: S,
-  storeStateRefSet: Set<number>,
+  storeStateRefCounter: number,
   storeMap: StoreMap<S>,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   initialState?: InitialStateType<S>,
@@ -367,7 +356,7 @@ export const pushTask = <S extends PrimitiveState>(
       key,
       value,
       connectStore(
-        key, unmountRestore, reducerState, stateMap, storeStateRefSet,
+        key, unmountRestore, reducerState, stateMap, storeStateRefCounter,
         storeMap, stateRestoreAccomplishedMap, schedulerProcessor, initialState,
       ).get(key)!.get("updater") as StoreMapValueType<S>["updater"],
     );

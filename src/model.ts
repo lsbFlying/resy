@@ -54,7 +54,7 @@ export type Listener<S extends PrimitiveState> = (data: ListenerParams<S>) => vo
  * @description StoreViewMap的数据值类型，作为view这个api的核心Map接口类型
  * 具备处理store的重置数据、以及获取最新state数据等相关处理功能
  */
-export interface StoreViewMapValue<S extends PrimitiveState> {
+export type StoreViewMapValue<S extends PrimitiveState> = {
   // store内部的stateMap数据对象
   getStateMap: MapType<S>;
   // view卸载检查重置数据
@@ -63,7 +63,7 @@ export interface StoreViewMapValue<S extends PrimitiveState> {
   viewInitialStateFnRestore: Callback;
   // view的props数据使用方式的数据生命周期与store关联同步
   viewConnectStore: () => Unsubscribe;
-}
+};
 
 // 供view使用的核心连接容器Map，包括处理内部stateMap数据以及重置初始化数据的方法
 export type StoreViewMapType<S extends PrimitiveState> = MapType<StoreViewMapValue<S>>;
@@ -239,7 +239,7 @@ export type MapStateToProps<S extends PrimitiveState, P extends PrimitiveState =
  * 后来发现是多余不必要的，因为本身回掉Set在遍历执行的过程中即使
  * 内部再有回掉执行，也会放在Set后续尾部调用，所以这里是天然直接遍历即可
  */
-export interface Scheduler<S extends PrimitiveState = {}> {
+export type Scheduler<S extends PrimitiveState = {}> = {
   // 更新进行中
   isUpdating: Promise<void> | null;
   // 将要更新执行的标识
@@ -255,7 +255,7 @@ export interface Scheduler<S extends PrimitiveState = {}> {
   };
   // 延迟useEffect的return 注册接触函数Destructor执行的标识
   deferDestructorFlag: Promise<void> | null;
-}
+};
 
 /**
  * @description createStore该API第二个参数配置项

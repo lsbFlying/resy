@@ -95,7 +95,7 @@ export const initialStateHandle = <S extends PrimitiveState>(
   innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>>,
   stores?: Store<S> | Stores<S>,
 ) => {
-  // 在最开始执行，赶在storeStateRefSet加载之前
+  // 在最开始执行，赶在storeStateRefCounter加载之前
   viewRestoreHandle("viewInitialStateFnRestore", stores);
   // 需要使用getState获取store内部的即时最新数据值（默认无store，同时默认兼容处理多store的返回情况）
   const stateMap: ViewStateMapType<S> = getLatestStateMap(stores) as MapType<S>;
@@ -149,7 +149,7 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
 
   if (singleStore) {
     innerUseStateMapSet.forEach(() => {
-      // 将view关联到store内部的storeStateRefSet，进行数据生命周期的同步
+      // 将view关联到store内部的storeStateRefCounter，进行数据生命周期的同步
       viewConnectStoreSet.add(
         (
           (
@@ -184,7 +184,6 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
       map,
     ) => {
       (map.get(storesKey) as Set<keyof S>).forEach(() => {
-        // 将view关联到每一个store内部的storeStateRefSet，进行数据生命周期的同步
         viewConnectStoreSet.add(
           (
             (
@@ -272,7 +271,7 @@ export const effectedHandle = <S extends PrimitiveState, P extends PrimitiveStat
       unsubscribeItem();
     });
     Promise.resolve().then(() => {
-      // 需要在最后执行，等待storeStateRefSet卸载完成
+      // 需要在最后执行，等待storeStateRefCounter卸载完成
       viewRestoreHandle("viewUnmountRestore", stores);
     });
   };

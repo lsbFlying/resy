@@ -39,8 +39,19 @@ export const stateErrorHandle = <S extends PrimitiveState>(
 };
 
 // createStore的options配置错误处理
-export const optionsErrorHandle = (fnName: "setOptions" | "createStore", options?: CreateStoreOptions) => {
-  if (options !== undefined && typeof options?.unmountRestore !== "boolean") {
+export const optionsErrorHandle = <S extends PrimitiveState>(
+  fnName: "setOptions" | "createStore",
+  options?: CreateStoreOptions<S>
+) => {
+  if (
+    (options !== undefined && typeof options?.unmountRestore !== "boolean")
+    || (
+      options !== undefined && (
+        typeof options?.__conciseStateSlot__ !== "function"
+        && typeof options?.__conciseStateSlot__ !== "undefined"
+      )
+    )
+  ) {
     throw new Error(
       `resy's ${fnName}(...): Expected the ${
         fnName === "createStore" ? "last optional" : ""

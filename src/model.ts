@@ -1,9 +1,23 @@
 import {
-  VIEW_CONNECT_STORE_KEY, USE_CONCISE_STORE_KEY, USE_STORE_KEY, REGENERATIVE_SYSTEM_KEY,
+  VIEW_CONNECT_STORE_KEY, USE_CONCISE_STORE_KEY, REGENERATIVE_SYSTEM_KEY,
 } from "./static";
 
 // 普通意义上的回调函数类型
 export type Callback = () => void;
+
+// 初始化参数禁用的key类型
+export type ExcludedKeys =
+  | "setOptions"
+  | "setState"
+  | "syncUpdate"
+  | "restore"
+  | "subscribe"
+  | "useData";
+
+// 初始化参数禁用的属性类型
+export type ForbiddenKeyType = {
+  [key in ExcludedKeys]?: never;
+};
 
 /**
  * @description 初始化数据的原始继承类型，目前没有想到键为symbol的状态使用场景，
@@ -70,7 +84,6 @@ export type StoreViewMapType<S extends PrimitiveState> = MapType<StoreViewMapVal
 
 export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & {
   [VIEW_CONNECT_STORE_KEY]: StoreViewMapType<S>;
-  [USE_STORE_KEY]: object;
   [USE_CONCISE_STORE_KEY]: object;
   [REGENERATIVE_SYSTEM_KEY]: symbol;
 };
@@ -190,17 +203,26 @@ export type Restore = Readonly<{
  * 应该使得其作为一种辅助，但一般而言CreateStoreOptions本身的配置能够符合且满足绝大多数场景
  * 所以SetOptions的使用场景还是较少概率的。
  */
-export type SetOptions = Readonly<{
-  setOptions(options: CreateStoreOptions): void;
+export type SetOptions<S extends PrimitiveState> = Readonly<{
+  setOptions(options: CreateStoreOptions<S>): void;
 }>;
 
-// ConciseStore的工具方法类型
-export type ConciseStoreUtils<S extends PrimitiveState> = SetState<S> & SyncUpdate<S> & Restore & Subscribe<S>;
+// 等价于useStore钩子的使用的useData属性
+export type UseData<S extends PrimitiveState> = Readonly<{
+  useData: S & StoreCoreUtils<S> & SetOptions<S>;
+}>;
+
+// store的一下核心的工具方法类型
+export type StoreCoreUtils<S extends PrimitiveState> = SetState<S> & SyncUpdate<S> & Restore & Subscribe<S>;
 
 // store的工具方法类型
-export type StoreUtils<S extends PrimitiveState> = ConciseStoreUtils<S> & SetOptions;
+export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOptions<S> & UseData<S>;
 
+// createStore返回的store类型
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
+
+// 给初始化参数initialState的函数thisType类型使用的初始化store的this类型
+export type InitialStore<S extends PrimitiveState> = S & StoreCoreUtils<S> & SetOptions<S>;
 
 // 针对class组件的混合store数据状态类型
 export type MultipleState = Record<number | string | symbol, Store<any>>;
@@ -208,16 +230,18 @@ export type MultipleState = Record<number | string | symbol, Store<any>>;
 // 多个store
 export type Stores<S extends MultipleState> = { [key in keyof S]: Store<S[key]> };
 
+export type StateWithThisType<S extends PrimitiveState> = S & ThisType<InitialStore<S>>;
+
 // 初始化数据类型
-export type InitialStateType<S extends PrimitiveState> = S & ThisType<Store<S>> | (() => S & ThisType<Store<S>>);
+export type InitialState<S extends PrimitiveState> = StateWithThisType<S> | (() => StateWithThisType<S>);
 
 /**
  * @description useConciseState的Store返回类型
  * 增加了store的属性调用，为了完善最新数据值的获取，
  * 弥补了useState对于最新数据值获取不足的缺陷
  */
-export type ConciseStore<S extends PrimitiveState> = S & ConciseStoreUtils<S> & {
-  readonly store: ConciseStore<S>;
+export type ConciseStore<S extends PrimitiveState> = S & StoreCoreUtils<S> & {
+  readonly store: S & StoreCoreUtils<S>;
 };
 
 /**
@@ -261,7 +285,7 @@ export type Scheduler<S extends PrimitiveState = {}> = {
  * @description createStore该API第二个参数配置项
  * 目前配置项不多，且常用主要配置也是unmountRestore
  */
-export type CreateStoreOptions = Readonly<{
+export type CreateStoreOptions<S extends PrimitiveState> = Readonly<{
   /**
    * @description 1、该参数主要是为了在某模块mount初始化阶段自动重置数据的，
    * 如遇到登录信息、主题等这样的全局数据而言才会设置为false，
@@ -270,6 +294,23 @@ export type CreateStoreOptions = Readonly<{
    * @default true
    */
   unmountRestore: boolean;
+  /**
+   * 内部私有配置，外部请勿使用
+   * 完成useConciseState这个钩子的功能
+   */
+  __conciseStateSlot__?(
+    unmountRestore: boolean,
+    externalMap: ExternalMapType<S>,
+    reducerState: S,
+    store: Store<S>,
+    singlePropUpdate: (key: keyof S, value: ValueOf<S>, isDelete?: true) => void,
+    stateMap: MapType<S>,
+    storeStateRefCounter: number,
+    storeMap: StoreMap<S>,
+    stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
+    schedulerProcessor: MapType<Scheduler>,
+    initialState?: InitialState<S>,
+  ): void;
 }>;
 
 // view中equal函数的参数类型，props与state的类型合集

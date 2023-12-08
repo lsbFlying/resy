@@ -6,7 +6,7 @@ import { batchUpdate } from "./static";
 import type {
   PrimitiveState, StoreViewMapType, ValueOf, MapType, Callback,
   SetStateCallbackItem, StoreMapValue, StoreMapValueType, Listener,
-  Scheduler, StoreMap, StateRestoreAccomplishedMapType, InitialStateType,
+  Scheduler, StoreMap, StateRestoreAccomplishedMapType, InitialState,
 } from "./model";
 import { hasOwnProperty, mapToObject, clearObject } from "./utils";
 
@@ -43,7 +43,7 @@ export const mergeStateKeys = <S extends PrimitiveState>(
 // 获取还原出来的state
 export const handleReducerState = <S extends PrimitiveState>(
   reducerState: S,
-  initialState?: InitialStateType<S>,
+  initialState?: InitialState<S>,
 ) => {
   /**
    * @description 如果是函数返回的初始化状态数据，则需要再次执行初始化函数来获取内部初始化的逻辑数据
@@ -63,7 +63,7 @@ export const handleReducerState = <S extends PrimitiveState>(
 const restoreHandle = <S extends PrimitiveState>(
   reducerState: S,
   stateMap: MapType<S>,
-  initialState?: InitialStateType<S>,
+  initialState?: InitialState<S>,
 ) => {
   // 进一步获取最新的还原状态数据
   handleReducerState(reducerState, initialState);
@@ -100,7 +100,7 @@ const unmountRestoreHandle = <S extends PrimitiveState>(
   stateMap: MapType<S>,
   storeStateRefCounter: number,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
-  initialState?: InitialStateType<S>,
+  initialState?: InitialState<S>,
 ) => {
   if (
     unmountRestore
@@ -118,7 +118,7 @@ const initialStateFnRestoreHandle = <S extends PrimitiveState>(
   stateMap: MapType<S>,
   storeStateRefCounter: number,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
-  initialState?: InitialStateType<S>,
+  initialState?: InitialState<S>,
 ) => {
   if (
     typeof initialState === "function"
@@ -138,7 +138,7 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
   storeStateRefCounter: number,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   schedulerProcessor: MapType<Scheduler>,
-  initialState?: InitialStateType<S>,
+  initialState?: InitialState<S>,
 ) => {
   const viewConnectStoreMap: StoreViewMapType<S> = new Map();
   viewConnectStoreMap.set("getStateMap", stateMap);
@@ -191,7 +191,7 @@ export const connectStore = <S extends PrimitiveState>(
   storeMap: StoreMap<S>,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   schedulerProcessor: MapType<Scheduler>,
-  initialState?: InitialStateType<S>,
+  initialState?: InitialState<S>,
 ) => {
   // 解决初始化属性泛型有?判断符，即一开始没有初始化的数据属性
   if (storeMap.has(key)) return storeMap;
@@ -289,7 +289,7 @@ export const connectHookUse = <S extends PrimitiveState>(
   storeMap: StoreMap<S>,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   schedulerProcessor: MapType<Scheduler>,
-  initialState?: InitialStateType<S>,
+  initialState?: InitialState<S>,
 ) => {
   // 如果initialState是函数则强制执行刷新恢复的逻辑，initialState是函数的情况下权重高于unmountRestore
   initialStateFnRestoreHandle(
@@ -332,7 +332,7 @@ export const pushTask = <S extends PrimitiveState>(
   storeStateRefCounter: number,
   storeMap: StoreMap<S>,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
-  initialState?: InitialStateType<S>,
+  initialState?: InitialState<S>,
   isDelete?: true,
 ) => {
   /**

@@ -7,9 +7,9 @@
  */
 import scheduler from "./scheduler";
 import {
-  batchUpdate, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY, USE_CONCISE_STORE_KEY, REGENERATIVE_SYSTEM_KEY,
+  batchUpdate, VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY,
 } from "./static";
-import { mapToObject, objectToMap, followUpMap, hasOwnProperty } from "./utils";
+import { mapToObject, objectToMap, hasOwnProperty } from "./utils";
 import {
   stateErrorHandle, protoPointStoreErrorHandle, optionsErrorHandle,
   subscribeErrorHandle, setStateCallbackErrorHandle,
@@ -19,10 +19,10 @@ import {
   willUpdatingHandle, mergeStateKeys, handleReducerState, connectStore, prevStateFollowUpStateMap,
 } from "./reduce";
 import type {
-  ExternalMapType, ExternalMapValue, PrimitiveState, StateFnType, StoreMap,
-  Unsubscribe, Listener, CreateStoreOptions, Store, AnyFn, ConciseExternalMapType,
-  ConciseExternalMapValue, SetStateCallback, SetStateCallbackItem, StoreMapValueType,
-  MapType, ValueOf, State, StateRestoreAccomplishedMapType, InitialStateType,
+  ExternalMapType, ExternalMapValue, StateFnType, StoreMap, PrimitiveState,
+  Unsubscribe, Listener, CreateStoreOptions, Store, AnyFn, SetStateCallback,
+  SetStateCallbackItem, StoreMapValueType, MapType, ValueOf, State,
+  StateRestoreAccomplishedMapType, InitialState, ForbiddenKeyType,
 } from "./model";
 
 /**
@@ -40,8 +40,8 @@ import type {
  * @return Store<S>
  */
 export const createStore = <S extends PrimitiveState>(
-  initialState?: InitialStateType<S>,
-  options?: CreateStoreOptions,
+  initialState?: InitialState<S> & ForbiddenKeyType,
+  options?: CreateStoreOptions<S>,
 ): Store<S> => {
   /**
    * 解析还原出来的状态数据
@@ -60,10 +60,10 @@ export const createStore = <S extends PrimitiveState>(
 
   stateErrorHandle(reducerState, "createStore");
 
-  optionsErrorHandle("createStore", options);
+  optionsErrorHandle<S>("createStore", options);
   const optionsTemp = options
     // 便于脱离后续setOptions的ReadOnly的类型校验
-    ? { unmountRestore: options.unmountRestore }
+    ? { ...options, unmountRestore: options.unmountRestore }
     : { unmountRestore: true };
 
   // 当前store的调度处理器
@@ -245,8 +245,8 @@ export const createStore = <S extends PrimitiveState>(
   };
 
   // 更改设置unmountRestore参数配置
-  const setOptions = (options: CreateStoreOptions) => {
-    optionsErrorHandle("setOptions", options);
+  const setOptions = (options: CreateStoreOptions<S>) => {
+    optionsErrorHandle<S>("setOptions", options);
     optionsTemp.unmountRestore = options?.unmountRestore ?? optionsTemp.unmountRestore;
   };
 
@@ -314,63 +314,15 @@ export const createStore = <S extends PrimitiveState>(
   externalMap.set("subscribe", subscribe);
   externalMap.set(REGENERATIVE_SYSTEM_KEY, REGENERATIVE_SYSTEM_KEY);
 
-  const conciseExternalMap = followUpMap(externalMap) as ConciseExternalMapType<S>;
-
-  externalMap.set("setOptions", setOptions);
-
-  /**
-   * @description 给useConciseState的store代理的额外的store代理，
-   * 同时store不仅仅是单纯的数据读取操作，set/sync/sub三个函数的使用一样可以，
-   * 并且也让store具有单个数据属性更新的能力
-   * 与createStore生成的store具有一样的功能
-   * be careful: 这样主要是为了解决react的useState中产生的数据不具有可追溯性的问题
-   * 比如在某些函数中因为因为或者作用域的不同导致函数内部再次获取useState的数据会不准确
-   * 而使用这个额外的store来读取数据可以具有追溯性得到最新的数据状态
-   */
-  const conciseExtraStore = new Proxy(storeMap, {
-    get: (_: StoreMap<S>, key: keyof S, receiver: any) => {
-      protoPointStoreErrorHandle(receiver, conciseExtraStore);
-
-      if (typeof stateMap.get(key) === "function") {
-        return (stateMap.get(key) as AnyFn).bind(store);
-      }
-
-      return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || stateMap.get(key);
-    },
-    set: (_: S, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
-    deleteProperty: (_: S, key: keyof S) => singlePropUpdate(key, undefined as ValueOf<S>, true),
-  } as any as ProxyHandler<StoreMap<S>>) as any as Store<S>;
-
-  conciseExternalMap.set("store", conciseExtraStore);
-
-  /**
-   * @description 给useConciseState的驱动更新代理，与useStore分开，因为二者承担功能点有些区别
-   * useStore中不需要store属性，而useConciseState可以有store属性
-   * useStore中使用的store可以使用setOptions，而useConciseState中的store属性不能使用setOptions
-   * 因为useConciseState本质上是createStore的memo包裹，所以重新渲染的时候无法使用静态createStore的已存在store
-   * 而是createStore生成的新的store，而它只能是unmountRestore是true，必然会是useState一样的数据渲染效果
-   * 所以自然也就不像具备全局性的createStore那样存在setOptions方法
-   */
-  const conciseStoreProxy = new Proxy(storeMap, {
-    get: (_, key: keyof S) => {
-      if (typeof stateMap.get(key) === "function") {
-        // 也做一个函数数据hook的调用，给予函数数据更新渲染的能力
-        connectHookUse(
-          key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounter,
-          storeMap, stateRestoreAccomplishedMap, schedulerProcessor, initialState,
-        );
-        return (stateMap.get(key) as AnyFn).bind(store);
-      }
-      return conciseExternalMap.get(key as keyof ConciseExternalMapValue<S>) || connectHookUse(
-        key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounter,
-        storeMap, stateRestoreAccomplishedMap, schedulerProcessor, initialState,
-      );
-    },
-  } as ProxyHandler<StoreMap<S>>);
+  optionsTemp.__conciseStateSlot__?.(
+    optionsTemp.unmountRestore, externalMap, reducerState, store,
+    singlePropUpdate, stateMap, storeStateRefCounter, storeMap,
+    stateRestoreAccomplishedMap, schedulerProcessor, initialState,
+  );
 
   externalMap.set(VIEW_CONNECT_STORE_KEY, viewConnectStoreMap);
-  externalMap.set(USE_STORE_KEY, storeProxy);
-  externalMap.set(USE_CONCISE_STORE_KEY, conciseStoreProxy);
+  externalMap.set("useData", storeProxy);
+  externalMap.set("setOptions", setOptions);
 
   return store;
 };

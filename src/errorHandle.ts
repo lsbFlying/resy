@@ -44,8 +44,13 @@ export const optionsErrorHandle = (
   options?: CreateStoreOptions
 ) => {
   if (
-    (options !== undefined && typeof options?.unmountRestore !== "boolean")
-    || (options !== undefined && typeof options?.__useConciseStateMode__ !== "boolean")
+    options !== undefined && (
+      typeof options?.unmountRestore !== "boolean"
+      || (
+        typeof options?.__useConciseStateMode__ !== "boolean"
+        && typeof options?.__useConciseStateMode__ !== "undefined"
+      )
+    )
   ) {
     throw new Error(
       `resy's ${fnName}(...): Expected the ${

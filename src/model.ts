@@ -6,7 +6,7 @@ import {
 export type Callback = () => void;
 
 // 初始化参数禁用的key类型
-export type ExcludedKeys =
+export type InitialStateExcludedKeys =
   | "setOptions"
   | "setState"
   | "syncUpdate"
@@ -15,8 +15,16 @@ export type ExcludedKeys =
   | "useData";
 
 // 初始化参数禁用的属性类型
-export type ForbiddenKeyType = {
-  [key in ExcludedKeys]?: never;
+export type InitialStateForbiddenKeyType = {
+  [key in InitialStateExcludedKeys]?: never;
+};
+
+// conciseState的初始化参数禁用的key类型
+export type ConciseInitialStateExcludedKeys = InitialStateExcludedKeys | "store";
+
+// conciseState的初始化参数禁用的属性类型
+export type ConciseInitialStateForbiddenKeyType = {
+  [key in ConciseInitialStateExcludedKeys]?: never;
 };
 
 /**
@@ -86,18 +94,11 @@ export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & {
   [VIEW_CONNECT_STORE_KEY]: StoreViewMapType<S>;
   [USE_CONCISE_STORE_KEY]: object;
   [REGENERATIVE_SYSTEM_KEY]: symbol;
+  readonly store: Store<S>;
 };
 
 // 扩展map的类型
 export type ExternalMapType<S extends PrimitiveState> = MapType<ExternalMapValue<S>>;
-
-export type ConciseExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & {
-  readonly store: Store<S>;
-  [REGENERATIVE_SYSTEM_KEY]: symbol;
-};
-
-// concise扩展map的类型
-export type ConciseExternalMapType<S extends PrimitiveState> = MapType<ConciseExternalMapValue<S>>;
 
 // 兼容null是出于后端最常用返回的数据格式null居多的考虑
 export type State<S extends PrimitiveState> = Partial<S> | S | null;
@@ -203,26 +204,26 @@ export type Restore = Readonly<{
  * 应该使得其作为一种辅助，但一般而言CreateStoreOptions本身的配置能够符合且满足绝大多数场景
  * 所以SetOptions的使用场景还是较少概率的。
  */
-export type SetOptions<S extends PrimitiveState> = Readonly<{
-  setOptions(options: CreateStoreOptions<S>): void;
+export type SetOptions = Readonly<{
+  setOptions(options: CreateStoreOptions): void;
 }>;
 
 // 等价于useStore钩子的使用的useData属性
 export type UseData<S extends PrimitiveState> = Readonly<{
-  useData: S & StoreCoreUtils<S> & SetOptions<S>;
+  useData: S & StoreCoreUtils<S> & SetOptions;
 }>;
 
 // store的一下核心的工具方法类型
 export type StoreCoreUtils<S extends PrimitiveState> = SetState<S> & SyncUpdate<S> & Restore & Subscribe<S>;
 
 // store的工具方法类型
-export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOptions<S> & UseData<S>;
+export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOptions & UseData<S>;
 
 // createStore返回的store类型
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
 
 // 给初始化参数initialState的函数thisType类型使用的初始化store的this类型
-export type InitialStore<S extends PrimitiveState> = S & StoreCoreUtils<S> & SetOptions<S>;
+export type InitialStore<S extends PrimitiveState> = S & StoreCoreUtils<S> & SetOptions;
 
 // 针对class组件的混合store数据状态类型
 export type MultipleState = Record<number | string | symbol, Store<any>>;
@@ -285,7 +286,7 @@ export type Scheduler<S extends PrimitiveState = {}> = {
  * @description createStore该API第二个参数配置项
  * 目前配置项不多，且常用主要配置也是unmountRestore
  */
-export type CreateStoreOptions<S extends PrimitiveState> = Readonly<{
+export type CreateStoreOptions = Readonly<{
   /**
    * @description 1、该参数主要是为了在某模块mount初始化阶段自动重置数据的，
    * 如遇到登录信息、主题等这样的全局数据而言才会设置为false，
@@ -294,23 +295,8 @@ export type CreateStoreOptions<S extends PrimitiveState> = Readonly<{
    * @default true
    */
   unmountRestore: boolean;
-  /**
-   * 内部私有配置，外部请勿使用
-   * 完成useConciseState这个钩子的功能
-   */
-  __conciseStateSlot__?(
-    unmountRestore: boolean,
-    externalMap: ExternalMapType<S>,
-    reducerState: S,
-    store: Store<S>,
-    singlePropUpdate: (key: keyof S, value: ValueOf<S>, isDelete?: true) => void,
-    stateMap: MapType<S>,
-    storeStateRefCounter: number,
-    storeMap: StoreMap<S>,
-    stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
-    schedulerProcessor: MapType<Scheduler>,
-    initialState?: InitialState<S>,
-  ): void;
+  /** 供useConciseState钩子使用的配置（内部使用，外部请勿使用） */
+  __useConciseStateMode__?: boolean;
 }>;
 
 // view中equal函数的参数类型，props与state的类型合集

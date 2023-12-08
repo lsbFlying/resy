@@ -7,7 +7,7 @@
  */
 import scheduler from "./scheduler";
 import {
-  batchUpdate, VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY,
+  batchUpdate, VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY, USE_CONCISE_STORE_KEY,
 } from "./static";
 import { mapToObject, objectToMap, hasOwnProperty } from "./utils";
 import {
@@ -22,7 +22,7 @@ import type {
   ExternalMapType, ExternalMapValue, StateFnType, StoreMap, PrimitiveState,
   Unsubscribe, Listener, CreateStoreOptions, Store, AnyFn, SetStateCallback,
   SetStateCallbackItem, StoreMapValueType, MapType, ValueOf, State,
-  StateRestoreAccomplishedMapType, InitialState, ForbiddenKeyType,
+  StateRestoreAccomplishedMapType, InitialState, InitialStateForbiddenKeyType,
 } from "./model";
 
 /**
@@ -40,8 +40,8 @@ import type {
  * @return Store<S>
  */
 export const createStore = <S extends PrimitiveState>(
-  initialState?: InitialState<S> & ForbiddenKeyType,
-  options?: CreateStoreOptions<S>,
+  initialState?: InitialState<S> & InitialStateForbiddenKeyType,
+  options?: CreateStoreOptions,
 ): Store<S> => {
   /**
    * 解析还原出来的状态数据
@@ -60,7 +60,7 @@ export const createStore = <S extends PrimitiveState>(
 
   stateErrorHandle(reducerState, "createStore");
 
-  optionsErrorHandle<S>("createStore", options);
+  optionsErrorHandle("createStore", options);
   const optionsTemp = options
     // 便于脱离后续setOptions的ReadOnly的类型校验
     ? { ...options, unmountRestore: options.unmountRestore }
@@ -245,8 +245,8 @@ export const createStore = <S extends PrimitiveState>(
   };
 
   // 更改设置unmountRestore参数配置
-  const setOptions = (options: CreateStoreOptions<S>) => {
-    optionsErrorHandle<S>("setOptions", options);
+  const setOptions = (options: CreateStoreOptions) => {
+    optionsErrorHandle("setOptions", options);
     optionsTemp.unmountRestore = options?.unmountRestore ?? optionsTemp.unmountRestore;
   };
 
@@ -314,15 +314,15 @@ export const createStore = <S extends PrimitiveState>(
   externalMap.set("subscribe", subscribe);
   externalMap.set(REGENERATIVE_SYSTEM_KEY, REGENERATIVE_SYSTEM_KEY);
 
-  optionsTemp.__conciseStateSlot__?.(
-    optionsTemp.unmountRestore, externalMap, reducerState, store,
-    singlePropUpdate, stateMap, storeStateRefCounter, storeMap,
-    stateRestoreAccomplishedMap, schedulerProcessor, initialState,
-  );
+  if (optionsTemp.__useConciseStateMode__) {
+    externalMap.set("store", store);
+    externalMap.set(USE_CONCISE_STORE_KEY, storeProxy);
+  } else {
+    externalMap.set("useData", storeProxy);
+    externalMap.set("setOptions", setOptions);
+  }
 
   externalMap.set(VIEW_CONNECT_STORE_KEY, viewConnectStoreMap);
-  externalMap.set("useData", storeProxy);
-  externalMap.set("setOptions", setOptions);
 
   return store;
 };

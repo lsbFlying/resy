@@ -1,6 +1,4 @@
-import {
-  VIEW_CONNECT_STORE_KEY, USE_CONCISE_STORE_KEY, REGENERATIVE_SYSTEM_KEY,
-} from "./static";
+import { VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY } from "./static";
 
 // 普通意义上的回调函数类型
 export type Callback = () => void;
@@ -92,7 +90,6 @@ export type StoreViewMapType<S extends PrimitiveState> = MapType<StoreViewMapVal
 
 export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & {
   [VIEW_CONNECT_STORE_KEY]: StoreViewMapType<S>;
-  [USE_CONCISE_STORE_KEY]: object;
   [REGENERATIVE_SYSTEM_KEY]: symbol;
   readonly store: Store<S>;
 };

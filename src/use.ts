@@ -4,7 +4,6 @@ import { storeErrorHandle } from "./errorHandle";
 import type {
   PrimitiveState, ConciseStore, InitialState, ConciseInitialStateForbiddenKeyType,
 } from "./model";
-import { USE_CONCISE_STORE_KEY } from "./static";
 
 /**
  * 驱动组件更新
@@ -40,5 +39,5 @@ export const useConciseState = <S extends PrimitiveState>(
     useMemo(() => createStore<S>(initialState, {
       unmountRestore: true,
       __useConciseStateMode__: true,
-    }), [])[USE_CONCISE_STORE_KEY as keyof S]
+    }), [])["useData" as keyof S]
 ;

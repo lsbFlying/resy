@@ -26,9 +26,6 @@ export const batchUpdate = unstable_batchedUpdates || batchUpdateShimRun;
 // 处理view连接store的唯一标识key值
 export const VIEW_CONNECT_STORE_KEY = Symbol("storeViewMapKey");
 
-// useConciseStore的key值，获取storeMap的代理key值
-export const USE_CONCISE_STORE_KEY = Symbol("useConciseStoreKey");
-
 // resy的内部特殊标识
 export const REGENERATIVE_SYSTEM_KEY = Symbol("regenerativeSystemKey");
 

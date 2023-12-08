@@ -6,9 +6,7 @@
  * @name createStore
  */
 import scheduler from "./scheduler";
-import {
-  batchUpdate, VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY, USE_CONCISE_STORE_KEY,
-} from "./static";
+import { batchUpdate, VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY } from "./static";
 import { mapToObject, objectToMap, hasOwnProperty } from "./utils";
 import {
   stateErrorHandle, protoPointStoreErrorHandle, optionsErrorHandle,
@@ -316,12 +314,11 @@ export const createStore = <S extends PrimitiveState>(
 
   if (optionsTemp.__useConciseStateMode__) {
     externalMap.set("store", store);
-    externalMap.set(USE_CONCISE_STORE_KEY, storeProxy);
   } else {
-    externalMap.set("useData", storeProxy);
     externalMap.set("setOptions", setOptions);
   }
 
+  externalMap.set("useData", storeProxy as any);
   externalMap.set(VIEW_CONNECT_STORE_KEY, viewConnectStoreMap);
 
   return store;

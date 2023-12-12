@@ -5,23 +5,28 @@
  * @date 2022-05-05
  * @name createStore
  */
-import scheduler from "./scheduler";
-import { batchUpdate, VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY } from "./static";
-import { mapToObject, objectToMap, hasOwnProperty } from "./utils";
+import { scheduler } from "../scheduler";
+import { batchUpdate, VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY } from "../static";
+import { mapToObject, objectToMap, hasOwnProperty } from "../utils";
 import {
   stateErrorHandle, protoPointStoreErrorHandle, optionsErrorHandle,
   subscribeErrorHandle, setStateCallbackErrorHandle,
-} from "./errorHandle";
-import {
-  genViewConnectStoreMap, batchDispatchListener, pushTask, connectHookUse, finallyBatchHandle,
-  willUpdatingHandle, mergeStateKeys, handleReducerState, connectStore, prevStateFollowUpStateMap,
-} from "./reduce";
+} from "../errors";
+import { pushTask, connectHookUse, finallyBatchHandle, connectStore } from "./core";
 import type {
-  ExternalMapType, ExternalMapValue, StateFnType, StoreMap, PrimitiveState,
-  Unsubscribe, Listener, CreateStoreOptions, Store, AnyFn, SetStateCallback,
-  SetStateCallbackItem, StoreMapValueType, MapType, ValueOf, State,
-  StateRestoreAccomplishedMapType, InitialState, InitialStateForbiddenKeyType,
-} from "./model";
+  ExternalMapType, ExternalMapValue, StateFnType, StoreMap, CreateStoreOptions, Store, SetStateCallback,
+  SetStateCallbackItem, StoreMapValueType, State, InitialState, InitialStateForbiddenKeyType,
+} from "./types";
+import type {
+  AnyFn, MapType, ValueOf, PrimitiveState,
+} from "../types";
+import { mergeStateKeys, handleReducerState } from "../reset";
+import type { StateRestoreAccomplishedMapType } from "../reset/types";
+import { genViewConnectStoreMap } from "../view/core";
+import {
+  willUpdatingHandle, prevStateFollowUpStateMap, batchDispatchListener,
+} from "../subscribe";
+import type {  Unsubscribe, Listener } from "../subscribe/types";
 
 /**
  * createStore

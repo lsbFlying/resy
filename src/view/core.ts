@@ -2,14 +2,20 @@
  * @description 本文件是view的内部代码抽离拆解的一些方法
  */
 import type { Dispatch, SetStateAction } from "react";
-import {
-  Callback,
-  MapType, ObjectMapType, ObjectType, PrimitiveState, PS, Store, Stores,
-  StoreViewMapType, StoreViewMapValue, Unsubscribe, ValueOf, ViewStateMapType,
-} from "./model";
-import { mapToObject, objectToMap, hasOwnProperty } from "./utils";
-import { protoPointStoreErrorHandle, storeErrorHandle } from "./errorHandle";
-import { REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY } from "./static";
+import type {
+  Callback, MapType, ObjectMapType, ObjectType, PrimitiveState, ValueOf,
+} from "../types";
+import type { Store, InitialState } from "../store/types";
+import type {
+  PS, Stores, StoreViewMapType, ViewStateMapType, StoreViewMapValue,
+} from "./types";
+import type { Scheduler } from "../scheduler/types";
+import type { Unsubscribe } from "../subscribe/types";
+import { mapToObject, objectToMap, hasOwnProperty } from "../utils";
+import { protoPointStoreErrorHandle, storeErrorHandle } from "../errors";
+import { REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY } from "../static";
+import { unmountRestoreHandle, initialStateFnRestoreHandle } from "../reset";
+import type { StateRestoreAccomplishedMapType } from "../reset/types";
 
 /**
  * 给Comp组件的props上挂载的state属性数据做一层引用代理
@@ -275,4 +281,48 @@ export const effectedHandle = <S extends PrimitiveState, P extends PrimitiveStat
       viewRestoreHandle("viewUnmountRestore", stores);
     });
   };
+};
+
+// 生成view连接store的map对象
+export const genViewConnectStoreMap = <S extends PrimitiveState>(
+  unmountRestore: boolean,
+  reducerState: S,
+  stateMap: MapType<S>,
+  storeStateRefCounter: number,
+  stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
+  schedulerProcessor: MapType<Scheduler>,
+  initialState?: InitialState<S>,
+) => {
+  const viewConnectStoreMap: StoreViewMapType<S> = new Map();
+  viewConnectStoreMap.set("getStateMap", stateMap);
+  viewConnectStoreMap.set("viewUnmountRestore", () => {
+    unmountRestoreHandle(
+      unmountRestore, reducerState, stateMap, storeStateRefCounter,
+      stateRestoreAccomplishedMap, initialState,
+    );
+  });
+  viewConnectStoreMap.set("viewInitialStateFnRestore", () => {
+    initialStateFnRestoreHandle(
+      reducerState, stateMap, storeStateRefCounter,
+      stateRestoreAccomplishedMap, initialState,
+    );
+  });
+  viewConnectStoreMap.set("viewConnectStore", () => {
+    // eslint-disable-next-line no-param-reassign
+    ++storeStateRefCounter;
+    return () => {
+      // eslint-disable-next-line no-param-reassign
+      --storeStateRefCounter;
+      if (!schedulerProcessor.get("deferDestructorFlag")) {
+        schedulerProcessor.set("deferDestructorFlag", Promise.resolve().then(() => {
+          schedulerProcessor.set("deferDestructorFlag", null);
+          if (!storeStateRefCounter) {
+            stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", null);
+            stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", null);
+          }
+        }));
+      }
+    };
+  });
+  return viewConnectStoreMap;
 };

@@ -1,7 +1,7 @@
 import { __DEV__, REGENERATIVE_SYSTEM_KEY } from "./static";
-import type {
-  PrimitiveState, State, CreateStoreOptions, Listener, SetStateCallback,
-} from "./model";
+import type { PrimitiveState } from "./types";
+import type { State, CreateStoreOptions, SetStateCallback } from "./store/types";
+import type { Listener } from "./subscribe/types";
 
 const toString = Object.prototype.toString;
 

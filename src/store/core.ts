@@ -1,14 +1,17 @@
-/**
- * @description 本文件是createStore的内部代码抽离拆解的一些方法
- */
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import { batchUpdate } from "./static";
+import { batchUpdate } from "../static";
 import type {
-  PrimitiveState, StoreViewMapType, ValueOf, MapType, Callback,
-  SetStateCallbackItem, StoreMapValue, StoreMapValueType, Listener,
-  Scheduler, StoreMap, StateRestoreAccomplishedMapType, InitialState,
-} from "./model";
-import { hasOwnProperty, mapToObject, clearObject } from "./utils";
+  PrimitiveState, ValueOf, MapType, Callback,
+} from "../types";
+import type {
+  SetStateCallbackItem, StoreMapValue, StoreMapValueType, StoreMap, InitialState,
+} from "./types";
+import type { Scheduler } from "../scheduler/types";
+import { mapToObject } from "../utils";
+import { unmountRestoreHandle, initialStateFnRestoreHandle } from "../reset";
+import { batchDispatchListener } from "../subscribe";
+import type { Listener } from "../subscribe/types";
+import type { StateRestoreAccomplishedMapType } from "../reset/types";
 
 /**
  * @description 从use-sync-external-store包的导入方式到下面的引用方式
@@ -16,163 +19,6 @@ import { hasOwnProperty, mapToObject, clearObject } from "./utils";
  * 等use-sync-external-store什么时候更新版本导出ESM模块的时候再更新吧
  */
 const { useSyncExternalStore } = useSyncExternalStoreExports;
-
-/**
- * @description 获取目前所有的keys
- * 🌟这里需要合并处理key的问题，因为可能存在delete key的情况
- * 这会导致字段属性数据不统一协调，存在缺失导致数据变化没有完全捕捉到
- * 而restore回复到原始数据状态需要捕捉到所有的状态key然后才可以捕捉到所有的value变化
- * 包括initialRestore或者unmountRestore都是如此
- * 所以这里需要使用merge合并key进行数据属性以及状态的合并捕捉处理
- * 这里也不用担心后续增加的key如果被删除的情况，因为每一次的delete操作也属于更新操作
- * 并且会有相应的delete key的完善更进，所以这里的处理足以完成回复到初始状态的功能
- */
-export const mergeStateKeys = <S extends PrimitiveState>(
-  reducerState: S,
-  stateMap: MapType<S>,
-) => Array.from(
-    new Set(
-      (
-        Object.keys(reducerState) as (keyof S)[]
-      ).concat(
-        Array.from(stateMap.keys())
-      )
-    )
-  );
-
-// 获取还原出来的state
-export const handleReducerState = <S extends PrimitiveState>(
-  reducerState: S,
-  initialState?: InitialState<S>,
-) => {
-  /**
-   * @description 如果是函数返回的初始化状态数据，则需要再次执行初始化函数来获取内部初始化的逻辑数据
-   * 防止因为初始化函数的内部逻辑导致重置恢复的数据不符合初始化的数据逻辑
-   *
-   * 卸载的情况下也选择函数刷新执行恢复，是因为我们很难把控到initialState参数作为函数的情况下
-   * 它的内部逻辑有怎样的需求设定会执行我们难以预料的一些逻辑操作，所以为了安全起见选择卸载的情况下也执行一下函数刷新恢复
-   */
-  if (typeof initialState === "function") {
-    clearObject(reducerState);
-    Object.entries(initialState()).forEach(([key, value]) => {
-      reducerState[key as keyof S] = value;
-    });
-  }
-};
-
-const restoreHandle = <S extends PrimitiveState>(
-  reducerState: S,
-  stateMap: MapType<S>,
-  initialState?: InitialState<S>,
-) => {
-  // 进一步获取最新的还原状态数据
-  handleReducerState(reducerState, initialState);
-  /**
-   * @description 重置数据状态（一次性全部重置）相较于直接复制 stateMap = new Map(state)的方式效率更快
-   * 之所以选择全部重置是因为防止某些模块未被及时渲染导致后续数据没有被初始化恢复
-   */
-  mergeStateKeys(reducerState, stateMap).forEach(key => {
-    hasOwnProperty.call(reducerState, key)
-      ? stateMap.set(key, reducerState[key])
-      : stateMap.delete(key);
-  });
-};
-
-/**
- * 初始化渲染恢复重置数据处理
- * @description 通过storeStateRefCounter判断当前数据是否还有组件引用
- * 只要还有一个组件在引用当前数据，都不会重置数据，
- * 因为当前还在业务逻辑中，不属于完整的卸载
- * 完整的卸载周期对应表达的是整个store的使用周期
- *
- * most important
- * detail course: 经过多次的临项实验
- * 最终确认放在卸载过程重置同时结合store整体的数据引用才是安全的
- *
- * 与此同时需要注意的是，如果initialState是函数，
- * 那么后续重新渲染的时候需要重新执行initialState函数恢复初始化状态数据reducerState
- *
- * 所以restoreHandle运用在两个阶段，一是卸载阶段，一是初始化阶段
- */
-const unmountRestoreHandle = <S extends PrimitiveState>(
-  unmountRestore: boolean,
-  reducerState: S,
-  stateMap: MapType<S>,
-  storeStateRefCounter: number,
-  stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
-  initialState?: InitialState<S>,
-) => {
-  if (
-    unmountRestore
-    && !storeStateRefCounter
-    && !stateRestoreAccomplishedMap.get("unmountRestoreAccomplished")
-  ) {
-    stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", true);
-    restoreHandle(reducerState, stateMap, initialState);
-  }
-};
-
-// initialState是函数的情况下的刷新恢复处理（与unmountRestoreHandle分开处理避免开关状态的混乱产生执行逻辑错误）
-const initialStateFnRestoreHandle = <S extends PrimitiveState>(
-  reducerState: S,
-  stateMap: MapType<S>,
-  storeStateRefCounter: number,
-  stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
-  initialState?: InitialState<S>,
-) => {
-  if (
-    typeof initialState === "function"
-    && !storeStateRefCounter
-    && !stateRestoreAccomplishedMap.get("initialStateFnRestoreAccomplished")
-  ) {
-    stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", true);
-    restoreHandle(reducerState, stateMap, initialState);
-  }
-};
-
-// 生成view连接store的map对象
-export const genViewConnectStoreMap = <S extends PrimitiveState>(
-  unmountRestore: boolean,
-  reducerState: S,
-  stateMap: MapType<S>,
-  storeStateRefCounter: number,
-  stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
-  schedulerProcessor: MapType<Scheduler>,
-  initialState?: InitialState<S>,
-) => {
-  const viewConnectStoreMap: StoreViewMapType<S> = new Map();
-  viewConnectStoreMap.set("getStateMap", stateMap);
-  viewConnectStoreMap.set("viewUnmountRestore", () => {
-    unmountRestoreHandle(
-      unmountRestore, reducerState, stateMap, storeStateRefCounter,
-      stateRestoreAccomplishedMap, initialState,
-    );
-  });
-  viewConnectStoreMap.set("viewInitialStateFnRestore", () => {
-    initialStateFnRestoreHandle(
-      reducerState, stateMap, storeStateRefCounter,
-      stateRestoreAccomplishedMap, initialState,
-    );
-  });
-  viewConnectStoreMap.set("viewConnectStore", () => {
-    // eslint-disable-next-line no-param-reassign
-    ++storeStateRefCounter;
-    return () => {
-      // eslint-disable-next-line no-param-reassign
-      --storeStateRefCounter;
-      if (!schedulerProcessor.get("deferDestructorFlag")) {
-        schedulerProcessor.set("deferDestructorFlag", Promise.resolve().then(() => {
-          schedulerProcessor.set("deferDestructorFlag", null);
-          if (!storeStateRefCounter) {
-            stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", null);
-            stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", null);
-          }
-        }));
-      }
-    };
-  });
-  return viewConnectStoreMap;
-};
 
 /**
  * @description 为每一个数据字段储存连接到store容器中
@@ -304,23 +150,6 @@ export const connectHookUse = <S extends PrimitiveState>(
   )();
 };
 
-// 批量触发订阅监听的数据变动
-export const batchDispatchListener = <S extends PrimitiveState>(
-  prevState: MapType<S>,
-  effectState: Partial<S>,
-  stateMap: MapType<S>,
-  listenerSet: Set<Listener<S>>,
-) => {
-  listenerSet.forEach(item => {
-    // 这里mapToObject的复制体让外部的订阅使用保持尽量的纯洁与安全性
-    item({
-      effectState,
-      nextState: mapToObject(stateMap),
-      prevState: mapToObject(prevState),
-    });
-  });
-};
-
 // 更新任务添加入栈
 export const pushTask = <S extends PrimitiveState>(
   key: keyof S,
@@ -431,33 +260,5 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
         (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
       });
     }));
-  }
-};
-
-// prevState同步更进到stateMap
-export const prevStateFollowUpStateMap = <S extends PrimitiveState>(
-  prevState: MapType<S>,
-  stateMap: MapType<S>,
-) => {
-  // 因为key的变化可能被删除，或者一开始不存在而后添加，所以这里先清空再设置
-  prevState.clear();
-  stateMap.forEach((value, key) => {
-    prevState.set(key, value);
-  });
-};
-
-// 更新之前的处理
-export const willUpdatingHandle = <S extends PrimitiveState>(
-  schedulerProcessor: MapType<Scheduler>,
-  prevState: MapType<S>,
-  stateMap: MapType<S>,
-) => {
-  if (!schedulerProcessor.get("willUpdating")) {
-    schedulerProcessor.set("willUpdating", true);
-    /**
-     * @description 在更新执行将更新之前的数据状态缓存一下，
-     * 以便于subscribe触发监听与setState、syncUpdate的函数参数prevState使用
-     */
-    prevStateFollowUpStateMap(prevState, stateMap);
   }
 };

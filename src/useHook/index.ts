@@ -1,9 +1,9 @@
 import { useMemo } from "react";
-import { createStore } from "./createStore";
-import { storeErrorHandle } from "./errorHandle";
-import type {
-  PrimitiveState, ConciseStore, InitialState, ConciseInitialStateForbiddenKeyType,
-} from "./model";
+import { createStore } from "../store";
+import { storeErrorHandle } from "../errors";
+import type { PrimitiveState } from "../types";
+import type { ConciseInitialStateForbiddenKeyType, ConciseStore } from "./types";
+import type { InitialState } from "../store/types";
 
 /**
  * 驱动组件更新
@@ -35,9 +35,9 @@ export const useStore = <S extends PrimitiveState>(store: S): S => {
 export const useConciseState = <S extends PrimitiveState>(
   initialState?: InitialState<S> & ConciseInitialStateForbiddenKeyType,
 ): ConciseStore<S> =>
-  // eslint-disable-next-line react-hooks/exhaustive-deps
     useMemo(() => createStore<S>(initialState, {
       unmountRestore: true,
       __useConciseStateMode__: true,
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }), [])["useData" as keyof S]
 ;

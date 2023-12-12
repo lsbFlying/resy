@@ -1,22 +1,6 @@
-import type { PrimitiveState, MapType } from "./model";
+import type { PrimitiveState, MapType } from "./types";
 
 export const hasOwnProperty = Object.prototype.hasOwnProperty;
-
-/**
- * @description 跟进状态map
- * 相较于直接赋值新值的方式也更快
- * forEach在少量数据情况下较for of略有劣势
- * 但在数据较多情况下的会强于于for of，
- * 考虑到for of只有100级别的小数据场景占优其余均劣势
- * 所以使用forEach
- */
-export const followUpMap = <K, V>(map: Map<K, V>) => {
-  const mapTemp: Map<K, V> = new Map();
-  map.forEach((value, key) => {
-    mapTemp.set(key, value);
-  });
-  return mapTemp;
-};
 
 /**
  * map转object

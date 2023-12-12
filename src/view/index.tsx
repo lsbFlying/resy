@@ -1,10 +1,12 @@
 import React, { memo, useEffect, useState } from "react";
-import { REGENERATIVE_SYSTEM_KEY } from "./static";
-import { mapToObject } from "./utils";
+import { REGENERATIVE_SYSTEM_KEY } from "../static";
+import { mapToObject } from "../utils";
 import {
   getLatestStateMap, viewStoresToLatestState, initialStateHandle, effectedHandle,
-} from "./viewReduce";
-import type { PrimitiveState, MapStateToProps, Store, Stores, ViewOptionsType } from "./model";
+} from "./core";
+import type { PrimitiveState } from "../types";
+import type { ViewOptionsType, MapStateToProps, Stores } from "./types";
+import type { Store } from "../store/types";
 
 /**
  * 连接store且具备memo与SCU的高阶HOC

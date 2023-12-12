@@ -1,4 +1,5 @@
-import type { MapType, Scheduler, PrimitiveState, Callback, ValueOf } from "./model";
+import type { MapType, PrimitiveState, Callback, ValueOf } from "../types";
+import type { Scheduler } from "./types";
 
 /**
  * @description 调度处理器针对每一个store的私有化
@@ -15,7 +16,7 @@ import type { MapType, Scheduler, PrimitiveState, Callback, ValueOf } from "./mo
  * 这个特性是 useSyncExternalStore + proxy + 前置数据 + Promise微任务执行 一起产生的额外联动效应
  * todo 目前来看这种useSyncExternalStore内部的useLayoutEffect的撕裂检查执行效果良好，保持观察
  */
-const scheduler = <S extends PrimitiveState = {}>() => {
+export const scheduler = <S extends PrimitiveState = {}>() => {
   // 更新的任务数据
   const taskDataMap: MapType<S> = new Map();
   // 更新任务队列
@@ -62,5 +63,3 @@ const scheduler = <S extends PrimitiveState = {}>() => {
 
   return schedulerProcessor;
 };
-
-export default scheduler;

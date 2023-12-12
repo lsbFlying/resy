@@ -1,7 +1,7 @@
 // @ts-ignore
 // eslint-disable-next-line import/no-unresolved
 import { unstable_batchedUpdates } from "react-platform";
-import type { Callback } from "./model";
+import type { Callback } from "./types";
 
 /**
  * 批处理的安全补包

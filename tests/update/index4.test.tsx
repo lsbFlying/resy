@@ -20,7 +20,7 @@ test("batchUpdate-IV", async () => {
         <button onClick={() => {
           store.count++;
           expect(store.count === 1).toBeTruthy();
-          
+
           // The three Promise will be merged into one update process, and the previous store.count++;
           // and the three Promise will be merged into one batch update under the version of react18.
           // 🌟However, because the update schedule in react17 is not 18 perfect,

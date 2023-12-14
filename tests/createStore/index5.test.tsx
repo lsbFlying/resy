@@ -72,8 +72,9 @@ test("createStoreWithFunction-I", async () => {
     // It is verified that if the store unload cycle is a function parameter,
     // the rendering will start with the object returned by the function again as the initialization data.
     // console.log("showChange-again", initialTimeRecord, timerStore.time);
-    Promise.resolve().then(() => {
+    const id = setTimeout(() => {
+      clearTimeout(id);
       expect(initialTimeRecord < timerStore.time).toBeTruthy();
-    });
+    }, 0);
   });
 });

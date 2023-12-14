@@ -13,13 +13,19 @@ test("batchUpdate-IV", async () => {
   const App = () => {
     const { count } = store.useData;
     counter++;
+    console.log("App", count);
     return (
       <>
         <p>{count}</p>
         <button onClick={() => {
           store.count++;
           expect(store.count === 1).toBeTruthy();
-          // The update mechanism of store is based on the event cycle.
+          
+          // The three Promise will be merged into one update process, and the previous store.count++;
+          // and the three Promise will be merged into one batch update under the version of react18.
+          // 🌟However, because the update schedule in react17 is not 18 perfect,
+          // the update of the previous store.count++;
+          // code and the three Promise will be divided into two batches of update processing.
           Promise.resolve().then(() => {
             // batch handle, merge into one update
             store.count++;
@@ -89,9 +95,6 @@ test("batchUpdate-IV", async () => {
   fireEvent.click(getByText("batchAdd"));
   await waitFor(() => {
     getByText("13");
-    const id = setTimeout(() => {
-      clearTimeout(id);
-      expect(counter === 8).toBeTruthy();
-    }, 0);
+    expect(counter === 5).toBeTruthy();
   });
 });

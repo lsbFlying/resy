@@ -43,6 +43,10 @@ test("setState-I", async () => {
             return null;
           });
         }}>changeText3</button>
+        <button onClick={() => {
+          // empty object, no updates
+          store.setState({});
+        }}>changeText4</button>
       </>
     );
   };
@@ -60,6 +64,11 @@ test("setState-I", async () => {
   });
 
   fireEvent.click(getByText("changeText3"));
+  await waitFor(() => {
+    getByText("hello world twice change");
+  });
+
+  fireEvent.click(getByText("changeText4"));
   await waitFor(() => {
     getByText("hello world twice change");
   });

@@ -1,6 +1,6 @@
 import { __DEV__, REGENERATIVE_SYSTEM_KEY } from "./static";
 import type { PrimitiveState } from "./types";
-import type { State, CreateStoreOptions, SetStateCallback } from "./store/types";
+import type { State, StoreOptions, SetStateCallback } from "./store/types";
 import type { Listener } from "./subscribe/types";
 
 const toString = Object.prototype.toString;
@@ -41,7 +41,7 @@ export const stateErrorHandle = <S extends PrimitiveState>(
 // createStore的options配置错误处理
 export const optionsErrorHandle = (
   fnName: "setOptions" | "createStore",
-  options?: CreateStoreOptions
+  options?: StoreOptions
 ) => {
   if (
     options !== undefined && (
@@ -55,7 +55,7 @@ export const optionsErrorHandle = (
     throw new Error(
       `resy's ${fnName}(...): Expected the ${
         fnName === "createStore" ? "last optional" : ""
-      } 'options' argument to be a CreateStoreOptions type params. Instead received: ${options}.`
+      } 'options' argument to be a StoreOptions type params. Instead received: ${options}.`
     );
   }
 };

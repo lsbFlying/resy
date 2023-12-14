@@ -1,4 +1,4 @@
-import type { StoreCoreUtils, InitialStateExcludedKeys } from "../store/types";
+import type { StoreCoreUtils } from "../store/types";
 import type { PrimitiveState } from "../types";
 
 /**
@@ -8,12 +8,4 @@ import type { PrimitiveState } from "../types";
  */
 export type ConciseStore<S extends PrimitiveState> = S & StoreCoreUtils<S> & {
   readonly store: S & StoreCoreUtils<S>;
-};
-
-/** conciseState的初始化参数禁用的key类型 */
-export type ConciseInitialStateExcludedKeys = InitialStateExcludedKeys | "store";
-
-/** conciseState的初始化参数禁用的属性类型 */
-export type ConciseInitialStateForbiddenKeyType = {
-  [key in ConciseInitialStateExcludedKeys]?: never;
 };

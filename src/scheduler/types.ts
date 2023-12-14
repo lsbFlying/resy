@@ -7,7 +7,7 @@ import type { PrimitiveState, ValueOf, MapType, Callback } from "../types";
  * 后来发现是多余不必要的，因为本身回掉Set在遍历执行的过程中即使
  * 内部再有回掉执行，也会放在Set后续尾部调用，所以这里是天然直接遍历即可
  */
-export type Scheduler<S extends PrimitiveState = {}> = {
+export type Scheduler<S extends PrimitiveState> = {
   // 更新进行中
   isUpdating: Promise<void> | null;
   // 将要更新执行的标识

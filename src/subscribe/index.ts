@@ -34,7 +34,7 @@ export const prevStateFollowUpStateMap = <S extends PrimitiveState>(
 
 // 更新之前的处理（前置记录prevState，为后续subscribe的数据变动触发做对比）
 export const willUpdatingHandle = <S extends PrimitiveState>(
-  schedulerProcessor: MapType<Scheduler>,
+  schedulerProcessor: MapType<Scheduler<S>>,
   prevState: MapType<S>,
   stateMap: MapType<S>,
 ) => {

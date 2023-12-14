@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { createStore } from "../store";
 import { storeErrorHandle } from "../errors";
 import type { PrimitiveState } from "../types";
-import type { ConciseInitialStateForbiddenKeyType, ConciseStore } from "./types";
+import type { ConciseStore } from "./types";
 import type { InitialState } from "../store/types";
 
 /**
@@ -33,7 +33,7 @@ export const useStore = <S extends PrimitiveState>(store: S): S => {
  * @return ConciseStore<S>
  */
 export const useConciseState = <S extends PrimitiveState>(
-  initialState?: InitialState<S> & ConciseInitialStateForbiddenKeyType,
+  initialState?: InitialState<S>,
 ): ConciseStore<S> =>
     useMemo(() => createStore<S>(initialState, {
       unmountRestore: true,

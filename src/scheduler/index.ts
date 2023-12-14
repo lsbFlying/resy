@@ -16,7 +16,7 @@ import type { Scheduler } from "./types";
  * 这个特性是 useSyncExternalStore + proxy + 前置数据 + Promise微任务执行 一起产生的额外联动效应
  * todo 目前来看这种useSyncExternalStore内部的useLayoutEffect的撕裂检查执行效果良好，保持观察
  */
-export const scheduler = <S extends PrimitiveState = {}>() => {
+export const scheduler = <S extends PrimitiveState>() => {
   // 更新的任务数据
   const taskDataMap: MapType<S> = new Map();
   // 更新任务队列
@@ -27,7 +27,7 @@ export const scheduler = <S extends PrimitiveState = {}>() => {
    * 主要是为了resy的直接单次更新的批量合并
    * 同时完成react18以下的非管理领域的批处理更新的调度协调性
    */
-  const schedulerProcessor: MapType<Scheduler> = new Map();
+  const schedulerProcessor: MapType<Scheduler<S>> = new Map();
 
   schedulerProcessor.set("isUpdating", null);
   schedulerProcessor.set("willUpdating", null);

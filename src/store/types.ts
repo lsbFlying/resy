@@ -3,11 +3,7 @@ import { REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY } from "../static";
 import type { Subscribe } from "../subscribe/types";
 import type { StoreViewMapType } from "../view/types";
 
-/**
- * @description createStore该API第二个参数配置项
- * 目前配置项不多，且常用主要配置也是unmountRestore
- */
-export type CreateStoreOptions = Readonly<{
+export type OriginOptions = {
   /**
    * @description 1、该参数主要是为了在某模块mount初始化阶段自动重置数据的，
    * 如遇到登录信息、主题等这样的全局数据而言才会设置为false，
@@ -16,23 +12,28 @@ export type CreateStoreOptions = Readonly<{
    * @default true
    */
   unmountRestore: boolean;
-  /** 供useConciseState钩子使用的配置（内部使用，外部请勿使用） */
+  /**
+   * 供useConciseState钩子使用的配置（内部使用，外部不建议使用）
+   * @default undefined
+   */
   __useConciseStateMode__?: boolean;
-}>;
+};
+
+/**
+ * @description createStore该API第二个参数配置项
+ * 目前配置项不多，且常用主要配置也是unmountRestore
+ */
+export type StoreOptions = Readonly<OriginOptions>;
 
 /** 初始化参数禁用的key类型 */
-export type InitialStateExcludedKeys =
-  | "setOptions"
+export type InitialStateForbiddenKeys =
   | "setState"
   | "syncUpdate"
-  | "restore"
   | "subscribe"
-  | "useData";
-
-/** 初始化参数禁用的属性类型 */
-export type InitialStateForbiddenKeyType = {
-  [key in InitialStateExcludedKeys]?: never;
-};
+  | "restore"
+  | "setOptions"
+  | "useData" // useData可以再考量一下，再找到最优解之前先保留
+  | "store";  // store是useConciseState的属性
 
 /**
  * @description resy的storeMap接口类型
@@ -150,17 +151,17 @@ export type Restore = Readonly<{
 
 /**
  * 设置createStore的options参数
- * @description 之所以可以允许改变CreateStoreOptions，是因为业务场景的需要
+ * @description 之所以可以允许改变StoreOptions，是因为业务场景的需要
  * 同时也是开放通道灵活开发，因为本身createStore的静态执行是一种限制
  * 如果需要在某种场景下的突然变动而无法使得静态参数设置变得可更改是一种束缚
  * 比如我有一个store初始场景是不需要unmountRestore为false，即常规下不需要永存状态信息
  * 但是突然因为业务场景的需求需要变更为我需要永存状态信息以便于在下次回到该store的运用情况的时候
- * 还能仍然保持之前的数据状态信息，这种情况是有必要的，主要是不想让CreateStoreOptions成为一种限制
- * 应该使得其作为一种辅助，但一般而言CreateStoreOptions本身的配置能够符合且满足绝大多数场景
+ * 还能仍然保持之前的数据状态信息，这种情况是有必要的，主要是不想让StoreOptions成为一种限制
+ * 应该使得其作为一种辅助，但一般而言StoreOptions本身的配置能够符合且满足绝大多数场景
  * 所以SetOptions的使用场景还是较少概率的。
  */
 export type SetOptions = Readonly<{
-  setOptions(options: CreateStoreOptions): void;
+  setOptions(options: StoreOptions): void;
 }>;
 
 /** store.useData 等价于 useStore(store) 的使用 */
@@ -178,10 +179,19 @@ export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOption
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
 
 /** 给初始化参数initialState的函数thisType类型使用的初始化store的this类型 */
-export type InitialStore<S extends PrimitiveState> = S & StoreCoreUtils<S> & SetOptions;
+export type InitialStore<S extends PrimitiveState> = {
+  [K in keyof S]: K extends InitialStateForbiddenKeys ? never : S[K];
+} & StoreCoreUtils<S> & SetOptions;
 
 /** 具备this类型指向识别的参数类型 */
-export type StateWithThisType<S extends PrimitiveState> = S & ThisType<InitialStore<S>>;
+export type StateWithThisType<S extends PrimitiveState> = {
+  [K in keyof S]: K extends InitialStateForbiddenKeys ? never : S[K];
+} & ThisType<InitialStore<S>>;
 
 /** 初始化数据类型 */
 export type InitialState<S extends PrimitiveState> = StateWithThisType<S> | (() => StateWithThisType<S>);
+
+// 对应整个store的数据引用标记的计数器的map类型
+export type StateRefCounterMapType = MapType<{
+  counter: number;
+}>;

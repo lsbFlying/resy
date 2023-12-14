@@ -1,6 +1,6 @@
 import type { PrimitiveState, MapType } from "../types";
-import type { StateRestoreAccomplishedMapType } from "./types";
-import type { InitialState } from "../store/types";
+import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "./types";
+import type { InitialState, StateRefCounterMapType } from "../store/types";
 import { hasOwnProperty, clearObject } from "../utils";
 
 /**
@@ -66,7 +66,7 @@ const restoreHandle = <S extends PrimitiveState>(
 
 /**
  * 初始化渲染恢复重置数据处理
- * @description 通过storeStateRefCounter判断当前数据是否还有组件引用
+ * @description 通过storeStateRefCounterMap判断当前数据是否还有组件引用
  * 只要还有一个组件在引用当前数据，都不会重置数据，
  * 因为当前还在业务逻辑中，不属于完整的卸载
  * 完整的卸载周期对应表达的是整个store的使用周期
@@ -84,17 +84,21 @@ export const unmountRestoreHandle = <S extends PrimitiveState>(
   unmountRestore: boolean,
   reducerState: S,
   stateMap: MapType<S>,
-  storeStateRefCounter: number,
+  storeStateRefCounterMap: StateRefCounterMapType,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
+  initialFnCanExecMap: InitialFnCanExecMapType,
   initialState?: InitialState<S>,
 ) => {
   if (
     unmountRestore
-    && !storeStateRefCounter
+    && !storeStateRefCounterMap.get("counter")
     && !stateRestoreAccomplishedMap.get("unmountRestoreAccomplished")
   ) {
-    stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", true);
-    restoreHandle(reducerState, stateMap, initialState);
+    if (typeof initialState !== "function") {
+      stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", true);
+      restoreHandle(reducerState, stateMap, initialState);
+    }
+    initialFnCanExecMap.set("canExec", true);
   }
 };
 
@@ -102,16 +106,19 @@ export const unmountRestoreHandle = <S extends PrimitiveState>(
 export const initialStateFnRestoreHandle = <S extends PrimitiveState>(
   reducerState: S,
   stateMap: MapType<S>,
-  storeStateRefCounter: number,
+  storeStateRefCounterMap: StateRefCounterMapType,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
+  initialFnCanExecMap: InitialFnCanExecMapType,
   initialState?: InitialState<S>,
 ) => {
   if (
     typeof initialState === "function"
-    && !storeStateRefCounter
+    && initialFnCanExecMap.get("canExec")
+    && !storeStateRefCounterMap.get("counter")
     && !stateRestoreAccomplishedMap.get("initialStateFnRestoreAccomplished")
   ) {
     stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", true);
     restoreHandle(reducerState, stateMap, initialState);
+    initialFnCanExecMap.set("canExec", true);
   }
 };

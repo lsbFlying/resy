@@ -5,7 +5,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type {
   Callback, MapType, ObjectMapType, ObjectType, PrimitiveState, ValueOf,
 } from "../types";
-import type { Store, InitialState } from "../store/types";
+import type { Store, InitialState, StateRefCounterMapType } from "../store/types";
 import type {
   PS, Stores, StoreViewMapType, ViewStateMapType, StoreViewMapValue,
 } from "./types";
@@ -15,7 +15,7 @@ import { mapToObject, objectToMap, hasOwnProperty } from "../utils";
 import { protoPointStoreErrorHandle, storeErrorHandle } from "../errors";
 import { REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY } from "../static";
 import { unmountRestoreHandle, initialStateFnRestoreHandle } from "../reset";
-import type { StateRestoreAccomplishedMapType } from "../reset/types";
+import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../reset/types";
 
 /**
  * 给Comp组件的props上挂载的state属性数据做一层引用代理
@@ -37,7 +37,7 @@ const stateRefByProxyHandle = <S extends PrimitiveState>(
 };
 
 // 获取最新数据Map对象（针对单个/无store，多个store就遍历再多次调用）
-export const getLatestStateMap = <S extends PrimitiveState = {}>(store?: Store<S> | Stores<S>) => {
+export const getLatestStateMap = <S extends PrimitiveState>(store?: Store<S> | Stores<S>) => {
   if (!store || !store[REGENERATIVE_SYSTEM_KEY as keyof S]) return new Map() as MapType<S>;
   return (
     store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
@@ -101,7 +101,7 @@ export const initialStateHandle = <S extends PrimitiveState>(
   innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>>,
   stores?: Store<S> | Stores<S>,
 ) => {
-  // 在最开始执行，赶在storeStateRefCounter加载之前
+  // 在最开始执行，赶在storeStateRefCounterMap加载之前
   viewRestoreHandle("viewInitialStateFnRestore", stores);
   // 需要使用getState获取store内部的即时最新数据值（默认无store，同时默认兼容处理多store的返回情况）
   const stateMap: ViewStateMapType<S> = getLatestStateMap(stores) as MapType<S>;
@@ -155,7 +155,7 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
 
   if (singleStore) {
     innerUseStateMapSet.forEach(() => {
-      // 将view关联到store内部的storeStateRefCounter，进行数据生命周期的同步
+      // 将view关联到store内部的storeStateRefCounterMap，进行数据生命周期的同步
       viewConnectStoreSet.add(
         (
           (
@@ -277,7 +277,7 @@ export const effectedHandle = <S extends PrimitiveState, P extends PrimitiveStat
       unsubscribeItem();
     });
     Promise.resolve().then(() => {
-      // 需要在最后执行，等待storeStateRefCounter卸载完成
+      // 需要在最后执行，等待storeStateRefCounterMap卸载完成
       viewRestoreHandle("viewUnmountRestore", stores);
     });
   };
@@ -288,35 +288,36 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
   unmountRestore: boolean,
   reducerState: S,
   stateMap: MapType<S>,
-  storeStateRefCounter: number,
+  storeStateRefCounterMap: StateRefCounterMapType,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
-  schedulerProcessor: MapType<Scheduler>,
+  schedulerProcessor: MapType<Scheduler<S>>,
+  initialFnCanExecMap: InitialFnCanExecMapType,
   initialState?: InitialState<S>,
 ) => {
   const viewConnectStoreMap: StoreViewMapType<S> = new Map();
   viewConnectStoreMap.set("getStateMap", stateMap);
   viewConnectStoreMap.set("viewUnmountRestore", () => {
     unmountRestoreHandle(
-      unmountRestore, reducerState, stateMap, storeStateRefCounter,
-      stateRestoreAccomplishedMap, initialState,
+      unmountRestore, reducerState, stateMap, storeStateRefCounterMap,
+      stateRestoreAccomplishedMap, initialFnCanExecMap, initialState,
     );
   });
   viewConnectStoreMap.set("viewInitialStateFnRestore", () => {
     initialStateFnRestoreHandle(
-      reducerState, stateMap, storeStateRefCounter,
-      stateRestoreAccomplishedMap, initialState,
+      reducerState, stateMap, storeStateRefCounterMap,
+      stateRestoreAccomplishedMap, initialFnCanExecMap, initialState,
     );
   });
   viewConnectStoreMap.set("viewConnectStore", () => {
-    // eslint-disable-next-line no-param-reassign
-    ++storeStateRefCounter;
+    storeStateRefCounterMap.set("counter", storeStateRefCounterMap.get("counter")! + 1);
+
     return () => {
-      // eslint-disable-next-line no-param-reassign
-      --storeStateRefCounter;
+      storeStateRefCounterMap.set("counter", storeStateRefCounterMap.get("counter")! - 1);
+
       if (!schedulerProcessor.get("deferDestructorFlag")) {
         schedulerProcessor.set("deferDestructorFlag", Promise.resolve().then(() => {
           schedulerProcessor.set("deferDestructorFlag", null);
-          if (!storeStateRefCounter) {
+          if (!storeStateRefCounterMap.get("counter")) {
             stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", null);
             stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", null);
           }

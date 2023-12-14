@@ -3,10 +3,10 @@ export * from "./useHook";
 export * from "./view";
 
 export type {
-  CreateStoreOptions, InitialStateExcludedKeys, InitialStateForbiddenKeyType,
-  State, SetState, StateFnType, SetStateCallback, SyncUpdate, Restore,
-  SetOptions, UseData, StoreCoreUtils, StoreUtils, Store, InitialStore,
-  StateWithThisType, InitialState,
+  StoreOptions, InitialStateForbiddenKeys, State,
+  SetState, StateFnType, SetStateCallback, SyncUpdate,
+  Restore, SetOptions, UseData, StoreCoreUtils, StoreUtils,
+  Store, InitialStore, StateWithThisType, InitialState,
 } from "./store/types";
 
 export * from "./subscribe/types";

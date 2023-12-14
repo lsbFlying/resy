@@ -5,3 +5,8 @@ export type StateRestoreAccomplishedMapType = MapType<{
   unmountRestoreAccomplished?: boolean | null;
   initialStateFnRestoreAccomplished?: boolean | null;
 }>;
+
+// initialState如果是函数，在useStore的initialStateFnRestoreHandle处理函数就可以得到执行的标志
+export type InitialFnCanExecMapType = MapType<{
+  canExec?: boolean;
+}>;

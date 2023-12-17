@@ -73,7 +73,7 @@ export const connectStore = <S extends PrimitiveState>(
        * 中间释放内存会移除之前的storeMapValue然后后续更新或者渲染会重新生成新的storeMapValue
        * 而这导致updater函数中访问的singlePropStoreChangeSet是上一次
        * 生成旧的storeMapValue时候的singlePropStoreChangeSet地址
-       * 🌟而旧的singlePropStoreChangeSet早就被删除清空，导致不会有更新能力 ————（有点复杂有点绕，注意理解）
+       * 🌟 而旧的singlePropStoreChangeSet早就被删除清空，导致不会有更新能力 ————（有点复杂有点绕，注意理解）
        * 同时storeStateRefCounterMap的条件判断执行如果在StrictMode下两次渲染也是不合理的
        * 同样困原因扰的还有view的viewConnectStore的Destructor的过渡执行
        * 以及view中effectedHandle的Destructor的过渡执行

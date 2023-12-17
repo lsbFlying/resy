@@ -7,7 +7,7 @@
  */
 import { scheduler } from "../scheduler";
 import { batchUpdate, VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY } from "../static";
-import { mapToObject, objectToMap, hasOwnProperty } from "../utils";
+import { mapToObject, objectToMap, hasOwnProperty, followUpMap } from "../utils";
 import {
   stateErrorHandle, protoPointStoreErrorHandle, optionsErrorHandle,
   subscribeErrorHandle, setStateCallbackErrorHandle,
@@ -122,7 +122,7 @@ export const createStore = <S extends PrimitiveState>(
 
     let stateTemp = state;
     if (typeof state === "function") {
-      stateTemp = (state as StateFnType<S>)(mapToObject(prevState));
+      stateTemp = (state as StateFnType<S>)(mapToObject(followUpMap(stateMap)));
     }
 
     if (stateTemp === null) return;
@@ -161,7 +161,7 @@ export const createStore = <S extends PrimitiveState>(
     let stateTemp = state;
 
     if (typeof state === "function") {
-      stateTemp = (state as StateFnType<S>)(mapToObject(prevState));
+      stateTemp = (state as StateFnType<S>)(mapToObject(followUpMap(stateMap)));
     }
 
     if (stateTemp !== null) {

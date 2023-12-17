@@ -3,6 +3,22 @@ import type { PrimitiveState, MapType } from "./types";
 export const hasOwnProperty = Object.prototype.hasOwnProperty;
 
 /**
+ * @description 跟进状态map
+ * 相较于直接赋值新值的方式也更快
+ * forEach在少量数据情况下较for of略有劣势
+ * 但在数据较多情况下的会强于于for of，
+ * 考虑到for of只有100级别的小数据场景占优其余均劣势
+ * 所以使用forEach
+ */
+export const followUpMap = <K, V>(map: Map<K, V>) => {
+  const mapTemp: Map<K, V> = new Map();
+  map.forEach((value, key) => {
+    mapTemp.set(key, value);
+  });
+  return mapTemp;
+};
+
+/**
  * map转object
  * @description 解决回调参数如果是map的proxy代理的话无法做扩展运算的问题
  * 使用map的forEach也可以，并且在数据量较大的时候比for of更快，
@@ -33,7 +49,7 @@ export const objectToMap = <S extends PrimitiveState>(object: S) => Object.keys(
  * 且在即使接近或者达到甚至超过百万级别的数据量的情况下该方式仍然与其他实现方式相差性能不大
  * 所以下面的实现方式仍然是相对最优解
  *
- * 🌟无论是mapToObject、objectToMap还是clearObject，都是对性能和内存的综合考量
+ * 🌟 无论是mapToObject、objectToMap还是clearObject，都是对性能和内存的综合考量
  * 本身外部是使用object肯定是大多数场景，但是内部使用转换一层map、set是出于map、set的性能优越性考虑
  * 但是这样一来似乎与互相转换的成本中此消彼长，但实际上并非如此，首先就mapToObject而言
  * 纵观resy的整个源码中，它的使用场景都是少数场景，即使在setState、syncUpdate中的函数参数的更新场景中也是不常见不常用的
@@ -48,7 +64,7 @@ export const objectToMap = <S extends PrimitiveState>(object: S) => Object.keys(
  * 总而言之，性能与内存就像物理学中的P=FV，对应到现实世界中就像力量与速度的结合，肌肉大则力量大但是速度降低，反之速度快但肌肉变小但是力量就会弱
  * 我们寻求的是一个FV的最大或者最综合全面的需求考虑，所以目前的考虑即是如此，后续有更优解再进一步加强
  *
- * 🌟另外clearObject这个逻辑操作本身是resy所必须要的执行，同时下面对于clearObject的实现方式是最快的
+ * 🌟 另外clearObject这个逻辑操作本身是resy所必须要的执行，同时下面对于clearObject的实现方式是最快的
  * 即使相对于map的clear操作或者map的遍历delete操作也是最快的，这也侧面体现了原生的某些方法的内部实现比如map.clear
  * 可能也并非是最佳实现方式，至少从速率这一方面来看即是如此
  */

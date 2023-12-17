@@ -28,6 +28,7 @@ It is made up of the first and last of the two letters.
 - 😎 Can be global or local
 - 😎 Fine-grained update
 - 😎 Better performance optimization
+- 😎 Batch update more optimized
 
 ### Install
 ```sh
@@ -69,9 +70,10 @@ resy requires the version of React v >= 16.8
 ### Detailed introduction of api
 
 <details>
-<summary>createStore</summary>
+<summary>
+createStore
+</summary>
 
-### createStore
 ##### the store returned by createStore can be shared globally
 ```tsx
 const demoStore1 = createStore({
@@ -206,10 +208,9 @@ const themeStore = createStore<{ themeStyle: "dark" | "light" }>(
 <details>
 <summary>useStore</summary>
 
-### useStore
 <details>
 <summary>
-similar to useState
+ability to re render
 </summary>
 you can think of it as useState, but not exactly.
 it is used to drive component updates re-render.<br/>
@@ -345,7 +346,6 @@ function App() {
 <details>
 <summary>setState</summary>
 
-### setState
 ```tsx
 import { useStore } from "resy";
 
@@ -510,7 +510,6 @@ function App() {
 <details>
 <summary>syncUpdate</summary>
 
-### syncUpdate
 <details>
 <summary>sync code execution</summary>
 the update of this controlled input/textarea needs to be updated synchronously,
@@ -549,7 +548,6 @@ function App() {
 <details>
 <summary>fine-grained update</summary>
 
-### Fine-grained update
 <details>
 <summary>natural perfection</summary>
 updates to each other's data between text and count
@@ -606,7 +604,6 @@ function App() {
 <details>
 <summary>subscribe</summary>
 
-### subscribe
 <details>
 <summary>data changes that subscribe to store</summary>
 to some extent, we can use useEffect's dependency array to subscribe to data,
@@ -708,7 +705,6 @@ function App() {
 <details>
 <summary>view</summary>
 
-### view
 <details>
 <summary>
 view api summary
@@ -989,7 +985,6 @@ function App() {
 <details>
 <summary>useConciseState</summary>
 
-### useConciseState
 <details>
 <summary>object deconstruction version of useState</summary>
 the existence of useConciseState is mainly for the improvement of state management
@@ -1069,7 +1064,6 @@ function App() {
 <details>
 <summary>setOptions</summary>
 
-#### setOptions
 <details>
 <summary>timing of use</summary>
 combined with the previous introduction to the unmountRestore configuration items, to use the.

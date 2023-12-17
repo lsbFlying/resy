@@ -5,7 +5,7 @@ import { hasOwnProperty, clearObject } from "../utils";
 
 /**
  * @description 获取目前所有的keys
- * 🌟这里需要合并处理key的问题，因为可能存在delete key的情况
+ * 🌟 这里需要合并处理key的问题，因为可能存在delete key的情况
  * 这会导致字段属性数据不统一协调，存在缺失导致数据变化没有完全捕捉到
  * 而restore回复到原始数据状态需要捕捉到所有的状态key然后才可以捕捉到所有的value变化
  * 包括initialRestore或者unmountRestore都是如此

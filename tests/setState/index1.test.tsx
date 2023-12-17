@@ -33,7 +33,6 @@ test("setState-I", async () => {
             return null;
           });
           store.setState(prevState => {
-            // Thus it can be seen that prevState is the state before a certain round of update batch.
             expect(prevState.text === "hello world").toBeTruthy();
             if (prevState.text === "hello world") {
               return {

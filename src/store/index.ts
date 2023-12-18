@@ -10,20 +10,18 @@ import { batchUpdate, VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY } from "..
 import { mapToObject, objectToMap, hasOwnProperty, followUpMap } from "../utils";
 import {
   stateErrorHandle, protoPointStoreErrorHandle, optionsErrorHandle,
-  subscribeErrorHandle, setStateCallbackErrorHandle,
+  subscribeErrorHandle, StateCallbackErrorHandle,
 } from "../errors";
 import { pushTask, connectHookUse, finallyBatchHandle, connectStore } from "./core";
 import type {
   ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions,
-  Store, SetStateCallback, SetStateCallbackItem, StoreMapValueType,
+  Store, StateCallback, StateCallbackItem, StoreMapValueType,
   State, InitialState, OriginOptions, StateRefCounterMapType,
 } from "./types";
 import { mergeStateKeys, handleReducerState } from "../reset";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../reset/types";
 import { genViewConnectStoreMap } from "../view/core";
-import {
-  willUpdatingHandle, prevStateFollowUpStateMap, batchDispatchListener,
-} from "../subscribe";
+import { willUpdatingHandle } from "../subscribe";
 import type {  Unsubscribe, Listener } from "../subscribe/types";
 import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 
@@ -91,14 +89,17 @@ export const createStore = <S extends PrimitiveState>(
    * 且涉及map、object转换的都属于高阶使用方式，常规使用不涉及这种消耗转换，所以总体来说使用Map获取的性能收益是划算的
    */
   const stateMap: MapType<S> = objectToMap(reducerState);
-  // 由于stateMap的设置前置了，优化了同步数据的获取，但是对于之前的数据状态也会需要前置处理
-  const prevState: MapType<S> = objectToMap(reducerState);
+  /**
+   * @description 上一批次的数据状态
+   * 由于stateMap的设置前置了，优化了同步数据的获取，但是对于之前的数据状态也会需要前置处理
+   */
+  const prevBatchState: MapType<S> = objectToMap(reducerState);
 
   /**
    * @description setState的回调函数执行栈数组
    * 用Array没有用Set或者Map是因为内部需要用索引index
    */
-  const setStateCallbackStackSet = new Set<SetStateCallbackItem<S>>();
+  const stateCallbackStackSet = new Set<StateCallbackItem<S>>();
 
   // 订阅监听Set容器
   const listenerSet = new Set<Listener<S>>();
@@ -112,55 +113,14 @@ export const createStore = <S extends PrimitiveState>(
   // 数据存储容器storeMap
   const storeMap: StoreMap<S> = new Map();
 
-  /**
-   * 同步更新
-   * @description todo 更多意义上是为了解决input无法输入非英文语言bug的无奈
-   * bug原因是react的更新调度机制不满足在微任务中执行的问题，vue中是可以的，后续待优化
-   */
-  const syncUpdate = (state: State<S> | StateFnType<S>) => {
-    prevStateFollowUpStateMap(prevState, stateMap);
-
-    let stateTemp = state;
-    if (typeof state === "function") {
-      stateTemp = (state as StateFnType<S>)(mapToObject(followUpMap(stateMap)));
-    }
-
-    if (stateTemp === null) return;
-
-    stateErrorHandle(stateTemp, "syncUpdate");
-
-    batchUpdate(() => {
-      const effectState: Partial<S> = {};
-
-      Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
-        const value = (stateTemp as Partial<S> | S)[key];
-
-        if (!Object.is(value, stateMap.get(key))) {
-          stateMap.set(key, value);
-          effectState[key as keyof S] = value;
-          // 更新
-          (
-            connectStore(
-              key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounterMap, storeMap,
-              stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, initialState,
-            ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
-          )();
-        }
-      });
-
-      if (Object.keys(effectState).length > 0 && listenerSet.size > 0) {
-        batchDispatchListener(prevState, effectState, stateMap, listenerSet);
-      }
-    });
-  };
-
   // 可对象数据更新的函数
-  const setState = (state: State<S> | StateFnType<S>, callback?: SetStateCallback<S>) => {
-    willUpdatingHandle(schedulerProcessor, prevState, stateMap);
+  const setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
+    willUpdatingHandle(schedulerProcessor, prevBatchState, stateMap);
 
     let stateTemp = state;
 
     if (typeof state === "function") {
+      // handle prevState
       stateTemp = (state as StateFnType<S>)(mapToObject(followUpMap(stateMap)));
     }
 
@@ -179,35 +139,42 @@ export const createStore = <S extends PrimitiveState>(
 
     // 异步回调添加入栈
     if (callback !== undefined) {
-      setStateCallbackErrorHandle(callback);
+      StateCallbackErrorHandle(callback);
 
       const nextState: S = Object.assign({}, mapToObject(stateMap), stateTemp);
-      setStateCallbackStackSet.add({ nextState, callback });
+      stateCallbackStackSet.add({ nextState, callback });
     }
 
     finallyBatchHandle(
-      schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackSet,
+      schedulerProcessor, prevBatchState, stateMap, listenerSet, stateCallbackStackSet,
     );
   };
 
-  // 重置恢复初始化状态数据
-  const restore = () => {
-    prevStateFollowUpStateMap(prevState, stateMap);
+  /**
+   * 同步更新
+   * @description 更多意义上是为了解决input无法输入非英文语言bug的无奈
+   * 原因是react的更新调度机制不满足在微任务中执行的问题
+   */
+  const syncUpdate = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
+    let stateTemp = state;
 
-    handleReducerState(reducerState, initialState);
+    if (typeof state === "function") {
+      stateTemp = (state as StateFnType<S>)(mapToObject(followUpMap(stateMap)));
+    }
+    // 借用setState来同步协调subscribe的订阅触发执行
+    setState(stateTemp, callback);
 
-    batchUpdate(() => {
-      const effectState: Partial<S> = {};
-
-      mergeStateKeys(reducerState, prevState).forEach(key => {
-        const originValue = reducerState[key];
-
-        if (!Object.is(originValue, stateMap.get(key))) {
-          hasOwnProperty.call(reducerState, key)
-            ? stateMap.set(key, originValue)
-            : stateMap.delete(key);
-          effectState[key as keyof S] = originValue;
-
+    if (stateTemp !== null) {
+      batchUpdate(() => {
+        Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
+          const value = (stateTemp as Partial<S> | S)[key];
+          /**
+           * 因为stateMap在setState中早已被前置更新了，所以这里没法再判断前后值是否相等了，
+           * 因为此时已经因为setSTate的前置更新stateMap的执行而相等了，
+           * 所以这里就先于setState直接执行更新即可，来达到react自身的更新调度机制
+           * 才可以解决input无法输入非英文语言的问题
+           */
+          stateMap.set(key, value);
           // 更新
           (
             connectStore(
@@ -215,13 +182,30 @@ export const createStore = <S extends PrimitiveState>(
               stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, initialState,
             ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
           )();
-        }
+        });
       });
+    }
+  };
 
-      if (Object.keys(effectState).length > 0 && listenerSet.size > 0) {
-        batchDispatchListener(prevState, effectState, stateMap, listenerSet);
+  // 重置恢复初始化状态数据
+  const restore = (callback?: StateCallback<S>) => {
+    willUpdatingHandle(schedulerProcessor, prevBatchState, stateMap);
+
+    handleReducerState(reducerState, initialState);
+
+    const effectState: Partial<S> = {};
+
+    mergeStateKeys(reducerState, prevBatchState).forEach(key => {
+      const originValue = reducerState[key];
+      if (!Object.is(originValue, stateMap.get(key))) {
+        hasOwnProperty.call(reducerState, key)
+          ? stateMap.set(key, originValue)
+          : stateMap.delete(key);
+        effectState[key as keyof S] = originValue;
       }
     });
+
+    setState(effectState, callback);
   };
 
   // 订阅函数
@@ -256,7 +240,7 @@ export const createStore = <S extends PrimitiveState>(
 
   // 单个属性数据更新
   const singlePropUpdate = (key: keyof S, value: ValueOf<S>, isDelete?: true) => {
-    willUpdatingHandle(schedulerProcessor, prevState, stateMap);
+    willUpdatingHandle(schedulerProcessor, prevBatchState, stateMap);
     pushTask(
       key, value, stateMap, schedulerProcessor, optionsTemp.unmountRestore,
       reducerState, storeStateRefCounterMap, storeMap,
@@ -264,7 +248,7 @@ export const createStore = <S extends PrimitiveState>(
       initialState, isDelete,
     );
     finallyBatchHandle(
-      schedulerProcessor, prevState, stateMap, listenerSet, setStateCallbackStackSet,
+      schedulerProcessor, prevBatchState, stateMap, listenerSet, stateCallbackStackSet,
     );
     return true;
   };

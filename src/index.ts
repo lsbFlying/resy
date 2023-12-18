@@ -4,7 +4,7 @@ export * from "./view";
 
 export type {
   StoreOptions, InitialStateForbiddenKeys, State,
-  SetState, StateFnType, SetStateCallback, SyncUpdate,
+  SetState, StateFnType, StateCallback, SyncUpdate,
   Restore, SetOptions, UseData, StoreCoreUtils, StoreUtils,
   Store, InitialStore, StateWithThisType, InitialState,
 } from "./store/types";

@@ -19,7 +19,7 @@ export const mergeStateKeys = <S extends PrimitiveState>(
 ) => Array.from(
     new Set(
       (
-      Object.keys(reducerState) as (keyof S)[]
+        Object.keys(reducerState) as (keyof S)[]
       ).concat(
         Array.from(stateMap.keys())
       )

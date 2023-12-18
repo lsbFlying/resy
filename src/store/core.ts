@@ -1,16 +1,13 @@
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { batchUpdate } from "../static";
+import type { PrimitiveState, ValueOf, MapType, Callback } from "../types";
 import type {
-  PrimitiveState, ValueOf, MapType, Callback,
-} from "../types";
-import type {
-  SetStateCallbackItem, StoreMapValue, StoreMapValueType,
+  StateCallbackItem, StoreMapValue, StoreMapValueType,
   StoreMap, InitialState, StateRefCounterMapType,
 } from "./types";
 import type { Scheduler } from "../scheduler/types";
 import { mapToObject } from "../utils";
 import { unmountRestoreHandle, initialStateFnRestoreHandle } from "../reset";
-import { batchDispatchListener } from "../subscribe";
 import type { Listener } from "../subscribe/types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../reset/types";
 
@@ -101,7 +98,7 @@ export const connectStore = <S extends PrimitiveState>(
     };
   });
 
-  storeMapValue.set("getOriginState", () => stateMap.get(key)!);
+  storeMapValue.set("getOriginState", () => stateMap.get(key));
 
   storeMapValue.set("useOriginState", () => useSyncExternalStore(
     (storeMap.get(key) as StoreMapValue<S>).get("subscribeOriginState") as StoreMapValueType<S>["subscribeOriginState"],
@@ -205,10 +202,10 @@ export const pushTask = <S extends PrimitiveState>(
  */
 export const finallyBatchHandle = <S extends PrimitiveState>(
   schedulerProcessor: MapType<Scheduler<S>>,
-  prevState: MapType<S>,
+  prevBatchState: MapType<S>,
   stateMap: MapType<S>,
   listenerSet: Set<Listener<S>>,
-  setStateCallbackStackSet: Set<SetStateCallbackItem<S>>,
+  stateCallbackStackSet: Set<StateCallbackItem<S>>,
 ) => {
   // 如果当前这一条更新没有变化也就没有任务队列入栈，则不需要更新就没有必要再往下执行多余的代码了
   const { taskDataMap } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
@@ -246,16 +243,23 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
          * 它的更新动力只是借助了这里的监听订阅的数据触发驱动而已
          */
         if (listenerSet.size > 0) {
-          batchDispatchListener(prevState, mapToObject(taskDataMap), stateMap, listenerSet);
+          listenerSet.forEach(item => {
+            // 这里mapToObject的复制体让外部的订阅使用保持尽量的纯洁与安全性
+            item({
+              effectState: mapToObject(taskDataMap),
+              nextState: mapToObject(stateMap),
+              prevState: mapToObject(prevBatchState),
+            });
+          });
         }
 
         // 同时也顺便把回掉中可能的更新也统一批量处理了
-        if (setStateCallbackStackSet.size > 0) {
+        if (stateCallbackStackSet.size > 0) {
           // 先更新，再执行回调，循环调用回调
-          setStateCallbackStackSet.forEach(({ callback, nextState }) => {
+          stateCallbackStackSet.forEach(({ callback, nextState }) => {
             callback(nextState);
           });
-          setStateCallbackStackSet.clear();
+          stateCallbackStackSet.clear();
         }
 
         // 至此，这一轮数据更新的任务完成，立即清空冲刷任务数据与任务队列，腾出空间为下一轮数据更新做准备

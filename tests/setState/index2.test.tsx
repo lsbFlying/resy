@@ -31,7 +31,7 @@ test("setState-II", async () => {
           }, nextState => {
             expect(nextState.count === 0).toBeTruthy();
             // Thus it can be seen that nextState is the updated state of the current sentence of code,
-            // not the updated state of this batch.
+            // not the updated state of this batch, it's safe.
             expect(store.count === 9).toBeTruthy();
             store.text = "hello after again";
           });

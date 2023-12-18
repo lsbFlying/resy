@@ -32,7 +32,7 @@ export type InitialStateForbiddenKeys =
   | "subscribe"
   | "restore"
   | "setOptions"
-  | "useData" // useData可以再考量一下，再找到最优解之前先保留
+  | "useData" // todo useData可以再考量一下，再找到最优解之前先保留
   | "store";  // store是useConciseState的属性
 
 /**
@@ -88,44 +88,30 @@ export type SetState<S extends PrimitiveState> = Readonly<{
    */
   setState(
     state: State<S> | StateFnType<S>,
-    callback?: SetStateCallback<S>,
+    callback?: StateCallback<S>,
   ): void;
 }>;
 
 /**
  * setState与syncUpdate的函数更新类型
- * @description prevState的存在是有必要的，注意区分在代码的同步变更state状态的过程中
- * 从store获取最新数据值与从当前一轮更新之前的prevState中获取之前的更新状态的逻辑区别
- * @example:
- * const store = createStore({ count: 0, text: "hello world" });
- * ...
- * // change:
- * store.count = 9;
- * store.setState(prevState => {
- *   console.log(prevState.count === 0);  // true
- *   console.log(store.count === 9);  // true
- *   return {
- *     text: "ok",
- *   };
- * });
+ * @description prevState的存在是有必要的，在复杂的业务更新逻辑与事件循环中，
+ * 能够通过简单的同步代码直接获取prevState之前的同步状态是很舒畅简约的设定
  */
 export type StateFnType<S extends PrimitiveState> = (prevState: Readonly<S>) => State<S>;
 
 /**
- * setState的回调函数的类型
- * @description 回调中nextState参数的存在是必要的，
- * 它与class类组件的this.setState的回调中通过this.state读取最新数据有所区别
- * 二者都是入栈最后执行，但是resy的nextState是每一句setState更新代码同步而来的最新数据
- * 也就是说resy它的setState的回调函数的最后的执行是记住了阶段性的最新数据，而不是最终的最新数据
- * 这一点很大程度上与类组件的this.setState区别开来
+ * setState、syncUpdate、restore的回调函数的类型
+ * @description 回调中nextState参数的存在是必要的，在复杂事件周期过程中，
+ * 虽然通过store获取数据可以获取最新的值，但是事件周期的复杂性会使最新的数据来源不可控，
+ * 很难追溯数据变化的来源，而此刻有nextState可以同步获取当前的同步状态是简约方便的设计
  */
-export type SetStateCallback<S extends PrimitiveState> = (nextState: Readonly<S>) => void;
+export type StateCallback<S extends PrimitiveState> = (nextState: Readonly<S>) => void;
 
-// setState的回调执行栈的元素类型
-export type SetStateCallbackItem<S extends PrimitiveState> = {
+// setState、syncUpdate、restore的回调执行栈的元素类型
+export type StateCallbackItem<S extends PrimitiveState> = {
   // 当前这一句更新代码更新的state状态数据
   nextState: S;
-  callback: SetStateCallback<S>;
+  callback: StateCallback<S>;
 };
 
 /** 同步更新 */
@@ -136,17 +122,22 @@ export type SyncUpdate<S extends PrimitiveState> = Readonly<{
    * 该场景为在异步中更新受控input类输入框的value值
    * 会导致输入不了英文以外的语言文字
    * @param state
+   * @param callback
    */
   syncUpdate(
     state: State<S> | StateFnType<S>,
+    callback?: StateCallback<S>,
   ): void;
 }>;
 
 /**
  * @description 重置、恢复初始化状态，具备更新渲染效应，有一定的业务需求必要性
  */
-export type Restore = Readonly<{
-  restore(): void;
+export type Restore<S extends PrimitiveState> = Readonly<{
+  /**
+   * @param callback
+   */
+  restore(callback?: StateCallback<S>): void;
 }>;
 
 /**
@@ -170,7 +161,7 @@ export type UseData<S extends PrimitiveState> = Readonly<{
 }>;
 
 /** store的一些核心的工具方法类型 */
-export type StoreCoreUtils<S extends PrimitiveState> = SetState<S> & SyncUpdate<S> & Restore & Subscribe<S>;
+export type StoreCoreUtils<S extends PrimitiveState> = SetState<S> & SyncUpdate<S> & Restore<S> & Subscribe<S>;
 
 /** store的工具方法类型 */
 export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOptions & UseData<S>;

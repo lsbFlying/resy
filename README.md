@@ -487,7 +487,7 @@ function App() {
     store.count = 9;
     // The prevState parameter of the function
     store.setState(prevState => {
-      console.log(prevState.count === 0);  // true
+      console.log(prevState.count === 9);  // true
       console.log(store.count === 9);  // true
       return {
         text: "ok",

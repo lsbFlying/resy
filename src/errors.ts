@@ -1,6 +1,6 @@
 import { __DEV__, REGENERATIVE_SYSTEM_KEY } from "./static";
 import type { PrimitiveState } from "./types";
-import type { State, StoreOptions, SetStateCallback } from "./store/types";
+import type { State, StoreOptions, StateCallback } from "./store/types";
 import type { Listener } from "./subscribe/types";
 
 const toString = Object.prototype.toString;
@@ -77,7 +77,7 @@ export const subscribeErrorHandle = <S extends PrimitiveState>(
   }
 };
 
-export const setStateCallbackErrorHandle = <S extends PrimitiveState>(callback?: SetStateCallback<S>) => {
+export const StateCallbackErrorHandle = <S extends PrimitiveState>(callback?: StateCallback<S>) => {
   if (callback !== undefined && typeof callback !== "function") {
     throw new Error(
       `resy's setState(...): Expected the last optional 'callback' argument to be a function. Instead received: ${callback}.`

@@ -3,7 +3,11 @@ import type { Callback, PrimitiveState } from "../types";
 /** resy的订阅监听的取消返回函数 */
 export type Unsubscribe = Callback;
 
-/** 订阅监听函数的参数类型 */
+/**
+ * 订阅监听函数的参数类型
+ * @description subscribe具备批次更新处理，effectState是本次一个批次变动的数据状态
+ * 而prevState和nextState是这一批次变动监听的前一批次和后一批次的数据状态
+ */
 export type ListenerParams<S extends PrimitiveState> = {
   effectState: Partial<S>;
   nextState: S;
@@ -23,7 +27,7 @@ export type Subscribe<S extends PrimitiveState> = Readonly<{
    * 具备多数据订阅监听的能力
    * @param listener 监听订阅的回调函数
    * @param stateKeys 监听订阅的具体的某一个store容器的某些数据变化，如果为空则默认监听store的任何一个数据的变化
-   * @return unsubscribe 返回取消监听的函数
+   * @return unsubscribe 返回的取消监听的函数
    */
   subscribe(
     listener: Listener<S>,

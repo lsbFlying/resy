@@ -16,7 +16,7 @@ test("restore-I", async () => {
       <>
         <p>{count}</p>
         <button onClick={() => {
-          store.count = 9;
+          store.count++;
         }}>add</button>
         <button onClick={() => {
           store.restore();

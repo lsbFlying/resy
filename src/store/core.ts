@@ -161,7 +161,7 @@ export const pushTask = <S extends PrimitiveState>(
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   initialFnCanExecMap: InitialFnCanExecMapType,
   initialState?: InitialState<S>,
-  isDelete?: true,
+  isDelete?: boolean,
 ) => {
   /**
    * @description 考虑极端复杂的情况下业务逻辑有需要更新某个数据为函数，或者本身函数也有变更

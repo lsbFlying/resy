@@ -10,7 +10,7 @@ import { batchUpdate, VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY } from "..
 import { mapToObject, objectToMap, hasOwnProperty, followUpMap } from "../utils";
 import {
   stateErrorHandle, protoPointStoreErrorHandle, optionsErrorHandle,
-  subscribeErrorHandle, StateCallbackErrorHandle,
+  subscribeErrorHandle, stateCallbackErrorHandle,
 } from "../errors";
 import { pushTask, connectHookUse, finallyBatchHandle, connectStore } from "./core";
 import type {
@@ -139,7 +139,7 @@ export const createStore = <S extends PrimitiveState>(
 
     // 异步回调添加入栈
     if (callback !== undefined) {
-      StateCallbackErrorHandle(callback);
+      stateCallbackErrorHandle(callback);
 
       const nextState: S = Object.assign({}, mapToObject(stateMap), stateTemp);
       stateCallbackStackSet.add({ nextState, callback });
@@ -193,19 +193,25 @@ export const createStore = <S extends PrimitiveState>(
 
     handleReducerState(reducerState, initialState);
 
-    const effectState: Partial<S> = {};
-
     mergeStateKeys(reducerState, prevBatchState).forEach(key => {
       const originValue = reducerState[key];
       if (!Object.is(originValue, stateMap.get(key))) {
-        hasOwnProperty.call(reducerState, key)
-          ? stateMap.set(key, originValue)
-          : stateMap.delete(key);
-        effectState[key as keyof S] = originValue;
+        pushTask(
+          key, originValue, stateMap, schedulerProcessor, optionsTemp.unmountRestore,
+          reducerState, storeStateRefCounterMap, storeMap, stateRestoreAccomplishedMap,
+          initialFnCanExecMap, initialState, !hasOwnProperty.call(reducerState, key),
+        );
       }
     });
 
-    setState(effectState, callback);
+    if (callback !== undefined) {
+      stateCallbackErrorHandle(callback);
+      stateCallbackStackSet.add({ nextState: reducerState, callback });
+    }
+
+    finallyBatchHandle(
+      schedulerProcessor, prevBatchState, stateMap, listenerSet, stateCallbackStackSet,
+    );
   };
 
   // 订阅函数
@@ -239,7 +245,7 @@ export const createStore = <S extends PrimitiveState>(
   };
 
   // 单个属性数据更新
-  const singlePropUpdate = (key: keyof S, value: ValueOf<S>, isDelete?: true) => {
+  const singlePropUpdate = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
     willUpdatingHandle(schedulerProcessor, prevBatchState, stateMap);
     pushTask(
       key, value, stateMap, schedulerProcessor, optionsTemp.unmountRestore,

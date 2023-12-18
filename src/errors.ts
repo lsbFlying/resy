@@ -77,7 +77,7 @@ export const subscribeErrorHandle = <S extends PrimitiveState>(
   }
 };
 
-export const StateCallbackErrorHandle = <S extends PrimitiveState>(callback?: StateCallback<S>) => {
+export const stateCallbackErrorHandle = <S extends PrimitiveState>(callback?: StateCallback<S>) => {
   if (callback !== undefined && typeof callback !== "function") {
     throw new Error(
       `resy's setState(...): Expected the last optional 'callback' argument to be a function. Instead received: ${callback}.`

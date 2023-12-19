@@ -1,8 +1,7 @@
 import { expect, test } from "vitest";
 import { createStore } from "../../src";
 
-test("createStore-error-scene-I", async () => {
-  /** 测试初始化入参报错 start */
+test("createStore-error-scene", async () => {
   // @ts-ignore
   expect(() => createStore(0)).toThrowError();
   // @ts-ignore
@@ -45,6 +44,8 @@ test("createStore-error-scene-I", async () => {
   // @ts-ignore
   expect(() => createStore({}, "")).toThrowError();
   // @ts-ignore
+  expect(() => createStore({}, "hello")).toThrowError();
+  // @ts-ignore
   expect(() => createStore({}, [])).toThrowError();
   // @ts-ignore
   expect(() => createStore({}, Symbol("empty-symbol"))).toThrowError();
@@ -58,5 +59,4 @@ test("createStore-error-scene-I", async () => {
   expect(() => createStore({}, new WeakMap())).toThrowError();
   // @ts-ignore
   expect(() => createStore({}, new WeakRef())).toThrowError();
-  /** 测试初始化options入参报错 end */
 });

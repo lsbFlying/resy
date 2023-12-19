@@ -1,16 +1,19 @@
 import { expect, test } from "vitest";
 import { createStore } from "../../src";
 
-test("setOptions-error-scene-I", async () => {
+test("setOptions-error-scene", async () => {
 
   const store = createStore();
   const { setOptions } = store;
 
-  /** 测试store类型报错 start */
   // @ts-ignore
-  expect(() => setOptions(123)).toThrowError();
+  expect(() => setOptions(0)).toThrowError();
   // @ts-ignore
-  expect(() => setOptions("123")).toThrowError();
+  expect(() => setOptions(1)).toThrowError();
+  // @ts-ignore
+  expect(() => setOptions("")).toThrowError();
+  // @ts-ignore
+  expect(() => setOptions("999")).toThrowError();
   // @ts-ignore
   // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
   expect(() => setOptions(() => {})).toThrowError();
@@ -34,5 +37,4 @@ test("setOptions-error-scene-I", async () => {
   expect(() => setOptions(new WeakSet())).toThrowError();
   // @ts-ignore
   expect(() => setOptions(new WeakRef())).toThrowError();
-  /** 测试store类型报错 end */
 });

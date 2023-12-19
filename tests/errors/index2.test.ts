@@ -1,13 +1,16 @@
 import { expect, test } from "vitest";
 import { useStore } from "../../src";
 
-test("useStore-error-scene-I", async () => {
+test("useStore-error-scene", async () => {
 
-  /** 测试store类型报错 start */
   // @ts-ignore
-  expect(() => useStore(123)).toThrowError();
+  expect(() => useStore(0)).toThrowError();
   // @ts-ignore
-  expect(() => useStore("123")).toThrowError();
+  expect(() => useStore(1)).toThrowError();
+  // @ts-ignore
+  expect(() => useStore("")).toThrowError();
+  // @ts-ignore
+  expect(() => useStore("999")).toThrowError();
   // @ts-ignore
   expect(() => useStore({})).toThrowError();
   // @ts-ignore
@@ -35,5 +38,4 @@ test("useStore-error-scene-I", async () => {
   expect(() => useStore(new WeakSet())).toThrowError();
   // @ts-ignore
   expect(() => useStore(new WeakRef())).toThrowError();
-  /** 测试store类型报错 end */
 });

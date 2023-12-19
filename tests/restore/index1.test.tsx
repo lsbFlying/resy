@@ -1,5 +1,5 @@
 import React from "react";
-import { test } from "vitest";
+import { expect, test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { createStore, useStore } from "../../src";
 
@@ -19,7 +19,9 @@ test("restore-I", async () => {
           store.count++;
         }}>add</button>
         <button onClick={() => {
-          store.restore();
+          store.restore(nextState => {
+            expect(nextState.count === 0).toBeTruthy();
+          });
         }}>restoreBtn</button>
       </>
     );

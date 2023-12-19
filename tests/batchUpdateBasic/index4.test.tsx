@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 
 /** Update method and batch update ( The effect of react's original update mechanism ) */
-test("batchUpdate-IV", async () => {
+test("batchUpdateBasic-IV", async () => {
   let counter = 0;
   const App = () => {
     const [count, setCount] = useState(0);

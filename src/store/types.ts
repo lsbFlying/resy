@@ -3,7 +3,10 @@ import { REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY } from "../static";
 import type { Subscribe } from "../subscribe/types";
 import type { StoreViewMapType } from "../view/types";
 
-export type OriginOptions = {
+/**
+ * @description createStore该API第二个参数配置项
+ */
+export type StoreOptions = Readonly<{
   /**
    * @description 1、该参数主要是为了在某模块mount初始化阶段自动重置数据的，
    * 如遇到登录信息、主题等这样的全局数据而言才会设置为false，
@@ -11,19 +14,13 @@ export type OriginOptions = {
    * 2、对象接口式的写法是为了兼容未来可能的未知的配置功能的增加
    * @default true
    */
-  unmountRestore: boolean;
+  unmountRestore?: boolean;
   /**
    * 供useConciseState钩子使用的配置（内部使用，外部不建议使用）
    * @default undefined
    */
   __useConciseStateMode__?: boolean;
-};
-
-/**
- * @description createStore该API第二个参数配置项
- * 目前配置项不多，且常用主要配置也是unmountRestore
- */
-export type StoreOptions = Readonly<OriginOptions>;
+}>;
 
 /** 初始化参数禁用的key类型 */
 export type InitialStateForbiddenKeys =
@@ -83,8 +80,8 @@ export type State<S extends PrimitiveState> = Partial<S> | S | null;
 /** setState 更新数据 */
 export type SetState<S extends PrimitiveState> = Readonly<{
   /**
-   * @param state
-   * @param callback
+   * @param state 更新的参数
+   * @param callback 更新后的回调函数
    */
   setState(
     state: State<S> | StateFnType<S>,
@@ -174,10 +171,29 @@ export type InitialStore<S extends PrimitiveState> = {
   [K in keyof S]: K extends InitialStateForbiddenKeys ? never : S[K];
 } & StoreCoreUtils<S> & SetOptions;
 
+/** InitialState的初始化禁用的参数类型 */
+export type PrimateForbiddenType =
+  | number
+  | string
+  | null
+  | Symbol
+  | boolean
+  | Set<any>
+  | Map<any, any>
+  | Array<any>
+  | WeakSet<any>
+  | WeakMap<any, any>
+  | WeakRef<any>;
+
 /** 具备this类型指向识别的参数类型 */
-export type StateWithThisType<S extends PrimitiveState> = {
-  [K in keyof S]: K extends InitialStateForbiddenKeys ? never : S[K];
-} & ThisType<InitialStore<S>>;
+export type StateWithThisType<S extends PrimitiveState> = S extends PrimateForbiddenType
+  ? never
+  // S & 可以剔除 S原型链上面的类型
+  : S & {
+    [K in keyof S]: K extends InitialStateForbiddenKeys
+      ? never
+      : S[K];
+  } & ThisType<InitialStore<S>>;
 
 /** 初始化数据类型 */
 export type InitialState<S extends PrimitiveState> = StateWithThisType<S> | (() => StateWithThisType<S>);

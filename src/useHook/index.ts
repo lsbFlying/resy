@@ -3,7 +3,7 @@ import { createStore } from "../store";
 import { storeErrorHandle } from "../errors";
 import type { PrimitiveState } from "../types";
 import type { ConciseStore } from "./types";
-import type { InitialState } from "../store/types";
+import type { InitialState, Store } from "../store/types";
 
 /**
  * 驱动组件更新
@@ -13,7 +13,7 @@ import type { InitialState } from "../store/types";
  * @param store
  * @return S
  */
-export const useStore = <S extends PrimitiveState>(store: S): S => {
+export const useStore = <S extends PrimitiveState>(store: Store<S>): Store<S> => {
   storeErrorHandle(store, "useStore");
   return store["useData" as keyof S];
 };

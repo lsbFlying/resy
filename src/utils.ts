@@ -2,6 +2,8 @@ import type { PrimitiveState, MapType } from "./types";
 
 export const hasOwnProperty = Object.prototype.hasOwnProperty;
 
+export const toString = Object.prototype.toString;
+
 /**
  * @description 跟进状态map
  * 相较于直接赋值新值的方式也更快

@@ -16,7 +16,7 @@ import { pushTask, connectHookUse, finallyBatchHandle, connectStore } from "./co
 import type {
   ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions,
   Store, StateCallback, StateCallbackItem, StoreMapValueType,
-  State, InitialState, OriginOptions, StateRefCounterMapType,
+  State, InitialState, StateRefCounterMapType, StateWithThisType,
 } from "./types";
 import { mergeStateKeys, handleReducerState } from "../reset";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../reset/types";
@@ -53,7 +53,7 @@ export const createStore = <S extends PrimitiveState>(
    * 那样一来每次createStore就会生成很多reduce里面的重复函数占用很多内存
    */
   const reducerState = initialState === undefined
-    ? ({} as S)
+    ? ({} as StateWithThisType<S>)
     : typeof initialState === "function"
       ? initialState()
       : initialState;
@@ -61,7 +61,12 @@ export const createStore = <S extends PrimitiveState>(
   stateErrorHandle(reducerState, "createStore");
 
   optionsErrorHandle("createStore", options);
-  const optionsTemp: OriginOptions = options ? { ...options } : { unmountRestore: true };
+  const optionsTemp = options
+    ? {
+      __useConciseStateMode__: options.__useConciseStateMode__ ?? undefined,
+      unmountRestore: options.unmountRestore ?? true,
+    }
+    : { unmountRestore: true };
 
   // 当前store的调度处理器
   const schedulerProcessor = scheduler<S>();

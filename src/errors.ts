@@ -2,8 +2,7 @@ import { __DEV__, REGENERATIVE_SYSTEM_KEY } from "./static";
 import type { PrimitiveState } from "./types";
 import type { State, StoreOptions, StateCallback } from "./store/types";
 import type { Listener } from "./subscribe/types";
-
-const toString = Object.prototype.toString;
+import { toString } from "./utils";
 
 // store传的不是由resy本身的createStore创建产生的store的错误处理
 export const storeErrorHandle = <S extends PrimitiveState>(store: S, fnName: "useStore" | "view") => {
@@ -43,12 +42,18 @@ export const optionsErrorHandle = (
   fnName: "setOptions" | "createStore",
   options?: StoreOptions
 ) => {
+  const optsExist = options !== undefined;
   if (
-    options !== undefined && (
-      typeof options?.unmountRestore !== "boolean"
-      || (
-        typeof options?.__useConciseStateMode__ !== "boolean"
-        && typeof options?.__useConciseStateMode__ !== "undefined"
+    (optsExist && toString.call(options) !== "[object Object]") || (
+      optsExist && (
+        (
+          typeof options?.unmountRestore !== "boolean"
+          && typeof options?.unmountRestore !== "undefined"
+        )
+        || (
+          typeof options?.__useConciseStateMode__ !== "boolean"
+          && typeof options?.__useConciseStateMode__ !== "undefined"
+        )
       )
     )
   ) {
@@ -80,7 +85,7 @@ export const subscribeErrorHandle = <S extends PrimitiveState>(
 export const stateCallbackErrorHandle = <S extends PrimitiveState>(callback?: StateCallback<S>) => {
   if (callback !== undefined && typeof callback !== "function") {
     throw new Error(
-      `resy's setState(...): Expected the last optional 'callback' argument to be a function. Instead received: ${callback}.`
+      `resy's stateCallback(...): Expected the last optional 'callback' argument to be a function. Instead received: ${callback}.`
     );
   }
 };

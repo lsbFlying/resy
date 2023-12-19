@@ -4,7 +4,7 @@ import { render, fireEvent, waitFor } from "@testing-library/react";
 import { createStore } from "../../src";
 
 /** Update method and batch update */
-test("batchUpdate-II", async () => {
+test("batchUpdateBasic-III", async () => {
   const store = createStore({
     count: 0,
   });
@@ -17,9 +17,8 @@ test("batchUpdate-II", async () => {
       <>
         <p>{count}</p>
         <button onClick={() => {
-          store.setState({
-            count: store.count + 1,
-          });
+          // Mixed updates also have batch effect.
+          store.count++;
           expect(store.count === 1).toBeTruthy();
 
           store.setState({
@@ -27,9 +26,7 @@ test("batchUpdate-II", async () => {
           });
           expect(store.count === 2).toBeTruthy();
 
-          store.setState({
-            count: store.count + 1,
-          });
+          store.count++;
           expect(store.count === 3).toBeTruthy();
 
           store.setState({

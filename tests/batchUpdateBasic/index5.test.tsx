@@ -4,7 +4,7 @@ import { render, fireEvent, waitFor } from "@testing-library/react";
 import { createStore } from "../../src";
 
 /** Update method and batch update */
-test("batchUpdate-V", async () => {
+test("batchUpdateBasic-V", async () => {
   const store = createStore({
     count: 0,
   });

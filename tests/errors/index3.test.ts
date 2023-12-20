@@ -26,6 +26,8 @@ test("setOptions-error-scene", async () => {
   // @ts-ignore
   expect(() => setOptions(NaN)).toThrowError();
   // @ts-ignore
+  expect(() => setOptions(false)).toThrowError();
+  // @ts-ignore
   expect(() => setOptions(true)).toThrowError();
   // @ts-ignore
   expect(() => setOptions(new Map())).toThrowError();

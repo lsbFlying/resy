@@ -27,6 +27,8 @@ test("useStore-error-scene", async () => {
   // @ts-ignore
   expect(() => useStore(NaN)).toThrowError();
   // @ts-ignore
+  expect(() => useStore(false)).toThrowError();
+  // @ts-ignore
   expect(() => useStore(true)).toThrowError();
   // @ts-ignore
   expect(() => useStore(new Map())).toThrowError();

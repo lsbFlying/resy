@@ -38,4 +38,33 @@ test("syncUpdate-error-scene", async () => {
   expect(() => store.syncUpdate(() => {})).toThrowError();
   // @ts-ignore
   expect(() => store.syncUpdate(new WeakRef())).toThrowError();
+
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, 0)).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, 1)).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, "")).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, "9")).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, true)).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, false)).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, null)).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, [])).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, NaN)).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, new Map())).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, new Set())).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, new WeakMap())).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, new WeakSet())).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, new WeakRef())).toThrowError();
 });

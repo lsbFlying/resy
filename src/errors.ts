@@ -20,7 +20,7 @@ export const storeErrorHandle = <S extends PrimitiveState>(store: S, fnName: "us
 // 数据更新参数报错处理
 export const stateErrorHandle = <S extends PrimitiveState>(
   stateParams: State<S>,
-  fnName: "setState" | "syncUpdate" | "createStore",
+  fnName: "setState | syncUpdate" | "createStore",
 ) => {
   if (toString.call(stateParams) !== "[object Object]") {
     throw new Error(

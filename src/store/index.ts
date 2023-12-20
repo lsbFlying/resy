@@ -130,7 +130,7 @@ export const createStore = <S extends PrimitiveState>(
     }
 
     if (stateTemp !== null) {
-      stateErrorHandle(stateTemp, "setState");
+      stateErrorHandle(stateTemp, "setState | syncUpdate");
 
       // 更新添加入栈，后续统一批次合并更新
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {

@@ -74,6 +74,7 @@ test("createStoreWithFunction-I", async () => {
     // console.log("showChange-again", initialTimeRecord, timerStore.time);
     const id = setTimeout(() => {
       clearTimeout(id);
+      console.log(initialTimeRecord, timerStore.time);
       expect(initialTimeRecord < timerStore.time).toBeTruthy();
     }, 0);
   });

@@ -1,7 +1,7 @@
 import React from "react";
 import { expect, test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
-import { createStore } from "../../src";
+import { createStore, useStore } from "../../src";
 
 /** Use mode of setState */
 test("setState-I", async () => {
@@ -10,7 +10,7 @@ test("setState-I", async () => {
   });
 
   const App = () => {
-    const { text } = store.useData;
+    const { text } = useStore(store);
     return (
       <>
         <p>{text}</p>
@@ -46,6 +46,10 @@ test("setState-I", async () => {
           // empty object, no updates
           store.setState({});
         }}>changeText4</button>
+        <button onClick={() => {
+          // store self, no updates
+          store.setState(store);
+        }}>changeText5</button>
       </>
     );
   };
@@ -68,6 +72,11 @@ test("setState-I", async () => {
   });
 
   fireEvent.click(getByText("changeText4"));
+  await waitFor(() => {
+    getByText("hello world twice change");
+  });
+
+  fireEvent.click(getByText("changeText5"));
   await waitFor(() => {
     getByText("hello world twice change");
   });

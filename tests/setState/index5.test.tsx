@@ -1,7 +1,7 @@
 import React from "react";
 import { expect, test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
-import { createStore } from "../../src";
+import { createStore, useStore } from "../../src";
 
 /** Update method and batch update and use mode of setState */
 test("setState-V", async () => {
@@ -11,7 +11,7 @@ test("setState-V", async () => {
   let counter = 0;
 
   const App = () => {
-    const { count } = store.useData;
+    const { count } = useStore(store);
     counter++;
     console.log("App", count, counter);
     return (
@@ -19,7 +19,7 @@ test("setState-V", async () => {
         <p>{count}</p>
         <button onClick={() => {
           /**
-           * —————— Limit mixing Test of promise、setTimeout、sync code、setState`s callback —————— start
+           * —————— Mixing Test of promise、setTimeout、sync code、setState`s callback —————— start
            * Test cases are tested for react18.
            * The results under react18 are only analyzed below.
            */

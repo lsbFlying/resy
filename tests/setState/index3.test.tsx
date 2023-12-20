@@ -1,7 +1,7 @@
 import React from "react";
 import { expect, test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
-import { createStore } from "../../src";
+import { createStore, useStore } from "../../src";
 
 /** Use mode of setState */
 test("setState-III", async () => {
@@ -11,7 +11,7 @@ test("setState-III", async () => {
   let counter = 0;
 
   const App = () => {
-    const { count } = store.useData;
+    const { count } = useStore(store);
     counter++;
     return (
       <>

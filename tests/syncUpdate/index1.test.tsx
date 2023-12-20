@@ -34,6 +34,14 @@ test("syncUpdate-basic-I", async () => {
             expect(nextState.count === 3).toBeTruthy();
           });
         }}>btn3</button>
+        <button onClick={() => {
+          // empty object, no updates
+          store.syncUpdate({});
+        }}>btn4</button>
+        <button onClick={() => {
+          // store self, no updates
+          store.syncUpdate(store);
+        }}>btn5</button>
       </>
     );
   };
@@ -51,6 +59,16 @@ test("syncUpdate-basic-I", async () => {
   });
 
   fireEvent.click(getByText("btn3"));
+  await waitFor(() => {
+    getByText("3");
+  });
+
+  fireEvent.click(getByText("btn4"));
+  await waitFor(() => {
+    getByText("3");
+  });
+
+  fireEvent.click(getByText("btn4"));
   await waitFor(() => {
     getByText("3");
   });

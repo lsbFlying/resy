@@ -11,7 +11,7 @@ import type { InitialState, Store } from "../store/types";
  * 特意分离直接从store获取hook调用是为了数据的安全使用
  * 本身产生的数据就是hook数据，所以会多一层代理
  * @param store
- * @return S
+ * @return store
  */
 export const useStore = <S extends PrimitiveState>(store: Store<S>): Store<S> => {
   storeErrorHandle(store, "useStore");
@@ -36,7 +36,6 @@ export const useConciseState = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
 ): ConciseStore<S> =>
     useMemo(() => createStore<S>(initialState, {
-      unmountRestore: true,
       __useConciseStateMode__: true,
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }), [])["useData" as keyof S]

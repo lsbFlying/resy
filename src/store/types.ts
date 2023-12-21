@@ -188,7 +188,6 @@ export type PrimateForbiddenType =
 /** 具备this类型指向识别的参数类型 */
 export type StateWithThisType<S extends PrimitiveState> = S extends PrimateForbiddenType
   ? never
-  // S & 可以剔除 S原型链上面的类型
   : S & {
     [K in keyof S]: K extends InitialStateForbiddenKeys
       ? never
@@ -196,7 +195,7 @@ export type StateWithThisType<S extends PrimitiveState> = S extends PrimateForbi
   } & ThisType<InitialStore<S>>;
 
 /** 初始化数据类型 */
-export type InitialState<S extends PrimitiveState> = StateWithThisType<S> | (() => StateWithThisType<S>);
+export type InitialState<S extends PrimitiveState> = (() => StateWithThisType<S>) | StateWithThisType<S>;
 
 // 对应整个store的数据引用标记的计数器的map类型
 export type StateRefCounterMapType = MapType<{

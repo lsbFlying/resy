@@ -18,7 +18,7 @@ import type { Store } from "../store/types";
  * 但是memo的本质使用效益总所周知可能是不那么明显，属于伤敌一千自损八百的招式
  * 且对于class组件而言，class终究是函数的上层模仿实现，最终还是有函数转换执行，
  * 其性能会弱于hook组件，可以考虑不再予以兼容支持，
- * 暂时启用渐进式弃用的方式，该api未来版本会被遗弃
+ * 暂时启用渐进式弃用的方式，该api未来版本可能会被遗弃
  */
 export const view = <P extends PrimitiveState = {}, S extends PrimitiveState = {}>(
   // any用于兼容某些HOC导致的类型不合一问题，比如withRouter(低版本的react-router还是存在该HOC)

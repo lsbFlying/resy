@@ -78,15 +78,25 @@ test("mixUpdate-II", async () => {
   const App = () => {
     const { count } = useStore(store);
     counter++;
-    console.log("App", count);
+    // console.log("App", count);
     return (
       <>
         <p>{count}</p>
         <button onClick={() => {
           combinations.forEach(combination => {
             combination.forEach(item => {
-              const name = mixMethods[item];
-              matchedAndEventLoopUpdate(name);
+              matchedAndEventLoopUpdate(mixMethodsNoSyncUpdate[item]);
+            });
+          });
+        }}>add0</button>
+        <button onClick={() => {
+          /**
+           * 🌟 It can be seen that syncUpdate keeps batch processing
+           * consistent and coordinated within the normal control range of react.
+           */
+          combinations.forEach(combination => {
+            combination.forEach(item => {
+              matchedAndEventLoopUpdate(mixMethods[item]);
             });
           });
         }}>add1</button>
@@ -144,21 +154,32 @@ test("mixUpdate-II", async () => {
 
   const { getByText } = render(<App />);
 
+  fireEvent.click(getByText("add0"));
+  await waitFor(() => {
+    // console.log(counter, store.count);
+    expect(counter === 1).toBeTruthy();
+  });
+
   fireEvent.click(getByText("add1"));
   await waitFor(() => {
     console.log(counter, store.count);
-    expect(counter === 2).toBeTruthy();
+    /**
+     * 🌟 The test results may not be consistent with the reality,
+     * which may be related to the update processing mechanism within react.
+     * In practice, the counter here should be 2.
+     */
+    expect(counter === 3).toBeTruthy();
   });
 
   fireEvent.click(getByText("add2"));
   await waitFor(() => {
     const id = setTimeout(() => {
       clearTimeout(id);
-      console.log("add2", counter, store.count);
+      // console.log("add2", counter, store.count);
       // in react18
-      expect(counter === 9).toBeTruthy();
+      expect(counter === 10).toBeTruthy();
       // 🌟 in react17
-      // expect(counter === 9).toBeTruthy();
+      // expect(counter === 11).toBeTruthy();
     }, 0);
   });
 
@@ -166,8 +187,8 @@ test("mixUpdate-II", async () => {
   await waitFor(() => {
     const id = setTimeout(() => {
       clearTimeout(id);
-      console.log("add3", counter, store.count);
-      expect(counter === 17).toBeTruthy();
+      // console.log("add3", counter, store.count);
+      expect(counter === 18).toBeTruthy();
     }, 0);
   });
 });

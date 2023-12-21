@@ -13,16 +13,8 @@ test("createStoreWithFunction-I", async () => {
     // You can handle some necessary or complex logic in the function,
 
     /** Simulate necessary or complex logic start */
-    let initialTime = Date.now();
-    // Odd
-    if (initialTime % 2 !== 0) {
-      // One seconds fast
-      initialTime += 1000;
-    // even
-    } else {
-      // Two seconds fast
-      initialTime += 2000;
-    }
+    const initialTime = Date.now() + 2000;
+    console.log(initialTime);
     /** Simulate necessary or complex logic end */
 
     // console.log("initialTime", initialTime);

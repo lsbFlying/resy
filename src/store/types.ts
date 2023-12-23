@@ -1,7 +1,7 @@
 import type { Callback, ValueOf, PrimitiveState, MapType } from "../types";
-import { REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY } from "../static";
 import type { Subscribe } from "../subscribe/types";
 import type { StoreViewMapType } from "../view/types";
+import { REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY } from "../static";
 
 /**
  * @description createStore该API第二个参数配置项

@@ -27,8 +27,8 @@ test("fine-grained.view", async () => {
   }
 
   // changes in the state of readyOk data will not cause re-render in TextView Or CountView
-  const TextView = view(Text);
-  const CountView = view(Count);
+  const TextView = view(Text, { compare: true });
+  const CountView = view(Count, { compare: true });
 
   const App = () => {
     const { readyOk } = useStore(store);

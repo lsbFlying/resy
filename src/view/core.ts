@@ -7,15 +7,15 @@ import type {
 } from "../types";
 import type { Store, InitialState, StateRefCounterMapType } from "../store/types";
 import type {
-  PS, Stores, StoreViewMapType, ViewStateMapType, StoreViewMapValue,
+  Stores, StoreViewMapType, ViewStateMapType, StoreViewMapValue, ViewCompareFnType,
 } from "./types";
 import type { Scheduler } from "../scheduler/types";
 import type { Unsubscribe } from "../subscribe/types";
+import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../reset/types";
 import { mapToObject, objectToMap, hasOwnProperty } from "../utils";
-import { protoPointStoreErrorHandle, storeErrorHandle } from "../errors";
+import { protoPointStoreErrorHandle } from "../errors";
 import { REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY } from "../static";
 import { unmountRestoreHandle, initialStateFnRestoreHandle } from "../reset";
-import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../reset/types";
 
 /**
  * 给Comp组件的props上挂载的state属性数据做一层引用代理
@@ -146,13 +146,10 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
   state: S | { [key in keyof Stores<S>]: S },
   setState: Dispatch<SetStateAction<S | { [key in keyof Stores<S>]: S }>>,
   props: P,
-  equal?: (next: PS<P, S>, prev: PS<P, S>) => boolean,
+  compare?: ViewCompareFnType<S, P>,
   singleStore?: boolean,
   storesKeyTemp?: keyof Stores<S>,
 ) => {
-  // 进行store校验（这里是单独的store，多个store也是遍历单独执行handleStoreSubscribe传入的，它与singleStore是不相关的判断逻辑）
-  storeErrorHandle(store, "view");
-
   if (singleStore) {
     innerUseStateMapSet.forEach(() => {
       // 将view关联到store内部的storeStateRefCounterMap，进行数据生命周期的同步
@@ -174,9 +171,9 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
         // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
         Array.from(innerUseStateMapSet as Set<keyof S>).some(key => effectStateFields.includes(key as string))
         && (
-          !equal || (
-            typeof equal === "function"
-            && !equal({ props, state: nextState }, { props, state: prevState })
+          !compare || (
+            typeof compare === "function"
+            && !compare({ props, state: nextState }, { props, state: prevState })
           )
         )
       ) {
@@ -211,9 +208,9 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
         // Comp组件内部使用到的数据属性字段数组，放在触发执行保持内部引用数据最新化
         Array.from(innerUseStateSet).some(key => effectStateFields.includes(key as string))
         && (
-          !equal || (
-            typeof equal === "function"
-            && !equal({ props, state: nextState }, { props, state: prevState })
+          !compare || (
+            typeof compare === "function"
+            && !compare({ props, state: nextState }, { props, state: prevState })
           )
         )
       ) {
@@ -230,7 +227,7 @@ export const effectedHandle = <S extends PrimitiveState, P extends PrimitiveStat
   setState: Dispatch<SetStateAction<S | { [key in keyof Stores<S>]: S }>>,
   props: P,
   stores?: Store<S> | Stores<S>,
-  equal?: (next: PS<P, S>, prev: PS<P, S>) => boolean,
+  compare?: ViewCompareFnType<S, P>,
 ) => {
   if (!stores) return;
 
@@ -247,7 +244,7 @@ export const effectedHandle = <S extends PrimitiveState, P extends PrimitiveStat
       state,
       setState,
       props,
-      equal,
+      compare,
       true,
     );
   } else {
@@ -260,7 +257,7 @@ export const effectedHandle = <S extends PrimitiveState, P extends PrimitiveStat
         state,
         setState,
         props,
-        equal,
+        compare,
         false,
         storesKey,
       ));

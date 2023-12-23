@@ -1,15 +1,15 @@
-import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import { batchUpdate } from "../static";
 import type { PrimitiveState, ValueOf, MapType, Callback } from "../types";
 import type {
   StateCallbackItem, StoreMapValue, StoreMapValueType,
   StoreMap, InitialState, StateRefCounterMapType,
 } from "./types";
 import type { Scheduler } from "../scheduler/types";
-import { mapToObject } from "../utils";
-import { unmountRestoreHandle, initialStateFnRestoreHandle } from "../reset";
 import type { Listener } from "../subscribe/types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../reset/types";
+import useSyncExternalStoreExports from "use-sync-external-store/shim";
+import { mapToObject } from "../utils";
+import { unmountRestoreHandle, initialStateFnRestoreHandle } from "../reset";
+import { batchUpdate } from "../static";
 
 /**
  * @description 从use-sync-external-store包的导入方式到下面的引用方式

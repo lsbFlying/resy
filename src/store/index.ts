@@ -5,6 +5,14 @@
  * @date 2022-05-05
  * @name createStore
  */
+import type {
+  ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions,
+  Store, StateCallback, StateCallbackItem, StoreMapValueType,
+  State, InitialState, StateRefCounterMapType, StateWithThisType,
+} from "./types";
+import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../reset/types";
+import type { Unsubscribe, Listener } from "../subscribe/types";
+import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import { scheduler } from "../scheduler";
 import { batchUpdate, VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY } from "../static";
 import { mapToObject, objectToMap, hasOwnProperty, followUpMap } from "../utils";
@@ -13,17 +21,9 @@ import {
   subscribeErrorHandle, stateCallbackErrorHandle,
 } from "../errors";
 import { pushTask, connectHookUse, finallyBatchHandle, connectStore } from "./core";
-import type {
-  ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions,
-  Store, StateCallback, StateCallbackItem, StoreMapValueType,
-  State, InitialState, StateRefCounterMapType, StateWithThisType,
-} from "./types";
 import { mergeStateKeys, handleReducerState } from "../reset";
-import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../reset/types";
 import { genViewConnectStoreMap } from "../view/core";
 import { willUpdatingHandle } from "../subscribe";
-import type {  Unsubscribe, Listener } from "../subscribe/types";
-import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 
 /**
  * createStore

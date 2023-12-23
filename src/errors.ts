@@ -1,12 +1,14 @@
-import { __DEV__, REGENERATIVE_SYSTEM_KEY } from "./static";
 import type { PrimitiveState } from "./types";
 import type { State, StoreOptions, StateCallback } from "./store/types";
 import type { Listener } from "./subscribe/types";
+import { __DEV__, REGENERATIVE_SYSTEM_KEY } from "./static";
 import { toString } from "./utils";
+import { Stores, ViewOptionsType } from "./view/types";
+import { Store } from "./store/types";
 
 // store传的不是由resy本身的createStore创建产生的store的错误处理
 export const storeErrorHandle = <S extends PrimitiveState>(store: S, fnName: "useStore" | "view") => {
-  if (!store[REGENERATIVE_SYSTEM_KEY as keyof S]) {
+  if (!store?.[REGENERATIVE_SYSTEM_KEY as keyof S]) {
     throw new Error(
       `resy's ${
         fnName
@@ -108,5 +110,31 @@ export const protoPointStoreErrorHandle = (receiver: any, store: any) => {
       "Warning: It is not recommended that store be inherited as a prototype object," +
       " because there is no this pointing to the target object corresponding to the Reflect proxy within store!"
     );
+  }
+};
+
+/** view的options的错误处理 */
+export const viewOptionsErrorHandle = <
+  S extends PrimitiveState = {},
+  P extends PrimitiveState = {},
+>(options: ViewOptionsType<S, P> = {}) => {
+  const { compare, stores } = options;
+  const compareType = typeof compare;
+  const storesType = toString.call(stores);
+  if (compareType !== "undefined" && compareType !== "boolean" && compareType !== "function") {
+    throw new Error(
+      "resy's view(..., options): Expect the compare configuration item of the options parameter"
+      + ` in the view to be a boolean value or function. Instead received: ${compare}.`
+    );
+  }
+  // 不是单个store也不是混合store
+  if (stores !== undefined && !(stores as Store<S>)?.[REGENERATIVE_SYSTEM_KEY as keyof S] && storesType !== "[object Object]") {
+    storeErrorHandle(stores as Store<S>, "view");
+  }
+  // 不是单个store但却可能是混合store
+  if (stores !== undefined && !(stores as Store<S>)?.[REGENERATIVE_SYSTEM_KEY as keyof S] && storesType === "[object Object]") {
+    Object.keys(stores as Stores<S>).forEach(storesKey => {
+      storeErrorHandle((stores as Stores<S>)[storesKey], "view");
+    });
   }
 };

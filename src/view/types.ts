@@ -2,17 +2,34 @@ import type { PrimitiveState, MapType, Callback, ObjectMapType } from "../types"
 import type { Unsubscribe } from "../subscribe/types";
 import type { Store } from "../store/types";
 
-/** view中equal函数的参数类型，props与state的类型合集 */
-export type PS<P extends PrimitiveState = {}, S extends PrimitiveState = {}> = Readonly<{
-  props: P;
+/** view中equal函数的参数类型，state与props的类型合集 */
+export type SP<S extends PrimitiveState = {}, P extends PrimitiveState = {}> = Readonly<{
   state: S;
+  props: P;
 }>;
 
-/** view返回函数的参数类型 */
-export type ViewOptionsType<P extends PrimitiveState = {}, S extends PrimitiveState = {}> = {
+/** view的options参数类型 */
+export type ViewOptionsType<S extends PrimitiveState = {}, P extends PrimitiveState = {}> = {
+  /**
+   * 链接的store
+   * @default undefined
+   */
   stores?: Store<S> | Stores<S>;
-  equal?: (next: PS<P, S>, prev: PS<P, S>) => boolean;
+  /**
+   * memo的compare对比函数，与React.memo的propsAreEqual类似
+   * 如果compare设置为布尔值true，则默认对比值的引用地址，浅对比
+   * 如果compare设置为布尔值false，则没有memo效果
+   * 如果compare设置为函数，那么compare函数就是React.memo的propsAreEqual的类似功能
+   * @default undefined
+   */
+  compare?: boolean | ViewCompareFnType<S, P>;
 };
+
+/** view的compare函数类型 */
+export type ViewCompareFnType<
+  S extends PrimitiveState = {},
+  P extends PrimitiveState = {},
+> = (next: SP<S, P>, prev: SP<S, P>) => boolean;
 
 /**
  * @description StoreViewMap的数据值类型，作为view这个api的核心Map接口类型
@@ -36,7 +53,7 @@ export type StoreViewMapType<S extends PrimitiveState> = MapType<StoreViewMapVal
 export type MultipleState = Record<number | string, Store<any>>;
 
 /** 多个store的类型 */
-export type Stores<S extends MultipleState> = { [key in keyof S]: Store<S[key]> };
+export type Stores<S extends MultipleState> = { [K in keyof S]: Store<S[K]> };
 
 /**
  * 将resy生成的store容器数据映射挂载到组件props的state属性上

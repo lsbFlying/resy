@@ -12,7 +12,7 @@ export * from "./subscribe/types";
 export * from "./useHook/types";
 
 export type {
-  PS, ViewOptionsType, MultipleState, Stores, MapStateToProps,
+  SP, ViewOptionsType, MultipleState, Stores, MapStateToProps,
 } from "./view/types";
 
 export * from "./types";

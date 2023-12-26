@@ -14,8 +14,8 @@ test("simplestBasic-II", async () => {
   });
 
   const App = () => {
-    // store.useData is equivalent to useStore(store)
-    const { count } = store.useData;
+    // store.useStore() is equivalent to useStore(store)
+    const { count } = store.useStore();
 
     return (
       <>

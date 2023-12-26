@@ -9,7 +9,7 @@ test("mockUseConciseState", async () => {
     // Internal implementation of useConciseState
     const { count, text, setState } = useMemo(() => createStore({ count: 0, text: "hello" }, {
       __useConciseStateMode__: true,
-    }), [])["useData"];
+    }), [])["useStore"]();
 
     return (
       <>

@@ -16,6 +16,9 @@ import { viewOptionsErrorHandle } from "../errors";
  * @return React.MemoExoticComponent
  * @description 支持class、hook组件连接store数据进行props方式渲染，
  * view最初的功能目的是想使得class组件连接使用store的数据。
+ * @deprecated 事实上view已经很完善了，只是相对而言我还是不满意它的使用简易程度，
+ * 所以在寻求到更完善的class组件的状态管理的支持方式之后
+ * 未来的resy版本可能不再维护view这个api甚至放弃view
  */
 export const view = <S extends PrimitiveState = {}, P extends PrimitiveState = {}>(
   // any用于兼容某些HOC导致的类型不合一问题，比如withRouter(低版本的react-router还是存在该HOC)

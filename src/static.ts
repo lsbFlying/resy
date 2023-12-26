@@ -31,3 +31,9 @@ const NODE_ENV = process.env.NODE_ENV;
 if (!NODE_ENV) console.error("NODE_ENV not set");
 
 export const __DEV__ = NODE_ENV === "development";
+
+// class组件连接store的属性symbol符
+export const CONNECT_SYMBOL_KEY = Symbol("connectSymbolKey");
+
+// useStore的key值，获取storeMap的代理key值
+export const USE_STORE_KEY = Symbol("useStoreKey");

@@ -14,7 +14,10 @@ import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from ".
 import type { Unsubscribe, Listener } from "../subscribe/types";
 import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import { scheduler } from "../scheduler";
-import { batchUpdate, VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY } from "../static";
+import {
+  batchUpdate, VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY,
+  USE_STORE_KEY, CONNECT_SYMBOL_KEY,
+} from "../static";
 import { mapToObject, objectToMap, hasOwnProperty, followUpMap } from "../utils";
 import {
   stateErrorHandle, protoPointStoreErrorHandle, optionsErrorHandle,
@@ -24,6 +27,7 @@ import { pushTask, connectHookUse, finallyBatchHandle, connectStore } from "./co
 import { mergeStateKeys, handleReducerState } from "../reset";
 import { genViewConnectStoreMap } from "../view/core";
 import { willUpdatingHandle } from "../subscribe";
+import { ClassThisPointerType } from "./types";
 
 /**
  * createStore
@@ -43,6 +47,9 @@ export const createStore = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
   options?: StoreOptions,
 ): Store<S> => {
+  /** connect连接class组件的this指针的set集合 */
+  const classThisPointerSet = new Set<ClassThisPointerType<S>>();
+
   /**
    * 解析还原出来的状态数据
    * @description 这里不能用let定义reducerState以及后续restore这个api中
@@ -131,13 +138,13 @@ export const createStore = <S extends PrimitiveState>(
 
     if (stateTemp !== null) {
       stateErrorHandle(stateTemp, "setState | syncUpdate");
-
       // 更新添加入栈，后续统一批次合并更新
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         pushTask(
           key, (stateTemp as S)[key], stateMap, schedulerProcessor,
           optionsTemp.unmountRestore, reducerState, storeStateRefCounterMap,
-          storeMap, stateRestoreAccomplishedMap, initialFnCanExecMap, initialState,
+          storeMap, stateRestoreAccomplishedMap, initialFnCanExecMap,
+          classThisPointerSet, initialState,
         );
       });
     }
@@ -180,6 +187,10 @@ export const createStore = <S extends PrimitiveState>(
            * 才可以解决input无法输入非英文语言的问题
            */
           stateMap.set(key, value);
+          // class状态的更新
+          classThisPointerSet?.forEach(classThisPointerItem => {
+            classThisPointerItem?.setState({ [key]: value } as State<S>);
+          });
           // 更新
           (
             connectStore(
@@ -202,9 +213,9 @@ export const createStore = <S extends PrimitiveState>(
       const originValue = reducerState[key];
       if (!Object.is(originValue, stateMap.get(key))) {
         pushTask(
-          key, originValue, stateMap, schedulerProcessor, optionsTemp.unmountRestore,
-          reducerState, storeStateRefCounterMap, storeMap, stateRestoreAccomplishedMap,
-          initialFnCanExecMap, initialState, !hasOwnProperty.call(reducerState, key),
+          key, originValue, stateMap, schedulerProcessor, optionsTemp.unmountRestore, reducerState,
+          storeStateRefCounterMap, storeMap, stateRestoreAccomplishedMap, initialFnCanExecMap,
+          classThisPointerSet, initialState, !hasOwnProperty.call(reducerState, key),
         );
       }
     });
@@ -256,7 +267,7 @@ export const createStore = <S extends PrimitiveState>(
       key, value, stateMap, schedulerProcessor, optionsTemp.unmountRestore,
       reducerState, storeStateRefCounterMap, storeMap,
       stateRestoreAccomplishedMap, initialFnCanExecMap,
-      initialState, isDelete,
+      classThisPointerSet, initialState, isDelete,
     );
     finallyBatchHandle(
       schedulerProcessor, prevBatchState, stateMap, listenerSet, stateCallbackStackSet,
@@ -321,7 +332,17 @@ export const createStore = <S extends PrimitiveState>(
     externalMap.set("setOptions", setOptions);
   }
 
-  externalMap.set("useData", storeProxy as any);
+  const useStore = () => storeProxy;
+
+  // 连接class组件的this指针（所以这里不能是箭头函数）
+  function connect(this: ClassThisPointerType<S>) {
+    classThisPointerSet.add(this);
+    return store;
+  }
+
+  externalMap.set("useStore", useStore);
+  externalMap.set(USE_STORE_KEY, storeProxy);
+  externalMap.set(CONNECT_SYMBOL_KEY, connect);
   externalMap.set(VIEW_CONNECT_STORE_KEY, viewConnectStoreMap);
 
   return store;

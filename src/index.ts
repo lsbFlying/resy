@@ -4,7 +4,7 @@ export * from "./view";
 
 export type {
   StoreOptions, InitialStateForbiddenKeys, State, PrimateForbiddenType,
-  SetState, StateFnType, StateCallback, SyncUpdate, Restore, SetOptions, UseData,
+  SetState, StateFnType, StateCallback, SyncUpdate, Restore, SetOptions, UseStore,
   StoreCoreUtils, StoreUtils, Store, InitialStore, StateWithThisType, InitialState,
 } from "./store/types";
 
@@ -16,3 +16,7 @@ export type {
 } from "./view/types";
 
 export * from "./types";
+
+export { ComponentWithStore, PureComponentWithStore } from "./connect";
+
+export type { ConnectStoreType, ClassStoreType } from "./connect/types";

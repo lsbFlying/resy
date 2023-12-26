@@ -1,13 +1,13 @@
 /**
  * @description 本文件是view的内部代码抽离拆解的一些方法
  */
-import type { Dispatch, SetStateAction } from "react";
 import type {
   Callback, MapType, ObjectMapType, ObjectType, PrimitiveState, ValueOf,
 } from "../types";
 import type { Store, InitialState, StateRefCounterMapType } from "../store/types";
 import type {
-  Stores, StoreViewMapType, ViewStateMapType, StoreViewMapValue, ViewCompareFnType,
+  Stores, StoreViewMapType, ViewStateMapType,
+  StoreViewMapValue, ViewCompareFnType, SetStateType,
 } from "./types";
 import type { Scheduler } from "../scheduler/types";
 import type { Unsubscribe } from "../subscribe/types";
@@ -46,7 +46,7 @@ export const getLatestStateMap = <S extends PrimitiveState>(store?: Store<S> | S
 
 // view多个store的最新数据的处理
 export const viewStoresToLatestState = <S extends PrimitiveState>(stores: Stores<S>) => {
-  const latestStateTemp = {} as { [key in keyof Stores<S>]: ValueOf<S> };
+  const latestStateTemp = {} as { [K in keyof Stores<S>]: ValueOf<S> };
   for (const storesKey in stores) {
     if (hasOwnProperty.call(stores, storesKey)) {
       latestStateTemp[storesKey] = mapToObject(getLatestStateMap(stores[storesKey]));
@@ -58,12 +58,12 @@ export const viewStoresToLatestState = <S extends PrimitiveState>(stores: Stores
 
 // view多个store的state更新处理
 const viewStoresStateUpdateHandle = <S extends PrimitiveState>(
-  state: { [key in keyof Stores<S>]: S },
+  state: { [K in keyof Stores<S>]: S },
   innerUseStateSet: Set<keyof S>,
   nextState: S,
   storesKey?: keyof Stores<S>,
 ) => {
-  const stateTemp: { [key in keyof Stores<S>]: S } = Object.assign({}, state);
+  const stateTemp: { [K in keyof Stores<S>]: S } = Object.assign({}, state);
   Object.keys(state).forEach(storesKeyItem => {
     if (storesKey === storesKeyItem) {
       stateTemp[storesKey] = stateRefByProxyHandle(objectToMap(nextState), innerUseStateSet);
@@ -143,8 +143,8 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
   store: Store<S>,
   innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>>,
   viewConnectStoreSet: Set<Unsubscribe>,
-  state: S | { [key in keyof Stores<S>]: S },
-  setState: Dispatch<SetStateAction<S | { [key in keyof Stores<S>]: S }>>,
+  state: S | { [K in keyof Stores<S>]: S },
+  setState: SetStateType<S>,
   props: P,
   compare?: ViewCompareFnType<S, P>,
   singleStore?: boolean,
@@ -223,8 +223,8 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
 // 组件useEffect异步只执行一次的相关处理
 export const effectedHandle = <S extends PrimitiveState, P extends PrimitiveState = {}>(
   innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>>,
-  state: S | { [key in keyof Stores<S>]: S },
-  setState: Dispatch<SetStateAction<S | { [key in keyof Stores<S>]: S }>>,
+  state: S | { [K in keyof Stores<S>]: S },
+  setState: SetStateType<S>,
   props: P,
   stores?: Store<S> | Stores<S>,
   compare?: ViewCompareFnType<S, P>,

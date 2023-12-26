@@ -7,7 +7,7 @@ import { Stores, ViewOptionsType } from "./view/types";
 import { Store } from "./store/types";
 
 // store传的不是由resy本身的createStore创建产生的store的错误处理
-export const storeErrorHandle = <S extends PrimitiveState>(store: S, fnName: "useStore" | "view") => {
+export const storeErrorHandle = <S extends PrimitiveState>(store: S, fnName: "useStore" | "view" | "connectStore") => {
   if (!store?.[REGENERATIVE_SYSTEM_KEY as keyof S]) {
     throw new Error(
       `resy's ${

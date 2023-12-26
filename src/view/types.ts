@@ -1,6 +1,7 @@
 import type { PrimitiveState, MapType, Callback, ObjectMapType } from "../types";
 import type { Unsubscribe } from "../subscribe/types";
 import type { Store } from "../store/types";
+import type { Dispatch, SetStateAction } from "react";
 
 /** view中equal函数的参数类型，state与props的类型合集 */
 export type SP<S extends PrimitiveState = {}, P extends PrimitiveState = {}> = Readonly<{
@@ -69,3 +70,6 @@ export type MapStateToProps<S extends PrimitiveState, P extends PrimitiveState =
 
 // view内部的stateMap的数据类型，根据是否是多store连接使用会有变化
 export type ViewStateMapType<S extends PrimitiveState> = MapType<S> | ObjectMapType<S>;
+
+// react的setState的函数类型
+export type SetStateType<S extends PrimitiveState> = Dispatch<SetStateAction<S | { [K in keyof Stores<S>]: S }>>;

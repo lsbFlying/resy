@@ -1,7 +1,8 @@
 import type { Callback, ValueOf, PrimitiveState, MapType } from "../types";
 import type { Subscribe } from "../subscribe/types";
 import type { StoreViewMapType } from "../view/types";
-import { REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY } from "../static";
+import type { ConnectType } from "../connect/types";
+import { REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY } from "../static";
 
 /**
  * @description createStore该API第二个参数配置项
@@ -29,7 +30,7 @@ export type InitialStateForbiddenKeys =
   | "subscribe"
   | "restore"
   | "setOptions"
-  | "useData" // todo useData可以再考量一下，再找到最优解之前先保留
+  | "useStore"
   | "store";  // store是useConciseState的属性
 
 /**
@@ -62,9 +63,10 @@ export type StoreMapValue<S extends PrimitiveState> = MapType<StoreMapValueType<
 // createStore的storeMap数据类型
 export type StoreMap<S extends PrimitiveState> = Map<keyof S, StoreMapValue<S>>;
 
-export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & {
+export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & ConnectType & {
   [VIEW_CONNECT_STORE_KEY]: StoreViewMapType<S>;
   [REGENERATIVE_SYSTEM_KEY]: symbol;
+  [USE_STORE_KEY]: object;
   readonly store: Store<S>;
 };
 
@@ -76,6 +78,11 @@ export type ExternalMapType<S extends PrimitiveState> = MapType<ExternalMapValue
  * @description 兼容null是出于后端最常用返回的数据格式null居多的考虑
  */
 export type State<S extends PrimitiveState> = Partial<S> | S | null;
+
+// class的this对象简易类型
+export type ClassThisPointerType<S extends PrimitiveState> = PrimitiveState & Readonly<{
+  setState(state: State<S>): void;
+}>;
 
 /** setState 更新数据 */
 export type SetState<S extends PrimitiveState> = Readonly<{
@@ -152,16 +159,16 @@ export type SetOptions = Readonly<{
   setOptions(options: StoreOptions): void;
 }>;
 
-/** store.useData 等价于 useStore(store) 的使用 */
-export type UseData<S extends PrimitiveState> = Readonly<{
-  useData: S & StoreCoreUtils<S> & SetOptions;
+/** store.useStore() 等价于 useStore(store) 的使用 */
+export type UseStore<S extends PrimitiveState> = Readonly<{
+  useStore(): S & StoreCoreUtils<S> & SetOptions;
 }>;
 
 /** store的一些核心的工具方法类型 */
 export type StoreCoreUtils<S extends PrimitiveState> = SetState<S> & SyncUpdate<S> & Restore<S> & Subscribe<S>;
 
 /** store的工具方法类型 */
-export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOptions & UseData<S>;
+export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOptions & UseStore<S>;
 
 /** createStore返回的store类型 */
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;

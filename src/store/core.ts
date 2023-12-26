@@ -1,7 +1,7 @@
 import type { PrimitiveState, ValueOf, MapType, Callback } from "../types";
 import type {
-  StateCallbackItem, StoreMapValue, StoreMapValueType,
-  StoreMap, InitialState, StateRefCounterMapType,
+  StateCallbackItem, StoreMapValue, StoreMapValueType, StoreMap,
+  InitialState, StateRefCounterMapType, State, ClassThisPointerType,
 } from "./types";
 import type { Scheduler } from "../scheduler/types";
 import type { Listener } from "../subscribe/types";
@@ -160,6 +160,7 @@ export const pushTask = <S extends PrimitiveState>(
   storeMap: StoreMap<S>,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   initialFnCanExecMap: InitialFnCanExecMapType,
+  classThisPointerSet?: Set<ClassThisPointerType<S>>,
   initialState?: InitialState<S>,
   isDelete?: boolean,
 ) => {
@@ -183,10 +184,20 @@ export const pushTask = <S extends PrimitiveState>(
     (schedulerProcessor.get("pushTask") as Scheduler<S>["pushTask"])(
       key,
       value,
-      connectStore(
-        key, unmountRestore, reducerState, stateMap, storeStateRefCounterMap, storeMap,
-        stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, initialState,
-      ).get(key)!.get("updater") as StoreMapValueType<S>["updater"],
+      () => {
+        // class状态的更新
+        classThisPointerSet?.forEach(classThisPointerItem => {
+          classThisPointerItem?.setState({ [key]: value } as State<S>);
+        });
+        // 这里没有把class的更新也放在下面的updater中执行也是为了保持hook使用更新的单纯性
+        // hook状态的更新
+        (
+          connectStore(
+            key, unmountRestore, reducerState, stateMap, storeStateRefCounterMap, storeMap,
+            stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, initialState,
+          ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
+        )();
+      },
     );
   }
 };

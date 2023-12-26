@@ -17,7 +17,7 @@ export type ValueOf<S extends PrimitiveState> = S[keyof S];
 export type MapType<S extends PrimitiveState> = Map<keyof S, ValueOf<S>>;
 
 /** object类型推断 */
-export type ObjectType<S extends PrimitiveState> = { [key in keyof S]: S[key] };
+export type ObjectType<S extends PrimitiveState> = { [K in keyof S]: S[K] };
 
 /** object值类型是map的类型推断 */
-export type ObjectMapType<S extends PrimitiveState> = { [key in keyof S]: MapType<S> };
+export type ObjectMapType<S extends PrimitiveState> = { [K in keyof S]: MapType<S> };

@@ -1,6 +1,6 @@
 import type { PrimitiveState } from "../types";
 import type { StoreCoreUtils, SetOptions } from "../store/types";
-import { CONNECT_SYMBOL_KEY } from "../static";
+import { CLASS_UNMOUNT_HANDLE_KEY, CONNECT_SYMBOL_KEY } from "../static";
 
 /**
  * Function types for connecting stores
@@ -17,5 +17,10 @@ export type ClassStoreType<S extends PrimitiveState> = S & StoreCoreUtils<S> & S
 
 /** 供class组件的基础类ComponentWithStore使用 */
 export type ConnectType = {
-  [CONNECT_SYMBOL_KEY]?<S extends PrimitiveState>(): ClassStoreType<S>;
+  [CONNECT_SYMBOL_KEY]<S extends PrimitiveState>(): ClassStoreType<S>;
 };
+
+// class组件卸载后执行的方法的类型
+export type ClassUnmountHandleType = {
+  [CLASS_UNMOUNT_HANDLE_KEY](): void;
+}

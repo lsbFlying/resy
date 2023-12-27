@@ -1,7 +1,7 @@
 import type { Callback, ValueOf, PrimitiveState, MapType } from "../types";
 import type { Subscribe } from "../subscribe/types";
 import type { StoreViewMapType } from "../view/types";
-import type { ConnectType } from "../connect/types";
+import type { ConnectType, ClassUnmountHandleType } from "../connect/types";
 import {
   REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY,
   USE_STORE_KEY, CLASS_STATE_REF_SET_KEY,
@@ -66,7 +66,10 @@ export type StoreMapValue<S extends PrimitiveState> = MapType<StoreMapValueType<
 // createStore的storeMap数据类型
 export type StoreMap<S extends PrimitiveState> = Map<keyof S, StoreMapValue<S>>;
 
-export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S> & ConnectType & {
+export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S>
+  & ConnectType
+  & ClassUnmountHandleType
+  & {
   [VIEW_CONNECT_STORE_KEY]: StoreViewMapType<S>;
   [REGENERATIVE_SYSTEM_KEY]: symbol;
   [USE_STORE_KEY]: object;

@@ -16,7 +16,7 @@ import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import { scheduler } from "../scheduler";
 import {
   batchUpdate, VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY,
-  USE_STORE_KEY, CONNECT_SYMBOL_KEY,
+  USE_STORE_KEY, CONNECT_SYMBOL_KEY, CLASS_UNMOUNT_HANDLE_KEY,
 } from "../static";
 import { mapToObject, objectToMap, hasOwnProperty, followUpMap } from "../utils";
 import {
@@ -24,7 +24,7 @@ import {
   subscribeErrorHandle, stateCallbackErrorHandle,
 } from "../errors";
 import { pushTask, connectHookUse, finallyBatchHandle, connectStore, connectClassUse } from "./core";
-import { mergeStateKeys, handleReducerState } from "../reset";
+import { mergeStateKeys, handleReducerState, unmountRestoreHandle } from "../reset";
 import { genViewConnectStoreMap } from "../view/core";
 import { willUpdatingHandle } from "../subscribe";
 
@@ -297,7 +297,7 @@ export const createStore = <S extends PrimitiveState>(
 
       return externalMap.get(key as keyof ExternalMapValue<S>) || stateMap.get(key);
     },
-    set: (_: S, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
+    set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
     // delete 也会起到更新作用
     deleteProperty: (_: S, key: keyof S) => singlePropUpdate(key, undefined as ValueOf<S>, true),
   } as any as ProxyHandler<StoreMap<S>>) as any as Store<S>;
@@ -339,7 +339,7 @@ export const createStore = <S extends PrimitiveState>(
     classThisPointerSet.add(this);
     // Data agents for use by class
     return new Proxy(storeMap, {
-      get: (_, key: keyof S) => {
+      get: (_: StoreMap<S>, key: keyof S) => {
         if (typeof stateMap.get(key) === "function") {
           // 让函数数据也具备更新渲染的能力
           connectClassUse.bind(this)(key, stateMap);
@@ -348,12 +348,21 @@ export const createStore = <S extends PrimitiveState>(
         return externalMap.get(key as keyof ExternalMapValue<S>)
           || connectClassUse.bind(this)(key, stateMap);
       },
-    } as ProxyHandler<StoreMap<S>>);
+      set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
+    } as any as ProxyHandler<StoreMap<S>>);
   }
+
+  const classUnmountHandle = () => {
+    unmountRestoreHandle(
+      optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounterMap,
+      stateRestoreAccomplishedMap, initialFnCanExecMap, classThisPointerSet, initialState,
+    );
+  };
 
   externalMap.set("useStore", useStore);
   externalMap.set(USE_STORE_KEY, storeProxy);
   externalMap.set(CONNECT_SYMBOL_KEY, connect);
+  externalMap.set(CLASS_UNMOUNT_HANDLE_KEY, classUnmountHandle);
   externalMap.set(VIEW_CONNECT_STORE_KEY, viewConnectStoreMap);
 
   return store;

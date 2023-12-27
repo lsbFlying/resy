@@ -40,3 +40,9 @@ export const USE_STORE_KEY = Symbol("useStoreKey");
 
 // class组件内部的state数据引用的集合key
 export const CLASS_STATE_REF_SET_KEY = Symbol("classStateRefSetKey");
+
+// class组件内部使用的store的set集合的key
+export const STORES_KEY = Symbol("storesKey");
+
+// class的unmountHandle处理key
+export const CLASS_UNMOUNT_HANDLE_KEY = Symbol("classUnmountHandleKey");

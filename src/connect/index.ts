@@ -1,8 +1,9 @@
 import type { ConnectStoreType, ConnectType } from "./types";
 import type { PrimitiveState, ValueOf } from "../types";
+import type { Store } from "../store/types";
 import { Component, PureComponent } from "react";
 import { connectStoreCore, getThisProxy, unmountHandleCore } from "./core";
-import { CONNECT_SYMBOL_KEY } from "../static";
+import { CONNECT_SYMBOL_KEY, STORES_KEY } from "../static";
 
 /**
  * @class ComponentWithStore
@@ -35,6 +36,8 @@ export class ComponentWithStore<P = {}, S = {}, SS = any> extends Component<P, S
 
   // @ts-ignore
   private [CONNECT_SYMBOL_KEY]: ValueOf<ConnectType> | undefined;
+  // @ts-ignore
+  private [STORES_KEY]: Set<Store<any>> = new Set();
 
   /**
    * Performs some action. This method should not be overridden in subclasses.
@@ -77,6 +80,8 @@ export class PureComponentWithStore<P = {}, S = {}, SS = any> extends PureCompon
 
   // @ts-ignore
   private [CONNECT_SYMBOL_KEY]: ValueOf<ConnectType> | undefined;
+  // @ts-ignore
+  private [STORES_KEY]: Set<Store<any>> = new Set();
 
   /**
    * Performs some action. This method should not be overridden in subclasses.

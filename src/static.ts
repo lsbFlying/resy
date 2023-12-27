@@ -1,6 +1,6 @@
 // @ts-ignore
 // eslint-disable-next-line import/no-unresolved
-import { unstable_batchedUpdates } from "react-platform";
+import { unstable_batchedUpdates } from "react-dom";
 import type { Callback } from "./types";
 
 /**
@@ -37,3 +37,6 @@ export const CONNECT_SYMBOL_KEY = Symbol("connectSymbolKey");
 
 // useStore的key值，获取storeMap的代理key值
 export const USE_STORE_KEY = Symbol("useStoreKey");
+
+// class组件内部的state数据引用的集合key
+export const CLASS_STATE_REF_SET_KEY = Symbol("classStateRefSetKey");

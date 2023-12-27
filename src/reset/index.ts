@@ -1,7 +1,8 @@
 import type { PrimitiveState, MapType } from "../types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "./types";
-import type { InitialState, StateRefCounterMapType } from "../store/types";
+import type { InitialState, StateRefCounterMapType, ClassThisPointerType } from "../store/types";
 import { hasOwnProperty, clearObject } from "../utils";
+import { CLASS_STATE_REF_SET_KEY } from "../static";
 
 /**
  * @description 获取目前所有的keys
@@ -65,6 +66,21 @@ const restoreHandle = <S extends PrimitiveState>(
 };
 
 /**
+ * 是否有class组件引用数据的判断处理
+ */
+function noClassStateRefHandle<S extends PrimitiveState>(classThisPointerSet: Set<ClassThisPointerType<S>>) {
+  let noClassStateRef = true;
+  if (classThisPointerSet.size !== 0) {
+    classThisPointerSet.forEach(classThisPointerItem => {
+      if (classThisPointerItem[CLASS_STATE_REF_SET_KEY].size !== 0) {
+        noClassStateRef = false;
+      }
+    });
+  }
+  return noClassStateRef;
+}
+
+/**
  * 初始化渲染恢复重置数据处理
  * @description 通过storeStateRefCounterMap判断当前数据是否还有组件引用
  * 只要还有一个组件在引用当前数据，都不会重置数据，
@@ -87,10 +103,12 @@ export const unmountRestoreHandle = <S extends PrimitiveState>(
   storeStateRefCounterMap: StateRefCounterMapType,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   initialFnCanExecMap: InitialFnCanExecMapType,
+  classThisPointerSet: Set<ClassThisPointerType<S>>,
   initialState?: InitialState<S>,
 ) => {
   if (
     unmountRestore
+    && noClassStateRefHandle(classThisPointerSet)
     && !storeStateRefCounterMap.get("counter")
     && !stateRestoreAccomplishedMap.get("unmountRestoreAccomplished")
   ) {
@@ -109,11 +127,13 @@ export const initialStateFnRestoreHandle = <S extends PrimitiveState>(
   storeStateRefCounterMap: StateRefCounterMapType,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   initialFnCanExecMap: InitialFnCanExecMapType,
+  classThisPointerSet: Set<ClassThisPointerType<S>>,
   initialState?: InitialState<S>,
 ) => {
   if (
     typeof initialState === "function"
     && initialFnCanExecMap.get("canExec")
+    && noClassStateRefHandle(classThisPointerSet)
     && !storeStateRefCounterMap.get("counter")
     && !stateRestoreAccomplishedMap.get("initialStateFnRestoreAccomplished")
   ) {

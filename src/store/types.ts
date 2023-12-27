@@ -2,7 +2,10 @@ import type { Callback, ValueOf, PrimitiveState, MapType } from "../types";
 import type { Subscribe } from "../subscribe/types";
 import type { StoreViewMapType } from "../view/types";
 import type { ConnectType } from "../connect/types";
-import { REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY, USE_STORE_KEY } from "../static";
+import {
+  REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY,
+  USE_STORE_KEY, CLASS_STATE_REF_SET_KEY,
+} from "../static";
 
 /**
  * @description createStore该API第二个参数配置项
@@ -82,7 +85,9 @@ export type State<S extends PrimitiveState> = Partial<S> | S | null;
 // class的this对象简易类型
 export type ClassThisPointerType<S extends PrimitiveState> = PrimitiveState & Readonly<{
   setState(state: State<S>): void;
-}>;
+}> & {
+  [CLASS_STATE_REF_SET_KEY]: Set<keyof S>;
+};
 
 /** setState 更新数据 */
 export type SetState<S extends PrimitiveState> = Readonly<{

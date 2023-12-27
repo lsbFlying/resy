@@ -2,7 +2,12 @@ import type { PrimitiveState } from "../types";
 import type { StoreCoreUtils, SetOptions } from "../store/types";
 import { CONNECT_SYMBOL_KEY } from "../static";
 
-/** 连接store的函数类型 */
+/**
+ * Function types for connecting stores
+ * Performs some action. This method should not be overridden in subclasses.
+ * @method
+ * @description This is an important method that is core to the functionality of this class.
+ */
 export type ConnectStoreType = {
   connectStore<S extends PrimitiveState>(store: S): ClassStoreType<S>;
 };

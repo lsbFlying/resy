@@ -9,7 +9,7 @@ import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from ".
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { mapToObject } from "../utils";
 import { unmountRestoreHandle, initialStateFnRestoreHandle } from "../reset";
-import { batchUpdate } from "../static";
+import { batchUpdate, CLASS_STATE_REF_SET_KEY } from "../static";
 
 /**
  * @description 从use-sync-external-store包的导入方式到下面的引用方式
@@ -36,6 +36,7 @@ export const connectStore = <S extends PrimitiveState>(
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   schedulerProcessor: MapType<Scheduler<S>>,
   initialFnCanExecMap: InitialFnCanExecMapType,
+  classThisPointerSet: Set<ClassThisPointerType<S>>,
   initialState?: InitialState<S>,
 ) => {
   // 解决初始化属性泛型有?判断符，即一开始没有初始化的数据属性
@@ -88,7 +89,7 @@ export const connectStore = <S extends PrimitiveState>(
             stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", null);
             unmountRestoreHandle(
               unmountRestore, reducerState, stateMap, storeStateRefCounterMap,
-              stateRestoreAccomplishedMap, initialFnCanExecMap, initialState,
+              stateRestoreAccomplishedMap, initialFnCanExecMap, classThisPointerSet, initialState,
             );
           }
           // 释放内存
@@ -133,20 +134,36 @@ export const connectHookUse = <S extends PrimitiveState>(
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   schedulerProcessor: MapType<Scheduler<S>>,
   initialFnCanExecMap: InitialFnCanExecMapType,
+  classThisPointerSet: Set<ClassThisPointerType<S>>,
   initialState?: InitialState<S>,
 ) => {
   // 如果initialState是函数则强制执行刷新恢复的逻辑，initialState是函数的情况下权重高于unmountRestore
   initialStateFnRestoreHandle(
-    reducerState, stateMap, storeStateRefCounterMap,
-    stateRestoreAccomplishedMap, initialFnCanExecMap, initialState,
+    reducerState, stateMap, storeStateRefCounterMap, stateRestoreAccomplishedMap,
+    initialFnCanExecMap, classThisPointerSet, initialState,
   );
   return (
     connectStore(
-      key, unmountRestore, reducerState, stateMap, storeStateRefCounterMap, storeMap,
-      stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, initialState,
+      key, unmountRestore, reducerState, stateMap,
+      storeStateRefCounterMap, storeMap, stateRestoreAccomplishedMap,
+      schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
     ).get(key)!.get("useOriginState") as StoreMapValueType<S>["useOriginState"]
   )();
 };
+
+export function connectClassUse<S extends PrimitiveState>(
+  this: any,
+  key: keyof S,
+  stateMap: MapType<S>,
+) {
+  if (this[CLASS_STATE_REF_SET_KEY]) {
+    this[CLASS_STATE_REF_SET_KEY].add(key);
+  } else {
+    this[CLASS_STATE_REF_SET_KEY] = new Set();
+    this[CLASS_STATE_REF_SET_KEY].add(key);
+  }
+  return stateMap.get(key);
+}
 
 // 更新任务添加入栈
 export const pushTask = <S extends PrimitiveState>(
@@ -160,7 +177,7 @@ export const pushTask = <S extends PrimitiveState>(
   storeMap: StoreMap<S>,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   initialFnCanExecMap: InitialFnCanExecMapType,
-  classThisPointerSet?: Set<ClassThisPointerType<S>>,
+  classThisPointerSet: Set<ClassThisPointerType<S>>,
   initialState?: InitialState<S>,
   isDelete?: boolean,
 ) => {
@@ -193,8 +210,9 @@ export const pushTask = <S extends PrimitiveState>(
         // hook状态的更新
         (
           connectStore(
-            key, unmountRestore, reducerState, stateMap, storeStateRefCounterMap, storeMap,
-            stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, initialState,
+            key, unmountRestore, reducerState, stateMap,
+            storeStateRefCounterMap, storeMap, stateRestoreAccomplishedMap,
+            schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
           ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
         )();
       },

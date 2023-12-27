@@ -7,8 +7,8 @@
  */
 import type {
   ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions,
-  Store, StateCallback, StateCallbackItem, StoreMapValueType,
-  State, InitialState, StateRefCounterMapType, StateWithThisType,
+  Store, StateCallback, StateCallbackItem, StoreMapValueType, State,
+  InitialState, StateRefCounterMapType, StateWithThisType, ClassThisPointerType,
 } from "./types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../reset/types";
 import type { Unsubscribe, Listener } from "../subscribe/types";
@@ -23,11 +23,10 @@ import {
   stateErrorHandle, protoPointStoreErrorHandle, optionsErrorHandle,
   subscribeErrorHandle, stateCallbackErrorHandle,
 } from "../errors";
-import { pushTask, connectHookUse, finallyBatchHandle, connectStore } from "./core";
+import { pushTask, connectHookUse, finallyBatchHandle, connectStore, connectClassUse } from "./core";
 import { mergeStateKeys, handleReducerState } from "../reset";
 import { genViewConnectStoreMap } from "../view/core";
 import { willUpdatingHandle } from "../subscribe";
-import { ClassThisPointerType } from "./types";
 
 /**
  * createStore
@@ -118,8 +117,9 @@ export const createStore = <S extends PrimitiveState>(
 
   // 处理view连接store、以及获取最新state数据的相关处理Map
   const viewConnectStoreMap = genViewConnectStoreMap(
-    optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounterMap,
-    stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, initialState,
+    optionsTemp.unmountRestore, reducerState, stateMap,
+    storeStateRefCounterMap, stateRestoreAccomplishedMap, schedulerProcessor,
+    initialFnCanExecMap, classThisPointerSet, initialState,
   );
 
   // 数据存储容器storeMap
@@ -195,7 +195,7 @@ export const createStore = <S extends PrimitiveState>(
           (
             connectStore(
               key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounterMap, storeMap,
-              stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, initialState,
+              stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
             ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
           )();
         });
@@ -309,13 +309,13 @@ export const createStore = <S extends PrimitiveState>(
         // 也做一个函数数据hook的调用，给予函数数据更新渲染的能力
         connectHookUse(
           key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounterMap, storeMap,
-          stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, initialState,
+          stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
         );
         return (stateMap.get(key) as AnyFn).bind(store);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
         key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounterMap, storeMap,
-        stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, initialState,
+        stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
       );
     },
   } as ProxyHandler<StoreMap<S>>);
@@ -337,7 +337,18 @@ export const createStore = <S extends PrimitiveState>(
   // 连接class组件的this指针（所以这里不能是箭头函数）
   function connect(this: ClassThisPointerType<S>) {
     classThisPointerSet.add(this);
-    return store;
+    // Data agents for use by class
+    return new Proxy(storeMap, {
+      get: (_, key: keyof S) => {
+        if (typeof stateMap.get(key) === "function") {
+          // 让函数数据也具备更新渲染的能力
+          connectClassUse.bind(this)(key, stateMap);
+          return (stateMap.get(key) as AnyFn).bind(store);
+        }
+        return externalMap.get(key as keyof ExternalMapValue<S>)
+          || connectClassUse.bind(this)(key, stateMap);
+      },
+    } as ProxyHandler<StoreMap<S>>);
   }
 
   externalMap.set("useStore", useStore);

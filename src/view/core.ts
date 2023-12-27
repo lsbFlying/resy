@@ -4,7 +4,7 @@
 import type {
   Callback, MapType, ObjectMapType, ObjectType, PrimitiveState, ValueOf,
 } from "../types";
-import type { Store, InitialState, StateRefCounterMapType } from "../store/types";
+import type { Store, InitialState, StateRefCounterMapType, ClassThisPointerType } from "../store/types";
 import type {
   Stores, StoreViewMapType, ViewStateMapType,
   StoreViewMapValue, ViewCompareFnType, SetStateType,
@@ -289,20 +289,22 @@ export const genViewConnectStoreMap = <S extends PrimitiveState>(
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   schedulerProcessor: MapType<Scheduler<S>>,
   initialFnCanExecMap: InitialFnCanExecMapType,
+  classThisPointerSet: Set<ClassThisPointerType<S>>,
   initialState?: InitialState<S>,
 ) => {
   const viewConnectStoreMap: StoreViewMapType<S> = new Map();
   viewConnectStoreMap.set("getStateMap", stateMap);
   viewConnectStoreMap.set("viewUnmountRestore", () => {
     unmountRestoreHandle(
-      unmountRestore, reducerState, stateMap, storeStateRefCounterMap,
-      stateRestoreAccomplishedMap, initialFnCanExecMap, initialState,
+      unmountRestore, reducerState, stateMap,
+      storeStateRefCounterMap, stateRestoreAccomplishedMap,
+      initialFnCanExecMap, classThisPointerSet, initialState,
     );
   });
   viewConnectStoreMap.set("viewInitialStateFnRestore", () => {
     initialStateFnRestoreHandle(
-      reducerState, stateMap, storeStateRefCounterMap,
-      stateRestoreAccomplishedMap, initialFnCanExecMap, initialState,
+      reducerState, stateMap, storeStateRefCounterMap, stateRestoreAccomplishedMap,
+      initialFnCanExecMap, classThisPointerSet, initialState,
     );
   });
   viewConnectStoreMap.set("viewConnectStore", () => {

@@ -46,3 +46,6 @@ export const STORES_KEY = Symbol("storesKey");
 
 // class的unmountHandle处理key
 export const CLASS_UNMOUNT_HANDLE_KEY = Symbol("classUnmountHandleKey");
+
+// class的Fn初始化重置恢复state处理key
+export const CLASS_FN_INITIAL_HANDLE_KEY = Symbol("classFnInitialHandleKey");

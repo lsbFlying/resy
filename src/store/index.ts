@@ -16,7 +16,7 @@ import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import { scheduler } from "../scheduler";
 import {
   batchUpdate, VIEW_CONNECT_STORE_KEY, REGENERATIVE_SYSTEM_KEY,
-  USE_STORE_KEY, CONNECT_SYMBOL_KEY, CLASS_UNMOUNT_HANDLE_KEY,
+  USE_STORE_KEY, CONNECT_SYMBOL_KEY, CLASS_UNMOUNT_HANDLE_KEY, CLASS_FN_INITIAL_HANDLE_KEY,
 } from "../static";
 import { mapToObject, objectToMap, hasOwnProperty, followUpMap } from "../utils";
 import {
@@ -24,7 +24,7 @@ import {
   subscribeErrorHandle, stateCallbackErrorHandle,
 } from "../errors";
 import { pushTask, connectHookUse, finallyBatchHandle, connectStore, connectClassUse } from "./core";
-import { mergeStateKeys, handleReducerState, unmountRestoreHandle } from "../reset";
+import { mergeStateKeys, handleReducerState, deferHandle, initialStateFnRestoreHandle } from "../reset";
 import { genViewConnectStoreMap } from "../view/core";
 import { willUpdatingHandle } from "../subscribe";
 
@@ -353,9 +353,17 @@ export const createStore = <S extends PrimitiveState>(
   }
 
   const classUnmountHandle = () => {
-    unmountRestoreHandle(
+    deferHandle(
       optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounterMap,
-      stateRestoreAccomplishedMap, initialFnCanExecMap, classThisPointerSet, initialState,
+      stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap,
+      classThisPointerSet, initialState,
+    );
+  };
+
+  const classFnInitialHandle = () => {
+    initialStateFnRestoreHandle(
+      reducerState, stateMap, storeStateRefCounterMap, stateRestoreAccomplishedMap,
+      initialFnCanExecMap, classThisPointerSet, initialState,
     );
   };
 
@@ -363,6 +371,7 @@ export const createStore = <S extends PrimitiveState>(
   externalMap.set(USE_STORE_KEY, storeProxy);
   externalMap.set(CONNECT_SYMBOL_KEY, connect);
   externalMap.set(CLASS_UNMOUNT_HANDLE_KEY, classUnmountHandle);
+  externalMap.set(CLASS_FN_INITIAL_HANDLE_KEY, classFnInitialHandle);
   externalMap.set(VIEW_CONNECT_STORE_KEY, viewConnectStoreMap);
 
   return store;

@@ -1,8 +1,9 @@
-import type { PrimitiveState, MapType } from "../types";
+import type { PrimitiveState, MapType, Callback } from "../types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "./types";
 import type { InitialState, StateRefCounterMapType, ClassThisPointerType } from "../store/types";
 import { hasOwnProperty, clearObject } from "../utils";
 import { CLASS_STATE_REF_SET_KEY } from "../static";
+import { Scheduler } from "../scheduler/types";
 
 /**
  * @description 获取目前所有的keys
@@ -68,7 +69,7 @@ const restoreHandle = <S extends PrimitiveState>(
 /**
  * 是否有class组件引用数据的判断处理
  */
-function noClassStateRefHandle<S extends PrimitiveState>(classThisPointerSet: Set<ClassThisPointerType<S>>) {
+export function noClassStateRefHandle<S extends PrimitiveState>(classThisPointerSet: Set<ClassThisPointerType<S>>) {
   let noClassStateRef = true;
   if (classThisPointerSet.size !== 0) {
     classThisPointerSet.forEach(classThisPointerItem => {
@@ -142,3 +143,47 @@ export const initialStateFnRestoreHandle = <S extends PrimitiveState>(
     initialFnCanExecMap.set("canExec", true);
   }
 };
+
+/**
+ * @description 为防止react的StrictMode严格模式带来的两次渲染导致effect的return的注册函数
+ * 会在中间执行一次导致storeMap提前释放内存
+ * 中间释放内存会移除之前的storeMapValue然后后续更新或者渲染会重新生成新的storeMapValue
+ * 而这导致updater函数中访问的singlePropStoreChangeSet是上一次
+ * 生成旧的storeMapValue时候的singlePropStoreChangeSet地址
+ * 🌟 而旧的singlePropStoreChangeSet早就被删除清空，导致不会有更新能力 ————（有点复杂有点绕，注意理解）
+ * 同时storeStateRefCounterMap的条件判断执行如果在StrictMode下两次渲染也是不合理的
+ * 同样困原因扰的还有view的viewConnectStore的Destructor的过渡执行
+ * 以及view中effectedHandle的Destructor的过渡执行
+ * 所以其余两处同样需要defer延迟处理
+ *
+ * 这里通过一个微任务执行，让在执行卸载释放内存以及unmountRestore等一系列操作时有一个经历double-effect的缓冲执行时机
+ * 此时微任务中再执行singlePropStoreChangeSet以及storeStateRefCounterMap在React.StrictMode情况下是有值的了，
+ */
+export function deferHandle<S extends PrimitiveState>(
+  unmountRestore: boolean,
+  reducerState: S,
+  stateMap: MapType<S>,
+  storeStateRefCounterMap: StateRefCounterMapType,
+  stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
+  schedulerProcessor: MapType<Scheduler<S>>,
+  initialFnCanExecMap: InitialFnCanExecMapType,
+  classThisPointerSet: Set<ClassThisPointerType<S>>,
+  initialState?: InitialState<S>,
+  callback?: Callback,
+) {
+  if (!schedulerProcessor.get("deferDestructorFlag")) {
+    schedulerProcessor.set("deferDestructorFlag", Promise.resolve().then(() => {
+      schedulerProcessor.set("deferDestructorFlag", null);
+      if (!storeStateRefCounterMap.get("counter") && noClassStateRefHandle(classThisPointerSet)) {
+        // 打开开关执行刷新恢复数据
+        stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", null);
+        stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", null);
+        unmountRestoreHandle(
+          unmountRestore, reducerState, stateMap, storeStateRefCounterMap,
+          stateRestoreAccomplishedMap, initialFnCanExecMap, classThisPointerSet, initialState,
+        );
+      }
+      callback?.();
+    }));
+  }
+}

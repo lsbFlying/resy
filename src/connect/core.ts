@@ -3,7 +3,8 @@ import type { ClassStoreType } from "./types";
 import type { Store } from "../store/types";
 import { storeErrorHandle } from "../errors";
 import {
-  CONNECT_SYMBOL_KEY, CLASS_STATE_REF_SET_KEY, STORES_KEY, CLASS_UNMOUNT_HANDLE_KEY,
+  CONNECT_SYMBOL_KEY, CLASS_STATE_REF_SET_KEY, STORES_KEY,
+  CLASS_UNMOUNT_HANDLE_KEY, CLASS_FN_INITIAL_HANDLE_KEY,
 } from "../static";
 
 /**
@@ -27,6 +28,7 @@ export function getThisProxy(this: any) {
 /** The core implementation of connectStore */
 export function connectStoreCore<S extends PrimitiveState>(this: any, store: S) {
   storeErrorHandle(store, "connectStore");
+  store[CLASS_FN_INITIAL_HANDLE_KEY as keyof S]();
   this[STORES_KEY].add(store);
   // Transform the called object to get this pointer of class,
   // in order to facilitate subsequent operations on class

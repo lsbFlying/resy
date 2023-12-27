@@ -1,6 +1,6 @@
 import type { PrimitiveState } from "../types";
 import type { StoreCoreUtils, SetOptions } from "../store/types";
-import { CLASS_UNMOUNT_HANDLE_KEY, CONNECT_SYMBOL_KEY } from "../static";
+import { CLASS_FN_INITIAL_HANDLE_KEY, CLASS_UNMOUNT_HANDLE_KEY, CONNECT_SYMBOL_KEY } from "../static";
 
 /**
  * Function types for connecting stores
@@ -24,3 +24,8 @@ export type ConnectType = {
 export type ClassUnmountHandleType = {
   [CLASS_UNMOUNT_HANDLE_KEY](): void;
 }
+
+// class在store初始化是函数的情况下的执行恢复
+export type ClassFnInitialHandleType = {
+  [CLASS_FN_INITIAL_HANDLE_KEY](): void;
+};

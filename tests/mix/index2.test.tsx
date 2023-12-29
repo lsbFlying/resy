@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { createStore, useStore } from "../../src";
 
-/** 排列组合 */
+/** Permutation and combination */
 export function permute(input: number[]) {
   const permArr: number[][] = [],
     usedChars: number[] = [];

@@ -2,7 +2,7 @@ import type { PrimitiveState } from "../types";
 import type { ViewOptionsType, MapStateToProps, Stores } from "./types";
 import type { Store } from "../store/types";
 import React, { memo, useEffect, useState } from "react";
-import { REGENERATIVE_SYSTEM_KEY } from "../static";
+import { __REGENERATIVE_SYSTEM_KEY__ } from "../static";
 import { mapToObject } from "../utils";
 import {
   getLatestStateMap, viewStoresToLatestState, initialStateHandle, effectedHandle,
@@ -18,7 +18,8 @@ import { viewOptionsErrorHandle } from "../errors";
  * view最初的功能目的是想使得class组件连接使用store的数据。
  * @deprecated 事实上view已经很完善了，只是相对而言我还是不满意它的使用简易程度，
  * 所以在寻求到更完善的class组件的状态管理的支持方式之后
- * 未来的resy版本可能不再维护view这个api甚至放弃view
+ * 🌟 随着resy-10.1.0版本针对class组件状态使用的彻底攻破，view的维护在该版本成为绝唱！
+ * 主要还是使用方式的略微复杂以及取得收益的不可观，本身memo的收益就很难鉴定。
  */
 export const view = <S extends PrimitiveState = {}, P extends PrimitiveState = {}>(
   // any用于兼容某些HOC导致的类型不合一问题，比如withRouter(低版本的react-router还是存在该HOC)
@@ -41,7 +42,7 @@ export const view = <S extends PrimitiveState = {}, P extends PrimitiveState = {
      * 保持innerUseStateMapSet数据代理引用的准确与及时性
      */
     const innerUseStateMapSet: Set<keyof S> | Map<keyof Stores<S>, Set<keyof S>> =
-      (!stores || (stores as Store<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]) ? new Set() : new Map();
+      (!stores || (stores as Store<S>)[__REGENERATIVE_SYSTEM_KEY__ as keyof S]) ? new Set() : new Map();
 
     /**
      * @description 给state数据做一个代理，从而让其知晓Comp组件内部使用了哪些数据！
@@ -71,7 +72,7 @@ export const view = <S extends PrimitiveState = {}, P extends PrimitiveState = {
   return memo(PureView, hasCompareFn ? (prevProps: P, nextProps: P) => {
     // props与state的变化可能存在同时变化的情况，但不影响equal的执行
     const latestState = stores
-      ? (stores as Store<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]
+      ? (stores as Store<S>)[__REGENERATIVE_SYSTEM_KEY__ as keyof S]
         ? mapToObject(getLatestStateMap(stores as Store<S>))
         : viewStoresToLatestState(stores)
       : ({} as S);

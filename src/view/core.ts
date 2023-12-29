@@ -1,6 +1,3 @@
-/**
- * @description 本文件是view的内部代码抽离拆解的一些方法
- */
 import type {
   Callback, MapType, ObjectMapType, ObjectType, PrimitiveState, ValueOf,
 } from "../types";
@@ -14,7 +11,7 @@ import type { Unsubscribe } from "../subscribe/types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../reset/types";
 import { mapToObject, objectToMap, hasOwnProperty } from "../utils";
 import { protoPointStoreErrorHandle } from "../errors";
-import { REGENERATIVE_SYSTEM_KEY, VIEW_CONNECT_STORE_KEY } from "../static";
+import { __REGENERATIVE_SYSTEM_KEY__, __VIEW_CONNECT_STORE_KEY__ } from "../static";
 import { unmountRestoreHandle, initialStateFnRestoreHandle } from "../reset";
 
 /**
@@ -38,9 +35,9 @@ const stateRefByProxyHandle = <S extends PrimitiveState>(
 
 // 获取最新数据Map对象（针对单个/无store，多个store就遍历再多次调用）
 export const getLatestStateMap = <S extends PrimitiveState>(store?: Store<S> | Stores<S>) => {
-  if (!store || !store[REGENERATIVE_SYSTEM_KEY as keyof S]) return new Map() as MapType<S>;
+  if (!store || !store[__REGENERATIVE_SYSTEM_KEY__ as keyof S]) return new Map() as MapType<S>;
   return (
-    store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
+    store[__VIEW_CONNECT_STORE_KEY__ as keyof S] as StoreViewMapType<S>
   ).get("getStateMap") as StoreViewMapValue<S>["getStateMap"];
 };
 
@@ -78,10 +75,10 @@ const viewRestoreHandle = <S extends PrimitiveState>(
 ) => {
   if (!stores) return;
   // 单个Store
-  if ((stores as Store<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]) {
+  if ((stores as Store<S>)[__REGENERATIVE_SYSTEM_KEY__ as keyof S]) {
     (
       (
-        (stores as Store<S>)?.[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
+        (stores as Store<S>)?.[__VIEW_CONNECT_STORE_KEY__ as keyof S] as StoreViewMapType<S>
       )?.get(action) as Callback
     )?.();
   } else {
@@ -89,7 +86,7 @@ const viewRestoreHandle = <S extends PrimitiveState>(
       const storeItem = (stores as Stores<S>)[storesKey] as Store<S>;
       (
         (
-          storeItem?.[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
+          storeItem?.[__VIEW_CONNECT_STORE_KEY__ as keyof S] as StoreViewMapType<S>
         )?.get(action) as Callback
       )?.();
     });
@@ -114,7 +111,7 @@ export const initialStateHandle = <S extends PrimitiveState>(
    */
   // 先行初始化执行逻辑，并且每次生命周期中只同步执行一次
   // 多个Store
-  if (stores && !(stores as Store<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]) {
+  if (stores && !(stores as Store<S>)[__REGENERATIVE_SYSTEM_KEY__ as keyof S]) {
     (Object.keys(stores) as (keyof Stores<S>)[]).forEach(storesKey => {
       const storeItem = (stores as Stores<S>)[storesKey] as Store<S>;
       (stateMap as ObjectMapType<S>)[storesKey] = getLatestStateMap(storeItem);
@@ -123,7 +120,7 @@ export const initialStateHandle = <S extends PrimitiveState>(
   }
 
   // 单store 或 无store
-  if (!stores || (stores as Store<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]) {
+  if (!stores || (stores as Store<S>)[__REGENERATIVE_SYSTEM_KEY__ as keyof S]) {
     return stateRefByProxyHandle(stateMap as MapType<S>, innerUseStateMapSet as Set<keyof S>);
   }
 
@@ -156,7 +153,7 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
       viewConnectStoreSet.add(
         (
           (
-            store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
+            store[__VIEW_CONNECT_STORE_KEY__ as keyof S] as StoreViewMapType<S>
           ).get("viewConnectStore") as StoreViewMapValue<S>["viewConnectStore"]
         )()
       );
@@ -190,7 +187,7 @@ const handleStoreSubscribe = <S extends PrimitiveState, P extends PrimitiveState
         viewConnectStoreSet.add(
           (
             (
-              store[VIEW_CONNECT_STORE_KEY as keyof S] as StoreViewMapType<S>
+              store[__VIEW_CONNECT_STORE_KEY__ as keyof S] as StoreViewMapType<S>
             ).get("viewConnectStore") as StoreViewMapValue<S>["viewConnectStore"]
           )()
         );
@@ -236,7 +233,7 @@ export const effectedHandle = <S extends PrimitiveState, P extends PrimitiveStat
 
   let unsubscribe: Unsubscribe | Unsubscribe[];
   // 单store
-  if ((stores as Store<S>)[REGENERATIVE_SYSTEM_KEY as keyof S]) {
+  if ((stores as Store<S>)[__REGENERATIVE_SYSTEM_KEY__ as keyof S]) {
     unsubscribe = handleStoreSubscribe(
       stores as Store<S>,
       innerUseStateMapSet,

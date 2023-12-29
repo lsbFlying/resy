@@ -4,32 +4,30 @@ import type { InitialState } from "../store/types";
 import { useMemo } from "react";
 import { createStore } from "../store";
 import { storeErrorHandle } from "../errors";
-import { USE_STORE_KEY } from "../static";
+import { __USE_STORE_KEY__ } from "../static";
 
 /**
- * 驱动组件更新
- * @description 驱动组件更新的hook，使用store容器中的数据
- * 特意分离直接从store获取hook调用是为了数据的安全使用
- * 本身产生的数据就是hook数据，所以会多一层代理
+ * useStore api
+ * @description useStore(store) === store.useStore()
  * @param store
  * @return store
  */
 export const useStore = <S extends PrimitiveState>(store: S): S => {
   storeErrorHandle(store, "useStore");
-  return store[USE_STORE_KEY as keyof S];
+  return store[__USE_STORE_KEY__ as keyof S];
 };
 
 /**
- * useState的简明版本
- * @description 帮助组件可以使用resy创建私有化的store数据状态容器
- * 它可以用如下方式：
+ * A concise version of useState
+ * @example:
  * const { count, text, setState } = useConciseState({ count: 0, text: "hello" });
- * 作用实现其实就是等价于原生的useState：
+ * equivalent to:
  * const [count, setCount] = useState(0);
  * const [text, setText] = useState("hello");
- * 🌟 useConciseState相对于useState在多个数据状态时使用相对简单明了
- * 🌟 同时 useConciseState中可以解析出store属性，通过store可以读取各个数据的最新数据值
- * 弥补了useState中无法读取属性数据的最新值的不足，这是最核心的关键点
+ * 🌟 useConciseState is relatively simple and clear to use compared to useState when dealing with multiple data states.
+ * 🌟 Furthermore, within useConciseState, the store attribute can be parsed out, and through the store,
+ * the latest data values of various items can be accessed,
+ * compensating for the shortfall in useState where the latest values of attribute data cannot be retrieved.
  * @param initialState
  * @return ConciseStore<S>
  */
@@ -39,5 +37,5 @@ export const useConciseState = <S extends PrimitiveState>(
     useMemo(() => createStore<S>(initialState, {
       __useConciseStateMode__: true,
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }), [])[USE_STORE_KEY as keyof S]
+    }), [])[__USE_STORE_KEY__ as keyof S]
 ;

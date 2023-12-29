@@ -1,26 +1,20 @@
 import type { PrimitiveState, ValueOf, MapType, Callback } from "../types";
 
-/**
- * resy的调度类型接口
- * @description 调度类型
- * 原本调度中还有针对setState的callback回掉进行处理的开关标识isCalling
- * 后来发现是多余不必要的，因为本身回掉Set在遍历执行的过程中即使
- * 内部再有回掉执行，也会放在Set后续尾部调用，所以这里是天然直接遍历即可
- */
+// Scheduler type
 export type Scheduler<S extends PrimitiveState> = {
-  // 更新进行中
+  // Flag for ongoing update
   isUpdating: Promise<void> | null;
-  // 将要更新执行的标识
+  // Flag for the upcoming update execution
   willUpdating: true | null;
-  // 入栈更新数据的key/value以及更新任函数务队列
+  // Push both the updated data (in key/value pairs) and the update task queue into the stack
   pushTask(key: keyof S, value: ValueOf<S>, task: Callback): void;
-  // 冲刷任务数据与任务队列
+  // Flush and clear the task data and task queue
   flush(): void;
-  // 获取当前一轮的更新任务及数据
+  // Get the current round of update tasks and data
   getTasks(): {
     taskDataMap: MapType<S>;
     taskQueueSet: Set<Callback>;
   };
-  // 延迟useEffect的return 注册接触函数Destructor执行的标识
+  // Flag to delay the execution of the return registration function in useEffect
   deferDestructorFlag: Promise<void> | null;
 };

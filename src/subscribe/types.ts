@@ -1,12 +1,14 @@
 import type { Callback, PrimitiveState } from "../types";
 
-/** resy的订阅监听的取消返回函数 */
+/** Type of unsubscribe */
 export type Unsubscribe = Callback;
 
 /**
- * 订阅监听函数的参数类型
- * @description subscribe具备批次更新处理，effectState是本次一个批次变动的数据状态
- * 而prevState和nextState是这一批次变动监听的前一批次和后一批次的数据状态
+ * The parameter type of the subscription listening function
+ * @description subscribe possesses the characteristic scheduling mechanism of Resy itself,
+ * as well as the ability to handle batch updates.
+ * effectState is the data state for a batch change,
+ * while prevState and nextState represent the data states before and after a batch change.
  */
 export type ListenerParams<S extends PrimitiveState> = {
   effectState: Partial<S>;
@@ -14,20 +16,15 @@ export type ListenerParams<S extends PrimitiveState> = {
   prevState: S;
 };
 
-/** 订阅事件的监听回调函数类型 */
+/** Type of monitoring callback for subscription */
 export type Listener<S extends PrimitiveState> = (data: ListenerParams<S>) => void;
 
-/** resy的订阅监听类型 */
+/** Type of subscribe */
 export type Subscribe<S extends PrimitiveState> = Readonly<{
   /**
-   * subscribe
-   * @description 监听订阅，类似addEventListener，但是这里对应的数据的变化监听订阅
-   * subscribe的存在是必要的，它的作用并不类比于useEffect，
-   * 而是像subscribe或者addEventListener的效果，监听订阅数据的变化
-   * 具备多数据订阅监听的能力
-   * @param listener 监听订阅的回调函数
-   * @param stateKeys 监听订阅的具体的某一个store容器的某些数据变化，如果为空则默认监听store的任何一个数据的变化
-   * @return unsubscribe 返回的取消监听的函数
+   * @param listener
+   * @param stateKeys Array of monitored data attributes
+   * @return unsubscribe
    */
   subscribe(
     listener: Listener<S>,

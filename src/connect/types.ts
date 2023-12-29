@@ -1,31 +1,37 @@
-import type { PrimitiveState } from "../types";
+import type { Callback, PrimitiveState } from "../types";
 import type { StoreCoreUtils, SetOptions } from "../store/types";
-import { CLASS_FN_INITIAL_HANDLE_KEY, CLASS_UNMOUNT_HANDLE_KEY, CONNECT_SYMBOL_KEY } from "../static";
+import { __CLASS_FN_INITIAL_HANDLE_KEY__, __CLASS_UNMOUNT_HANDLE_KEY__, __CONNECT_SYMBOL_KEY__ } from "../static";
 
 /**
- * Function types for connecting stores
+ * Function types for connecting store
  * Performs some action. This method should not be overridden in subclasses.
- * @method
+ * Even if you rewrite it, your rewriting method won't work.
  * @description This is an important method that is core to the functionality of this class.
  */
 export type ConnectStoreType = {
   connectStore<S extends PrimitiveState>(store: S): ClassStoreType<S>;
 };
 
-/** class连接store后的数据类型 */
+/** This is the data type returned by the class after connecting to the store */
 export type ClassStoreType<S extends PrimitiveState> = S & StoreCoreUtils<S> & SetOptions;
 
-/** 供class组件的基础类ComponentWithStore使用 */
+// This is the connection type used by the base classes ComponentWithStore and PureComponentWithStore in the class component
 export type ConnectType = {
-  [CONNECT_SYMBOL_KEY]<S extends PrimitiveState>(): ClassStoreType<S>;
+  [__CONNECT_SYMBOL_KEY__]<S extends PrimitiveState>(): ClassStoreType<S>;
 };
 
-// class组件卸载后执行的方法的类型
+// This is the type of method that is executed after the class component is unmounted
 export type ClassUnmountHandleType = {
-  [CLASS_UNMOUNT_HANDLE_KEY](): void;
+  [__CLASS_UNMOUNT_HANDLE_KEY__](): void;
 }
 
-// class在store初始化是函数的情况下的执行恢复
+// This is the type of recovery performed by the class if the store initialization parameter is a function
 export type ClassFnInitialHandleType = {
-  [CLASS_FN_INITIAL_HANDLE_KEY](): void;
+  [__CLASS_FN_INITIAL_HANDLE_KEY__](): void;
+};
+
+// Unmount the hook object type executed by the logic
+export type UnmountExecutionHookObjType = {
+  executionCounter: number;
+  callback?: Callback | null;
 };

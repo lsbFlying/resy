@@ -2,31 +2,24 @@ import type { MapType, PrimitiveState, Callback, ValueOf } from "../types";
 import type { Scheduler } from "./types";
 
 /**
- * @description 调度处理器针对每一个store的私有化
- * 便于不同的store的调度处理分离开来
- * 避免了更新调度的交叉不协调问题产生的数据更新问题
- * detail course:
- * 因为调度内部的任务队列或者数据map都是根据key来添加执行的
- * 如果所有的store都公用一个会导致数据更新有问题
- * 同时，分离开调度并不影响批量更新的执行触发，是因为本身resy前置数据状态更进执行了
- * 后续store的更新执行到useSyncExternalStore内部的checkIfSnapshotChanged方法时
- * 由于前面批次的store更新因为value变更触发了useSyncExternalStore内部的useLayoutEffect
- * 而内部的useLayoutEffect又同步了数据状态inst.value = value;
- * 所以原本为了防止更新撕裂的问题而写的useLayoutEffect，节省了一次更新效应
- * 这个特性是 useSyncExternalStore + proxy + 前置数据 + Promise微任务执行 一起产生的额外联动效应
- * todo 目前来看这种useSyncExternalStore内部的useLayoutEffect的撕裂检查执行效果良好，保持观察
+ * @description Each store's dispatch handler
+ * Since the task queue or data inside the dispatcher is operated based on keys,
+ * and different stores may have the same data attributes,
+ * so it is necessary to privatize each store's dispatch handler.
+ * However, the update dispatch of different stores does not affect the triggering of batch updates,
+ * because the data state in Resy has been advanced further.
+ * Therefore, although subsequent store updates are not actually be executed,
+ * they will incidentally synchronize the data in the store with the rendering on the page.
+ * This saves one update effect and can be considered a batch update handling across different stores.
+ * todo At present, the effect of this characteristic is good, keep observation.
  */
 export const scheduler = <S extends PrimitiveState>() => {
-  // 更新的任务数据
+  // task data of updated
   const taskDataMap: MapType<S> = new Map();
-  // 更新任务队列
+  // task queue of updated
   const taskQueueSet: Set<Callback> = new Set();
 
-  /**
-   * @description 批量处理更新的调度Map
-   * 主要是为了resy的直接单次更新的批量合并
-   * 同时完成react18以下的非管理领域的批处理更新的调度协调性
-   */
+  // Scheduling map for batch updates
   const schedulerProcessor: MapType<Scheduler<S>> = new Map();
 
   schedulerProcessor.set("isUpdating", null);

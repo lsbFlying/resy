@@ -50,8 +50,8 @@ test("createStoreWithFunction-III", async () => {
 
   fireEvent.click(getByText("showChange"));
   await waitFor(() => {
-    // It is verified that the reset execution logic of the function parameters
-    // of createStore can be executed correctly under the precondition that unmountRestore is true.
-    expect(initialTimeRecord === timerStore.time).toBeTruthy();
+    // Verified that the reinitialization of the function parameters in createStore
+    // is independent of the unmountRestore configuration
+    expect(initialTimeRecord < timerStore.time).toBeTruthy();
   });
 });

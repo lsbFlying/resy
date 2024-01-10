@@ -16,18 +16,12 @@ function equal(objA: PrimitiveState, objB: PrimitiveState) {
   const keysA = Object.keys(objA);
   const keysB = Object.keys(objB);
 
-  if (keysA.length !== keysB.length) {
-    return false;
-  }
+  if (keysA.length !== keysB.length) return false;
 
-  // Test for A's keys different from B.
+  // Test for A's keys different from B
   for (let i = 0; i < keysA.length; i++) {
     const currentKey = keysA[i];
-    if (
-      !hasOwnProperty.call(objB, currentKey) ||
-      // $FlowFixMe[incompatible-use] lost refinement of `objB`
-      !Object.is(objA[currentKey], objB[currentKey])
-    ) {
+    if (!hasOwnProperty.call(objB, currentKey) || !Object.is(objA[currentKey], objB[currentKey])) {
       return false;
     }
   }

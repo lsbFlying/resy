@@ -38,5 +38,5 @@ test("setOptions-error-scene", async () => {
   // @ts-ignore
   expect(() => setOptions(new WeakSet())).toThrowError();
   // @ts-ignore
-  expect(() => setOptions(new WeakRef())).toThrowError();
+  expect(() => setOptions(new WeakRef({}))).toThrowError();
 });

@@ -34,7 +34,7 @@ test("subscribe-error-scene", async () => {
   // @ts-ignore
   expect(() => store.subscribe([])).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe(new WeakRef())).toThrowError();
+  expect(() => store.subscribe(new WeakRef({}))).toThrowError();
 
   // @ts-ignore
   // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
@@ -74,5 +74,5 @@ test("subscribe-error-scene", async () => {
   expect(() => store.subscribe(() => {}, new WeakSet())).toThrowError();
   // @ts-ignore
   // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
-  expect(() => store.subscribe(() => {}, new WeakRef())).toThrowError();
+  expect(() => store.subscribe(() => {}, new WeakRef({}))).toThrowError();
 });

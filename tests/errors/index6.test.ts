@@ -32,5 +32,5 @@ test("restore-error-scene", async () => {
   // @ts-ignore
   expect(() => store.restore([])).toThrowError();
   // @ts-ignore
-  expect(() => store.restore(new WeakRef())).toThrowError();
+  expect(() => store.restore(new WeakRef({}))).toThrowError();
 });

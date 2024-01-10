@@ -24,7 +24,7 @@ const unmountExecutionHookObj: UnmountExecutionHookObjType = {
 
 // this proxy returned by constructor
 export function getThisProxy(this: any) {
-  unmountExecutionHookObj.executionCounter += 1;
+  unmountExecutionHookObj.executionCounter = (unmountExecutionHookObj.executionCounter ?? 0) + 1;
   if (unmountExecutionHookObj.executionCounter === 2) {
     unmountExecutionHookObj.callback?.();
     unmountExecutionHookObj.callback = null;
@@ -35,6 +35,8 @@ export function getThisProxy(this: any) {
       if (prop === "componentWillUnmount") {
         // Ensure that the unmount logic is executed
         if (!target.unmountExecuted) {
+          unmountExecutionHookObj.callback = null;
+          unmountExecutionHookObj.executionCounter = null;
           // Ensure that this points to the proxy instance here in order to facilitate the subsequent unmount execution.
           Reflect.get(target, "unmountHandle", receiver).bind(receiver)();
         }

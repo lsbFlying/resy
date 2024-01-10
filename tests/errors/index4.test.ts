@@ -37,7 +37,7 @@ test("setState-error-scene", async () => {
   // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
   expect(() => store.setState(() => {})).toThrowError();
   // @ts-ignore
-  expect(() => store.setState(new WeakRef())).toThrowError();
+  expect(() => store.setState(new WeakRef({}))).toThrowError();
 
   // @ts-ignore
   expect(() => store.setState({}, 0)).toThrowError();
@@ -66,5 +66,5 @@ test("setState-error-scene", async () => {
   // @ts-ignore
   expect(() => store.setState({}, new WeakSet())).toThrowError();
   // @ts-ignore
-  expect(() => store.setState({}, new WeakRef())).toThrowError();
+  expect(() => store.setState({}, new WeakRef({}))).toThrowError();
 });

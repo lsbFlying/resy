@@ -15,7 +15,7 @@ import type { Unsubscribe, Listener } from "../subscribe/types";
 import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import { scheduler } from "../scheduler";
 import {
-  batchUpdate, __VIEW_CONNECT_STORE_KEY__, __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__,
+  batchUpdate, __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__,
   __CONNECT_SYMBOL_KEY__, __CLASS_UNMOUNT_HANDLE_KEY__, __CLASS_FN_INITIAL_HANDLE_KEY__,
 } from "../static";
 import { mapToObject, objectToMap, hasOwnProperty, followUpMap } from "../utils";
@@ -25,7 +25,6 @@ import {
 } from "../errors";
 import { pushTask, connectHookUse, finallyBatchHandle, connectStore, connectClassUse } from "./core";
 import { mergeStateKeys, handleReducerState, deferHandle, initialStateFnRestoreHandle } from "../reset";
-import { genViewConnectStoreMap } from "../view/core";
 import { willUpdatingHandle } from "../subscribe";
 
 /**
@@ -83,13 +82,6 @@ export const createStore = <S extends PrimitiveState>(
 
   // Subscription listener stack
   const listenerSet = new Set<Listener<S>>();
-
-  // The map for view connects to the store.
-  const viewConnectStoreMap = genViewConnectStoreMap(
-    optionsTemp.unmountRestore, reducerState, stateMap,
-    storeStateRefCounterMap, stateRestoreAccomplishedMap, schedulerProcessor,
-    initialFnCanExecMap, classThisPointerSet, initialState,
-  );
 
   // The core map of store
   const storeMap: StoreMap<S> = new Map();
@@ -346,7 +338,6 @@ export const createStore = <S extends PrimitiveState>(
   externalMap.set(__CONNECT_SYMBOL_KEY__, connect);
   externalMap.set(__CLASS_UNMOUNT_HANDLE_KEY__, classUnmountHandle);
   externalMap.set(__CLASS_FN_INITIAL_HANDLE_KEY__, classInitialFnHandle);
-  externalMap.set(__VIEW_CONNECT_STORE_KEY__, viewConnectStoreMap);
 
   return store;
 };

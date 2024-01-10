@@ -39,5 +39,5 @@ test("useStore-error-scene", async () => {
   // @ts-ignore
   expect(() => useStore(new WeakSet())).toThrowError();
   // @ts-ignore
-  expect(() => useStore(new WeakRef())).toThrowError();
+  expect(() => useStore(new WeakRef({}))).toThrowError();
 });

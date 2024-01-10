@@ -27,7 +27,7 @@ test("createStore-error-scene", async () => {
   // @ts-ignore
   expect(() => createStore(new WeakMap())).toThrowError();
   // @ts-ignore
-  expect(() => createStore(new WeakRef())).toThrowError();
+  expect(() => createStore(new WeakRef({}))).toThrowError();
 
   // @ts-ignore
   expect(() => createStore(() => 0)).toThrowError();
@@ -54,7 +54,7 @@ test("createStore-error-scene", async () => {
   // @ts-ignore
   expect(() => createStore(() => new WeakMap())).toThrowError();
   // @ts-ignore
-  expect(() => createStore(() => new WeakRef())).toThrowError();
+  expect(() => createStore(() => new WeakRef({}))).toThrowError();
 
   // @ts-ignore
   expect(() => createStore({}, 0)).toThrowError();
@@ -85,7 +85,7 @@ test("createStore-error-scene", async () => {
   // @ts-ignore
   expect(() => createStore({}, new WeakMap())).toThrowError();
   // @ts-ignore
-  expect(() => createStore({}, new WeakRef())).toThrowError();
+  expect(() => createStore({}, new WeakRef({}))).toThrowError();
 
   // @ts-ignore
   expect(() => createStore({}, { unmountRestore: 0 })).toThrowError();
@@ -112,7 +112,7 @@ test("createStore-error-scene", async () => {
   // @ts-ignore
   expect(() => createStore({}, { unmountRestore: new WeakMap() })).toThrowError();
   // @ts-ignore
-  expect(() => createStore({}, { unmountRestore: new WeakRef() })).toThrowError();
+  expect(() => createStore({}, { unmountRestore: new WeakRef({}) })).toThrowError();
 
   // @ts-ignore
   expect(() => createStore({}, { __useConciseStateMode__: 0 })).toThrowError();
@@ -139,5 +139,5 @@ test("createStore-error-scene", async () => {
   // @ts-ignore
   expect(() => createStore({}, { __useConciseStateMode__: new WeakMap() })).toThrowError();
   // @ts-ignore
-  expect(() => createStore({}, { __useConciseStateMode__: new WeakRef() })).toThrowError();
+  expect(() => createStore({}, { __useConciseStateMode__: new WeakRef({}) })).toThrowError();
 });

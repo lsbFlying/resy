@@ -72,7 +72,7 @@ export function noClassStateRefHandle<S extends PrimitiveState>(classThisPointer
   let noClassStateRef = true;
   if (classThisPointerSet.size !== 0) {
     classThisPointerSet.forEach(classThisPointerItem => {
-      if (classThisPointerItem[__CLASS_STATE_REF_SET_KEY__].size !== 0) {
+      if (classThisPointerItem[__CLASS_STATE_REF_SET_KEY__]?.size !== 0) {
         noClassStateRef = false;
       }
     });

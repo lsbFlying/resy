@@ -1,9 +1,8 @@
 import type { Callback, ValueOf, PrimitiveState, MapType } from "../types";
 import type { Subscribe } from "../subscribe/types";
-import type { StoreViewMapType } from "../view/types";
 import type { ConnectType, ClassUnmountHandleType, ClassFnInitialHandleType } from "../connect/types";
 import {
-  __REGENERATIVE_SYSTEM_KEY__, __VIEW_CONNECT_STORE_KEY__, __USE_STORE_KEY__, __CLASS_STATE_REF_SET_KEY__,
+  __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__, __CLASS_STATE_REF_SET_KEY__,
 } from "../static";
 
 /**
@@ -63,7 +62,6 @@ export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S>
   & ClassUnmountHandleType
   & ClassFnInitialHandleType
   & {
-  [__VIEW_CONNECT_STORE_KEY__]: StoreViewMapType<S>;
   [__REGENERATIVE_SYSTEM_KEY__]: symbol;
   [__USE_STORE_KEY__]: object;
   readonly store: Store<S>;

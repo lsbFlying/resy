@@ -9,7 +9,7 @@ let fineGrainedCounterNormal = 0;
  * Components at the same level use different data attributes
  * to render without affecting each other
  */
-test("fine-grained.normal", async () => {
+test("fine-grained-I", async () => {
   const store = createStore({
     count: 0,
     text: "hello world",

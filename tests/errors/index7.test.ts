@@ -37,7 +37,7 @@ test("syncUpdate-error-scene", async () => {
   // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
   expect(() => store.syncUpdate(() => {})).toThrowError();
   // @ts-ignore
-  expect(() => store.syncUpdate(new WeakRef())).toThrowError();
+  expect(() => store.syncUpdate(new WeakRef({}))).toThrowError();
 
   // @ts-ignore
   expect(() => store.syncUpdate({}, 0)).toThrowError();
@@ -66,5 +66,5 @@ test("syncUpdate-error-scene", async () => {
   // @ts-ignore
   expect(() => store.syncUpdate({}, new WeakSet())).toThrowError();
   // @ts-ignore
-  expect(() => store.syncUpdate({}, new WeakRef())).toThrowError();
+  expect(() => store.syncUpdate({}, new WeakRef({}))).toThrowError();
 });

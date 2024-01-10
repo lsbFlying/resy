@@ -156,7 +156,7 @@ const store = createStore<StateType>({
 ```tsx
 // Store such as login and theme can set unmountRestore to false
 // so that it will not be reset globally.
-const loginStore = createStore<{ userName: string; userId: number }>(
+const userStore = createStore<{ userName: string; userId: number }>(
   {
     userName: "wenmu",
     userId: 0,
@@ -197,12 +197,37 @@ function App() {
 }
 ```
 
+##### Mixed use of store
+```tsx
+import { useStore } from "resy";
+
+function App() {
+  const { userName } = userStore.useStore();
+  const { themeStyle } = themeStore.useStore();
+  
+  return (
+    <>
+      <p>{userName}</p>
+      <p>{themeStyle}</p>
+      <button onClick={() => {
+        userStore.userName = "LF";
+      }}>nameChange</button>
+      <button onClick={() => {
+        themeStore.setState({
+          themeStyle: "light",
+        });
+      }}>themeChange</button>
+    </>
+  );
+}
+```
+
 ##### direct read usage mode
 ```tsx
 import { useStore } from "resy";
 
 function App() {
-  const state = useStore(store);
+  const state = store.useStore();
   
   return (
     <>
@@ -232,7 +257,7 @@ function App() {
     count, text,
     // The use of these api will be described in detail later.
     setState, syncUpdate, restore, subscribe,
-  } = useStore(store);
+  } = store.useStore();
   
   return (
     <>
@@ -248,7 +273,7 @@ function App() {
 import { useStore } from "resy";
 
 function App() {
-  const { count, text } = useStore(store);
+  const { count, text } = store.useStore();
   
   // Updates can be assigned directly
   function btn2() {
@@ -268,6 +293,95 @@ function App() {
 </details>
 
 <details>
+<summary>Using in class components</summary>
+
+##### ComponentWithStore、PureComponentWithStore
+```tsx
+import { ComponentWithStore, PureComponentWithStore } from "resy";
+
+/**
+ * @description ComponentWithStore is inherited from React Component,
+ * PureComponentWithStore is inherited from React PureComponent;
+ */
+class AppClass extends ComponentWithStore {
+
+  store = this.connectStore(store);
+
+  render() {
+    const { count } = this.store;
+    return (
+      <>
+        {count}
+        <button onClick={() => {
+          this.store.count++;
+        }}>+
+        </button>
+      </>
+    );
+  }
+}
+
+class PureAppClass extends PureComponentWithStore {
+  store = this.connectStore(store);
+
+  render() {
+    const { count } = this.store;
+    return (
+      <>
+        {count}
+        <button onClick={() => {
+          this.store.count++;
+        }}>+
+        </button>
+      </>
+    );
+  }
+}
+```
+
+##### Mixed use of store
+
+```tsx
+import { ComponentWithStore, createStore } from "resy";
+
+/**
+ * @description The update methods of internal "this.userStore" and "this.themeStore"
+ * are the same as those of the connected store itself, and can be called directly.
+ */
+class AppClass extends ComponentWithStore {
+
+  userStore = this.connectStore(userStore);
+
+  themeStore = this.connectStore(themeStore);
+
+  render() {
+    const { userName } = this.userStore;
+    const { theme } = this.themeStore;
+    return (
+        <>
+          <span>{userName}</span>
+          <span>{theme}</span>
+          <button onClick={() => {
+            this.userStore.userName = "LD";
+          }}>
+            nameChange
+          </button>
+          <button onClick={() => {
+            this.themeStore.setState({
+              theme: "light",
+            });
+          }}>
+            themeChange
+          </button>
+        </>
+    );
+  }
+}
+```
+
+</details>
+
+<details>
 <summary>
 Invalid update
 </summary>
@@ -278,7 +392,7 @@ import { useStore } from "resy";
 function App() {
   const {
     info: { name }, ageList, inputValue,
-  } = useStore(store);
+  } = store.useStore();
   
   function btn2() {
     // store.info.name = "Jack";   // Invalid update
@@ -307,7 +421,7 @@ function App() {
 import { useStore } from "resy";
 
 function App() {
-  const { count, text } = useStore(store);
+  const { count, text } = store.useStore();
   
   return (
     <>
@@ -333,7 +447,7 @@ function App() {
 import { useStore } from "resy";
 
 function App() {
-  const { text } = useStore(store);
+  const { text } = store.useStore();
   
   return (
     <button
@@ -399,7 +513,7 @@ import { useStore, createStore } from "resy";
 const store = createStore({count: 0, text: "hello"});
 
 function App() {
-  const { text } = useStore(store);
+  const { text } = store.useStore();
   
   return (
     <button
@@ -427,7 +541,7 @@ import { useStore } from "resy";
 const store = createStore({count: 0, text: "hello"});
 
 function App() {
-  const { count, text } = useStore(store);
+  const { count, text } = store.useStore();
   
   function btnClick1() {
     store.setState(() => {
@@ -470,8 +584,12 @@ function App() {
 ```tsx
 import { useStore, syncUpdate } from "resy";
 
+/**
+ * @description 🌟 The main purpose of syncUpdate is to solve the problem
+ * that input box updates such as input cannot be updated in an asynchronous environment.
+ */
 function App() {
-  const { inputValue } = useStore(store);
+  const { inputValue } = store.useStore();
   
   function inputChange(event: React.ChangeEvent<HTMLInputElement>) {
     store.syncUpdate({
@@ -499,20 +617,20 @@ function App() {
 ```tsx
 import { useStore } from "resy";
 
-// changes in the state of count data will not cause re-render in Text
+// Updates to count data will not cause Text components to re-render
 function Text() {
-  const { text } = useStore(store);
+  const { text } = store.useStore();
   return <p>{text}</p>;
 }
 
-// changes in the state of text data will not cause re-render in Count
+// Updates to text data will not cause Count components to re-render
 function Count() {
-  const { count } = useStore(store);
+  const { count } = store.useStore();
   return <p>{count}</p>;
 }
 
 function App() {
-  const { increase, name } = useStore(store);
+  const { increase, name } = store.useStore();
   
   return (
     <>
@@ -645,7 +763,7 @@ import { useEffect } from "react";
 import { useStore } from "resy";
 
 function App() {
-  const { count } = useStore(store);
+  const { count } = store.useStore();
   
   // Here is an example of a function component.
   // If it is a class component, it can be used in componentDidMount.
@@ -708,7 +826,7 @@ function App() {
 import { useStore } from "resy";
 
 function App() {
-  const { count, text } = useStore(store);
+  const { count, text } = store.useStore();
   
   return (
     <>
@@ -761,186 +879,6 @@ function App() {
     }}>btn</button>
   );
 }
-```
-</details>
-
-## Deprecated API
-| API             | Description                                                  |
-|-----------------|--------------------------------------------------------------|
-| view            | Help components to automatically process SCU and memo        |
-
-### Detailed introduction of api
-
-<details>
-<summary>view</summary>
-
-##### support for class components
-```tsx
-import React from "react";
-import { useStore, MapStateToProps, view } from "resy";
-
-class ClassCom extends React.Component<MapStateToProps<StateType>> {
-  render() {
-    // The data is hung on the state property of the props of the class component
-    const { count, text } = this.props.state;
-    return (
-      <div>{count}{text}</div>
-    );
-  }
-}
-
-const ClassComView = view(ClassCom, { stores: store });
-```
-
-##### view for hook mode I
-```tsx
-function HookCom() {
-  const { count, text } = useStore(store);
-  return (
-    <div>{count}{text}</div>
-  );
-}
-const HookComView = view(HookCom);
-```
-
-* name data update, will not cause TestView re-render
-* name data update, will not cause TestView2 re-render
-```tsx
-function App() {
-  const { increase, name } = useStore(store);
-  
-  return (
-    <>
-      <Text/>
-      <Count/>
-      <ClassComView/>
-      <HookComView/>
-      <div>{name}</div>
-      <button onClick={() => { store.name = "app"; }}>btn-name</button>
-      <button onClick={increase}>btn+</button>
-      <button onClick={() => { store.count-- }}>btn-</button>
-    </>
-  );
-}
-```
-
-##### view for hook mode II
-```tsx
-function HookCom(props: MapStateToProps<StateType>) {
-  const { count, text } = props.state;
-  return (
-    <div>{count}{text}</div>
-  );
-}
-const HookComView2 = view(HookCom, { stores: store });
-```
-
-##### for class component
-```tsx
-import React from "react";
-import { useStore, MapStateToProps, view } from "resy";
-
-type ComPropsType = { name: string };
-
-// the second type parameter of the MapStateToProps paradigm type is the type of props.
-class ClassComWithProps extends React.Component<
-  MapStateToProps<StateType, ComPropsType>
-> {
-  render() {
-    const { state: { count, text }, name } = this.props;
-    return (
-      <div>{count}{text}{name}</div>
-    );
-  }
-}
-
-// you can add a props type interface to the generic type of view.
-const ClassComWithPropsView = view<ComPropsType>(ClassComWithProps, { stores: store });
-
-function App() {
-  return (
-    <ClassComWithPropsView name="ClassComPropsName"/>
-  );
-}
-```
-
-##### view's equalCompare function handle
-```tsx
-const ClassComWithPropsEqualView = view<ComPropsType, StateType>(ClassComWithProps, {
-  stores: store,
-  // if compare is set to true, equivalent to React.memo without propsAreEqual
-  // compare: true,
-  // if compare is set to a function, it is similar to React.memo's propsAreEqual.
-  compare: (next, prev) => {
-    const { props: nextProps, state: nextState } = next;
-    const { props: prevProps, state: prevState } = prev;
-    // some conditon
-    if (
-      nextProps.name === "ClassComPropsName"
-      || prevProps.name === "ClassComPropsName"
-    ) {
-      return false;
-    }
-    return (
-      nextState.count === prevState.count
-      || nextState.text === prevState.text
-    );
-  },
-});
-```
-
-##### multiple store for class component
-```tsx
-import React from "react";
-
-const loginStore = createStore<{ userName: string }>({
-   userName: "resy",
-});
-const themeStore = createStore<{ theme: "light" | "dark" }>({
-   theme: "light",
-});
-
-type MultipleStateType = {
-  loginState: {
-    userName: string;
-  };
-  themeState: {
-    theme: "light" | "dark";
-  };
-};
-
-type ClassComMultipleProps = {
-  value: number;
-};
-
-class ClassComMultiple extends React.Component<MapStateToProps<
-  MultipleStateType,
-  ClassComMultipleProps
->> {
-  render() {
-    const { value } = this.props;
-    const { loginState: { userName }, themeState: { theme } } = this.props.state;
-    return (
-      <div>
-        userName{userName}<br/>
-        theme:{theme}<br/>
-        value:{value}<br/>
-      </div>
-    );
-  }
-}
-
-const ClassComMultipleView4 = view<ClassComMultipleProps, MultipleStateType>(
-  ClassComMultiple,
-  {
-    stores: { loginState: loginStore, themeState: themeStore },
-    equal: (next, prev) => {
-      console.log(next.state.loginState.userName, prev.props.value);
-      // if (...) return true;
-      return false;
-    },
-  },
-);
 ```
 </details>
 

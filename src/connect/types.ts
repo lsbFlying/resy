@@ -32,6 +32,6 @@ export type ClassFnInitialHandleType = {
 
 // Unmount the hook object type executed by the logic
 export type UnmountExecutionHookObjType = {
-  executionCounter: number;
+  executionCounter: number | null;
   callback?: Callback | null;
 };

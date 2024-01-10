@@ -43,8 +43,7 @@ export function pureView<P extends PrimitiveState>(
 ): JSX.Element {
   pureViewErrorHandle(Comp, props);
   if ((Comp as ComponentProType)[elementRefCacheKey] && props) {
-    const compare = propsAreEqual ?? equal;
-    return compare(pureView.prototype[propsKey], props)
+    return (propsAreEqual ?? equal)(pureView.prototype[propsKey], props)
       ? (Comp as ComponentProType)[elementRefCacheKey]
       : <Comp {...(props as P)} />;
   }

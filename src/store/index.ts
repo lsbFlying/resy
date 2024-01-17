@@ -15,15 +15,17 @@ import type { Unsubscribe, Listener } from "../subscribe/types";
 import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import { scheduler } from "../scheduler";
 import {
-  batchUpdate, __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__,
   __CONNECT_SYMBOL_KEY__, __CLASS_UNMOUNT_HANDLE_KEY__, __CLASS_FN_INITIAL_HANDLE_KEY__,
-} from "../static";
-import { mapToObject, objectToMap, hasOwnProperty, followUpMap } from "../utils";
+} from "../connect/static";
+import { batchUpdate, __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
+import { hasOwnProperty } from "../utils";
 import {
   stateErrorHandle, protoPointStoreErrorHandle, optionsErrorHandle,
   subscribeErrorHandle, stateCallbackErrorHandle,
-} from "../errors";
-import { pushTask, connectHookUse, finallyBatchHandle, connectStore, connectClassUse } from "./core";
+} from "./errors";
+import {
+  pushTask, connectHookUse, finallyBatchHandle, connectStore, mapToObject, objectToMap, followUpMap,
+} from "./handles";
 import { mergeStateKeys, handleReducerState, deferHandle, initialStateFnRestoreHandle } from "../reset";
 import { willUpdatingHandle } from "../subscribe";
 
@@ -297,12 +299,9 @@ export const createStore = <S extends PrimitiveState>(
     return new Proxy(storeMap, {
       get: (_: StoreMap<S>, key: keyof S) => {
         if (typeof stateMap.get(key) === "function") {
-          // A function is counted as a data variable if it has a reference
-          connectClassUse.bind(this)(key, stateMap);
           return (stateMap.get(key) as AnyFn).bind(store);
         }
-        return externalMap.get(key as keyof ExternalMapValue<S>)
-          || connectClassUse.bind(this)(key, stateMap);
+        return externalMap.get(key as keyof ExternalMapValue<S>) || stateMap.get(key);
       },
       set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
     } as any as ProxyHandler<StoreMap<S>>);

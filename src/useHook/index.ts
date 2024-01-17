@@ -3,8 +3,8 @@ import type { ConciseStore } from "./types";
 import type { InitialState } from "../store/types";
 import { useMemo } from "react";
 import { createStore } from "../store";
-import { storeErrorHandle } from "../errors";
-import { __USE_STORE_KEY__ } from "../static";
+import { storeErrorHandle } from "../store/errors";
+import { __USE_STORE_KEY__ } from "../store/static";
 
 /**
  * useStore api

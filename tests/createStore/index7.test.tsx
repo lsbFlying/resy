@@ -6,7 +6,7 @@ import { createStore, useStore } from "../../src";
 /** Usage of function parameters for createStore */
 test("createStoreWithFunction-III", async () => {
 
-  const timerStore = createStore(
+  const timerStore = createStore<{ time: number }>(
     () => ({
       time: Date.now(),
     }),

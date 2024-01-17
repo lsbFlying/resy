@@ -1,9 +1,15 @@
 import type { PrimitiveState, MapType, Callback } from "../types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "./types";
 import type { InitialState, StateRefCounterMapType, ClassThisPointerType } from "../store/types";
-import { hasOwnProperty, clearObject } from "../utils";
-import { __CLASS_STATE_REF_SET_KEY__ } from "../static";
+import { hasOwnProperty } from "../utils";
 import { Scheduler } from "../scheduler/types";
+
+/** clear object */
+const clearObject = <S extends PrimitiveState>(object: S) => {
+  Object.keys(object).forEach(key => {
+    delete object[key];
+  });
+};
 
 /**
  * @description Get all the properties
@@ -67,19 +73,6 @@ const restoreHandle = <S extends PrimitiveState>(
   });
 };
 
-// This is a function that determines whether the class component still has data references.
-export function noClassStateRefHandle<S extends PrimitiveState>(classThisPointerSet: Set<ClassThisPointerType<S>>) {
-  let noClassStateRef = true;
-  if (classThisPointerSet.size !== 0) {
-    classThisPointerSet.forEach(classThisPointerItem => {
-      if (classThisPointerItem[__CLASS_STATE_REF_SET_KEY__]?.size !== 0) {
-        noClassStateRef = false;
-      }
-    });
-  }
-  return noClassStateRef;
-}
-
 /**
  * By using "storeStateRefCounterMap" and "noClassStateRefHandle",
  * we determine whether the store still has component references.
@@ -97,7 +90,7 @@ export const unmountRestoreHandle = <S extends PrimitiveState>(
   classThisPointerSet: Set<ClassThisPointerType<S>>,
   initialState?: InitialState<S>,
 ) => {
-  const noRefFlag = noClassStateRefHandle(classThisPointerSet)
+  const noRefFlag = !classThisPointerSet.size
     && !storeStateRefCounterMap.get("counter")
     && !stateRestoreAccomplishedMap.get("unmountRestoreAccomplished");
   /**
@@ -127,7 +120,7 @@ export const initialStateFnRestoreHandle = <S extends PrimitiveState>(
   if (
     typeof initialState === "function"
     && initialFnCanExecMap.get("canExec")
-    && noClassStateRefHandle(classThisPointerSet)
+    && !classThisPointerSet.size
     && !storeStateRefCounterMap.get("counter")
     && !stateRestoreAccomplishedMap.get("initialStateFnRestoreAccomplished")
   ) {
@@ -169,7 +162,7 @@ export function deferHandle<S extends PrimitiveState>(
   if (!schedulerProcessor.get("deferDestructorFlag")) {
     schedulerProcessor.set("deferDestructorFlag", Promise.resolve().then(() => {
       schedulerProcessor.set("deferDestructorFlag", null);
-      if (!storeStateRefCounterMap.get("counter") && noClassStateRefHandle(classThisPointerSet)) {
+      if (!storeStateRefCounterMap.get("counter") && !classThisPointerSet.size) {
         // Turn on the switch to perform refresh recovery data
         stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", null);
         stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", null);

@@ -1,11 +1,13 @@
-import type { Callback, PrimitiveState } from "../types";
+import type { PrimitiveState } from "../types";
 import type { StoreCoreUtils, SetOptions } from "../store/types";
-import { __CLASS_FN_INITIAL_HANDLE_KEY__, __CLASS_UNMOUNT_HANDLE_KEY__, __CONNECT_SYMBOL_KEY__ } from "../static";
+import {
+  __CLASS_FN_INITIAL_HANDLE_KEY__, __CLASS_UNMOUNT_HANDLE_KEY__, __CONNECT_SYMBOL_KEY__,
+} from "./static";
 
 /**
- * Function types for connecting store
  * Performs some action. This method should not be overridden in subclasses.
  * Even if you rewrite it, your rewriting method won't work.
+ * @method connectStore
  * @description This is an important method that is core to the functionality of this class.
  */
 export type ConnectStoreType = {
@@ -28,10 +30,4 @@ export type ClassUnmountHandleType = {
 // This is the type of recovery performed by the class if the store initialization parameter is a function
 export type ClassFnInitialHandleType = {
   [__CLASS_FN_INITIAL_HANDLE_KEY__](): void;
-};
-
-// Unmount the hook object type executed by the logic
-export type UnmountExecutionHookObjType = {
-  executionCounter: number | null;
-  callback?: Callback | null;
 };

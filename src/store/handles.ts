@@ -7,15 +7,39 @@ import type { Scheduler } from "../scheduler/types";
 import type { Listener } from "../subscribe/types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../reset/types";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import { mapToObject } from "../utils";
 import { initialStateFnRestoreHandle, deferHandle } from "../reset";
-import { batchUpdate, __CLASS_STATE_REF_SET_KEY__ } from "../static";
+import { batchUpdate } from "./static";
 
 /**
  * @description Additional references are utilized to ensure the compatibility
  * of the package in ESM since 'use-sync-external-store' only exports in CJS format.
  */
 const { useSyncExternalStore } = useSyncExternalStoreExports;
+
+/** Track the shallow-cloned state map */
+export const followUpMap = <K, V>(map: Map<K, V>) => {
+  const mapTemp: Map<K, V> = new Map();
+  map.forEach((value, key) => {
+    mapTemp.set(key, value);
+  });
+  return mapTemp;
+};
+
+/** map to object */
+export const mapToObject = <S extends PrimitiveState>(map: MapType<S>): S => {
+  const object = {} as S;
+  for (const [key, value] of map) {
+    object[key] = value;
+  }
+  return object;
+};
+
+/** object to map */
+export const objectToMap = <S extends PrimitiveState>(object: S) => Object.keys(object)
+  .reduce((prev, key) => {
+    prev.set(key, object[key]);
+    return prev;
+  }, new Map());
 
 /**
  * @description By connecting the core mapping variable storeMap within the store,
@@ -113,24 +137,6 @@ export const connectHookUse = <S extends PrimitiveState>(
   )();
 };
 
-/**
- * @description The corresponding connectHookUse and connectClassUse are for class components,
- * but they only need to make the corresponding tags and return the data.
- */
-export function connectClassUse<S extends PrimitiveState>(
-  this: any,
-  key: keyof S,
-  stateMap: MapType<S>,
-) {
-  if (this[__CLASS_STATE_REF_SET_KEY__]) {
-    this[__CLASS_STATE_REF_SET_KEY__].add(key);
-  } else {
-    this[__CLASS_STATE_REF_SET_KEY__] = new Set();
-    this[__CLASS_STATE_REF_SET_KEY__].add(key);
-  }
-  return stateMap.get(key);
-}
-
 // Add the update task to the stack
 export const pushTask = <S extends PrimitiveState>(
   key: keyof S,
@@ -158,7 +164,17 @@ export const pushTask = <S extends PrimitiveState>(
       () => {
         // Status updates for class components
         classThisPointerSet?.forEach(classThisPointerItem => {
-          classThisPointerItem?.setState({ [key]: value } as State<S>);
+          /**
+           * There is an "updater" attribute on the internal this pointer of react's class,
+           * and an isMounted method is mounted on it to determine whether the component has been loaded.
+           * If it is React.StrictMode, the first loaded this instance
+           * will be discarded by react and has not been loaded all the time.
+           */
+          if (classThisPointerItem.updater.isMounted(classThisPointerItem)) {
+            classThisPointerItem?.setState({ [key]: value } as State<S>);
+          } else {
+            classThisPointerSet.delete(classThisPointerItem);
+          }
         });
         /**
          * @description The decision not to execute the updates for class components within the following updater

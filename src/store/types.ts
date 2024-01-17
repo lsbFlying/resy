@@ -1,9 +1,7 @@
 import type { Callback, ValueOf, PrimitiveState, MapType } from "../types";
 import type { Subscribe } from "../subscribe/types";
 import type { ConnectType, ClassUnmountHandleType, ClassFnInitialHandleType } from "../connect/types";
-import {
-  __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__, __CLASS_STATE_REF_SET_KEY__,
-} from "../static";
+import { __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
 
 /**
  * @description The second parameter configuration item of createStore
@@ -80,7 +78,9 @@ export type State<S extends PrimitiveState> = Partial<S> | S | null;
 export type ClassThisPointerType<S extends PrimitiveState> = PrimitiveState & Readonly<{
   setState(state: State<S>): void;
 }> & {
-  [__CLASS_STATE_REF_SET_KEY__]: Set<keyof S>;
+  updater: {
+    isMounted(classItem: any): boolean;
+  };
 };
 
 /** Type of setState */

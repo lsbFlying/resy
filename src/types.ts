@@ -8,13 +8,10 @@ export type ValueOf<S extends PrimitiveState> = S[keyof S];
 
 export type MapType<S extends PrimitiveState> = Map<keyof S, ValueOf<S>>;
 
-export type ObjectType<S extends PrimitiveState> = { [K in keyof S]: S[K] };
-
-export type ObjectMapType<S extends PrimitiveState> = { [K in keyof S]: MapType<S> };
-
 export type NativeDataType =
-  | "Number" | "String" | "Boolean" | "Undefined" | "Null" | "Symbol" | "BigInt"
+  | "Number" | "String" | "Boolean" | "Undefined" | "Null" | "Symbol"
   | "Object" | "Function" | "Array" | "Date" | "RegExp"
-  | "Map" | "Set" | "WeakMap" | "WeakSet" | "WeakRef"
+  | "Map" | "Set" | "WeakMap" | "WeakSet"
+  | "WeakRef" | "BigInt"
   | "Window" | "Global"
   | "Unknown";

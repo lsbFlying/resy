@@ -3,7 +3,8 @@
   "parserOptions": {
     "ecmaVersion": "latest",
     "sourceType": "module",
-    "project": "./tsconfig.json",
+    "tsconfigRootDir": "./",
+    "project": "[tsconfig.json]",
     "createDefaultProgram": true // https://github.com/typescript-eslint/typescript-eslint/issues/967
   },
   "plugins": ["import", "react", "react-hooks", "@typescript-eslint"],

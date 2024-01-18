@@ -1,7 +1,8 @@
 import type { PrimitiveState } from "../types";
-import type { StoreCoreUtils, SetOptions } from "../store/types";
+import type { StoreCoreUtils, SetOptions, Store } from "../store/types";
 import {
-  __CLASS_FN_INITIAL_HANDLE_KEY__, __CLASS_UNMOUNT_HANDLE_KEY__, __CONNECT_SYMBOL_KEY__,
+  __CLASS_FN_INITIAL_HANDLE_KEY__, __CLASS_THIS_POINTER_STORES_KEY__,
+  __CLASS_UNMOUNT_HANDLE_KEY__, __CLASS_CONNECT_STORE_KEY__,
 } from "./static";
 
 /**
@@ -18,8 +19,12 @@ export type ConnectStoreType = {
 export type ClassStoreType<S extends PrimitiveState> = S & StoreCoreUtils<S> & SetOptions;
 
 // This is the connection type used by the base classes ComponentWithStore and PureComponentWithStore in the class component
-export type ConnectType = {
-  [__CONNECT_SYMBOL_KEY__]<S extends PrimitiveState>(): ClassStoreType<S>;
+export type ClassConnectStoreType = {
+  [__CLASS_CONNECT_STORE_KEY__]<S extends PrimitiveState>(): ClassStoreType<S>;
+};
+
+export type ClassThisPointerStoresType<S extends PrimitiveState = any> = {
+  [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<S>>;
 };
 
 // This is the type of method that is executed after the class component is unmounted

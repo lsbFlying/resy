@@ -1,6 +1,8 @@
 import type { Callback, ValueOf, PrimitiveState, MapType } from "../types";
 import type { Subscribe } from "../subscribe/types";
-import type { ConnectType, ClassUnmountHandleType, ClassFnInitialHandleType } from "../connect/types";
+import type {
+  ClassConnectStoreType, ClassUnmountHandleType, ClassFnInitialHandleType, ClassThisPointerStoresType,
+} from "../connect/types";
 import { __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
 
 /**
@@ -56,7 +58,7 @@ export type StoreMapValue<S extends PrimitiveState> = MapType<StoreMapValueType<
 export type StoreMap<S extends PrimitiveState> = Map<keyof S, StoreMapValue<S>>;
 
 export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S>
-  & ConnectType
+  & ClassConnectStoreType
   & ClassUnmountHandleType
   & ClassFnInitialHandleType
   & {
@@ -75,9 +77,11 @@ export type State<S extends PrimitiveState> = Partial<S> | S | null;
  * This object type of class
  * @description The this here refers to the subclass object that inherits ComponentWithStore or PureComponentWithStore.
  */
-export type ClassThisPointerType<S extends PrimitiveState> = PrimitiveState & Readonly<{
-  setState(state: State<S>): void;
-}> & {
+export type ClassThisPointerType<S extends PrimitiveState> = PrimitiveState
+  & Readonly<{ setState(state: State<S>): void }>
+  & ClassConnectStoreType
+  & ClassThisPointerStoresType
+  & {
   updater: {
     isMounted(classItem: any): boolean;
   };

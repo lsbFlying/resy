@@ -15,7 +15,7 @@ import type { Unsubscribe, Listener } from "../subscribe/types";
 import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import { scheduler } from "../scheduler";
 import {
-  __CONNECT_SYMBOL_KEY__, __CLASS_UNMOUNT_HANDLE_KEY__, __CLASS_FN_INITIAL_HANDLE_KEY__,
+  __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_HANDLE_KEY__, __CLASS_FN_INITIAL_HANDLE_KEY__,
 } from "../connect/static";
 import { batchUpdate, __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
 import { hasOwnProperty } from "../utils";
@@ -24,8 +24,8 @@ import {
   subscribeErrorHandle, stateCallbackErrorHandle,
 } from "./errors";
 import {
-  pushTask, connectHookUse, finallyBatchHandle, connectStore, mapToObject, objectToMap, followUpMap,
-} from "./handles";
+  pushTask, connectHookUse, finallyBatchHandle, connectStore, mapToObject, objectToMap, classUpdater,
+} from "./utils";
 import { mergeStateKeys, handleReducerState, deferHandle, initialStateFnRestoreHandle } from "../reset";
 import { willUpdatingHandle } from "../subscribe";
 
@@ -95,7 +95,7 @@ export const createStore = <S extends PrimitiveState>(
 
     if (typeof state === "function") {
       // handle prevState
-      stateTemp = (state as StateFnType<S>)(mapToObject(followUpMap(stateMap)));
+      stateTemp = (state as StateFnType<S>)(mapToObject(stateMap));
     }
 
     if (stateTemp !== null) {
@@ -131,7 +131,7 @@ export const createStore = <S extends PrimitiveState>(
     let stateTemp = state;
 
     if (typeof state === "function") {
-      stateTemp = (state as StateFnType<S>)(mapToObject(followUpMap(stateMap)));
+      stateTemp = (state as StateFnType<S>)(mapToObject(stateMap));
     }
     // Borrowing setState to synchronize the update scheduling mechanism of Resy itself.
     setState(stateTemp, callback);
@@ -140,9 +140,7 @@ export const createStore = <S extends PrimitiveState>(
       batchUpdate(() => {
         Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
           const value = (stateTemp as Partial<S> | S)[key];
-          classThisPointerSet?.forEach(classThisPointerItem => {
-            classThisPointerItem?.setState({ [key]: value } as State<S>);
-          });
+          classUpdater(key, value, classThisPointerSet);
           (
             connectStore(
               key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounterMap, storeMap,
@@ -293,7 +291,7 @@ export const createStore = <S extends PrimitiveState>(
   const useStore = () => storeProxy;
 
   // Connecting the this pointer of the class component (therefore, this cannot be an arrow function)
-  function connect(this: ClassThisPointerType<S>) {
+  function classConnectStore(this: ClassThisPointerType<S>) {
     classThisPointerSet.add(this);
     // Data agents for use by class
     return new Proxy(storeMap, {
@@ -334,7 +332,7 @@ export const createStore = <S extends PrimitiveState>(
    * is that a simple external call cannot access these internal related data,
    * so they have to be written inside createStore.
    */
-  externalMap.set(__CONNECT_SYMBOL_KEY__, connect);
+  externalMap.set(__CLASS_CONNECT_STORE_KEY__, classConnectStore);
   externalMap.set(__CLASS_UNMOUNT_HANDLE_KEY__, classUnmountHandle);
   externalMap.set(__CLASS_FN_INITIAL_HANDLE_KEY__, classInitialFnHandle);
 

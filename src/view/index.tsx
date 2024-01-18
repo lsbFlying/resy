@@ -1,6 +1,6 @@
 import React, { type ComponentType } from "react";
 import type { PrimitiveState } from "../types";
-import { equal, viewErrorHandle } from "./handles";
+import { equal, viewErrorHandle } from "./utils";
 
 const __view__ = Symbol("viewerKey");
 const __props__ = Symbol("propsKey");

@@ -679,6 +679,9 @@ function App() {
              text: "ASD",
           });
           // or
+          // store.count++;
+          // store.text = "ASD";
+          // or
           // store.setState({
           //   count: count + 1,
           //   text: "ASD",

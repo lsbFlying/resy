@@ -17,7 +17,7 @@ import { batchUpdate } from "./static";
 const { useSyncExternalStore } = useSyncExternalStoreExports;
 
 /** Track the shallow-cloned state map */
-export const followUpMap = <K, V>(map: Map<K, V>) => {
+const shallowCloneMap = <K, V>(map: Map<K, V>) => {
   const mapTemp: Map<K, V> = new Map();
   map.forEach((value, key) => {
     mapTemp.set(key, value);
@@ -137,6 +137,27 @@ export const connectHookUse = <S extends PrimitiveState>(
   )();
 };
 
+// State updates for class components
+export const classUpdater = <S extends PrimitiveState>(
+  key: keyof S,
+  value: ValueOf<S>,
+  classThisPointerSet: Set<ClassThisPointerType<S>>,
+) => {
+  classThisPointerSet?.forEach(classThisPointerItem => {
+    /**
+     * There is an "updater" attribute on the internal this pointer of react's class,
+     * and an "isMounted" method is mounted on it to determine whether the component has been loaded.
+     * If it is in "React.StrictMode" mode,
+     * React will discard the first generated instance and the instance will not be mounted.
+     */
+    if (classThisPointerItem.updater.isMounted(classThisPointerItem)) {
+      classThisPointerItem?.setState({ [key]: value } as State<S>);
+    } else {
+      classThisPointerSet.delete(classThisPointerItem);
+    }
+  });
+};
+
 // Add the update task to the stack
 export const pushTask = <S extends PrimitiveState>(
   key: keyof S,
@@ -162,20 +183,7 @@ export const pushTask = <S extends PrimitiveState>(
       key,
       value,
       () => {
-        // Status updates for class components
-        classThisPointerSet?.forEach(classThisPointerItem => {
-          /**
-           * There is an "updater" attribute on the internal this pointer of react's class,
-           * and an isMounted method is mounted on it to determine whether the component has been loaded.
-           * If it is React.StrictMode, the first loaded this instance
-           * will be discarded by react and has not been loaded all the time.
-           */
-          if (classThisPointerItem.updater.isMounted(classThisPointerItem)) {
-            classThisPointerItem?.setState({ [key]: value } as State<S>);
-          } else {
-            classThisPointerSet.delete(classThisPointerItem);
-          }
-        });
+        classUpdater(key, value, classThisPointerSet);
         /**
          * @description The decision not to execute the updates for class components within the following updater
          * is to preserve the simplicity of the update scheduling for both hook and class components.
@@ -205,8 +213,10 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
   listenerSet: Set<Listener<S>>,
   stateCallbackStackSet: Set<StateCallbackItem<S>>,
 ) => {
-  // 如果当前这一条更新没有变化也就没有任务队列入栈，则不需要更新就没有必要再往下执行多余的代码了
-  const { taskDataMap } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
+  const {
+    taskDataMap, taskQueueSet,
+  } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
+
   if (taskDataMap.size > 0 && !schedulerProcessor.get("isUpdating")) {
     // Reduce the generation of redundant microtasks through the isUpdating flag
     schedulerProcessor.set("isUpdating", Promise.resolve().then(() => {
@@ -217,8 +227,6 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
       schedulerProcessor.set("isUpdating", null);
       schedulerProcessor.set("willUpdating", null);
 
-      const { taskDataMap, taskQueueSet } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
-
       batchUpdate(() => {
         if (taskDataMap.size > 0) {
           // Perform update task
@@ -226,13 +234,28 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
             task();
           });
         }
+
+        // Make a shallow clone of the "taskDataMap" data for the "effectState" of "subscribe",
+        // because the task data will then be washed away.
+        const effectStateTemp = listenerSet.size > 0 ? shallowCloneMap(taskDataMap) : undefined;
+
+        /**
+         * @description With this, the task of this round of data updates is complete.
+         * The task data and task queue are immediately flushed and cleared,
+         * freeing up space in preparation for the next round of data updates.
+         */
+        (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
+
+        // 🌟 The execution of subscribe and callback needs to be placed after flush,
+        // otherwise their own update queues will be emptied in advance, affecting their own internal execution.
+
         // Updates within subscriptions are processed in batch to reduce the excess burden of updates.
         if (listenerSet.size > 0) {
           listenerSet.forEach(item => {
             // the clone returned by mapToObject ensures that the externally subscribed data
             // maintains it`s purity and security as much as possible in terms of usage.
             item({
-              effectState: mapToObject(taskDataMap),
+              effectState: mapToObject(effectStateTemp!),
               nextState: mapToObject(stateMap),
               prevState: mapToObject(prevBatchState),
             });
@@ -246,13 +269,6 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
           });
           stateCallbackStackSet.clear();
         }
-
-        /**
-         * @description With this, the task of this round of data updates is complete.
-         * The task data and task queue are immediately flushed and cleared,
-         * freeing up space in preparation for the next round of data updates.
-         */
-        (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
       });
     }));
   }

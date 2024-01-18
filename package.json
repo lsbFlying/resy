@@ -41,7 +41,6 @@
     "@types/react-dom": "^18.2.18",
     "@types/react-native": "^0.71.13",
     "@types/rollup-plugin-auto-external": "^2.0.5",
-    "@types/testing-library__jest-dom": "^5.14.9",
     "@types/use-sync-external-store": "0.0.3",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",

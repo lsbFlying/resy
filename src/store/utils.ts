@@ -237,7 +237,7 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
 
         // Make a shallow clone of the "taskDataMap" data for the "effectState" of "subscribe",
         // because the task data will then be washed away.
-        const effectStateTemp = listenerSet.size > 0 ? shallowCloneMap(taskDataMap) : undefined;
+        const effectStateTemp = listenerSet.size > 0 ?? shallowCloneMap(taskDataMap);
 
         /**
          * @description With this, the task of this round of data updates is complete.
@@ -255,7 +255,7 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
             // the clone returned by mapToObject ensures that the externally subscribed data
             // maintains it`s purity and security as much as possible in terms of usage.
             item({
-              effectState: mapToObject(effectStateTemp!),
+              effectState: mapToObject(effectStateTemp as any as MapType<S>),
               nextState: mapToObject(stateMap),
               prevState: mapToObject(prevBatchState),
             });

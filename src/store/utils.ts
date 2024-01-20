@@ -237,10 +237,10 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
 
         // Make a shallow clone of the "taskDataMap" data for the "effectState" of "subscribe",
         // because the task data will then be washed away.
-        const effectStateTemp = listenerSet.size > 0 ?? shallowCloneMap(taskDataMap);
+        const effectStateTemp = listenerSet.size > 0 ? shallowCloneMap(taskDataMap) : undefined;
 
         /**
-         * @description With this, the task of this round of data updates is complete.
+         * @description So far, the task of this round of data updates is complete.
          * The task data and task queue are immediately flushed and cleared,
          * freeing up space in preparation for the next round of data updates.
          */
@@ -249,20 +249,20 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
         // 🌟 The execution of subscribe and callback needs to be placed after flush,
         // otherwise their own update queues will be emptied in advance, affecting their own internal execution.
 
-        // Updates within subscriptions are processed in batch to reduce the excess burden of updates.
+        // Trigger the execution of subscription snooping
         if (listenerSet.size > 0) {
           listenerSet.forEach(item => {
             // the clone returned by mapToObject ensures that the externally subscribed data
             // maintains it`s purity and security as much as possible in terms of usage.
             item({
-              effectState: mapToObject(effectStateTemp as any as MapType<S>),
+              effectState: mapToObject(effectStateTemp!),
               nextState: mapToObject(stateMap),
               prevState: mapToObject(prevBatchState),
             });
           });
         }
 
-        // At the same time, it also takes the opportunity to batch process the updates in the callback stack.
+        // Trigger the execution of the callback function
         if (stateCallbackStackSet.size > 0) {
           stateCallbackStackSet.forEach(({ callback, nextState }) => {
             callback(nextState);

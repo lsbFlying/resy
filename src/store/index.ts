@@ -236,12 +236,13 @@ export const createStore = <S extends PrimitiveState>(
   // A proxy object with the capabilities of updating and data tracking.
   const store = new Proxy(storeMap, {
     get: (_: StoreMap<S>, key: keyof S) => {
-      if (typeof stateMap.get(key) === "function") {
+      const value = stateMap.get(key);
+      if (typeof value === "function") {
         // Bind to the store for the convenience of using this as well as calling some related objects in externalMap.
-        return (stateMap.get(key) as AnyFn).bind(store);
+        return (value as AnyFn).bind(store);
       }
 
-      return externalMap.get(key as keyof ExternalMapValue<S>) || stateMap.get(key);
+      return externalMap.get(key as keyof ExternalMapValue<S>) || value;
     },
     set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
     // Delete will also play an updating role
@@ -251,13 +252,14 @@ export const createStore = <S extends PrimitiveState>(
   // Driver update agent for useStore
   const storeProxy = new Proxy(storeMap, {
     get: (_, key: keyof S) => {
-      if (typeof stateMap.get(key) === "function") {
+      const value = stateMap.get(key);
+      if (typeof value === "function") {
         // Invoke a function data hook to grant the ability to update and render function data.
         connectHookUse(
           key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounterMap, storeMap,
           stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
         );
-        return (stateMap.get(key) as AnyFn).bind(store);
+        return (value as AnyFn).bind(store);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
         key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounterMap, storeMap,

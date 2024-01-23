@@ -1,7 +1,8 @@
 import type { Callback, ValueOf, PrimitiveState, MapType } from "../types";
 import type { Subscribe } from "../subscribe/types";
 import type {
-  ClassConnectStoreType, ClassUnmountHandleType, ClassFnInitialHandleType, ClassThisPointerStoresType,
+  ClassConnectStoreType, ClassUnmountHandleType, ClassStateRefSetType,
+  ClassFnInitialHandleType, ClassThisPointerStoresType,
 } from "../connect/types";
 import { __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
 
@@ -57,6 +58,7 @@ export type StoreMapValue<S extends PrimitiveState> = MapType<StoreMapValueType<
 // Type of storeMap
 export type StoreMap<S extends PrimitiveState> = Map<keyof S, StoreMapValue<S>>;
 
+// Some additional extensions of tool classes and property sets of methods needed within store
 export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S>
   & ClassConnectStoreType
   & ClassUnmountHandleType
@@ -81,6 +83,7 @@ export type ClassThisPointerType<S extends PrimitiveState> = PrimitiveState
   & Readonly<{ setState(state: State<S>): void }>
   & ClassConnectStoreType
   & ClassThisPointerStoresType
+  & ClassStateRefSetType<S>
   & {
   updater: {
     isMounted(classItem: any): boolean;

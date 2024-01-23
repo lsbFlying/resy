@@ -20,10 +20,12 @@ import {
 import { batchUpdate, __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
 import { hasOwnProperty } from "../utils";
 import {
-  stateErrorHandle, optionsErrorHandle, subscribeErrorHandle, stateCallbackErrorHandle,
+  stateErrorHandle, optionsErrorHandle, protoPointStoreErrorHandle,
+  subscribeErrorHandle, stateCallbackErrorHandle,
 } from "./errors";
 import {
-  pushTask, connectHookUse, finallyBatchHandle, connectStore, mapToObject, objectToMap, classUpdater,
+  pushTask, connectHookUse, finallyBatchHandle, connectStore,
+  mapToObject, objectToMap, classUpdater, connectClassUse,
 } from "./utils";
 import { mergeStateKeys, handleReducerState, deferHandle, initialStateFnRestoreHandle } from "../reset";
 import { willUpdatingHandle } from "../subscribe";
@@ -235,7 +237,9 @@ export const createStore = <S extends PrimitiveState>(
 
   // A proxy object with the capabilities of updating and data tracking.
   const store = new Proxy(storeMap, {
-    get: (_: StoreMap<S>, key: keyof S) => {
+    get: (_: StoreMap<S>, key: keyof S, receiver: any) => {
+      protoPointStoreErrorHandle(receiver, store);
+
       const value = stateMap.get(key);
       if (typeof value === "function") {
         // Bind to the store for the convenience of using this as well as calling some related objects in externalMap.
@@ -292,7 +296,20 @@ export const createStore = <S extends PrimitiveState>(
   // Connecting the this pointer of the class component (therefore, this cannot be an arrow function)
   function classConnectStore(this: ClassThisPointerType<S>) {
     classThisPointerSet.add(this);
-    return store;
+    // Data agents for use by class
+    return new Proxy(storeMap, {
+      get: (_: StoreMap<S>, key: keyof S) => {
+        if (typeof stateMap.get(key) === "function") {
+          // A function is counted as a data variable if it has a reference
+          connectClassUse.bind(this)(key, stateMap);
+          return (stateMap.get(key) as AnyFn).bind(store);
+        }
+        return externalMap.get(key as keyof ExternalMapValue<S>)
+          || connectClassUse.bind(this)(key, stateMap);
+      },
+      set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
+      deleteProperty: (_: S, key: keyof S) => singlePropUpdate(key, undefined as ValueOf<S>, true),
+    } as any as ProxyHandler<StoreMap<S>>);
   }
 
   // Unmount execution of class components

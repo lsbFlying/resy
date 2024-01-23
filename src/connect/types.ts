@@ -1,7 +1,7 @@
 import type { PrimitiveState } from "../types";
 import type { StoreCoreUtils, SetOptions, Store } from "../store/types";
 import {
-  __CLASS_FN_INITIAL_HANDLE_KEY__, __CLASS_THIS_POINTER_STORES_KEY__,
+  __CLASS_FN_INITIAL_HANDLE_KEY__, __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_STATE_REF_SET_KEY__,
   __CLASS_UNMOUNT_HANDLE_KEY__, __CLASS_CONNECT_STORE_KEY__,
 } from "./static";
 
@@ -23,8 +23,14 @@ export type ClassConnectStoreType = {
   [__CLASS_CONNECT_STORE_KEY__]<S extends PrimitiveState>(): ClassStoreType<S>;
 };
 
+// The types of different store mounted on the this pointer of the class component
 export type ClassThisPointerStoresType<S extends PrimitiveState = any> = {
   [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<S>>;
+};
+
+// The type of the set collection referenced by the state data of the class component
+export type ClassStateRefSetType<S extends PrimitiveState> = {
+  [__CLASS_STATE_REF_SET_KEY__]: Set<keyof S>;
 };
 
 // This is the type of method that is executed after the class component is unmounted

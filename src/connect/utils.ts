@@ -3,7 +3,7 @@ import type { ClassStoreType } from "./types";
 import type { Store, ClassThisPointerType } from "../store/types";
 import { storeErrorHandle } from "../store/errors";
 import {
-  __CLASS_CONNECT_STORE_KEY__, __CLASS_THIS_POINTER_STORES_KEY__,
+  __CLASS_CONNECT_STORE_KEY__, __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_STATE_REF_SET_KEY__,
   __CLASS_UNMOUNT_HANDLE_KEY__, __CLASS_FN_INITIAL_HANDLE_KEY__,
 } from "./static";
 
@@ -20,6 +20,7 @@ export function connectStoreCore<S extends PrimitiveState>(this: ClassThisPointe
 
 // this proxy returned by constructor
 export function getThisProxy<T extends PrimitiveState>(this: ClassThisPointerType<T>) {
+  // eslint-disable-next-line prefer-const
   return new Proxy(this, {
     get(target, prop, receiver) {
       if (prop === "componentWillUnmount") {
@@ -42,6 +43,7 @@ export function getThisProxy<T extends PrimitiveState>(this: ClassThisPointerTyp
 // The core implementation of unmountHandle
 export function unmountHandleCore<S extends PrimitiveState>(this: ClassThisPointerType<S>) {
   // Clear the data references used by the class component in rendering
+  this[__CLASS_STATE_REF_SET_KEY__].clear();
   // References to these data are recorded and added through “connectClassUse”
   this[__CLASS_THIS_POINTER_STORES_KEY__].forEach((store: Store<S>) => {
     /**

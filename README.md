@@ -614,6 +614,7 @@ function App() {
 <details>
 <summary>fine-grained of update</summary>
 
+##### hook
 ```tsx
 import { useStore } from "resy";
 
@@ -642,6 +643,59 @@ function App() {
       <button onClick={() => { store.count-- }}>btn-</button>
     </>
   );
+}
+```
+
+##### class
+```tsx
+import { useStore, ComponentWithStore } from "resy";
+
+// Updates to count data will not cause Text components to re-render
+class TextClass extends ComponentWithStore {
+  store = this.connectStore(store);
+  
+  render() {
+    const { text } = this.store;
+    return (
+      <p>{text}</p>
+    );
+  }
+}
+
+// Updates to text data will not cause Count components to re-render
+class CountClass extends ComponentWithStore {
+  store = this.connectStore(store);
+
+  render() {
+    const { count } = this.store;
+    return (
+      <p>{count}</p>
+    );
+  }
+}
+
+class AppClass extends ComponentWithStore {
+  store = this.connectStore(store);
+
+  render() {
+    const { increase, name } = this.store;
+    return (
+      <>
+        <Text/>
+        <Count/>
+        <div>{name}</div>
+        <button onClick={() => {
+          store.name = "app";
+        }}>btn-name
+        </button>
+        <button onClick={increase}>btn+</button>
+        <button onClick={() => {
+          store.count--
+        }}>btn-
+        </button>
+      </>
+    );
+  }
 }
 ```
 </details>

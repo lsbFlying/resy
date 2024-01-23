@@ -76,6 +76,9 @@
     "redux",
     "store",
     "state",
-    "resy"
+    "resy",
+    "proxy",
+    "manager",
+    "management"
   ]
 }

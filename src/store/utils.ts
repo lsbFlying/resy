@@ -9,6 +9,7 @@ import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from ".
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { initialStateFnRestoreHandle, deferHandle } from "../reset";
 import { batchUpdate } from "./static";
+import { __CLASS_STATE_REF_SET_KEY__ } from "../connect/static";
 
 /**
  * @description Additional references are utilized to ensure the compatibility
@@ -137,6 +138,24 @@ export const connectHookUse = <S extends PrimitiveState>(
   )();
 };
 
+/**
+ * @description The corresponding connectHookUse and connectClassUse are for class components,
+ * but they only need to make the corresponding tags and return the data.
+ */
+export function connectClassUse<S extends PrimitiveState>(
+  this: any,
+  key: keyof S,
+  stateMap: MapType<S>,
+) {
+  // In class, Set is used for reference tags and combined with the size attribute of Set to judge.
+  if (this[__CLASS_STATE_REF_SET_KEY__]) {
+    this[__CLASS_STATE_REF_SET_KEY__].add(key);
+  } else {
+    this[__CLASS_STATE_REF_SET_KEY__] = new Set<keyof S>().add(key);
+  }
+  return stateMap.get(key);
+}
+
 // State updates for class components
 export const classUpdater = <S extends PrimitiveState>(
   key: keyof S,
@@ -151,7 +170,10 @@ export const classUpdater = <S extends PrimitiveState>(
      * React will discard the first generated instance and the instance will not be mounted.
      */
     if (classThisPointerItem.updater.isMounted(classThisPointerItem)) {
-      classThisPointerItem?.setState({ [key]: value } as State<S>);
+      // Determine whether the currently updated data property is used in the class component, and if not, do not update it
+      classThisPointerItem[__CLASS_STATE_REF_SET_KEY__].has(key) && (
+        classThisPointerItem.setState({ [key]: value } as State<S>)
+      );
     } else {
       classThisPointerSet.delete(classThisPointerItem);
     }

@@ -19,7 +19,12 @@ const plugins = [
     exclude: "node_modules/**",
     babelHelpers: "bundled",
   }),
-  typescript(),
+  typescript({
+    compilerOptions: {
+      lib: ["dom", "dom.iterable", "esnext", "es5", "es6", "es7"],
+      target: "esnext",
+    },
+  }),
   autoExternal(),
   terser(),
 ];

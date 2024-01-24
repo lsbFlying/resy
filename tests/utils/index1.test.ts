@@ -32,11 +32,8 @@ test("utils", () => {
     value26 = new WeakSet().add({ count: 19 }),
     value27 = new WeakRef({}),
     value28 = new WeakRef({ count: 19 }),
-    value29 = BigInt("8374654835683476853476");
-    // BigInt literals are not available when targeting lower than ES2020.
-    // value29 = 8374654835683476853476n,
-    // value30 = window,
-    // value31 = global;
+    value29 = BigInt("8374654835683476853476"),
+    value30 = 8374654835683476853476n;
 
   expect(whatsType(value0) === "Number").toBeTruthy();
   expect(whatsType(value1) === "Number").toBeTruthy();
@@ -68,6 +65,12 @@ test("utils", () => {
   expect(whatsType(value27) === "WeakRef").toBeTruthy();
   expect(whatsType(value28) === "WeakRef").toBeTruthy();
   expect(whatsType(value29) === "BigInt").toBeTruthy();
-  // expect(whatsType(value30) === "Window").toBeTruthy();
-  // expect(whatsType(value31) === "global").toBeTruthy();
+  expect(whatsType(value30) === "BigInt").toBeTruthy();
+  // 🌟 The test execution here is slightly different from the test execution result of the browser,
+  // and it should be related to the small changes in the global object of vitest's test environment.
+  // console.log(typeof window, window.__proto__, Window.prototype, whatsType(window), whatsType(global));
+  // expect(whatsType(window) === "Global").toBeTruthy();
+  // expect(whatsType(window) === "Window").toBeTruthy();
+  // The global object global in node, but this is not necessarily a global object in a simulated node environment
+  // expect(whatsType(global) === "Global").toBeTruthy();
 });

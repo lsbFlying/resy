@@ -44,6 +44,8 @@ test("setState-error-scene", async () => {
   expect(() => store.setState(new Date())).toThrowError();
   // @ts-ignore
   expect(() => store.setState(BigInt("8374565436436765"))).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState(window)).toThrowError();
 
   // @ts-ignore
   expect(() => store.setState({}, 0)).toThrowError();
@@ -79,4 +81,6 @@ test("setState-error-scene", async () => {
   expect(() => store.setState({}, new Date())).toThrowError();
   // @ts-ignore
   expect(() => store.setState({}, BigInt("387456834565863"))).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, window)).toThrowError();
 });

@@ -45,4 +45,6 @@ test("setOptions-error-scene", async () => {
   expect(() => setOptions(new Date())).toThrowError();
   // @ts-ignore
   expect(() => setOptions(BigInt("8374657843678436"))).toThrowError();
+  // @ts-ignore
+  expect(() => setOptions(window)).toThrowError();
 });

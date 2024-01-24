@@ -190,9 +190,11 @@ export type PrimateForbiddenType =
   | Array<any>
   | WeakSet<any>
   | WeakMap<any, any>
+  | WeakRef<any>
   | RegExp
   | BigInt
-  | Date;
+  | Date
+  | Window;
 
 /** Parameter types with this type pointing to identification */
 export type StateWithThisType<S extends PrimitiveState> = S extends PrimateForbiddenType

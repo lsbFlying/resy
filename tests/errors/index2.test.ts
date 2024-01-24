@@ -46,4 +46,6 @@ test("useStore-error-scene", async () => {
   expect(() => useStore(new Date())).toThrowError();
   // @ts-ignore
   expect(() => useStore(BigInt("8274687346853"))).toThrowError();
+  // @ts-ignore
+  expect(() => useStore(window)).toThrowError();
 });

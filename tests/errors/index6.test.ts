@@ -39,4 +39,6 @@ test("restore-error-scene", async () => {
   expect(() => store.restore(new Date())).toThrowError();
   // @ts-ignore
   expect(() => store.restore(BigInt("837456834658437"))).toThrowError();
+  // @ts-ignore
+  expect(() => store.restore(window)).toThrowError();
 });

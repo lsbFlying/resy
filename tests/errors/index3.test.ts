@@ -39,4 +39,10 @@ test("setOptions-error-scene", async () => {
   expect(() => setOptions(new WeakSet())).toThrowError();
   // @ts-ignore
   expect(() => setOptions(new WeakRef({}))).toThrowError();
+  // @ts-ignore
+  expect(() => setOptions(new RegExp())).toThrowError();
+  // @ts-ignore
+  expect(() => setOptions(new Date())).toThrowError();
+  // @ts-ignore
+  expect(() => setOptions(BigInt("8374657843678436"))).toThrowError();
 });

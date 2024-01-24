@@ -45,6 +45,8 @@ export const whatsType = (value: unknown): NativeDataType => {
       return "Window";
     case "[object Global]":
       return "Global";
+    case "[object global]":
+      return "Global";
     default:
       return "Unknown";
   }

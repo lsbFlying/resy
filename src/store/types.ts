@@ -156,7 +156,7 @@ export type Restore<S extends PrimitiveState> = Readonly<{
  * so the occurrences where setOptions is needed are still relatively rare.
  */
 export type SetOptions = Readonly<{
-  setOptions(options: StoreOptions): void;
+  setOptions(options: Pick<StoreOptions, "unmountRestore">): void;
 }>;
 
 /** store.useStore() */
@@ -190,7 +190,9 @@ export type PrimateForbiddenType =
   | Array<any>
   | WeakSet<any>
   | WeakMap<any, any>
-  | WeakRef<any>;
+  | RegExp
+  | BigInt
+  | Date;
 
 /** Parameter types with this type pointing to identification */
 export type StateWithThisType<S extends PrimitiveState> = S extends PrimateForbiddenType

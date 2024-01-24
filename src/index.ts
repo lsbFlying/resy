@@ -14,5 +14,3 @@ export * from "./types";
 
 export { ComponentWithStore, PureComponentWithStore } from "./connect";
 export type { ConnectStoreType, ClassStoreType } from "./connect/types";
-
-export * from "./view";

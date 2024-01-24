@@ -12,7 +12,7 @@ import {
  * @description This is an important method that is core to the functionality of this class.
  */
 export type ConnectStoreType = {
-  connectStore<S extends PrimitiveState>(store: S): ClassStoreType<S>;
+  connectStore<S extends PrimitiveState>(store: S): S;
 };
 
 /** This is the data type returned by the class after connecting to the store */

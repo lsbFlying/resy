@@ -105,7 +105,7 @@ export const createStore = <S extends PrimitiveState>(
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         pushTask(
           key, (stateTemp as S)[key], stateMap, schedulerProcessor,
-          optionsTemp.unmountRestore, reducerState, storeStateRefCounterMap,
+          optionsTemp, reducerState, storeStateRefCounterMap,
           storeMap, stateRestoreAccomplishedMap, initialFnCanExecMap,
           classThisPointerSet, initialState,
         );
@@ -144,7 +144,7 @@ export const createStore = <S extends PrimitiveState>(
           classUpdater(key, value, classThisPointerSet);
           (
             connectStore(
-              key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounterMap, storeMap,
+              key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
               stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
             ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
           )();
@@ -163,7 +163,7 @@ export const createStore = <S extends PrimitiveState>(
       const originValue = reducerState[key];
       if (!Object.is(originValue, stateMap.get(key))) {
         pushTask(
-          key, originValue, stateMap, schedulerProcessor, optionsTemp.unmountRestore, reducerState,
+          key, originValue, stateMap, schedulerProcessor, optionsTemp, reducerState,
           storeStateRefCounterMap, storeMap, stateRestoreAccomplishedMap, initialFnCanExecMap,
           classThisPointerSet, initialState, !hasOwnProperty.call(reducerState, key),
         );
@@ -207,17 +207,16 @@ export const createStore = <S extends PrimitiveState>(
   };
 
   // Change options configuration
-  const setOptions = (options: StoreOptions) => {
+  const setOptions = (options: Pick<StoreOptions, "unmountRestore">) => {
     optionsErrorHandle("setOptions", options);
     optionsTemp.unmountRestore = options?.unmountRestore ?? optionsTemp.unmountRestore;
-    optionsTemp.__useConciseStateMode__ = options?.__useConciseStateMode__ ?? optionsTemp.__useConciseStateMode__;
   };
 
   // Data updates for a single attribute
   const singlePropUpdate = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
     willUpdatingHandle(schedulerProcessor, prevBatchState, stateMap);
     pushTask(
-      key, value, stateMap, schedulerProcessor, optionsTemp.unmountRestore,
+      key, value, stateMap, schedulerProcessor, optionsTemp,
       reducerState, storeStateRefCounterMap, storeMap,
       stateRestoreAccomplishedMap, initialFnCanExecMap,
       classThisPointerSet, initialState, isDelete,
@@ -260,13 +259,13 @@ export const createStore = <S extends PrimitiveState>(
       if (typeof value === "function") {
         // Invoke a function data hook to grant the ability to update and render function data.
         connectHookUse(
-          key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounterMap, storeMap,
+          key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
           stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
         );
         return (value as AnyFn).bind(store);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
-        key, optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounterMap, storeMap,
+        key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
         stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
       );
     },
@@ -290,7 +289,11 @@ export const createStore = <S extends PrimitiveState>(
     externalMap.set("setOptions", setOptions);
   }
 
-  // It is convenient for store.useStore() to call directly
+  /**
+   * It is convenient for store.useStore() to call directly
+   * 🌟 The reason why it is not changed to store.useStore
+   * is due to the consideration of the rules for the use of the hook function.
+   */
   const useStore = () => storeProxy;
 
   // Connecting the this pointer of the class component (therefore, this cannot be an arrow function)
@@ -316,7 +319,7 @@ export const createStore = <S extends PrimitiveState>(
   function classUnmountHandle(this: ClassThisPointerType<S>) {
     classThisPointerSet.delete(this);
     deferHandle(
-      optionsTemp.unmountRestore, reducerState, stateMap, storeStateRefCounterMap,
+      optionsTemp, reducerState, stateMap, storeStateRefCounterMap,
       stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap,
       classThisPointerSet, initialState,
     );

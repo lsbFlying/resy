@@ -3,13 +3,13 @@ import { expect, test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { createStore, useStore } from "../../src";
 
-let fineGrainedCounterNormal = 0;
-
 /**
  * Components at the same level use different data attributes
  * to render without affecting each other
  */
 test("fine-grained-I", async () => {
+  let fineGrainedCounterNormal = 0;
+
   const store = createStore({
     count: 0,
     text: "hello world",

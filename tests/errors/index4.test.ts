@@ -38,6 +38,12 @@ test("setState-error-scene", async () => {
   expect(() => store.setState(() => {})).toThrowError();
   // @ts-ignore
   expect(() => store.setState(new WeakRef({}))).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState(new RegExp())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState(new Date())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState(BigInt("8374565436436765"))).toThrowError();
 
   // @ts-ignore
   expect(() => store.setState({}, 0)).toThrowError();
@@ -67,4 +73,10 @@ test("setState-error-scene", async () => {
   expect(() => store.setState({}, new WeakSet())).toThrowError();
   // @ts-ignore
   expect(() => store.setState({}, new WeakRef({}))).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, new RegExp())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, new Date())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState({}, BigInt("387456834565863"))).toThrowError();
 });

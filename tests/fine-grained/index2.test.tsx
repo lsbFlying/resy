@@ -3,9 +3,9 @@ import { expect, test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { createStore, useStore } from "../../src";
 
-let fineGrainedCounter = 0;
-
 test("fine-grained-II", async () => {
+  let fineGrainedCounter = 0;
+
   const store = createStore({
     count: 0,
     text: "hello world",

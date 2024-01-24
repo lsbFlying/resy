@@ -28,6 +28,12 @@ test("createStore-error-scene", async () => {
   expect(() => createStore(new WeakMap())).toThrowError();
   // @ts-ignore
   expect(() => createStore(new WeakRef({}))).toThrowError();
+  // @ts-ignore
+  expect(() => createStore(new Date())).toThrowError();
+  // @ts-ignore
+  expect(() => createStore(new RegExp())).toThrowError();
+  // @ts-ignore
+  expect(() => createStore(BigInt("8723648264864355"))).toThrowError();
 
   // @ts-ignore
   expect(() => createStore(() => 0)).toThrowError();
@@ -55,6 +61,12 @@ test("createStore-error-scene", async () => {
   expect(() => createStore(() => new WeakMap())).toThrowError();
   // @ts-ignore
   expect(() => createStore(() => new WeakRef({}))).toThrowError();
+  // @ts-ignore
+  expect(() => createStore(() => new Date())).toThrowError();
+  // @ts-ignore
+  expect(() => createStore(() => new RegExp())).toThrowError();
+  // @ts-ignore
+  expect(() => createStore(() => BigInt("8723648264864355"))).toThrowError();
 
   // @ts-ignore
   expect(() => createStore({}, 0)).toThrowError();
@@ -86,6 +98,12 @@ test("createStore-error-scene", async () => {
   expect(() => createStore({}, new WeakMap())).toThrowError();
   // @ts-ignore
   expect(() => createStore({}, new WeakRef({}))).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, new Date())).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, new RegExp())).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, BigInt("8723648264864355"))).toThrowError();
 
   // @ts-ignore
   expect(() => createStore({}, { unmountRestore: 0 })).toThrowError();
@@ -113,6 +131,12 @@ test("createStore-error-scene", async () => {
   expect(() => createStore({}, { unmountRestore: new WeakMap() })).toThrowError();
   // @ts-ignore
   expect(() => createStore({}, { unmountRestore: new WeakRef({}) })).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, { unmountRestore: new Date() })).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, { unmountRestore: new RegExp() })).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, { unmountRestore: BigInt("8723648264864355") })).toThrowError();
 
   // @ts-ignore
   expect(() => createStore({}, { __useConciseStateMode__: 0 })).toThrowError();
@@ -140,4 +164,10 @@ test("createStore-error-scene", async () => {
   expect(() => createStore({}, { __useConciseStateMode__: new WeakMap() })).toThrowError();
   // @ts-ignore
   expect(() => createStore({}, { __useConciseStateMode__: new WeakRef({}) })).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, { __useConciseStateMode__: new Date() })).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, { __useConciseStateMode__: new RegExp() })).toThrowError();
+  // @ts-ignore
+  expect(() => createStore({}, { __useConciseStateMode__: BigInt("8723648264864355") })).toThrowError();
 });

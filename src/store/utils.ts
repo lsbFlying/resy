@@ -1,7 +1,7 @@
 import type { PrimitiveState, ValueOf, MapType, Callback } from "../types";
 import type {
-  StateCallbackItem, StoreMapValue, StoreMapValueType, StoreMap,
-  InitialState, StateRefCounterMapType, State, ClassThisPointerType,
+  StateCallbackItem, StoreMapValue, StoreMapValueType, StoreMap, InitialState,
+  StateRefCounterMapType, State, ClassThisPointerType, StoreOptions,
 } from "./types";
 import type { Scheduler } from "../scheduler/types";
 import type { Listener } from "../subscribe/types";
@@ -48,7 +48,7 @@ export const objectToMap = <S extends PrimitiveState>(object: S) => Object.keys(
  */
 export const connectStore = <S extends PrimitiveState>(
   key: keyof S,
-  unmountRestore: boolean,
+  options: StoreOptions,
   reducerState: S,
   stateMap: MapType<S>,
   storeStateRefCounterMap: StateRefCounterMapType,
@@ -78,7 +78,7 @@ export const connectStore = <S extends PrimitiveState>(
       storeStateRefCounterMap.set("counter", storeStateRefCounterMap.get("counter")! - 1);
 
       deferHandle(
-        unmountRestore, reducerState, stateMap, storeStateRefCounterMap,
+        options, reducerState, stateMap, storeStateRefCounterMap,
         stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap,
         classThisPointerSet, initialState, () => {
           // Release memory if there are no component references
@@ -113,7 +113,7 @@ export const connectStore = <S extends PrimitiveState>(
  */
 export const connectHookUse = <S extends PrimitiveState>(
   key: keyof S,
-  unmountRestore: boolean,
+  options: StoreOptions,
   reducerState: S,
   stateMap: MapType<S>,
   storeStateRefCounterMap: StateRefCounterMapType,
@@ -131,7 +131,7 @@ export const connectHookUse = <S extends PrimitiveState>(
   );
   return (
     connectStore(
-      key, unmountRestore, reducerState, stateMap,
+      key, options, reducerState, stateMap,
       storeStateRefCounterMap, storeMap, stateRestoreAccomplishedMap,
       schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
     ).get(key)!.get("useOriginState") as StoreMapValueType<S>["useOriginState"]
@@ -186,7 +186,7 @@ export const pushTask = <S extends PrimitiveState>(
   value: ValueOf<S>,
   stateMap: MapType<S>,
   schedulerProcessor: MapType<Scheduler<S>>,
-  unmountRestore: boolean,
+  options: StoreOptions,
   reducerState: S,
   storeStateRefCounterMap: StateRefCounterMapType,
   storeMap: StoreMap<S>,
@@ -213,7 +213,7 @@ export const pushTask = <S extends PrimitiveState>(
         // Status updates for hook components
         (
           connectStore(
-            key, unmountRestore, reducerState, stateMap,
+            key, options, reducerState, stateMap,
             storeStateRefCounterMap, storeMap, stateRestoreAccomplishedMap,
             schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
           ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]

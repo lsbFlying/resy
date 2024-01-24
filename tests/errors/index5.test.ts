@@ -35,6 +35,12 @@ test("subscribe-error-scene", async () => {
   expect(() => store.subscribe([])).toThrowError();
   // @ts-ignore
   expect(() => store.subscribe(new WeakRef({}))).toThrowError();
+  // @ts-ignore
+  expect(() => store.subscribe(new RegExp())).toThrowError();
+  // @ts-ignore
+  expect(() => store.subscribe(new Date())).toThrowError();
+  // @ts-ignore
+  expect(() => store.subscribe(BigInt("387484368564"))).toThrowError();
 
   // @ts-ignore
   // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
@@ -75,4 +81,13 @@ test("subscribe-error-scene", async () => {
   // @ts-ignore
   // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
   expect(() => store.subscribe(() => {}, new WeakRef({}))).toThrowError();
+  // @ts-ignore
+  // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
+  expect(() => store.subscribe(() => {}, new RegExp())).toThrowError();
+  // @ts-ignore
+  // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
+  expect(() => store.subscribe(() => {}, new Date())).toThrowError();
+  // @ts-ignore
+  // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
+  expect(() => store.subscribe(() => {}, BigInt("76345743754375"))).toThrowError();
 });

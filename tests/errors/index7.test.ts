@@ -38,6 +38,12 @@ test("syncUpdate-error-scene", async () => {
   expect(() => store.syncUpdate(() => {})).toThrowError();
   // @ts-ignore
   expect(() => store.syncUpdate(new WeakRef({}))).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(new RegExp())).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(new Date())).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(BigInt("827348436586436"))).toThrowError();
 
   // @ts-ignore
   expect(() => store.syncUpdate({}, 0)).toThrowError();
@@ -67,4 +73,10 @@ test("syncUpdate-error-scene", async () => {
   expect(() => store.syncUpdate({}, new WeakSet())).toThrowError();
   // @ts-ignore
   expect(() => store.syncUpdate({}, new WeakRef({}))).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, new RegExp())).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, new Date())).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate({}, BigInt("83475683456843658"))).toThrowError();
 });

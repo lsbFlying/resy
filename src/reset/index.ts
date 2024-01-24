@@ -1,6 +1,8 @@
 import type { PrimitiveState, MapType, Callback } from "../types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "./types";
-import type { InitialState, StateRefCounterMapType, ClassThisPointerType } from "../store/types";
+import type {
+  InitialState, StateRefCounterMapType, ClassThisPointerType, StoreOptions,
+} from "../store/types";
 import { hasOwnProperty } from "../utils";
 import { Scheduler } from "../scheduler/types";
 
@@ -81,7 +83,7 @@ const restoreHandle = <S extends PrimitiveState>(
  * The complete unloading cycle corresponds to the entire usage cycle of the store.
  */
 export const unmountRestoreHandle = <S extends PrimitiveState>(
-  unmountRestore: boolean,
+  options: StoreOptions,
   reducerState: S,
   stateMap: MapType<S>,
   storeStateRefCounterMap: StateRefCounterMapType,
@@ -99,7 +101,7 @@ export const unmountRestoreHandle = <S extends PrimitiveState>(
    * because initialization time is sure to reset execution,
    * thus optimizing code execution efficiency.
    */
-  if (unmountRestore && noRefFlag && typeof initialState !== "function") {
+  if (options.unmountRestore && noRefFlag && typeof initialState !== "function") {
     stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", true);
     restoreHandle(reducerState, stateMap, initialState);
   }
@@ -148,7 +150,7 @@ export const initialStateFnRestoreHandle = <S extends PrimitiveState>(
  * a microtask can be used to postpone the unmount process.
  */
 export function deferHandle<S extends PrimitiveState>(
-  unmountRestore: boolean,
+  options: StoreOptions,
   reducerState: S,
   stateMap: MapType<S>,
   storeStateRefCounterMap: StateRefCounterMapType,
@@ -167,7 +169,7 @@ export function deferHandle<S extends PrimitiveState>(
         stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", null);
         stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", null);
         unmountRestoreHandle(
-          unmountRestore, reducerState, stateMap, storeStateRefCounterMap,
+          options, reducerState, stateMap, storeStateRefCounterMap,
           stateRestoreAccomplishedMap, initialFnCanExecMap, classThisPointerSet, initialState,
         );
       }

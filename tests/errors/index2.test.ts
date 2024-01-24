@@ -40,4 +40,10 @@ test("useStore-error-scene", async () => {
   expect(() => useStore(new WeakSet())).toThrowError();
   // @ts-ignore
   expect(() => useStore(new WeakRef({}))).toThrowError();
+  // @ts-ignore
+  expect(() => useStore(new RegExp())).toThrowError();
+  // @ts-ignore
+  expect(() => useStore(new Date())).toThrowError();
+  // @ts-ignore
+  expect(() => useStore(BigInt("8274687346853"))).toThrowError();
 });

@@ -104,22 +104,21 @@ export const stateCallbackErrorHandle = <S extends PrimitiveState>(callback?: St
 };
 
 /**
- * @description Error handling when store is set as the prototype of an object
- * Since the receiver object in the proxy
- * that points to the this context object will change with the prototype,
- * such uncontrollable changes can cause incompatibility issues
- * or create discrepancies in understanding with the data returns within the store.
- * Therefore, it is not recommended to perform the uncommon
- * and discordant operation of 'setting the store as the prototype object of certain objects'.
- * 🌟 Note: The discordant issues are mainly caused by the object's property descriptors,
- * such as set and get. Specific examples will not be provided here,
- * for more details, you may refer to the explanations of the receiver in the context of a proxy.
+ * @description It's not recommended to set the store created by createStore as the prototype of some objects,
+ * as the store internally hijacks the binding of the this context for function properties
+ * (which does not affect arrow functions).
+ * This means that for the inherited properties of those set objects,
+ * the direction of this will be changed to the hijacked this object specified within the store.
+ * The issues caused by such hijacking of this binding also extend to property descriptors like setters and getters.
+ * Since the hijacking of this binding for function properties deviates from the native behavior,
+ * this could lead to confusion.
+ * Therefore, such operations are discouraged!
  */
 export const protoPointStoreErrorHandle = (receiver: any, store: any) => {
   if (__DEV__ && receiver !== store) {
     console.error(
-      "Warning: It is not recommended that store be inherited as a prototype object," +
-      " because there is no this pointing to the target object corresponding to the Reflect proxy within store!"
+      "Warning: It's not recommended to set the store created by createStore as the prototype of some objects" +
+      " as the store internally hijacks the binding of the this context for function properties!"
     );
   }
 };

@@ -47,7 +47,7 @@ export function unmountHandleCore<S extends PrimitiveState>(this: ClassThisPoint
   // References to these data are recorded and added through “connectClassUse”
   this[__CLASS_THIS_POINTER_STORES_KEY__].forEach((store: Store<S>) => {
     /**
-     * After the class component is uninstalled and its internal data references are cleared,
+     * After the class component is unmounted and its internal data references are cleared,
      * the unmount logic of the class component is executed
      * The logic is divided into two parts:
      * firstly, removing the this proxy instance of class from the internal classThisPointerSet of the store,

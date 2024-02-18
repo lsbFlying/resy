@@ -7,13 +7,15 @@ import { createStore, useStore } from "../../src";
 test("setState-I", async () => {
   const store = createStore({
     text: "world",
+    count: 0,
   });
 
   const App = () => {
-    const { text } = useStore(store);
+    const { text, count } = useStore(store);
     return (
       <>
         <p>{text}</p>
+        <p>{count}</p>
         <button onClick={() => {
           store.setState({
             text: "hello",
@@ -50,6 +52,18 @@ test("setState-I", async () => {
           // store self, no updates
           store.setState(store);
         }}>changeText5</button>
+        <button onClick={() => {
+          store.setState({
+            count: 0,
+          });
+        }}>sameChange</button>
+        <button onClick={() => {
+          store.setState({
+            count: 0,
+          }, () => {
+            store.count = 999;
+          });
+        }}>sameChangeAndCallback</button>
       </>
     );
   };
@@ -79,5 +93,15 @@ test("setState-I", async () => {
   fireEvent.click(getByText("changeText5"));
   await waitFor(() => {
     getByText("hello world twice change");
+  });
+
+  fireEvent.click(getByText("sameChange"));
+  await waitFor(() => {
+    getByText("0");
+  });
+
+  fireEvent.click(getByText("sameChangeAndCallback"));
+  await waitFor(() => {
+    getByText("999");
   });
 });

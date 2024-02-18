@@ -11,7 +11,7 @@ import { mapToObject } from "../store/utils";
  * and different stores may have the same data attributes,
  * so it is necessary to privatize each store's dispatch handler.
  * However, the update dispatch of different stores does not affect the triggering of batch updates,
- * because the data state in Resy has been advanced further.
+ * because the data state in resy has been pre-synchronous execution.
  * Therefore, although subsequent store updates are not actually be executed,
  * they will incidentally synchronize the data in the store with the rendering on the page.
  * This saves one update effect and can be considered a batch update handling across different stores.

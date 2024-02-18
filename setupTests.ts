@@ -1,4 +1,9 @@
 import "@testing-library/jest-dom";
 
-// for test (vitest会自动将process.env.NODE_ENV设置为test，这样无法测试走入dev分支，所以简单更改一下便于分析测试覆盖率)
+/**
+ * @description for test
+ * Vitest automatically sets process.env.NODE_ENV to test,
+ * so it is impossible to test into the dev branch,
+ * so a simple change makes it easier to analyze test coverage
+ */
 process.env.NODE_ENV = "development";

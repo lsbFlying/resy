@@ -7,7 +7,7 @@
  */
 import type {
   ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions,
-  Store, StateCallback, StateCallbackItem, StoreMapValueType, State,
+  Store, StateCallback, StoreMapValueType, State,
   InitialState, StateRefCounterMapType, StateWithThisType, ClassThisPointerType,
 } from "./types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../reset/types";
@@ -16,12 +16,11 @@ import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import { scheduler } from "../scheduler";
 import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_HANDLE_KEY__, __CLASS_FN_INITIAL_HANDLE_KEY__,
-} from "../connect/static";
+} from "../classConnect/static";
 import { batchUpdate, __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
 import { hasOwnProperty } from "../utils";
 import {
-  stateErrorHandle, optionsErrorHandle, protoPointStoreErrorHandle,
-  subscribeErrorHandle, stateCallbackErrorHandle,
+  stateErrorHandle, optionsErrorHandle, protoPointStoreErrorHandle, subscribeErrorHandle,
 } from "./errors";
 import {
   pushTask, connectHookUse, finallyBatchHandle, connectStore,
@@ -29,6 +28,8 @@ import {
 } from "./utils";
 import { mergeStateKeys, handleReducerState, deferHandle, initialStateFnRestoreHandle } from "../reset";
 import { willUpdatingHandle } from "../subscribe";
+import { useEffect } from "react";
+import { Scheduler } from "../scheduler/types";
 
 /**
  * createStore
@@ -44,9 +45,6 @@ export const createStore = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
   options?: StoreOptions,
 ): Store<S> => {
-  // The storage stack of the this proxy object for the class component
-  const classThisPointerSet = new Set<ClassThisPointerType<S>>();
-
   // Retrieve the reducerState
   const reducerState = initialState === undefined
     ? ({} as StateWithThisType<S>)
@@ -80,14 +78,14 @@ export const createStore = <S extends PrimitiveState>(
   // Data status of the previous batch
   const prevBatchState: MapType<S> = objectToMap(reducerState);
 
-  // Callback function stack
-  const stateCallbackStackSet = new Set<StateCallbackItem<S>>();
-
   // Subscription listener stack
   const listenerSet = new Set<Listener<S>>();
 
   // The core map of store
   const storeMap: StoreMap<S> = new Map();
+
+  // The storage stack of the this proxy object for the class component
+  const classThisPointerSet = new Set<ClassThisPointerType<S>>();
 
   const setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
     willUpdatingHandle(schedulerProcessor, prevBatchState, stateMap);
@@ -112,16 +110,11 @@ export const createStore = <S extends PrimitiveState>(
       });
     }
 
-    if (callback !== undefined) {
-      stateCallbackErrorHandle(callback);
-
-      const nextState: S = Object.assign({}, mapToObject(stateMap), stateTemp);
-      stateCallbackStackSet.add({ nextState, callback });
-    }
-
-    finallyBatchHandle(
-      schedulerProcessor, prevBatchState, stateMap, listenerSet, stateCallbackStackSet,
+    (schedulerProcessor.get("pushCallbackStack") as Scheduler<S>["pushCallbackStack"])(
+      stateMap, stateTemp as State<S>, callback,
     );
+
+    finallyBatchHandle(schedulerProcessor, prevBatchState, stateMap, listenerSet);
   };
 
   /**
@@ -159,9 +152,11 @@ export const createStore = <S extends PrimitiveState>(
 
     handleReducerState(reducerState, initialState);
 
+    const state = {} as State<S>;
     mergeStateKeys(reducerState, prevBatchState).forEach(key => {
       const originValue = reducerState[key];
       if (!Object.is(originValue, stateMap.get(key))) {
+        state![key] = originValue;
         pushTask(
           key, originValue, stateMap, schedulerProcessor, optionsTemp, reducerState,
           storeStateRefCounterMap, storeMap, stateRestoreAccomplishedMap, initialFnCanExecMap,
@@ -170,20 +165,17 @@ export const createStore = <S extends PrimitiveState>(
       }
     });
 
-    if (callback !== undefined) {
-      stateCallbackErrorHandle(callback);
-      stateCallbackStackSet.add({ nextState: reducerState, callback });
-    }
-
-    finallyBatchHandle(
-      schedulerProcessor, prevBatchState, stateMap, listenerSet, stateCallbackStackSet,
+    (schedulerProcessor.get("pushCallbackStack") as Scheduler<S>["pushCallbackStack"])(
+      stateMap, state, callback,
     );
+
+    finallyBatchHandle(schedulerProcessor, prevBatchState, stateMap, listenerSet);
   };
 
   // Subscription function
   const subscribe = (listener: Listener<S>, stateKeys?: (keyof S)[]): Unsubscribe => {
     subscribeErrorHandle(listener, stateKeys);
-    const listenerWrap: Listener<S> | null = data => {
+    const listenerWrap: Listener<S> = data => {
       const listenerKeysExist = stateKeys && stateKeys?.length > 0;
       /**
        * @description In fact, when the final subscription is triggered,
@@ -221,9 +213,7 @@ export const createStore = <S extends PrimitiveState>(
       stateRestoreAccomplishedMap, initialFnCanExecMap,
       classThisPointerSet, initialState, isDelete,
     );
-    finallyBatchHandle(
-      schedulerProcessor, prevBatchState, stateMap, listenerSet, stateCallbackStackSet,
-    );
+    finallyBatchHandle(schedulerProcessor, prevBatchState, stateMap, listenerSet);
     return true;
   };
 
@@ -296,6 +286,10 @@ export const createStore = <S extends PrimitiveState>(
    */
   const useStore = () => storeProxy;
 
+  const useSubscribe = (listener: Listener<S>, stateKeys?: (keyof S)[]) => {
+    useEffect(() => subscribe(listener, stateKeys), []);
+  };
+
   // Connecting the this pointer of the class component (therefore, this cannot be an arrow function)
   function classConnectStore(this: ClassThisPointerType<S>) {
     classThisPointerSet.add(this);
@@ -334,6 +328,7 @@ export const createStore = <S extends PrimitiveState>(
   };
 
   externalMap.set("useStore", useStore);
+  externalMap.set("useSubscribe", useSubscribe);
   externalMap.set(__USE_STORE_KEY__, storeProxy);
   /**
    * @description The reason why the three operation functions for class components

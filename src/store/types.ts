@@ -3,8 +3,9 @@ import type { Subscribe } from "../subscribe/types";
 import type {
   ClassConnectStoreType, ClassUnmountHandleType, ClassStateRefSetType,
   ClassFnInitialHandleType, ClassThisPointerStoresType,
-} from "../connect/types";
+} from "../classConnect/types";
 import { __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
+import { Listener } from "../subscribe/types";
 
 /**
  * @description The second parameter configuration item of createStore
@@ -164,11 +165,16 @@ export type UseStore<S extends PrimitiveState> = Readonly<{
   useStore(): S & StoreCoreUtils<S> & SetOptions;
 }>;
 
+/** store.useSubscribe() */
+export type UseSubscribe<S extends PrimitiveState> = Readonly<{
+  useSubscribe(listener: Listener<S>, stateKeys?: (keyof S)[]): void;
+}>;
+
 /** Some of the core tool method types of store */
 export type StoreCoreUtils<S extends PrimitiveState> = SetState<S> & SyncUpdate<S> & Restore<S> & Subscribe<S>;
 
 /** Tool method type of store */
-export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOptions & UseStore<S>;
+export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOptions & UseStore<S> & UseSubscribe<S>;
 
 /** The type of store returned by createStore */
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;

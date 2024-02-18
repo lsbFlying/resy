@@ -1,5 +1,9 @@
 import type { MapType, PrimitiveState, Callback, ValueOf } from "../types";
 import type { Scheduler } from "./types";
+import type { StateCallbackItem } from "../store/types";
+import { State, StateCallback } from "../store/types";
+import { stateCallbackErrorHandle } from "../store/errors";
+import { mapToObject } from "../store/utils";
 
 /**
  * @description Each store's dispatch handler
@@ -18,6 +22,8 @@ export const scheduler = <S extends PrimitiveState>() => {
   const taskDataMap: MapType<S> = new Map();
   // task queue of updated
   const taskQueueSet: Set<Callback> = new Set();
+  // Callback function stack
+  const callbackStackSet = new Set<StateCallbackItem<S>>();
 
   // Scheduling map for batch updates
   const schedulerProcessor: MapType<Scheduler<S>> = new Map();
@@ -39,7 +45,22 @@ export const scheduler = <S extends PrimitiveState>() => {
   );
 
   schedulerProcessor.set(
-    "flush",
+    "pushCallbackStack",
+    (
+      stateMap: MapType<S>,
+      state: State<S>,
+      callback?: StateCallback<S>,
+    ) => {
+      if (callback !== undefined) {
+        stateCallbackErrorHandle(callback);
+        const nextState: S = Object.assign({}, mapToObject(stateMap), state);
+        callbackStackSet.add({ nextState, callback });
+      }
+    },
+  );
+
+  schedulerProcessor.set(
+    "flushTask",
     () => {
       taskDataMap.clear();
       taskQueueSet.clear();
@@ -47,10 +68,11 @@ export const scheduler = <S extends PrimitiveState>() => {
   );
 
   schedulerProcessor.set(
-    "getTasks",
+    "getSchedulerQueue",
     () => ({
       taskDataMap,
       taskQueueSet,
+      callbackStackSet,
     }),
   );
 

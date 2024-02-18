@@ -1,5 +1,7 @@
 import type { PrimitiveState, MapType } from "../types";
 import type { Scheduler } from "../scheduler/types";
+import { Listener } from "./types";
+import { useEffect } from "react";
 
 // Pre-update processing (records the prevBatchState beforehand for later comparison when data changes trigger subscribers)
 export const willUpdatingHandle = <S extends PrimitiveState>(
@@ -15,4 +17,8 @@ export const willUpdatingHandle = <S extends PrimitiveState>(
       prevBatchState.set(key, value);
     });
   }
+};
+
+export const useSubscribe = <S extends PrimitiveState>(store: S, listener: Listener<S>, stateKeys?: (keyof S)[]) => {
+  useEffect(() => store.subscribe(listener, stateKeys), []);
 };

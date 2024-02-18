@@ -1,6 +1,6 @@
 import type { PrimitiveState, ValueOf, MapType, Callback } from "../types";
 import type {
-  StateCallbackItem, StoreMapValue, StoreMapValueType, StoreMap, InitialState,
+  StoreMapValue, StoreMapValueType, StoreMap, InitialState,
   StateRefCounterMapType, State, ClassThisPointerType, StoreOptions,
 } from "./types";
 import type { Scheduler } from "../scheduler/types";
@@ -9,7 +9,7 @@ import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from ".
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { initialStateFnRestoreHandle, deferHandle } from "../reset";
 import { batchUpdate } from "./static";
-import { __CLASS_STATE_REF_SET_KEY__ } from "../connect/static";
+import { __CLASS_STATE_REF_SET_KEY__ } from "../classConnect/static";
 
 /**
  * @description Additional references are utilized to ensure the compatibility
@@ -233,13 +233,12 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
   prevBatchState: MapType<S>,
   stateMap: MapType<S>,
   listenerSet: Set<Listener<S>>,
-  stateCallbackStackSet: Set<StateCallbackItem<S>>,
 ) => {
   const {
-    taskDataMap, taskQueueSet,
-  } = (schedulerProcessor.get("getTasks") as Scheduler<S>["getTasks"])();
+    taskDataMap, taskQueueSet, callbackStackSet,
+  } = (schedulerProcessor.get("getSchedulerQueue") as Scheduler<S>["getSchedulerQueue"])();
 
-  if (taskDataMap.size > 0 && !schedulerProcessor.get("isUpdating")) {
+  if ((taskDataMap.size > 0 || callbackStackSet.size > 0) && !schedulerProcessor.get("isUpdating")) {
     // Reduce the generation of redundant microtasks through the isUpdating flag
     schedulerProcessor.set("isUpdating", Promise.resolve().then(() => {
       /**
@@ -266,10 +265,20 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
          * The task data and task queue are immediately flushed and cleared,
          * freeing up space in preparation for the next round of data updates.
          */
-        (schedulerProcessor.get("flush") as Scheduler<S>["flush"])();
+        (schedulerProcessor.get("flushTask") as Scheduler<S>["flushTask"])();
 
         // 🌟 The execution of subscribe and callback needs to be placed after flush,
         // otherwise their own update queues will be emptied in advance, affecting their own internal execution.
+
+        // Trigger the execution of the callback function
+        if (callbackStackSet.size > 0) {
+          callbackStackSet.forEach(({ callback, nextState }) => {
+            callback(nextState);
+          });
+          callbackStackSet.clear();
+        }
+
+        // 🌟 As logically, the listener in subscribe needs to be executed after the callback has been executed.
 
         // Trigger the execution of subscription snooping
         if (listenerSet.size > 0) {
@@ -282,14 +291,6 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
               prevState: mapToObject(prevBatchState),
             });
           });
-        }
-
-        // Trigger the execution of the callback function
-        if (stateCallbackStackSet.size > 0) {
-          stateCallbackStackSet.forEach(({ callback, nextState }) => {
-            callback(nextState);
-          });
-          stateCallbackStackSet.clear();
         }
       });
     }));

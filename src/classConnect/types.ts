@@ -1,8 +1,8 @@
 import type { PrimitiveState } from "../types";
 import type { StoreCoreUtils, SetOptions, Store } from "../store/types";
 import {
-  __CLASS_FN_INITIAL_HANDLE_KEY__, __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_STATE_REF_SET_KEY__,
-  __CLASS_UNMOUNT_HANDLE_KEY__, __CLASS_CONNECT_STORE_KEY__,
+  __CLASS_INITIAL_STATE_RETRIEVE_KEY__, __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_STATE_REF_SET_KEY__,
+  __CLASS_UNMOUNT_PROCESSING_KEY__, __CLASS_CONNECT_STORE_KEY__,
 } from "./static";
 
 /**
@@ -34,11 +34,11 @@ export type ClassStateRefSetType<S extends PrimitiveState> = {
 };
 
 // This is the type of method that is executed after the class component is unmounted
-export type ClassUnmountHandleType = {
-  [__CLASS_UNMOUNT_HANDLE_KEY__](): void;
+export type ClassUnmountProcessingType = {
+  [__CLASS_UNMOUNT_PROCESSING_KEY__](): void;
 }
 
 // This is the type of recovery performed by the class if the store initialization parameter is a function
-export type ClassFnInitialHandleType = {
-  [__CLASS_FN_INITIAL_HANDLE_KEY__](): void;
+export type ClassInitialStateRetrieveType = {
+  [__CLASS_INITIAL_STATE_RETRIEVE_KEY__](): void;
 };

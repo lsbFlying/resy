@@ -2,7 +2,7 @@ import type { PrimitiveState, ValueOf, MapType, Callback } from "../types";
 import type { StateCallbackItem, StateCallback, State } from "../store/types";
 
 // Scheduler type
-export type Scheduler<S extends PrimitiveState> = {
+export type SchedulerType<S extends PrimitiveState> = {
   // Flag for ongoing update
   isUpdating: Promise<void> | null;
   // Flag for the upcoming update execution
@@ -28,5 +28,5 @@ export type Scheduler<S extends PrimitiveState> = {
     callbackStackSet: Set<StateCallbackItem<S>>;
   };
   // Flag to delay the execution of the return registration function in useEffect
-  deferDestructorFlag: Promise<void> | null;
+  deferEffectDestructorExecFlag: Promise<void> | null;
 };

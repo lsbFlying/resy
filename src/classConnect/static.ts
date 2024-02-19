@@ -7,8 +7,8 @@ export const __CLASS_THIS_POINTER_STORES_KEY__ = Symbol("classThisPointerStoresK
 // The key is for data references of class component
 export const __CLASS_STATE_REF_SET_KEY__ = Symbol("classStateRefSetKey");
 
-// The key is for unmountHandle of class component
-export const __CLASS_UNMOUNT_HANDLE_KEY__ = Symbol("classUnmountHandleKey");
+// The key is for unmountProcessing of class component
+export const __CLASS_UNMOUNT_PROCESSING_KEY__ = Symbol("classUnmountProcessingKey");
 
-// The key is for initialFnHandle of class component
-export const __CLASS_FN_INITIAL_HANDLE_KEY__ = Symbol("classFnInitialHandleKey");
+// The key is for initialStateRetrieve of class component
+export const __CLASS_INITIAL_STATE_RETRIEVE_KEY__ = Symbol("classInitialStateRetrieveKey");

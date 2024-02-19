@@ -1,11 +1,11 @@
 import type { PrimitiveState, MapType } from "../types";
-import type { Scheduler } from "../scheduler/types";
-import { Listener } from "./types";
+import type { SchedulerType } from "../scheduler/types";
+import type { ListenerType } from "./types";
 import { useEffect } from "react";
 
 // Pre-update processing (records the prevBatchState beforehand for later comparison when data changes trigger subscribers)
-export const willUpdatingHandle = <S extends PrimitiveState>(
-  schedulerProcessor: MapType<Scheduler<S>>,
+export const willUpdatingProcessing = <S extends PrimitiveState>(
+  schedulerProcessor: MapType<SchedulerType<S>>,
   prevBatchState: MapType<S>,
   stateMap: MapType<S>,
 ) => {
@@ -19,6 +19,8 @@ export const willUpdatingHandle = <S extends PrimitiveState>(
   }
 };
 
-export const useSubscribe = <S extends PrimitiveState>(store: S, listener: Listener<S>, stateKeys?: (keyof S)[]) => {
+// Hook of subscribe
+export const useSubscribe = <S extends PrimitiveState>(store: S, listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => store.subscribe(listener, stateKeys), []);
 };

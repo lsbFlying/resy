@@ -2,10 +2,8 @@ import type { ConnectStoreType, ClassConnectStoreType } from "./types";
 import type { ValueOf } from "../types";
 import type { Store } from "../store/types";
 import { Component, PureComponent } from "react";
-import { getThisProxy, unmountHandleCore } from "./utils";
-import {
-  __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_CONNECT_STORE_KEY__,
-} from "./static";
+import { getThisProxy, unmountProcessingCore } from "./utils";
+import { __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_CONNECT_STORE_KEY__ } from "./static";
 
 /**
  * @class ComponentWithStore
@@ -25,9 +23,9 @@ export class ComponentWithStore<P = {}, S = {}, SS = any> extends Component<P, S
    * Performs unmount processing logic
    */
   // @ts-ignore
-  private unmountHandle() {
+  private unmountProcessing() {
     this.unmountExecuted = true;
-    unmountHandleCore.bind(this as any)();
+    unmountProcessingCore.bind(this as any)();
   }
 
   // @ts-ignore
@@ -56,9 +54,9 @@ export class PureComponentWithStore<P = {}, S = {}, SS = any> extends PureCompon
    * Performs unmount processing logic
    */
   // @ts-ignore
-  private unmountHandle() {
+  private unmountProcessing() {
     this.unmountExecuted = true;
-    unmountHandleCore.bind(this as any)();
+    unmountProcessingCore.bind(this as any)();
   }
 
   // @ts-ignore

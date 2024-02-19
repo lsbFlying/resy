@@ -1,11 +1,10 @@
 import type { Callback, ValueOf, PrimitiveState, MapType } from "../types";
-import type { Subscribe } from "../subscribe/types";
+import type { Subscribe, ListenerType } from "../subscribe/types";
 import type {
-  ClassConnectStoreType, ClassUnmountHandleType, ClassStateRefSetType,
-  ClassFnInitialHandleType, ClassThisPointerStoresType,
+  ClassConnectStoreType, ClassUnmountProcessingType, ClassStateRefSetType,
+  ClassInitialStateRetrieveType, ClassThisPointerStoresType,
 } from "../classConnect/types";
 import { __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
-import { Listener } from "../subscribe/types";
 
 /**
  * @description The second parameter configuration item of createStore
@@ -34,6 +33,7 @@ export type InitialStateForbiddenKeys =
   | "restore"
   | "setOptions"
   | "useStore"
+  | "useSubscribe"
   | "store";
 
 /**
@@ -62,8 +62,8 @@ export type StoreMap<S extends PrimitiveState> = Map<keyof S, StoreMapValue<S>>;
 // Some additional extensions of tool classes and property sets of methods needed within store
 export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S>
   & ClassConnectStoreType
-  & ClassUnmountHandleType
-  & ClassFnInitialHandleType
+  & ClassUnmountProcessingType
+  & ClassInitialStateRetrieveType
   & {
   [__REGENERATIVE_SYSTEM_KEY__]: symbol;
   [__USE_STORE_KEY__]: object;
@@ -140,6 +140,11 @@ export type SyncUpdate<S extends PrimitiveState> = Readonly<{
 export type Restore<S extends PrimitiveState> = Readonly<{
   /**
    * @param callback
+   * @description The reason for not naming it reset is due to
+   * the consideration of scenarios where the createStore parameter might be a function.
+   * In such cases, logically speaking, it's not so much about resetting but rather about restoring.
+   * As for what state it restores to depends on the result returned by the execution of the initialization function.
+   * Hence, the choice of the name restore instead of reset.
    */
   restore(callback?: StateCallback<S>): void;
 }>;
@@ -157,7 +162,7 @@ export type Restore<S extends PrimitiveState> = Readonly<{
  * so the occurrences where setOptions is needed are still relatively rare.
  */
 export type SetOptions = Readonly<{
-  setOptions(options: Pick<StoreOptions, "unmountRestore">): void;
+  setOptions(options: { unmountRestore: boolean }): void;
 }>;
 
 /** store.useStore() */
@@ -167,7 +172,7 @@ export type UseStore<S extends PrimitiveState> = Readonly<{
 
 /** store.useSubscribe() */
 export type UseSubscribe<S extends PrimitiveState> = Readonly<{
-  useSubscribe(listener: Listener<S>, stateKeys?: (keyof S)[]): void;
+  useSubscribe(listener: ListenerType<S>, stateKeys?: (keyof S)[]): void;
 }>;
 
 /** Some of the core tool method types of store */
@@ -178,6 +183,11 @@ export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOption
 
 /** The type of store returned by createStore */
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
+
+/** Return type of useConciseState */
+export type ConciseStore<S extends PrimitiveState> = S & StoreCoreUtils<S> & {
+  readonly store: S & StoreCoreUtils<S>;
+};
 
 /** The thisType type used to initialize store when initialState is a function */
 export type InitialStore<S extends PrimitiveState> = {

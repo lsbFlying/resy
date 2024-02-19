@@ -3,8 +3,8 @@ import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from ".
 import type {
   InitialState, StateRefCounterMapType, ClassThisPointerType, StoreOptions,
 } from "../store/types";
+import type { SchedulerType } from "../scheduler/types";
 import { hasOwnProperty } from "../utils";
-import { Scheduler } from "../scheduler/types";
 
 /** clear object */
 const clearObject = <S extends PrimitiveState>(object: S) => {
@@ -40,19 +40,19 @@ export const mergeStateKeys = <S extends PrimitiveState>(
     )
   );
 
-// Retrieve the reducerState.
-export const handleReducerState = <S extends PrimitiveState>(
+/**
+ * Retrieve the reducerState
+ * @description If the data is in the initialization state and returned by a function,
+ * the initialization function must be executed again.
+ * This ensures that the retrieved internal initialization data aligns with the function's logic.
+ * For example, if the initialization function's return includes time in milliseconds,
+ * it is important to re-execute the function to acquire the most up-to-date initialization data.
+ * Such caution ensures the precision of data recovery.
+ */
+export const retrieveReducerState = <S extends PrimitiveState>(
   reducerState: S,
   initialState?: InitialState<S>,
 ) => {
-  /**
-   * @description If the data is in the initialization state and returned by a function,
-   * the initialization function must be executed again.
-   * This ensures that the retrieved internal initialization data aligns with the function's logic.
-   * For example, if the initialization function's return includes time in milliseconds,
-   * it is important to re-execute the function to acquire the most up-to-date initialization data.
-   * Such caution ensures the precision of data recovery.
-   */
   if (typeof initialState === "function") {
     clearObject(reducerState);
     Object.entries(initialState()).forEach(([key, value]) => {
@@ -62,12 +62,12 @@ export const handleReducerState = <S extends PrimitiveState>(
 };
 
 // Logic of recovery processing
-const restoreHandle = <S extends PrimitiveState>(
+const restoreProcessing = <S extends PrimitiveState>(
   reducerState: S,
   stateMap: MapType<S>,
   initialState?: InitialState<S>,
 ) => {
-  handleReducerState(reducerState, initialState);
+  retrieveReducerState(reducerState, initialState);
   mergeStateKeys(reducerState, stateMap).forEach(key => {
     hasOwnProperty.call(reducerState, key)
       ? stateMap.set(key, reducerState[key])
@@ -76,13 +76,13 @@ const restoreHandle = <S extends PrimitiveState>(
 };
 
 /**
- * By using "storeStateRefCounterMap" and "noClassStateRefHandle",
+ * By using "storeStateRefCounterMap" and "classThisPointerSet",
  * we determine whether the store still has component references.
  * As long as there is at least one component referencing,
  * the data will not be reset since it is currently in use within the business logic and does not constitute a complete unloading.
  * The complete unloading cycle corresponds to the entire usage cycle of the store.
  */
-export const unmountRestoreHandle = <S extends PrimitiveState>(
+const unmountRestore = <S extends PrimitiveState>(
   options: StoreOptions,
   reducerState: S,
   stateMap: MapType<S>,
@@ -103,13 +103,13 @@ export const unmountRestoreHandle = <S extends PrimitiveState>(
    */
   if (options.unmountRestore && noRefFlag && typeof initialState !== "function") {
     stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", true);
-    restoreHandle(reducerState, stateMap, initialState);
+    restoreProcessing(reducerState, stateMap, initialState);
   }
   noRefFlag && initialFnCanExecMap.set("canExec", true);
 };
 
 // Retrieve recovery processing when initialState is a function
-export const initialStateFnRestoreHandle = <S extends PrimitiveState>(
+export const initialStateRetrieve = <S extends PrimitiveState>(
   reducerState: S,
   stateMap: MapType<S>,
   storeStateRefCounterMap: StateRefCounterMapType,
@@ -118,16 +118,16 @@ export const initialStateFnRestoreHandle = <S extends PrimitiveState>(
   classThisPointerSet: Set<ClassThisPointerType<S>>,
   initialState?: InitialState<S>,
 ) => {
-  // The relevant judgment logic is similar to unmountRestoreHandle.
+  // The relevant judgment logic is similar to unmountRestore.
   if (
     typeof initialState === "function"
     && initialFnCanExecMap.get("canExec")
     && !classThisPointerSet.size
     && !storeStateRefCounterMap.get("counter")
-    && !stateRestoreAccomplishedMap.get("initialStateFnRestoreAccomplished")
+    && !stateRestoreAccomplishedMap.get("initialStateRetrieveAccomplished")
   ) {
-    stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", true);
-    restoreHandle(reducerState, stateMap, initialState);
+    stateRestoreAccomplishedMap.set("initialStateRetrieveAccomplished", true);
+    restoreProcessing(reducerState, stateMap, initialState);
     initialFnCanExecMap.set("canExec", true);
   }
 };
@@ -146,29 +146,29 @@ export const initialStateFnRestoreHandle = <S extends PrimitiveState>(
  * and cleared with the early release of the storeMapValue's memory,
  * leading to the updater function's incapability to make valid updates.
  * Here, to ensure operations such as unloading, freeing memory,
- * and unmountRestoreHandle run smoothly,
+ * and unmountRestore run smoothly,
  * a microtask can be used to postpone the unmount process.
  */
-export function deferHandle<S extends PrimitiveState>(
+export function deferRestoreProcessing<S extends PrimitiveState>(
   options: StoreOptions,
   reducerState: S,
   stateMap: MapType<S>,
   storeStateRefCounterMap: StateRefCounterMapType,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
-  schedulerProcessor: MapType<Scheduler<S>>,
+  schedulerProcessor: MapType<SchedulerType<S>>,
   initialFnCanExecMap: InitialFnCanExecMapType,
   classThisPointerSet: Set<ClassThisPointerType<S>>,
   initialState?: InitialState<S>,
   callback?: Callback,
 ) {
-  if (!schedulerProcessor.get("deferDestructorFlag")) {
-    schedulerProcessor.set("deferDestructorFlag", Promise.resolve().then(() => {
-      schedulerProcessor.set("deferDestructorFlag", null);
+  if (!schedulerProcessor.get("deferEffectDestructorExecFlag")) {
+    schedulerProcessor.set("deferEffectDestructorExecFlag", Promise.resolve().then(() => {
+      schedulerProcessor.set("deferEffectDestructorExecFlag", null);
       if (!storeStateRefCounterMap.get("counter") && !classThisPointerSet.size) {
         // Turn on the switch to perform refresh recovery data
         stateRestoreAccomplishedMap.set("unmountRestoreAccomplished", null);
-        stateRestoreAccomplishedMap.set("initialStateFnRestoreAccomplished", null);
-        unmountRestoreHandle(
+        stateRestoreAccomplishedMap.set("initialStateRetrieveAccomplished", null);
+        unmountRestore(
           options, reducerState, stateMap, storeStateRefCounterMap,
           stateRestoreAccomplishedMap, initialFnCanExecMap, classThisPointerSet, initialState,
         );

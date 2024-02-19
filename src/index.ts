@@ -1,6 +1,6 @@
-export { createStore } from "./store";
+export { createStore, useStore, useConciseState } from "./store";
 export type {
-  StoreOptions, InitialStateForbiddenKeys, State, PrimateForbiddenType,
+  StoreOptions, InitialStateForbiddenKeys, State, PrimateForbiddenType, ConciseStore,
   SetState, StateFnType, StateCallback, SyncUpdate, Restore, SetOptions, UseStore,
   StoreCoreUtils, StoreUtils, Store, InitialStore, StateWithThisType, InitialState,
 } from "./store/types";
@@ -8,10 +8,7 @@ export type {
 export { useSubscribe } from "./subscribe";
 export * from "./subscribe/types";
 
-export * from "./useHook";
-export * from "./useHook/types";
-
-export * from "./types";
-
 export { ComponentWithStore, PureComponentWithStore } from "./classConnect";
 export type { ConnectStoreType, ClassStoreType } from "./classConnect/types";
+
+export * from "./types";

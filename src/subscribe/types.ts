@@ -11,13 +11,13 @@ export type Unsubscribe = Callback;
  * while prevState and nextState represent the data states before and after a batch change.
  */
 export type ListenerParams<S extends PrimitiveState> = {
-  effectState: Partial<S>;
-  nextState: S;
-  prevState: S;
+  effectState: Readonly<Partial<S>>;
+  nextState: Readonly<S>;
+  prevState: Readonly<S>;
 };
 
 /** Type of monitoring callback for subscription */
-export type Listener<S extends PrimitiveState> = (data: ListenerParams<S>) => void;
+export type ListenerType<S extends PrimitiveState> = (data: ListenerParams<S>) => void;
 
 /** Type of subscribe */
 export type Subscribe<S extends PrimitiveState> = Readonly<{
@@ -27,7 +27,7 @@ export type Subscribe<S extends PrimitiveState> = Readonly<{
    * @return unsubscribe
    */
   subscribe(
-    listener: Listener<S>,
+    listener: ListenerType<S>,
     stateKeys?: (keyof S)[],
   ): Unsubscribe;
 }>;

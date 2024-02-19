@@ -3,11 +3,11 @@ import type {
   StoreMapValue, StoreMapValueType, StoreMap, InitialState,
   StateRefCounterMapType, State, ClassThisPointerType, StoreOptions,
 } from "./types";
-import type { Scheduler } from "../scheduler/types";
-import type { Listener } from "../subscribe/types";
-import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../reset/types";
+import type { SchedulerType } from "../scheduler/types";
+import type { ListenerType } from "../subscribe/types";
+import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../restore/types";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import { initialStateFnRestoreHandle, deferHandle } from "../reset";
+import { initialStateRetrieve, deferRestoreProcessing } from "../restore";
 import { batchUpdate } from "./static";
 import { __CLASS_STATE_REF_SET_KEY__ } from "../classConnect/static";
 
@@ -54,7 +54,7 @@ export const connectStore = <S extends PrimitiveState>(
   storeStateRefCounterMap: StateRefCounterMapType,
   storeMap: StoreMap<S>,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
-  schedulerProcessor: MapType<Scheduler<S>>,
+  schedulerProcessor: MapType<SchedulerType<S>>,
   initialFnCanExecMap: InitialFnCanExecMapType,
   classThisPointerSet: Set<ClassThisPointerType<S>>,
   initialState?: InitialState<S>,
@@ -77,7 +77,7 @@ export const connectStore = <S extends PrimitiveState>(
       singlePropStoreChangeSet.delete(onOriginStateChange);
       storeStateRefCounterMap.set("counter", storeStateRefCounterMap.get("counter")! - 1);
 
-      deferHandle(
+      deferRestoreProcessing(
         options, reducerState, stateMap, storeStateRefCounterMap,
         stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap,
         classThisPointerSet, initialState, () => {
@@ -119,13 +119,13 @@ export const connectHookUse = <S extends PrimitiveState>(
   storeStateRefCounterMap: StateRefCounterMapType,
   storeMap: StoreMap<S>,
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
-  schedulerProcessor: MapType<Scheduler<S>>,
+  schedulerProcessor: MapType<SchedulerType<S>>,
   initialFnCanExecMap: InitialFnCanExecMapType,
   classThisPointerSet: Set<ClassThisPointerType<S>>,
   initialState?: InitialState<S>,
 ) => {
   // Perform refresh recovery logic if initialState is a function
-  initialStateFnRestoreHandle(
+  initialStateRetrieve(
     reducerState, stateMap, storeStateRefCounterMap, stateRestoreAccomplishedMap,
     initialFnCanExecMap, classThisPointerSet, initialState,
   );
@@ -185,7 +185,7 @@ export const pushTask = <S extends PrimitiveState>(
   key: keyof S,
   value: ValueOf<S>,
   stateMap: MapType<S>,
-  schedulerProcessor: MapType<Scheduler<S>>,
+  schedulerProcessor: MapType<SchedulerType<S>>,
   options: StoreOptions,
   reducerState: S,
   storeStateRefCounterMap: StateRefCounterMapType,
@@ -201,7 +201,7 @@ export const pushTask = <S extends PrimitiveState>(
     // which lays the foundation for subsequent batch updates.
     !isDelete ? stateMap.set(key, value) : stateMap.delete(key);
 
-    (schedulerProcessor.get("pushTask") as Scheduler<S>["pushTask"])(
+    (schedulerProcessor.get("pushTask") as SchedulerType<S>["pushTask"])(
       key,
       value,
       () => {
@@ -228,15 +228,15 @@ export const pushTask = <S extends PrimitiveState>(
  * With the help of the micro-task event loop via 'then',
  * the update execution of data and tasks are placed onto the stack, and subsequently flushed.
  */
-export const finallyBatchHandle = <S extends PrimitiveState>(
-  schedulerProcessor: MapType<Scheduler<S>>,
+export const finallyBatchProcessing = <S extends PrimitiveState>(
+  schedulerProcessor: MapType<SchedulerType<S>>,
   prevBatchState: MapType<S>,
   stateMap: MapType<S>,
-  listenerSet: Set<Listener<S>>,
+  listenerSet: Set<ListenerType<S>>,
 ) => {
   const {
     taskDataMap, taskQueueSet, callbackStackSet,
-  } = (schedulerProcessor.get("getSchedulerQueue") as Scheduler<S>["getSchedulerQueue"])();
+  } = (schedulerProcessor.get("getSchedulerQueue") as SchedulerType<S>["getSchedulerQueue"])();
 
   if ((taskDataMap.size > 0 || callbackStackSet.size > 0) && !schedulerProcessor.get("isUpdating")) {
     // Reduce the generation of redundant microtasks through the isUpdating flag
@@ -265,7 +265,7 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
          * The task data and task queue are immediately flushed and cleared,
          * freeing up space in preparation for the next round of data updates.
          */
-        (schedulerProcessor.get("flushTask") as Scheduler<S>["flushTask"])();
+        (schedulerProcessor.get("flushTask") as SchedulerType<S>["flushTask"])();
 
         // 🌟 The execution of subscribe and callback needs to be placed after flush,
         // otherwise their own update queues will be emptied in advance, affecting their own internal execution.
@@ -282,14 +282,15 @@ export const finallyBatchHandle = <S extends PrimitiveState>(
 
         // Trigger the execution of subscription snooping
         if (listenerSet.size > 0) {
+          const listenerData = {
+            effectState: mapToObject(effectStateTemp!),
+            nextState: mapToObject(stateMap),
+            prevState: mapToObject(prevBatchState),
+          };
           listenerSet.forEach(item => {
             // the clone returned by mapToObject ensures that the externally subscribed data
             // maintains it`s purity and security as much as possible in terms of usage.
-            item({
-              effectState: mapToObject(effectStateTemp!),
-              nextState: mapToObject(stateMap),
-              prevState: mapToObject(prevBatchState),
-            });
+            item(listenerData);
           });
         }
       });

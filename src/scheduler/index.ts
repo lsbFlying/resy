@@ -1,8 +1,7 @@
 import type { MapType, PrimitiveState, Callback, ValueOf } from "../types";
-import type { Scheduler } from "./types";
-import type { StateCallbackItem } from "../store/types";
-import { State, StateCallback } from "../store/types";
-import { stateCallbackErrorHandle } from "../store/errors";
+import type { SchedulerType } from "./types";
+import type { StateCallbackItem, State, StateCallback } from "../store/types";
+import { stateCallbackErrorProcessing } from "../store/errors";
 import { mapToObject } from "../store/utils";
 
 /**
@@ -26,11 +25,11 @@ export const scheduler = <S extends PrimitiveState>() => {
   const callbackStackSet = new Set<StateCallbackItem<S>>();
 
   // Scheduling map for batch updates
-  const schedulerProcessor: MapType<Scheduler<S>> = new Map();
+  const schedulerProcessor: MapType<SchedulerType<S>> = new Map();
 
   schedulerProcessor.set("isUpdating", null);
   schedulerProcessor.set("willUpdating", null);
-  schedulerProcessor.set("deferDestructorFlag", null);
+  schedulerProcessor.set("deferEffectDestructorExecFlag", null);
 
   schedulerProcessor.set(
     "pushTask",
@@ -52,7 +51,7 @@ export const scheduler = <S extends PrimitiveState>() => {
       callback?: StateCallback<S>,
     ) => {
       if (callback !== undefined) {
-        stateCallbackErrorHandle(callback);
+        stateCallbackErrorProcessing(callback);
         const nextState: S = Object.assign({}, mapToObject(stateMap), state);
         callbackStackSet.add({ nextState, callback });
       }

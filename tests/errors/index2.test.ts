@@ -23,7 +23,7 @@ test("useStore-error-scene", async () => {
   // @ts-ignore
   expect(() => useStore(undefined)).toThrowError();
   // @ts-ignore
-  expect(() => useStore(new Symbol())).toThrowError();
+  expect(() => useStore(Symbol())).toThrowError();
   // @ts-ignore
   expect(() => useStore(NaN)).toThrowError();
   // @ts-ignore

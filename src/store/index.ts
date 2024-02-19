@@ -5,31 +5,32 @@
  * @date 2022-05-05
  * @name createStore
  */
+import { useEffect, useMemo } from "react";
 import type {
   ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions,
-  Store, StateCallback, StoreMapValueType, State,
+  Store, StateCallback, StoreMapValueType, State, ConciseStore,
   InitialState, StateRefCounterMapType, StateWithThisType, ClassThisPointerType,
 } from "./types";
-import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../reset/types";
-import type { Unsubscribe, Listener } from "../subscribe/types";
+import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../restore/types";
+import type { Unsubscribe, ListenerType } from "../subscribe/types";
 import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
+import type { SchedulerType } from "../scheduler/types";
 import { scheduler } from "../scheduler";
 import {
-  __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_HANDLE_KEY__, __CLASS_FN_INITIAL_HANDLE_KEY__,
+  __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__, __CLASS_INITIAL_STATE_RETRIEVE_KEY__,
 } from "../classConnect/static";
 import { batchUpdate, __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
 import { hasOwnProperty } from "../utils";
 import {
-  stateErrorHandle, optionsErrorHandle, protoPointStoreErrorHandle, subscribeErrorHandle,
+  stateErrorProcessing, optionsErrorProcessing, protoPointStoreErrorProcessing,
+  subscribeErrorProcessing, storeErrorProcessing, setOptionsErrorProcessing,
 } from "./errors";
 import {
-  pushTask, connectHookUse, finallyBatchHandle, connectStore,
+  pushTask, connectHookUse, finallyBatchProcessing, connectStore,
   mapToObject, objectToMap, classUpdater, connectClassUse,
 } from "./utils";
-import { mergeStateKeys, handleReducerState, deferHandle, initialStateFnRestoreHandle } from "../reset";
-import { willUpdatingHandle } from "../subscribe";
-import { useEffect } from "react";
-import { Scheduler } from "../scheduler/types";
+import { mergeStateKeys, retrieveReducerState, deferRestoreProcessing, initialStateRetrieve } from "../restore";
+import { willUpdatingProcessing } from "../subscribe";
 
 /**
  * createStore
@@ -52,9 +53,9 @@ export const createStore = <S extends PrimitiveState>(
       ? initialState()
       : initialState;
 
-  stateErrorHandle(reducerState, "createStore");
+  stateErrorProcessing(reducerState, "createStore");
 
-  optionsErrorHandle("createStore", options);
+  optionsErrorProcessing(options);
   const optionsTemp = options
     ? {
       __useConciseStateMode__: options.__useConciseStateMode__ ?? undefined,
@@ -67,7 +68,7 @@ export const createStore = <S extends PrimitiveState>(
   // Tag counters for data references of store
   const storeStateRefCounterMap: StateRefCounterMapType = new Map().set("counter", 0);
 
-  // Flag indicating that the initialStateFnRestoreHandle function is executable
+  // Flag indicating that the initialStateRetrieve function is executable
   const initialFnCanExecMap: InitialFnCanExecMapType = new Map();
 
   // This is the identification of whether the logical execution of the reset recovery is complete (to prevent multiple resets)
@@ -79,7 +80,7 @@ export const createStore = <S extends PrimitiveState>(
   const prevBatchState: MapType<S> = objectToMap(reducerState);
 
   // Subscription listener stack
-  const listenerSet = new Set<Listener<S>>();
+  const listenerSet = new Set<ListenerType<S>>();
 
   // The core map of store
   const storeMap: StoreMap<S> = new Map();
@@ -88,17 +89,17 @@ export const createStore = <S extends PrimitiveState>(
   const classThisPointerSet = new Set<ClassThisPointerType<S>>();
 
   const setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    willUpdatingHandle(schedulerProcessor, prevBatchState, stateMap);
+    willUpdatingProcessing(schedulerProcessor, prevBatchState, stateMap);
 
     let stateTemp = state;
 
     if (typeof state === "function") {
-      // handle prevState
+      // processing of prevState
       stateTemp = (state as StateFnType<S>)(mapToObject(stateMap));
     }
 
     if (stateTemp !== null) {
-      stateErrorHandle(stateTemp, "setState | syncUpdate");
+      stateErrorProcessing(stateTemp, "setState | syncUpdate");
       // The update of hook is an independent update dispatch action, and traversal processing is needed to unify the stack.
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         pushTask(
@@ -110,11 +111,11 @@ export const createStore = <S extends PrimitiveState>(
       });
     }
 
-    (schedulerProcessor.get("pushCallbackStack") as Scheduler<S>["pushCallbackStack"])(
+    (schedulerProcessor.get("pushCallbackStack") as SchedulerType<S>["pushCallbackStack"])(
       stateMap, stateTemp as State<S>, callback,
     );
 
-    finallyBatchHandle(schedulerProcessor, prevBatchState, stateMap, listenerSet);
+    finallyBatchProcessing(schedulerProcessor, prevBatchState, stateMap, listenerSet);
   };
 
   /**
@@ -148,9 +149,9 @@ export const createStore = <S extends PrimitiveState>(
 
   // Reset recovery initialization state data
   const restore = (callback?: StateCallback<S>) => {
-    willUpdatingHandle(schedulerProcessor, prevBatchState, stateMap);
+    willUpdatingProcessing(schedulerProcessor, prevBatchState, stateMap);
 
-    handleReducerState(reducerState, initialState);
+    retrieveReducerState(reducerState, initialState);
 
     const state = {} as State<S>;
     mergeStateKeys(reducerState, prevBatchState).forEach(key => {
@@ -165,17 +166,17 @@ export const createStore = <S extends PrimitiveState>(
       }
     });
 
-    (schedulerProcessor.get("pushCallbackStack") as Scheduler<S>["pushCallbackStack"])(
+    (schedulerProcessor.get("pushCallbackStack") as SchedulerType<S>["pushCallbackStack"])(
       stateMap, state, callback,
     );
 
-    finallyBatchHandle(schedulerProcessor, prevBatchState, stateMap, listenerSet);
+    finallyBatchProcessing(schedulerProcessor, prevBatchState, stateMap, listenerSet);
   };
 
   // Subscription function
-  const subscribe = (listener: Listener<S>, stateKeys?: (keyof S)[]): Unsubscribe => {
-    subscribeErrorHandle(listener, stateKeys);
-    const listenerWrap: Listener<S> = data => {
+  const subscribe = (listener: ListenerType<S>, stateKeys?: (keyof S)[]): Unsubscribe => {
+    subscribeErrorProcessing(listener, stateKeys);
+    const listenerWrap: ListenerType<S> = data => {
       const listenerKeysExist = stateKeys && stateKeys?.length > 0;
       /**
        * @description In fact, when the final subscription is triggered,
@@ -195,25 +196,25 @@ export const createStore = <S extends PrimitiveState>(
 
     // Returns the unsubscribing function, which allows the user to choose whether or not to unsubscribe,
     // because it is also possible that the user wants the subscription to remain in effect.
-    return () => listenerSet.delete(listenerWrap as Listener<S>);
+    return () => listenerSet.delete(listenerWrap as ListenerType<S>);
   };
 
   // Change options configuration
-  const setOptions = (options: Pick<StoreOptions, "unmountRestore">) => {
-    optionsErrorHandle("setOptions", options);
-    optionsTemp.unmountRestore = options?.unmountRestore ?? optionsTemp.unmountRestore;
+  const setOptions = (options: { unmountRestore: boolean }) => {
+    setOptionsErrorProcessing(options);
+    optionsTemp.unmountRestore = options.unmountRestore;
   };
 
   // Data updates for a single attribute
   const singlePropUpdate = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
-    willUpdatingHandle(schedulerProcessor, prevBatchState, stateMap);
+    willUpdatingProcessing(schedulerProcessor, prevBatchState, stateMap);
     pushTask(
       key, value, stateMap, schedulerProcessor, optionsTemp,
       reducerState, storeStateRefCounterMap, storeMap,
       stateRestoreAccomplishedMap, initialFnCanExecMap,
       classThisPointerSet, initialState, isDelete,
     );
-    finallyBatchHandle(schedulerProcessor, prevBatchState, stateMap, listenerSet);
+    finallyBatchProcessing(schedulerProcessor, prevBatchState, stateMap, listenerSet);
     return true;
   };
 
@@ -227,7 +228,7 @@ export const createStore = <S extends PrimitiveState>(
   // A proxy object with the capabilities of updating and data tracking.
   const store = new Proxy(storeMap, {
     get: (_: StoreMap<S>, key: keyof S, receiver: any) => {
-      protoPointStoreErrorHandle(receiver, store);
+      protoPointStoreErrorProcessing(receiver, store);
 
       const value = stateMap.get(key);
       if (typeof value === "function") {
@@ -286,7 +287,8 @@ export const createStore = <S extends PrimitiveState>(
    */
   const useStore = () => storeProxy;
 
-  const useSubscribe = (listener: Listener<S>, stateKeys?: (keyof S)[]) => {
+  const useSubscribe = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => subscribe(listener, stateKeys), []);
   };
 
@@ -310,9 +312,9 @@ export const createStore = <S extends PrimitiveState>(
   }
 
   // Unmount execution of class components
-  function classUnmountHandle(this: ClassThisPointerType<S>) {
+  function classUnmountProcessing(this: ClassThisPointerType<S>) {
     classThisPointerSet.delete(this);
-    deferHandle(
+    deferRestoreProcessing(
       optionsTemp, reducerState, stateMap, storeStateRefCounterMap,
       stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap,
       classThisPointerSet, initialState,
@@ -320,8 +322,8 @@ export const createStore = <S extends PrimitiveState>(
   }
 
   // The initialization function of createStore resets the recovery process for class component
-  const classInitialFnHandle = () => {
-    initialStateFnRestoreHandle(
+  const classInitialStateRetrieve = () => {
+    initialStateRetrieve(
       reducerState, stateMap, storeStateRefCounterMap, stateRestoreAccomplishedMap,
       initialFnCanExecMap, classThisPointerSet, initialState,
     );
@@ -332,14 +334,48 @@ export const createStore = <S extends PrimitiveState>(
   externalMap.set(__USE_STORE_KEY__, storeProxy);
   /**
    * @description The reason why the three operation functions for class components
-   * — connect, classUnmountHandle, and classInitialFnHandle
+   * — connect, classUnmountProcessing, and classInitialStateRetrieve
    * cannot be extracted for external operations
    * is that a simple external call cannot access these internal related data,
    * so they have to be written inside createStore.
    */
   externalMap.set(__CLASS_CONNECT_STORE_KEY__, classConnectStore);
-  externalMap.set(__CLASS_UNMOUNT_HANDLE_KEY__, classUnmountHandle);
-  externalMap.set(__CLASS_FN_INITIAL_HANDLE_KEY__, classInitialFnHandle);
+  externalMap.set(__CLASS_UNMOUNT_PROCESSING_KEY__, classUnmountProcessing);
+  externalMap.set(__CLASS_INITIAL_STATE_RETRIEVE_KEY__, classInitialStateRetrieve);
 
   return store;
 };
+
+/**
+ * useStore api
+ * @description useStore(store) === store.useStore()
+ * @param store
+ * @return store
+ */
+export const useStore = <S extends PrimitiveState>(store: S): S => {
+  storeErrorProcessing(store, "useStore");
+  return store[__USE_STORE_KEY__ as keyof S];
+};
+
+/**
+ * A concise version of useState
+ * @example:
+ * const { count, text, setState } = useConciseState({ count: 0, text: "hello" });
+ * equivalent to:
+ * const [count, setCount] = useState(0);
+ * const [text, setText] = useState("hello");
+ * 🌟 useConciseState is relatively simple and clear to use compared to useState when dealing with multiple data states.
+ * 🌟 Furthermore, within useConciseState, the store attribute can be parsed out, and through the store,
+ * the latest data values of various items can be accessed,
+ * compensating for the shortfall in useState where the latest values of attribute data cannot be retrieved.
+ * @param initialState
+ * @return ConciseStore<S>
+ */
+export const useConciseState = <S extends PrimitiveState>(
+  initialState?: InitialState<S>,
+): ConciseStore<S> =>
+    useMemo(() => createStore<S>(initialState, {
+      __useConciseStateMode__: true,
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }), [])[__USE_STORE_KEY__ as keyof S]
+;

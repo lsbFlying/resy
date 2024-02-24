@@ -6,17 +6,37 @@
   "author": "liushanbao <1262300490@qq.com>",
   "homepage": "https://github.com/lsbFlying/resy",
   "bugs": "https://github.com/lsbFlying/resy/issues",
-  "main": "dist/resy.cjs.js",
-  "module": "dist/resy.esm.js",
+  "main": "index.js",
+  "module": "dist/esm/resy.mjs",
   "types": "dist/resy.d.ts",
   "files": [
+    "index.js",
+    "index.mjs",
     "dist"
   ],
   "scripts": {
     "test": "vitest run --coverage --environment jsdom",
     "test:dev": "vitest --ui --coverage --environment jsdom",
-    "build": "rollup -c --configPlugin @rollup/plugin-typescript",
+    "build": "rollup -c --configPlugin @rollup/plugin-typescript && node createEntryFile.js",
     "prepublishOnly": "rm -rf dist coverage && npm test && npm run build"
+  },
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/resy.d.ts",
+        "node": "./index.mjs",
+        "default": "./dist/esm/resy.mjs"
+      },
+      "require": {
+        "types": "./dist/resy.d.ts",
+        "node": {
+          "production": "./dist/resy.cjs.prod.js",
+          "development": "./dist/resy.cjs.js",
+          "default": "./index.js"
+        },
+        "default": "./index.js"
+      }
+    }
   },
   "engines": {
     "node": "^12.20.0 || ^14.18.0 || >=16.0.0"

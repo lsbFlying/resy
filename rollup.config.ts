@@ -4,116 +4,244 @@ import replace from "@rollup/plugin-replace";
 import autoExternal from "rollup-plugin-auto-external";
 import terser from "@rollup/plugin-terser";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
-import { babel } from "@rollup/plugin-babel";
+import {
+  babel,
+  // getBabelOutputPlugin,
+} from "@rollup/plugin-babel";
 
 const input = "src/index.ts";
-/**
- * @description Because use-sync-external-store, this package only exports CJS modules.
- * So here we need to do a separate special identification of an external extension.
- * Otherwise, the special export processing in the code will be invalid.
- */
-const external = ["use-sync-external-store/shim"];
-const plugins = [
-  nodeResolve(),
-  babel({
-    exclude: "node_modules/**",
-    babelHelpers: "bundled",
-  }),
-  typescript({
-    compilerOptions: {
-      lib: ["dom", "dom.iterable", "esnext", "es5", "es6", "es7"],
-      target: "esnext",
-    },
-  }),
-  autoExternal(),
-  terser(),
-];
+const umdOutputName = "resy";
 
-const curDate = new Date();
-const curDay = curDate.getDate();
-// Header declaration of the packaged file
-const banner =
-  "/**\n" +
-  " * resy\n" +
-  " * An easy-to-use react data state manager\n" +
-  " * created by liushanbao <1262300490@qq.com>\n" +
-  ` * (c) 2020-05-05-${curDate.getFullYear()}-${curDate.getMonth() + 1}-${curDay < 10 ? `0${curDay}` : curDay}\n` +
-  " * Released under the MIT License.\n" +
-  " */";
+function createModuleBuildConfig(
+  format: "cjs" | "es" | "umd" | "system",
+  opts?: {
+    esFileSuffix?: "m";
+    isTerser?: boolean;
+  },
+) {
+  const { esFileSuffix, isTerser } = opts ?? {};
 
-export default [
-  {
-    input: "src/platforms/dom.ts",
-    external: ["react-dom"],
-    output: [
-      {
-        format: "es",
-        dir: "dist",
-        entryFileNames: "platform.js",
+  const umdNameOpts = format === "umd"
+    ? { name: umdOutputName }
+    : {};
+  const fileOpts = {
+    umd: "/umd",
+    system: "/system",
+    es: "/esm",
+    /**
+     * @description Although modern browsers and the latest version of Node.js support ESM,
+     * the CJS module can be used seamlessly in most JavaScript environments,
+     * including older versions of Node.js and some tool chains.
+     * So the CJS module is exported by default.
+     */
+    cjs: "",
+  };
+
+  // umd needs to make some adjustments to the global transformation
+  const platforms = format === "umd"
+    ? "platform"
+    : "./platform";
+  const umdOutputGlobalOpts = format === "umd"
+    ? {
+      globals: {
+        react: "React",
+        "platform": "ReactPlatformExports",
+        "use-sync-external-store/shim": "useSyncExternalStoreExports",
       },
-      {
-        format: "cjs",
-        dir: "dist",
-        entryFileNames: "platform.cjs.js",
-      },
-    ],
-  },
-  {
-    input: "src/platforms/native.ts",
-    external: ["react-native"],
-    output: [
-      {
-        format: "es",
-        dir: "dist",
-        entryFileNames: "platform.native.js",
-      },
-      {
-        format: "cjs",
-        dir: "dist",
-        entryFileNames: "platform.cjs.native.js",
-      },
-    ],
-  },
-  // CJS
-  {
+    }
+    : {};
+
+  const babelPlugins = format === "umd" || format === "system"
+    ? []
+    : [
+      babel({
+        exclude: "node_modules/**",
+        // babelHelpers: "runtime",
+        babelHelpers: "bundled",
+      }),
+      /**
+       * @description "getBabelOutputPlugin" plugin and "runtime" settings are combined
+       * with "@ babel/plugin-transform-runtime", "@ babel/runtime-corejs3" and "@ babel/runtime"
+       * to make the code compatible. However, there is no overall polyfill for the current library.
+       * Instead, it is left to the developer to handle the overall system involved in the construction to do polyfill.
+       */
+      // getBabelOutputPlugin({
+      //   configFile: "./babel.config.js",
+      // }),
+    ];
+
+  const terserOpts = isTerser ? [terser()] : [];
+
+  const suffixOpts = {
+    umd: "",
+    system: "",
+    es: "",
+    cjs: "cjs.",
+  };
+
+  return {
     input,
     output: {
-      file: "dist/resy.cjs.js",
-      format: "cjs",
-      exports: "auto",
+      file: `dist${fileOpts[format]}/resy.${suffixOpts[format]}${isTerser ? "prod." : ""}${esFileSuffix ?? ""}js`,
+      format,
+      ...umdNameOpts,
+      ...umdOutputGlobalOpts,
     },
-    external: [...external, "./platform.cjs"],
+    /**
+     * @description Because use-sync-external-store, this package only exports CJS modules.
+     * So here we need to do a separate special identification of an external extension.
+     * Otherwise, the special export processing in the code will be invalid.
+     */
+    external: [
+      "use-sync-external-store/shim",
+      platforms,
+      // /@babel\/runtime/,
+    ],
     plugins: [
-      ...plugins,
+      ...babelPlugins,
+      nodeResolve(),
+      typescript({
+        compilerOptions: {
+          lib: ["dom", "dom.iterable", "esnext", "es5", "es6", "es7"],
+          target: "esnext",
+        },
+      }),
+      autoExternal(),
       replace({
-        "react-platform": "./platform.cjs",
+        "react-platform": platforms,
         preventAssignment: true,
       }),
+      ...terserOpts,
     ]
-  },
-  // ESM
-  {
-    input,
-    output: {
-      file: "dist/resy.esm.js",
-      format: "es",
+  };
+}
+
+function createPlatformsBuildConfig() {
+  return [
+    {
+      input: "src/platforms/dom.ts",
+      external: ["react-dom"],
+      output: [
+        {
+          format: "cjs",
+          dir: "dist",
+          entryFileNames: "platform.js",
+        },
+        {
+          format: "es",
+          dir: "dist/esm",
+          entryFileNames: "platform.js",
+        },
+        {
+          format: "es",
+          dir: "dist/esm",
+          entryFileNames: "platform.mjs",
+        },
+        {
+          format: "umd",
+          dir: "dist/umd",
+          name: umdOutputName,
+          entryFileNames: "platform.js",
+          globals: {
+            "react-dom": "reactDom",
+          },
+        },
+        {
+          format: "system",
+          dir: "dist/system",
+          entryFileNames: "platform.js",
+        },
+      ],
     },
-    external: [...external, "./platform"],
-    plugins: [
-      ...plugins,
-      replace({
-        "react-platform": "./platform",
-        preventAssignment: true,
-      }),
-    ],
-  },
-  {
+    {
+      input: "src/platforms/native.ts",
+      external: ["react-native"],
+      output: [
+        {
+          format: "cjs",
+          dir: "dist",
+          entryFileNames: "platform.native.js",
+        },
+        {
+          format: "es",
+          dir: "dist/esm",
+          entryFileNames: "platform.native.js",
+        },
+        {
+          format: "es",
+          dir: "dist/esm",
+          entryFileNames: "platform.native.mjs",
+        },
+        {
+          format: "umd",
+          dir: "dist/umd",
+          name: umdOutputName,
+          entryFileNames: "platform.native.js",
+          globals: {
+            "react-native": "reactNative",
+          },
+        },
+        {
+          format: "system",
+          dir: "dist/system",
+          entryFileNames: "platform.native.js",
+        },
+      ],
+    },
+  ];
+}
+
+function createTsDeclareFileBuildConfig() {
+  const curDate = new Date();
+  const curDay = curDate.getDate();
+  // Header declaration of the packaged file
+  const banner =
+    "/**\n" +
+    " * resy\n" +
+    " * An easy-to-use React data state manager\n" +
+    " * created by liushanbao <1262300490@qq.com>\n" +
+    ` * (c) 2020-05-05-${curDate.getFullYear()}-${curDate.getMonth() + 1}-${curDay < 10 ? `0${curDay}` : curDay}\n` +
+    " * Released under the MIT License.\n" +
+    " */";
+
+  const modulesIndex = ["esm", "umd", "system"];
+  const miDts = modulesIndex.map(item => ({
     input,
     output: {
-      file: "dist/resy.d.ts",
+      file: `dist/${item}/index.d.ts`,
       format: "es",
       banner,
     },
-    plugins: [dts()],
-  },
+    plugins: [
+      dts(),
+    ],
+  }));
+
+  const modules = ["cjs", "esm", "umd", "system"];
+
+  return modules.map(item => ({
+    input,
+    output: {
+      file: `dist${item === "cjs" ? "" : `/${item}`}/resy.d.ts`,
+      format: "es",
+      banner,
+    },
+    plugins: [
+      dts(),
+    ],
+  })).concat(miDts);
+}
+
+export default [
+  ...createPlatformsBuildConfig(),
+  createModuleBuildConfig("cjs"),
+  createModuleBuildConfig("cjs", { isTerser: true }),
+  createModuleBuildConfig("es"),
+  createModuleBuildConfig("es", { esFileSuffix: "m" }),
+  createModuleBuildConfig("es", { esFileSuffix: "m", isTerser: true }),
+  createModuleBuildConfig("umd"),
+  createModuleBuildConfig("umd", { isTerser: true }),
+  createModuleBuildConfig("system"),
+  createModuleBuildConfig("system", { isTerser: true }),
+  ...createTsDeclareFileBuildConfig(),
 ];

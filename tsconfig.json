@@ -5,10 +5,10 @@
     "lib": [
       "dom",
       "dom.iterable",
-      "esnext",
       "es5",
       "es6",
-      "es7"
+      "es7",
+      "esnext"
     ],
     "module": "esnext",
     "moduleResolution": "node",

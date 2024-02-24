@@ -2,7 +2,7 @@ import React from "react";
 import { test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { createStore, useStore } from "../../src";
-import { batchUpdateShimRun } from "../../src/store/static";
+import { batchUpdateShimRun } from "../../src/static";
 
 /** Function Test of "batchUpdateShimRun" */
 test("batchUpdateShimRun", async () => {

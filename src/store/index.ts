@@ -19,7 +19,7 @@ import { scheduler } from "../scheduler";
 import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__, __CLASS_INITIAL_STATE_RETRIEVE_KEY__,
 } from "../classConnect/static";
-import { batchUpdate, __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
+import { __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
 import { hasOwnProperty } from "../utils";
 import {
   stateErrorProcessing, optionsErrorProcessing, protoPointStoreErrorProcessing,
@@ -31,6 +31,7 @@ import {
 } from "./utils";
 import { mergeStateKeys, retrieveReducerState, deferRestoreProcessing, initialStateRetrieve } from "../restore";
 import { willUpdatingProcessing } from "../subscribe";
+import { batchUpdate } from "../static";
 
 /**
  * createStore

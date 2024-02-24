@@ -8,7 +8,7 @@ import type { ListenerType } from "../subscribe/types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../restore/types";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { initialStateRetrieve, deferRestoreProcessing } from "../restore";
-import { batchUpdate } from "./static";
+import { batchUpdate } from "../static";
 import { __CLASS_STATE_REF_SET_KEY__ } from "../classConnect/static";
 
 /**

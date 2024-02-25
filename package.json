@@ -1,6 +1,6 @@
 {
   "name": "resy",
-  "version": "11.0.0-alpha.1",
+  "version": "11.0.0-alpha.2",
   "description": "React State Easy",
   "repository": "https://github.com/lsbFlying/resy.git",
   "author": "liushanbao <1262300490@qq.com>",
@@ -39,6 +39,48 @@
           "default": "./index.js"
         },
         "default": "./index.js"
+      }
+    },
+    "./dist/esm": {
+      "import": {
+        "types": "./dist/esm/resy.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "module": {
+        "types": "./dist/esm/resy.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "default": {
+        "types": "./dist/esm/resy.d.ts",
+        "default": "./dist/esm/index.js"
+      }
+    },
+    "./dist/umd": {
+      "import": {
+        "types": "./dist/umd/resy.d.ts",
+        "default": "./dist/umd/index.js"
+      },
+      "module": {
+        "types": "./dist/umd/resy.d.ts",
+        "default": "./dist/umd/index.js"
+      },
+      "default": {
+        "types": "./dist/umd/resy.d.ts",
+        "default": "./dist/umd/index.js"
+      }
+    },
+    "./dist/system": {
+      "import": {
+        "types": "./dist/system/resy.d.ts",
+        "default": "./dist/system/index.js"
+      },
+      "module": {
+        "types": "./dist/system/resy.d.ts",
+        "default": "./dist/system/index.js"
+      },
+      "default": {
+        "types": "./dist/system/resy.d.ts",
+        "default": "./dist/system/index.js"
       }
     }
   },

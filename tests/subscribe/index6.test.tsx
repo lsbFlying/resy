@@ -4,7 +4,7 @@ import { render, fireEvent, waitFor } from "@testing-library/react";
 import { createStore, useStore } from "../../src";
 
 /** Use mode of subscribe */
-test("store.useSubscribe-basic-II", async () => {
+test("store.useSubscription-basic-II", async () => {
   const store = createStore({
     count: 0,
     text: "hello",
@@ -12,7 +12,7 @@ test("store.useSubscribe-basic-II", async () => {
 
   const App = () => {
     const { count, text } = useStore(store);
-    store.useSubscribe(({
+    store.useSubscription(({
       effectState,
       nextState,
       prevState,

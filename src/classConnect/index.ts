@@ -1,5 +1,5 @@
 import type { ConnectStoreType, ClassConnectStoreType } from "./types";
-import type { ValueOf } from "../types";
+import type { ValueOf, PrimitiveState } from "../types";
 import type { Store } from "../store/types";
 import { Component, PureComponent } from "react";
 import { getThisProxy, unmountProcessingCore } from "./utils";
@@ -9,7 +9,7 @@ import { __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_CONNECT_STORE_KEY__ } from "
  * @class ComponentWithStore
  * @classdesc The public base class can connect to the store
  */
-export class ComponentWithStore<P = {}, S = {}, SS = any> extends Component<P, S, SS> {
+export class ComponentWithStore<P = {}, S = {}, SS = any> extends Component<P, S, SS> implements ConnectStoreType {
   constructor(props: P) {
     super(props);
     return getThisProxy.bind(this as any)();
@@ -32,15 +32,16 @@ export class ComponentWithStore<P = {}, S = {}, SS = any> extends Component<P, S
   private [__CLASS_CONNECT_STORE_KEY__]: ValueOf<ClassConnectStoreType> | undefined;
   // @ts-ignore
   private [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
-}
 
-export interface ComponentWithStore extends ConnectStoreType {}
+  // mock
+  connectStore<S extends PrimitiveState>(store: S) { return store; }
+}
 
 /**
  * @class PureComponentWithStore
  * @classdesc The public base class can connect to the store
  */
-export class PureComponentWithStore<P = {}, S = {}, SS = any> extends PureComponent<P, S, SS> {
+export class PureComponentWithStore<P = {}, S = {}, SS = any> extends PureComponent<P, S, SS> implements ConnectStoreType {
   constructor(props: P) {
     super(props);
     return getThisProxy.bind(this as any)();
@@ -63,6 +64,7 @@ export class PureComponentWithStore<P = {}, S = {}, SS = any> extends PureCompon
   private [__CLASS_CONNECT_STORE_KEY__]: ValueOf<ClassConnectStoreType> | undefined;
   // @ts-ignore
   private [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
-}
 
-export interface PureComponentWithStore extends ConnectStoreType {}
+  // mock
+  connectStore<S extends PrimitiveState>(store: S) { return store; }
+}

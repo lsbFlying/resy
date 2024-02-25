@@ -20,7 +20,7 @@ export const willUpdatingProcessing = <S extends PrimitiveState>(
 };
 
 // Hook of subscribe
-export const useSubscribe = <S extends PrimitiveState>(store: S, listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
+export const useSubscription = <S extends PrimitiveState>(store: S, listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => store.subscribe(listener, stateKeys), []);
 };

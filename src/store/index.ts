@@ -288,7 +288,7 @@ export const createStore = <S extends PrimitiveState>(
    */
   const useStore = () => storeProxy;
 
-  const useSubscribe = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
+  const useSubscription = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => subscribe(listener, stateKeys), []);
   };
@@ -331,7 +331,7 @@ export const createStore = <S extends PrimitiveState>(
   };
 
   externalMap.set("useStore", useStore);
-  externalMap.set("useSubscribe", useSubscribe);
+  externalMap.set("useSubscription", useSubscription);
   externalMap.set(__USE_STORE_KEY__, storeProxy);
   /**
    * @description The reason why the three operation functions for class components

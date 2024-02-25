@@ -1,10 +1,10 @@
 import React from "react";
 import { expect, test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
-import { createStore, useStore, useSubscribe } from "../../src";
+import { createStore, useStore, useSubscription } from "../../src";
 
 /** Use mode of useSubscribe */
-test("useSubscribe-basic-I", async () => {
+test("useSubscription-basic-I", async () => {
   const store = createStore({
     count: 0,
     text: "hello",
@@ -12,7 +12,7 @@ test("useSubscribe-basic-I", async () => {
 
   const App = () => {
     const { count, text } = useStore(store);
-    useSubscribe(store, ({
+    useSubscription(store, ({
       effectState,
       nextState,
       prevState,

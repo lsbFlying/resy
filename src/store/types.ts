@@ -33,7 +33,7 @@ export type InitialStateForbiddenKeys =
   | "restore"
   | "setOptions"
   | "useStore"
-  | "useSubscribe"
+  | "useSubscription"
   | "store";
 
 /**
@@ -170,16 +170,16 @@ export type UseStore<S extends PrimitiveState> = Readonly<{
   useStore(): S & StoreCoreUtils<S> & SetOptions;
 }>;
 
-/** store.useSubscribe() */
-export type UseSubscribe<S extends PrimitiveState> = Readonly<{
-  useSubscribe(listener: ListenerType<S>, stateKeys?: (keyof S)[]): void;
+/** store.UseSubscription() */
+export type UseSubscription<S extends PrimitiveState> = Readonly<{
+  useSubscription(listener: ListenerType<S>, stateKeys?: (keyof S)[]): void;
 }>;
 
 /** Some of the core tool method types of store */
 export type StoreCoreUtils<S extends PrimitiveState> = SetState<S> & SyncUpdate<S> & Restore<S> & Subscribe<S>;
 
 /** Tool method type of store */
-export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOptions & UseStore<S> & UseSubscribe<S>;
+export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOptions & UseStore<S> & UseSubscription<S>;
 
 /** The type of store returned by createStore */
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;

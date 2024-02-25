@@ -5,7 +5,7 @@ export type {
   StoreCoreUtils, StoreUtils, Store, InitialStore, StateWithThisType, InitialState,
 } from "./store/types";
 
-export { useSubscribe } from "./subscribe";
+export { useSubscription } from "./subscribe";
 export * from "./subscribe/types";
 
 export { ComponentWithStore, PureComponentWithStore } from "./classConnect";

@@ -55,9 +55,7 @@ class AppClass extends ComponentWithStore {
     return (
       <>
         {count}
-        <button onClick={() => {
-          store.count++;
-        }}>increase</button>
+        <button onClick={() => { store.count++; }}>increase</button>
       </>
     );
   }

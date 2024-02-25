@@ -8,15 +8,11 @@ const entryEsIndexFilePath = path.resolve(__dirname, "./dist/esm/index.js");
 const esContent = `"use strict"
 
 if (process.env.NODE_ENV === "production") {
-  module.exports = require("./resy.prod.mjs");
+  module.exports = require("./resy.prod.js");
 } else {
-  module.exports = require("./resy.mjs");
+  module.exports = require("./resy.js");
 }`;
 fs.writeFileSync(entryEsIndexFilePath, esContent);
-
-const entryEsmIndexFilePath = path.resolve(__dirname, "./dist/esm/index.mjs");
-const esmContent = "export * from \"./index.js\";";
-fs.writeFileSync(entryEsmIndexFilePath, esmContent);
 /** ESM end */
 
 /** UMD/System start */

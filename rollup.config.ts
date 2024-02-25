@@ -14,13 +14,8 @@ const umdOutputName = "resy";
 
 function createModuleBuildConfig(
   format: "cjs" | "es" | "umd" | "system",
-  opts?: {
-    esFileSuffix?: "m";
-    isTerser?: boolean;
-  },
+  isTerser?: boolean,
 ) {
-  const { esFileSuffix, isTerser } = opts ?? {};
-
   const umdNameOpts = format === "umd"
     ? { name: umdOutputName }
     : {};
@@ -82,7 +77,7 @@ function createModuleBuildConfig(
   return {
     input,
     output: {
-      file: `dist${fileOpts[format]}/resy.${suffixOpts[format]}${isTerser ? "prod." : ""}${esFileSuffix ?? ""}js`,
+      file: `dist${fileOpts[format]}/resy.${suffixOpts[format]}${isTerser ? "prod." : ""}js`,
       format,
       ...umdNameOpts,
       ...umdOutputGlobalOpts,
@@ -102,8 +97,8 @@ function createModuleBuildConfig(
       nodeResolve(),
       typescript({
         compilerOptions: {
-          lib: ["dom", "dom.iterable", "esnext", "es5", "es6", "es7"],
-          target: "esnext",
+          lib: ["DOM", "DOM.Iterable", "ES5", "ES6", "ES7", "ESNext"],
+          target: "ESNext",
         },
       }),
       autoExternal(),
@@ -125,17 +120,12 @@ function createPlatformsBuildConfig() {
         {
           format: "cjs",
           dir: "dist",
-          entryFileNames: "platform.js",
+          entryFileNames: "platform.cjs.js",
         },
         {
           format: "es",
           dir: "dist/esm",
           entryFileNames: "platform.js",
-        },
-        {
-          format: "es",
-          dir: "dist/esm",
-          entryFileNames: "platform.mjs",
         },
         {
           format: "umd",
@@ -160,17 +150,12 @@ function createPlatformsBuildConfig() {
         {
           format: "cjs",
           dir: "dist",
-          entryFileNames: "platform.native.js",
+          entryFileNames: "platform.cjs.native.js",
         },
         {
           format: "es",
           dir: "dist/esm",
           entryFileNames: "platform.native.js",
-        },
-        {
-          format: "es",
-          dir: "dist/esm",
-          entryFileNames: "platform.native.mjs",
         },
         {
           format: "umd",
@@ -235,13 +220,12 @@ function createTsDeclareFileBuildConfig() {
 export default [
   ...createPlatformsBuildConfig(),
   createModuleBuildConfig("cjs"),
-  createModuleBuildConfig("cjs", { isTerser: true }),
+  createModuleBuildConfig("cjs", true),
   createModuleBuildConfig("es"),
-  createModuleBuildConfig("es", { esFileSuffix: "m" }),
-  createModuleBuildConfig("es", { esFileSuffix: "m", isTerser: true }),
+  createModuleBuildConfig("es", true),
   createModuleBuildConfig("umd"),
-  createModuleBuildConfig("umd", { isTerser: true }),
+  createModuleBuildConfig("umd", true),
   createModuleBuildConfig("system"),
-  createModuleBuildConfig("system", { isTerser: true }),
+  createModuleBuildConfig("system", true),
   ...createTsDeclareFileBuildConfig(),
 ];

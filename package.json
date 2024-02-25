@@ -24,8 +24,12 @@
     ".": {
       "import": {
         "types": "./dist/resy.d.ts",
-        "node": "./index.mjs",
-        "default": "./dist/esm/resy.mjs"
+        "node": {
+          "production": "./dist/esm/resy.prod.js",
+          "development": "./dist/esm/resy.js",
+          "default": "./dist/esm/index.js"
+        },
+        "default": "./dist/esm/index.js"
       },
       "require": {
         "types": "./dist/resy.d.ts",

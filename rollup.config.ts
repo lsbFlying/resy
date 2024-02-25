@@ -32,15 +32,12 @@ function createModuleBuildConfig(
     cjs: "",
   };
 
-  // umd needs to make some adjustments to the global transformation
-  const platforms = format === "umd"
-    ? "platform"
-    : "./platform";
+  const platforms = "./platform";
   const umdOutputGlobalOpts = format === "umd"
     ? {
       globals: {
         react: "React",
-        "platform": "ReactPlatformExports",
+        "./platform": "ReactPlatformExports",
         "use-sync-external-store/shim": "useSyncExternalStoreExports",
       },
     }

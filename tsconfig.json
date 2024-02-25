@@ -1,16 +1,16 @@
 {
   "compilerOptions": {
     "jsx": "react",
-    "target": "esnext",
+    "target": "ESNext",
     "lib": [
-      "dom",
-      "dom.iterable",
-      "es5",
-      "es6",
-      "es7",
-      "esnext"
+      "DOM",
+      "DOM.Iterable",
+      "ES5",
+      "ES6",
+      "ES7",
+      "ESNext"
     ],
-    "module": "esnext",
+    "module": "ESNext",
     "moduleResolution": "node",
     "outDir": "./dist",
     "downlevelIteration": true,

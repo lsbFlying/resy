@@ -86,7 +86,7 @@ export const createStore = <S extends PrimitiveState>(
   // The core map of store
   const storeMap: StoreMap<S> = new Map();
 
-  // The storage stack of the this proxy object for the class component
+  // The storage stack of this proxy object for the class component
   const classThisPointerSet = new Set<ClassThisPointerType<S>>();
 
   const setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
@@ -293,7 +293,7 @@ export const createStore = <S extends PrimitiveState>(
     useEffect(() => subscribe(listener, stateKeys), []);
   };
 
-  // Connecting the this pointer of the class component (therefore, this cannot be an arrow function)
+  // Connecting this pointer of the class component (therefore, this cannot be an arrow function)
   function classConnectStore(this: ClassThisPointerType<S>) {
     classThisPointerSet.add(this);
     // Data agents for use by class

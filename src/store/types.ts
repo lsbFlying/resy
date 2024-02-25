@@ -78,7 +78,7 @@ export type State<S extends PrimitiveState> = Partial<S> | S | null;
 
 /**
  * This object type of class
- * @description The this here refers to the subclass object that inherits ComponentWithStore or PureComponentWithStore.
+ * @description This here refers to the subclass object that inherits ComponentWithStore or PureComponentWithStore.
  */
 export type ClassThisPointerType<S extends PrimitiveState> = PrimitiveState
   & Readonly<{ setState(state: State<S>): void }>
@@ -189,7 +189,7 @@ export type ConciseStore<S extends PrimitiveState> = S & StoreCoreUtils<S> & {
   readonly store: S & StoreCoreUtils<S>;
 };
 
-/** The thisType type used to initialize store when initialState is a function */
+/** thisType type used to initialize store when initialState is a function */
 export type InitialStore<S extends PrimitiveState> = {
   [K in keyof S]: K extends InitialStateForbiddenKeys ? never : S[K];
 } & StoreCoreUtils<S> & SetOptions;

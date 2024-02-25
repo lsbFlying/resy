@@ -57,12 +57,6 @@ class AppClass extends ComponentWithStore {
         {count}
         <button onClick={() => {
           store.count++;
-          /**
-           * @description You can also use `this` to access the store,
-           * which in essence is equivalent to operating directly through the store.
-           * Generally, we would not perform such redundant operations. 
-           */
-          // this.store.count++;
         }}>increase</button>
       </>
     );

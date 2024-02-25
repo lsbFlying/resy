@@ -125,7 +125,7 @@ export const stateCallbackErrorProcessing = <S extends PrimitiveState>(callback?
 
 /**
  * @description It's not recommended to set the store created by createStore as the prototype of some objects,
- * as the store internally hijacks the binding of the this context for function properties
+ * as the store internally hijacks the binding of this context for function properties
  * (which does not affect arrow functions).
  * This means that for the inherited properties of those set objects,
  * the direction of this will be changed to the hijacked this object specified within the store.
@@ -138,7 +138,7 @@ export const protoPointStoreErrorProcessing = (receiver: any, store: any) => {
   if (__DEV__ && receiver !== store) {
     console.error(
       "Warning: It's not recommended to set the store created by createStore as the prototype of some objects" +
-      " as the store internally hijacks the binding of the this context for function properties!"
+      " as the store internally hijacks the binding of this context for function properties!"
     );
   }
 };

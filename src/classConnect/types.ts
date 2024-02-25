@@ -23,7 +23,7 @@ export type ClassConnectStoreType = {
   [__CLASS_CONNECT_STORE_KEY__]<S extends PrimitiveState>(): ClassStoreType<S>;
 };
 
-// The types of different store mounted on the this pointer of the class component
+// The types of different store mounted on this pointer of the class component
 export type ClassThisPointerStoresType<S extends PrimitiveState = any> = {
   [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<S>>;
 };

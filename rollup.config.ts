@@ -11,9 +11,72 @@ import {
 
 const input = "src/index.ts";
 const umdOutputName = "resy";
+const modules = ["cjs", "esm", "umd", "system"];
+
+function createPlatformsBuildConfig() {
+  return ["dom", "native"].map(item => ({
+    input: `src/platforms/${item}.ts`,
+    external: [`react-${item}`],
+    output: modules.map(itemM => {
+      const umdOpts = itemM === "umd"
+        ? {
+          name: `${umdOutputName}-${item}`,
+          globals: {
+            [`react-${item}`]: item === "dom" ? "ReactDom" : "ReactNative",
+          },
+        }
+        : {};
+      return {
+        format: itemM,
+        dir: itemM === "cjs" ? "dist" : `dist/${itemM}`,
+        entryFileNames: `platform${item === "dom" ? "" : ".native"}.js`,
+        ...umdOpts,
+      };
+    }),
+  }));
+}
+
+function createTsDeclareFileBuildConfig() {
+  const curDate = new Date();
+  const curDay = curDate.getDate();
+  // Header declaration of the packaged file
+  const banner =
+    "/**\n" +
+    " * resy\n" +
+    " * An easy-to-use React data state manager\n" +
+    " * created by liushanbao <1262300490@qq.com>\n" +
+    ` * (c) 2020-05-05-${curDate.getFullYear()}-${curDate.getMonth() + 1}-${curDay < 10 ? `0${curDay}` : curDay}\n` +
+    " * Released under the MIT License.\n" +
+    " */";
+
+  const modulesIndex = ["esm", "umd", "system"];
+  const miDts = modulesIndex.map(item => ({
+    input,
+    output: {
+      file: `dist/${item}/index.d.ts`,
+      format: "esm",
+      banner,
+    },
+    plugins: [
+      dts(),
+    ],
+  }));
+
+  return modules.map(item => ({
+    input,
+    output: {
+      file: `dist${item === "cjs" ? "" : `/${item}`}/resy.d.ts`,
+      format: "esm",
+      banner,
+    },
+    plugins: [
+      dts(),
+    ],
+  })).concat(miDts);
+}
 
 function createModuleBuildConfig(
-  format: "cjs" | "es" | "umd" | "system",
+  format: "cjs" | "esm" | "umd" | "system",
   isTerser?: boolean,
 ) {
   const umdNameOpts = format === "umd"
@@ -22,7 +85,7 @@ function createModuleBuildConfig(
   const fileOpts = {
     umd: "/umd",
     system: "/system",
-    es: "/esm",
+    esm: "/esm",
     /**
      * @description Although modern browsers and the latest version of Node.js support ESM,
      * the CJS module can be used seamlessly in most JavaScript environments,
@@ -67,7 +130,7 @@ function createModuleBuildConfig(
   const suffixOpts = {
     umd: "",
     system: "",
-    es: "",
+    esm: "",
     cjs: "cjs.",
   };
 
@@ -108,121 +171,10 @@ function createModuleBuildConfig(
   };
 }
 
-function createPlatformsBuildConfig() {
-  return [
-    {
-      input: "src/platforms/dom.ts",
-      external: ["react-dom"],
-      output: [
-        {
-          format: "cjs",
-          dir: "dist",
-          entryFileNames: "platform.cjs.js",
-        },
-        {
-          format: "es",
-          dir: "dist/esm",
-          entryFileNames: "platform.js",
-        },
-        {
-          format: "umd",
-          dir: "dist/umd",
-          name: umdOutputName,
-          entryFileNames: "platform.js",
-          globals: {
-            "react-dom": "reactDom",
-          },
-        },
-        {
-          format: "system",
-          dir: "dist/system",
-          entryFileNames: "platform.js",
-        },
-      ],
-    },
-    {
-      input: "src/platforms/native.ts",
-      external: ["react-native"],
-      output: [
-        {
-          format: "cjs",
-          dir: "dist",
-          entryFileNames: "platform.cjs.native.js",
-        },
-        {
-          format: "es",
-          dir: "dist/esm",
-          entryFileNames: "platform.native.js",
-        },
-        {
-          format: "umd",
-          dir: "dist/umd",
-          name: umdOutputName,
-          entryFileNames: "platform.native.js",
-          globals: {
-            "react-native": "reactNative",
-          },
-        },
-        {
-          format: "system",
-          dir: "dist/system",
-          entryFileNames: "platform.native.js",
-        },
-      ],
-    },
-  ];
-}
-
-function createTsDeclareFileBuildConfig() {
-  const curDate = new Date();
-  const curDay = curDate.getDate();
-  // Header declaration of the packaged file
-  const banner =
-    "/**\n" +
-    " * resy\n" +
-    " * An easy-to-use React data state manager\n" +
-    " * created by liushanbao <1262300490@qq.com>\n" +
-    ` * (c) 2020-05-05-${curDate.getFullYear()}-${curDate.getMonth() + 1}-${curDay < 10 ? `0${curDay}` : curDay}\n` +
-    " * Released under the MIT License.\n" +
-    " */";
-
-  const modulesIndex = ["esm", "umd", "system"];
-  const miDts = modulesIndex.map(item => ({
-    input,
-    output: {
-      file: `dist/${item}/index.d.ts`,
-      format: "es",
-      banner,
-    },
-    plugins: [
-      dts(),
-    ],
-  }));
-
-  const modules = ["cjs", "esm", "umd", "system"];
-
-  return modules.map(item => ({
-    input,
-    output: {
-      file: `dist${item === "cjs" ? "" : `/${item}`}/resy.d.ts`,
-      format: "es",
-      banner,
-    },
-    plugins: [
-      dts(),
-    ],
-  })).concat(miDts);
-}
-
 export default [
   ...createPlatformsBuildConfig(),
-  createModuleBuildConfig("cjs"),
-  createModuleBuildConfig("cjs", true),
-  createModuleBuildConfig("es"),
-  createModuleBuildConfig("es", true),
-  createModuleBuildConfig("umd"),
-  createModuleBuildConfig("umd", true),
-  createModuleBuildConfig("system"),
-  createModuleBuildConfig("system", true),
   ...createTsDeclareFileBuildConfig(),
+  ...[...modules, ...modules].map((item, index) => (
+    createModuleBuildConfig(item as any, index > 3)
+  )),
 ];

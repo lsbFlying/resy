@@ -1,7 +1,7 @@
 import type { MapType, PrimitiveState, Callback, ValueOf } from "../types";
 import type { SchedulerType } from "./types";
 import type { StateCallbackItem, State, StateCallback } from "../store/types";
-import { stateCallbackErrorProcessing } from "../store/errors";
+import { stateCallbackErrorProcessing } from "../errors";
 import { mapToObject } from "../store/utils";
 
 /**

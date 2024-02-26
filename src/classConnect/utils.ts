@@ -1,7 +1,7 @@
 import type { PrimitiveState } from "../types";
 import type { ClassStoreType } from "./types";
 import type { Store, ClassThisPointerType } from "../store/types";
-import { storeErrorProcessing } from "../store/errors";
+import { storeErrorProcessing } from "../errors";
 import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_STATE_REF_SET_KEY__,
   __CLASS_UNMOUNT_PROCESSING_KEY__, __CLASS_INITIAL_STATE_RETRIEVE_KEY__,

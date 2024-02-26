@@ -24,7 +24,7 @@ import { hasOwnProperty } from "../utils";
 import {
   stateErrorProcessing, optionsErrorProcessing, protoPointStoreErrorProcessing,
   subscribeErrorProcessing, storeErrorProcessing, setOptionsErrorProcessing,
-} from "./errors";
+} from "../errors";
 import {
   pushTask, connectHookUse, finallyBatchProcessing, connectStore,
   mapToObject, objectToMap, classUpdater, connectClassUse,

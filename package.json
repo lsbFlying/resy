@@ -83,6 +83,11 @@
     "build": "rollup -c --configPlugin @rollup/plugin-typescript && node createEntryFile.js",
     "prepublishOnly": "rm -rf dist coverage && npm test && npm run build"
   },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "tag": "latest",
+    "access": "public"
+  },
   "dependencies": {
     "use-sync-external-store": "^1.2.0"
   },

@@ -209,14 +209,8 @@ function App() {
     <>
       <p>{userName}</p>
       <p>{themeStyle}</p>
-      <button onClick={() => {
-        userStore.userName = "LF";
-      }}>nameChange</button>
-      <button onClick={() => {
-        themeStore.setState({
-          themeStyle: "light",
-        });
-      }}>themeChange</button>
+      <button onClick={() => { userStore.userName = "LF" }}>nameChange</button>
+      <button onClick={() => { themeStore.setState({ themeStyle: "light" }) }}>themeChange</button>
     </>
   );
 }
@@ -312,10 +306,7 @@ class AppClass extends ComponentWithStore {
     return (
       <>
         {count}
-        <button onClick={() => {
-          this.store.count++;
-        }}>+
-        </button>
+        <button onClick={() => { this.store.count++; }}>button +</button>
       </>
     );
   }
@@ -329,10 +320,7 @@ class PureAppClass extends PureComponentWithStore {
     return (
       <>
         {count}
-        <button onClick={() => {
-          this.store.count++;
-        }}>+
-        </button>
+        <button onClick={() => { this.store.count++; }}>button +</button>
       </>
     );
   }
@@ -361,16 +349,10 @@ class AppClass extends ComponentWithStore {
         <>
           <span>{userName}</span>
           <span>{theme}</span>
-          <button onClick={() => {
-            this.userStore.userName = "LD";
-          }}>
+          <button onClick={() => { this.userStore.userName = "LD" }}>
             nameChange
           </button>
-          <button onClick={() => {
-            this.themeStore.setState({
-              theme: "light",
-            });
-          }}>
+          <button onClick={() => { this.themeStore.setState({ theme: "light" }) }}>
             themeChange
           </button>
         </>
@@ -602,6 +584,13 @@ function App() {
     //     inputValue: event.target.value,
     //   };
     // });
+    // @example C
+    // You can also use the callback function
+    // store.syncUpdate({
+    //   inputValue: event.target.value,
+    // }, nextState => {
+    //   console.log(nextState);
+    // });
   }
   
   return (
@@ -684,15 +673,9 @@ class AppClass extends ComponentWithStore {
         <Text/>
         <Count/>
         <div>{name}</div>
-        <button onClick={() => {
-          store.name = "app";
-        }}>btn-name
-        </button>
+        <button onClick={() => { store.name = "app" }}>btn-name</button>
         <button onClick={increase}>btn+</button>
-        <button onClick={() => {
-          store.count--
-        }}>btn-
-        </button>
+        <button onClick={() => { store.count-- }}>btn-</button>
       </>
     );
   }
@@ -951,10 +934,18 @@ function App() {
   return (
     <>
       <div>{count}-{text}</div>
-      <div onClick={() => {
-        // data recover initial
-        store.restore();
-      }}>reset-btn</div>
+      <div
+        onClick={() => {
+          // data recover initial
+          store.restore();
+          // You can also add callback functions in the restore function
+          // store.restore(nextState => {
+          //   console.log(nextState);
+          // });
+        }}
+      >
+        reset-btn
+      </div>
     </>
   );
 }
@@ -975,11 +966,15 @@ function App() {
   return (
     <>
       <div>now:{now}</div>
-      <div onClick={() => {
-        // time data now recover and also changed initial,
-        // because of initialState is function return.
-        store.restore();
-      }}>reset-btn</div>
+      <div
+        onClick={() => {
+          // time data now recover and also changed initial,
+          // because of initialState is function return.
+          store.restore();
+        }}
+      >
+        reset-btn
+      </div>
     </>
   );
 }
@@ -992,11 +987,15 @@ function App() {
 ```tsx
 function App() {
   return (
-    <button onClick={() => {
-      // Use less scenes, use it with caution
-      // You can change the unmountRestore parameter setting of createStore
-      store.setOptions({ unmountRestore: false });
-    }}>btn</button>
+    <button
+      onClick={() => {
+        // Use less scenes, use it with caution
+        // You can change the unmountRestore parameter setting of createStore
+        store.setOptions({ unmountRestore: false });
+      }}
+    >
+      btn
+    </button>
   );
 }
 ```

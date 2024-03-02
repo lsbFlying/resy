@@ -49,11 +49,10 @@ function createTsDeclareFileBuildConfig() {
     " * Released under the MIT License.\n" +
     " */";
 
-  const modulesIndex = ["esm", "umd", "system"];
-  const miDts = modulesIndex.map(item => ({
+  return modules.map(item => ({
     input,
     output: {
-      file: `dist/${item}/index.d.ts`,
+      file: `dist${item === "cjs" ? "/resy.d.ts" : `/${item}/index.d.ts`}`,
       format: "esm",
       banner,
     },
@@ -61,18 +60,6 @@ function createTsDeclareFileBuildConfig() {
       dts(),
     ],
   }));
-
-  return modules.map(item => ({
-    input,
-    output: {
-      file: `dist${item === "cjs" ? "" : `/${item}`}/resy.d.ts`,
-      format: "esm",
-      banner,
-    },
-    plugins: [
-      dts(),
-    ],
-  })).concat(miDts);
 }
 
 function createModuleBuildConfig(

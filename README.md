@@ -34,9 +34,7 @@ const store = createStore({ count: 0 });
 
 // for hook component
 function App() {
-  const { count } = useStore(store);
-  // or
-  // const { count, text } = store.useStore();
+  const { count } = useStore(store);  // or store.useStore();
   return (
     <>
       {count}

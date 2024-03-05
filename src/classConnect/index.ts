@@ -33,7 +33,7 @@ export class ComponentWithStore<P = {}, S = {}, SS = any> extends Component<P, S
   // @ts-ignore
   private [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
 
-  // mock
+  // template code
   connectStore<S extends PrimitiveState>(store: S) { return store; }
 }
 
@@ -65,6 +65,6 @@ export class PureComponentWithStore<P = {}, S = {}, SS = any> extends PureCompon
   // @ts-ignore
   private [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
 
-  // mock
+  // template code
   connectStore<S extends PrimitiveState>(store: S) { return store; }
 }

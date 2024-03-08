@@ -5,11 +5,11 @@
  * @date 2022-05-05
  * @name createStore
  */
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import type {
   ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions,
-  Store, StateCallback, StoreMapValueType, State, ConciseStore,
-  InitialState, StateRefCounterMapType, StateWithThisType, ClassThisPointerType,
+  Store, StateCallback, StoreMapValueType, State, InitialState,
+  StateRefCounterMapType, StateWithThisType, ClassThisPointerType,
 } from "./types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../restore/types";
 import type { Unsubscribe, ListenerType } from "../subscribe/types";
@@ -17,19 +17,23 @@ import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import type { SchedulerType } from "../scheduler/types";
 import { scheduler } from "../scheduler";
 import {
-  __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__, __CLASS_INITIAL_STATE_RETRIEVE_KEY__,
+  __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__,
+  __CLASS_INITIAL_STATE_RETRIEVE_KEY__,
 } from "../classConnect/static";
 import { __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
 import { hasOwnProperty } from "../utils";
 import {
-  stateErrorProcessing, optionsErrorProcessing, protoPointStoreErrorProcessing,
-  subscribeErrorProcessing, storeErrorProcessing, setOptionsErrorProcessing,
+  stateErrorProcessing, optionsErrorProcessing, subscribeErrorProcessing,
+  protoPointStoreErrorProcessing, setOptionsErrorProcessing,
 } from "../errors";
 import {
   pushTask, connectHookUse, finallyBatchProcessing, connectStore,
   mapToObject, objectToMap, classUpdater, connectClassUse,
 } from "./utils";
-import { mergeStateKeys, retrieveReducerState, deferRestoreProcessing, initialStateRetrieve } from "../restore";
+import {
+  mergeStateKeys, retrieveReducerState,
+  deferRestoreProcessing, initialStateRetrieve,
+} from "../restore";
 import { willUpdatingProcessing } from "../subscribe";
 import { batchUpdate } from "../static";
 
@@ -346,37 +350,3 @@ export const createStore = <S extends PrimitiveState>(
 
   return store;
 };
-
-/**
- * useStore api
- * @description useStore(store) === store.useStore()
- * @param store
- * @return store
- */
-export const useStore = <S extends PrimitiveState>(store: S): S => {
-  storeErrorProcessing(store, "useStore");
-  return store[__USE_STORE_KEY__ as keyof S];
-};
-
-/**
- * A concise version of useState
- * @example:
- * const { count, text, setState } = useConciseState({ count: 0, text: "hello" });
- * equivalent to:
- * const [count, setCount] = useState(0);
- * const [text, setText] = useState("hello");
- * 🌟 useConciseState is relatively simple and clear to use compared to useState when dealing with multiple data states.
- * 🌟 Furthermore, within useConciseState, the store attribute can be parsed out, and through the store,
- * the latest data values of various items can be accessed,
- * compensating for the shortfall in useState where the latest values of attribute data cannot be retrieved.
- * @param initialState
- * @return ConciseStore<S>
- */
-export const useConciseState = <S extends PrimitiveState>(
-  initialState?: InitialState<S>,
-): ConciseStore<S> =>
-    useMemo(() => createStore<S>(initialState, {
-      __useConciseStateMode__: true,
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }), [])[__USE_STORE_KEY__ as keyof S]
-;

@@ -304,13 +304,14 @@ class AppClass extends ComponentWithStore {
     return (
       <>
         {count}
-        <button onClick={() => { this.store.count++; }}>button +</button>
+        <button onClick={() => { store.count++; }}>button +</button>
       </>
     );
   }
 }
 
 class PureAppClass extends PureComponentWithStore {
+
   store = this.connectStore(store);
 
   render() {
@@ -318,7 +319,7 @@ class PureAppClass extends PureComponentWithStore {
     return (
       <>
         {count}
-        <button onClick={() => { this.store.count++; }}>button +</button>
+        <button onClick={() => { store.count++; }}>button +</button>
       </>
     );
   }
@@ -639,6 +640,7 @@ import { useStore, ComponentWithStore } from "resy";
 
 // Updates to count data will not cause Text components to re-render
 class TextClass extends ComponentWithStore {
+
   store = this.connectStore(store);
   
   render() {
@@ -651,6 +653,7 @@ class TextClass extends ComponentWithStore {
 
 // Updates to text data will not cause Count components to re-render
 class CountClass extends ComponentWithStore {
+
   store = this.connectStore(store);
 
   render() {
@@ -662,6 +665,7 @@ class CountClass extends ComponentWithStore {
 }
 
 class AppClass extends ComponentWithStore {
+
   store = this.connectStore(store);
 
   render() {
@@ -867,11 +871,6 @@ function App() {
   useSubscription(store, ({
     effectState, prevState, nextState,
   }) => {
-    /**
-     * effectState：Currently changing data
-     *   nextState：Data after change
-     *   prevState：Data before change
-     */
     console.log(effectState, prevState, nextState);
   }, ["count"]);
   
@@ -898,11 +897,6 @@ function App() {
   store.useSubscription(({
     effectState, prevState, nextState,
   }) => {
-    /**
-     * effectState：Currently changing data
-     *   nextState：Data after change
-     *   prevState：Data before change
-     */
     console.log(effectState, prevState, nextState);
   }, ["count"]);
   

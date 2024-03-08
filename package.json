@@ -140,6 +140,8 @@
   ],
   "license": "MIT",
   "keywords": [
+    "reactive",
+    "reactive-state",
     "react",
     "hooks",
     "flux",

@@ -19,10 +19,10 @@
 
 ### Install
 ```sh
-npm i @shein/resy
+npm i resy
 
-# yarn add @shein/resy
-# pnpm add @shein/resy
+# yarn add resy
+# pnpm add resy
 ```
 
 ### Usage

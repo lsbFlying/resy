@@ -1,11 +1,11 @@
 {
-  "name": "@shein/resy",
-  "version": "0.0.2",
+  "name": "resy",
+  "version": "11.0.0",
   "description": "React State Easy",
-  "repository": "https://gitlab.sheincorp.cn/npmjs/shein/resy.git",
+  "repository": "https://github.com/lsbFlying/resy.git",
   "author": "liushanbao <1262300490@qq.com>",
-  "homepage": "https://gitlab.sheincorp.cn/npmjs/shein/resy",
-  "bugs": "https://gitlab.sheincorp.cn/npmjs/shein/resy/-/issues",
+  "homepage": "https://github.com/lsbFlying/resy",
+  "bugs": "https://github.com/lsbFlying/resy/issues",
   "main": "index.js",
   "module": "dist/esm/index.js",
   "types": "dist/resy.d.ts",
@@ -84,7 +84,7 @@
     "prepublishOnly": "rm -rf dist coverage && npm test && npm run build"
   },
   "publishConfig": {
-    "registry": "https://npmjs.sheincorp.cn/-/npmjs/"
+    "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
     "use-sync-external-store": "^1.2.0"

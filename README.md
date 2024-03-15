@@ -1,5 +1,5 @@
 <div align="center">
-<img src="./resy-logo.svg" alt="resy">
+<img src="./resy-logo.svg" alt="@shein/resy">
 <h3>react state manager</h3>
 <h4>Support React Native、Mini Apps</h4>
 
@@ -9,7 +9,6 @@
 [![npm type definitions](https://img.shields.io/npm/types/typescript?color=orange&style=flat-square)](https://github.com/lsbFlying/resy/blob/master/src/index.ts)
 [![npm bundle size](https://img.shields.io/bundlephobia/minzip/resy?color=brightgreen&style=flat-square)](https://bundlephobia.com/result?p=resy)
 [![react](https://img.shields.io/badge/React-%3E%3D16.8.0-green.svg?style=flat-square)](https://img.shields.io/badge/React-%3E%3D16.0.0-green.svg?style=flat-square)
-[![npm](https://img.shields.io/npm/v/resy?color=blue&style=flat-square)](https://www.npmjs.com/package/resy)
 
 </div>
 
@@ -20,15 +19,15 @@
 
 ### Install
 ```sh
-npm i resy
+npm i @shein/resy
 
-# yarn add resy
-# pnpm add resy
+# yarn add @shein/resy
+# pnpm add @shein/resy
 ```
 
 ### Usage
 ```tsx
-import { createStore, useStore, ComponentWithStore } from "resy";
+import { createStore, useStore, ComponentWithStore } from "@shein/resy";
 
 const store = createStore({ count: 0 });
 
@@ -127,7 +126,7 @@ const demoStore4 = createStore({
 
 ##### general use
 ```tsx
-import { createStore } from "resy";
+import { createStore } from "@shein/resy";
 
 type StateType = {
   count: number;
@@ -179,7 +178,7 @@ const themeStore = createStore<{ themeStyle: "dark" | "light" }>(
 
 ##### deconstruction usage mode
 ```tsx
-import { useStore } from "resy";
+import { useStore } from "@shein/resy";
 
 function App() {
   const { count, text } = useStore(store);
@@ -197,7 +196,7 @@ function App() {
 
 ##### Mixed use of store
 ```tsx
-import { useStore } from "resy";
+import { useStore } from "@shein/resy";
 
 function App() {
   const { userName } = userStore.useStore();
@@ -216,7 +215,7 @@ function App() {
 
 ##### direct read usage mode
 ```tsx
-import { useStore } from "resy";
+import { useStore } from "@shein/resy";
 
 function App() {
   const state = store.useStore();
@@ -242,7 +241,7 @@ which are described in more detail in the following sections.
 </details>
 
 ```tsx
-import { useStore } from "resy";
+import { useStore } from "@shein/resy";
 
 function App() {
   const {
@@ -262,7 +261,7 @@ function App() {
 
 ##### direct assignment update
 ```tsx
-import { useStore } from "resy";
+import { useStore } from "@shein/resy";
 
 function App() {
   const { count, text } = store.useStore();
@@ -289,7 +288,7 @@ function App() {
 
 ##### ComponentWithStore、PureComponentWithStore
 ```tsx
-import { ComponentWithStore, PureComponentWithStore } from "resy";
+import { ComponentWithStore, PureComponentWithStore } from "@shein/resy";
 
 /**
  * @description ComponentWithStore is inherited from React Component,
@@ -311,7 +310,6 @@ class AppClass extends ComponentWithStore {
 }
 
 class PureAppClass extends PureComponentWithStore {
-
   store = this.connectStore(store);
 
   render() {
@@ -329,7 +327,7 @@ class PureAppClass extends PureComponentWithStore {
 ##### Mixed use of store
 
 ```tsx
-import { ComponentWithStore, createStore } from "resy";
+import { ComponentWithStore, createStore } from "@shein/resy";
 
 /**
  * @description The update methods of internal "this.userStore" and "this.themeStore"
@@ -368,7 +366,7 @@ Invalid update
 </summary>
 
 ```tsx
-import { useStore } from "resy";
+import { useStore } from "@shein/resy";
 
 function App() {
   const {
@@ -399,7 +397,7 @@ function App() {
 <summary>setState</summary>
 
 ```tsx
-import { useStore } from "resy";
+import { useStore } from "@shein/resy";
 
 function App() {
   const { count, text } = store.useStore();
@@ -425,7 +423,7 @@ function App() {
 
 ##### setState's callback
 ```tsx
-import { useStore } from "resy";
+import { useStore } from "@shein/resy";
 
 function App() {
   const { text } = store.useStore();
@@ -489,7 +487,7 @@ class TestClassX extends Component {
   of resy's setState is the latest data in the current synchronization phase,
   but it does not belong to the latest data after the final round of updates.
 ```tsx
-import { useStore, createStore } from "resy";
+import { useStore, createStore } from "@shein/resy";
 
 const store = createStore({count: 0, text: "hello"});
 
@@ -517,7 +515,7 @@ function App() {
 
 ##### parameters of the function type of setState
 ```tsx
-import { useStore } from "resy";
+import { useStore } from "@shein/resy";
 
 const store = createStore({count: 0, text: "hello"});
 
@@ -563,7 +561,7 @@ function App() {
 <summary>syncUpdate</summary>
 
 ```tsx
-import { useStore, syncUpdate } from "resy";
+import { useStore, syncUpdate } from "@shein/resy";
 
 /**
  * @description 🌟 The main purpose of syncUpdate is to solve the problem
@@ -604,7 +602,7 @@ function App() {
 
 ##### hook
 ```tsx
-import { useStore } from "resy";
+import { useStore } from "@shein/resy";
 
 // Updates to count data will not cause Text components to re-render
 function Text() {
@@ -636,7 +634,7 @@ function App() {
 
 ##### class
 ```tsx
-import { useStore, ComponentWithStore } from "resy";
+import { useStore, ComponentWithStore } from "@shein/resy";
 
 // Updates to count data will not cause Text components to re-render
 class TextClass extends ComponentWithStore {
@@ -699,8 +697,14 @@ class AppClass extends ComponentWithStore {
 <details>
 <summary>useConciseState</summary>
 
+<p>
+  The functionality of useConciseState is not limited to just a concise syntax on the surface.
+Its deeper capability is to deconstruct the store and provide sub-components with a doorway
+that allows for comprehensive control over the store's data, rendering, updates, and subscriptions.
+</p>
+
 ```tsx
-import { useConciseState } from "resy";
+import { useConciseState } from "@shein/resy";
 
 const initialState = {
   count: 123,
@@ -741,7 +745,7 @@ function App() {
 restore、syncUpdate、subscribe these api can also be deconstructed and used directly.
 ```tsx
 import { useEffect } from "react";
-import { useConciseState } from "resy";
+import { useConciseState } from "@shein/resy";
 
 function App() {
   const { count, text, restore, syncUpdate, subscribe } = useConciseState(initialState);
@@ -766,6 +770,78 @@ function App() {
   );
 }
 ```
+
+#### Advantages of useConciseState
+
+```tsx
+import { useConciseState, ConciseStoreHeart } from "@shein/resy";
+
+type State = {
+  count: number;
+  text: string;
+};
+
+function ChildOne(props: ConciseStoreHeart<State>) {
+  const { store } = props;
+  const { count, text } = useStore(store);
+
+  return (
+    <>
+      <p>ChildOne-count:{count}</p>
+      <p>ChildOne-text:{text}</p>
+      <button
+        onClick={() => {
+          store.setState({
+            count: 999,
+            text: "ChildOneSetStateNewText",
+          });
+        }}
+      >
+        childOneBtn
+      </button>
+    </>
+  );
+}
+
+function ChildTwo(props: ConciseStoreHeart<State>) {
+  const { store } = props;
+  const [data, setData] = useState({ count: 0, text: "hello" });
+
+  store.useSubscription(({ nextState }) => {
+    setData(nextState);
+  });
+
+  return (
+    <>
+      <p>ChildTwo-count:{data.count}</p>
+      <p>ChildTwo-text:{data.text}</p>
+    </>
+  );
+}
+
+const App = () => {
+  const { count, text, store } = useConciseState<State>({
+    count: 0,
+    text: "hello",
+  });
+
+  return (
+    <>
+      <p>{count}</p>
+      <p>{text}</p>
+      <ChildOne store={store} />
+      <ChildTwo store={store} />
+      <button onClick={() => {
+        store.setState({
+          count: 1,
+          text: "world",
+        });
+      }}>change</button>
+    </>
+  );
+};
+```
+
 </details>
 
 <details>
@@ -803,7 +879,7 @@ store.subscribe(() => {
 #### general use
 ```tsx
 import { useEffect } from "react";
-import { useStore } from "resy";
+import { useStore } from "@shein/resy";
 
 function App() {
   const { count } = store.useStore();
@@ -863,7 +939,7 @@ function App() {
 
 ```tsx
 import { useEffect } from "react";
-import { useStore, useSubscription } from "resy";
+import { useStore, useSubscription } from "@shein/resy";
 
 function App() {
   const { count } = store.useStore();
@@ -889,7 +965,7 @@ function App() {
 
 ```tsx
 import { useEffect } from "react";
-import { useStore } from "resy";
+import { useStore } from "@shein/resy";
 
 function App() {
   const { count } = store.useStore();
@@ -918,7 +994,7 @@ function App() {
 <summary>restore</summary>
 
 ```tsx
-import { useStore } from "resy";
+import { useStore } from "@shein/resy";
 
 function App() {
   const { count, text } = store.useStore();
@@ -944,7 +1020,7 @@ function App() {
 ```
 
 ```tsx
-import { createStore, useStore } from "resy";
+import { createStore, useStore } from "@shein/resy";
 
 const timeStore = createStore(() => {
   return {

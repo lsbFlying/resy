@@ -151,7 +151,6 @@ test("setState-V", async () => {
     expect(counter === 6).toBeTruthy();
 
     // 🌟 in react17, plus initialization rendering, there are seven rounds.
-    // console.log("counter", counter);
     // expect(counter === 7).toBeTruthy();
   });
 });

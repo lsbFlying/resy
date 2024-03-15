@@ -4,6 +4,19 @@ export default defineConfig({
   test: {
     globals: true,
     setupFiles: "setupTests.ts",
+    coverage: {
+      exclude: [
+        "createEntryFile.js",
+        "index.js",
+        "src/types.ts",
+        "src/classConnect/types.ts",
+        "src/platforms/*.ts",
+        "src/restore/types.ts",
+        "src/scheduler/types.ts",
+        "src/store/types.ts",
+        "src/subscribe/types.ts",
+      ],
+    },
     // reporters: ["html"],
   },
   resolve: {

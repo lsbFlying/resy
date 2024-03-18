@@ -93,7 +93,7 @@ export const createStore = <S extends PrimitiveState>(
   // The storage stack of this proxy object for the class component
   const classThisPointerSet = new Set<ClassThisPointerType<S>>();
 
-  const updateStatePrimerSet: Set<Dispatch<SetStateAction<PrimitiveState>>> = new Set();
+  const updateStatePrimerSet = new Set<Dispatch<SetStateAction<PrimitiveState>>>();
 
   const setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
     willUpdatingProcessing(schedulerProcessor, prevBatchState, stateMap);

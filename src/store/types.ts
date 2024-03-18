@@ -4,7 +4,9 @@ import type {
   ClassConnectStoreType, ClassUnmountProcessingType, ClassStateRefSetType,
   ClassInitialStateRetrieveType, ClassThisPointerStoresType,
 } from "../classConnect/types";
-import { __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
+import {
+  __REGENERATIVE_SYSTEM_KEY__, __UPDATE_STATE_PRIMER_SET_KEY__, __USE_STORE_KEY__,
+} from "./static";
 
 /**
  * @description The second parameter configuration item of createStore
@@ -67,6 +69,7 @@ export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S>
   & {
   [__REGENERATIVE_SYSTEM_KEY__]: symbol;
   [__USE_STORE_KEY__]: object;
+  [__UPDATE_STATE_PRIMER_SET_KEY__]: Set<PrimitiveState>;
   readonly store: Store<S>;
 };
 
@@ -175,17 +178,27 @@ export type UseSubscription<S extends PrimitiveState> = Readonly<{
   useSubscription(listener: ListenerType<S>, stateKeys?: (keyof S)[]): void;
 }>;
 
+export type Mutate = Readonly<{
+  mutate(actions: Callback): void;
+}>;
+
 /** Some of the core tool method types of store */
-export type StoreCoreUtils<S extends PrimitiveState> = SetState<S> & SyncUpdate<S> & Restore<S> & Subscribe<S>;
+export type StoreCoreUtils<S extends PrimitiveState> = SetState<S>
+  & SyncUpdate<S>
+  & Restore<S>
+  & Subscribe<S>
+  & UseStore<S>
+  & UseSubscription<S>
+  & Mutate;
 
 /** Tool method type of store */
-export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOptions & UseStore<S> & UseSubscription<S>;
+export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOptions;
 
 /** The type of store returned by createStore */
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
 
 export type ConciseStoreHeart<S extends PrimitiveState> = {
-  readonly store: S & StoreCoreUtils<S> & UseStore<S> & UseSubscription<S>;
+  readonly store: S & StoreCoreUtils<S>;
 };
 
 /** Return type of useConciseState */

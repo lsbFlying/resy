@@ -1,7 +1,7 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { ConciseStore, InitialState } from "./types";
 import type { PrimitiveState } from "../types";
-import { __USE_STORE_KEY__ } from "./static";
+import { __UPDATE_STATE_PRIMER_SET_KEY__, __USE_STORE_KEY__ } from "./static";
 import { storeErrorProcessing } from "../errors";
 import { createStore } from "./index";
 
@@ -13,6 +13,9 @@ import { createStore } from "./index";
  */
 export const useStore = <S extends PrimitiveState>(store: S): S => {
   storeErrorProcessing(store, "useStore");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_, updateState] = useState<PrimitiveState>({});
+  (store[__UPDATE_STATE_PRIMER_SET_KEY__ as keyof S] as Set<PrimitiveState>).add(updateState);
   return store[__USE_STORE_KEY__ as keyof S];
 };
 

@@ -3,5 +3,3 @@ export const __REGENERATIVE_SYSTEM_KEY__ = Symbol("regenerativeSystemKey");
 
 // The key of useStore
 export const __USE_STORE_KEY__ = Symbol("useStoreKey");
-
-export const __UPDATE_STATE_PRIMER_SET_KEY__ = Symbol("updateStatePrimerSetKey");

@@ -1,9 +1,10 @@
 export { createStore } from "./store";
 export { useStore, useConciseState } from "./store/hook";
 export type {
-  StoreOptions, InitialStateForbiddenKeys, State, PrimateForbiddenType, ConciseStore, SetState,
-  StateFnType, StateCallback, SyncUpdate, Restore, SetOptions, UseStore, StoreCoreUtils,
-  StoreUtils, Store, InitialStore, StateWithThisType, InitialState, ConciseStoreHeart,
+  StoreOptions, InitialStateForbiddenKeys, State, PrimateForbiddenType,
+  ConciseStore, SetState, StateFnType, StateCallback, SyncUpdate, Restore,
+  SetOptions, UseStore, StoreCoreUtils, StoreUtils, Store, InitialStore,
+  StateWithThisType, InitialState, ConciseStoreHeart, SetStateAction,
 } from "./store/types";
 
 export { useSubscription } from "./subscribe";

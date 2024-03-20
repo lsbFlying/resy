@@ -5,7 +5,7 @@
  * @date 2022-05-05
  * @name createStore
  */
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { useEffect } from "react";
 import type {
   ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions,
   Store, StateCallback, StoreMapValueType, State, InitialState,
@@ -13,14 +13,14 @@ import type {
 } from "./types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../restore/types";
 import type { Unsubscribe, ListenerType } from "../subscribe/types";
-import type { AnyFn, MapType, ValueOf, PrimitiveState, Callback } from "../types";
+import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import type { SchedulerType } from "../scheduler/types";
 import { scheduler } from "../scheduler";
 import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__,
   __CLASS_INITIAL_STATE_RETRIEVE_KEY__,
 } from "../classConnect/static";
-import { __REGENERATIVE_SYSTEM_KEY__, __UPDATE_STATE_PRIMER_SET_KEY__, __USE_STORE_KEY__ } from "./static";
+import { __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
 import { hasOwnProperty } from "../utils";
 import {
   stateErrorProcessing, optionsErrorProcessing, subscribeErrorProcessing,
@@ -92,8 +92,6 @@ export const createStore = <S extends PrimitiveState>(
 
   // The storage stack of this proxy object for the class component
   const classThisPointerSet = new Set<ClassThisPointerType<S>>();
-
-  const updateStatePrimerSet = new Set<Dispatch<SetStateAction<PrimitiveState>>>();
 
   const setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
     willUpdatingProcessing(schedulerProcessor, prevBatchState, stateMap);
@@ -292,19 +290,7 @@ export const createStore = <S extends PrimitiveState>(
    * 🌟 The reason why it is not changed to store.useStore
    * is due to the consideration of the rules for the use of the hook function.
    */
-  const useStore = () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [_, updateState] = useState<PrimitiveState>({});
-    updateStatePrimerSet.add(updateState);
-    return storeProxy;
-  };
-
-  const mutate = (actions: Callback) => {
-    actions();
-    updateStatePrimerSet.forEach(action => {
-      action({});
-    });
-  };
+  const useStore = () => storeProxy;
 
   const useSubscription = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -349,10 +335,8 @@ export const createStore = <S extends PrimitiveState>(
   };
 
   externalMap.set("useStore", useStore);
-  externalMap.set("mutate", mutate);
   externalMap.set("useSubscription", useSubscription);
   externalMap.set(__USE_STORE_KEY__, storeProxy);
-  externalMap.set(__UPDATE_STATE_PRIMER_SET_KEY__, updateStatePrimerSet);
   /**
    * @description The reason why the three operation functions for class components
    * — connect, classUnmountProcessing, and classInitialStateRetrieve

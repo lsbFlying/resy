@@ -1,5 +1,5 @@
 import typescript from "@rollup/plugin-typescript";
-import dts from "rollup-plugin-dts";
+import { dts } from "rollup-plugin-dts";
 import replace from "@rollup/plugin-replace";
 import autoExternal from "rollup-plugin-auto-external";
 import terser from "@rollup/plugin-terser";
@@ -57,7 +57,13 @@ function createTsDeclareFileBuildConfig() {
       banner,
     },
     plugins: [
-      dts(),
+      dts({
+        tsconfig: "./tsconfig.json",
+        compilerOptions: {
+          target: 99,
+          module: 99,
+        },
+      }),
     ],
   }));
 }
@@ -103,8 +109,28 @@ function createModuleBuildConfig(
       }),
       /**
        * @description "getBabelOutputPlugin" plugin and "runtime" settings are combined
-       * with "@ babel/plugin-transform-runtime", "@ babel/runtime-corejs3" and "@ babel/runtime"
-       * to make the code compatible. However, there is no overall polyfill for the current library.
+       * with "@babel/plugin-transform-runtime", "@babel/runtime-corejs3" and "@babel/runtime",
+       * "@babel/runtime-corejs3" and "@babel/runtime" these two packs need to be placed in "dependencies"
+       * And "@babel/plugin-transform-runtime" pack are placed in "devDependencies".
+       * At the same time, the babel.config.js configuration in the root directory is as follows:
+       * module.exports = api => {
+       *   // https://babeljs.io/docs/config-files#config-function-api
+       *   api.cache(true);
+       *   return {
+       *     presets: [
+       *       "@babel/preset-env"
+       *     ],
+       *     plugins: [
+       *       [
+       *         "@babel/plugin-transform-runtime",
+       *         {
+       *           corejs: 3
+       *         }
+       *       ]
+       *     ]
+       *   };
+       * };
+       * it`s to make the code compatible. However, there is no overall polyfill for the current library.
        * Instead, it is left to the developer to handle the overall system involved in the construction to do polyfill.
        */
       // getBabelOutputPlugin({
@@ -135,23 +161,21 @@ function createModuleBuildConfig(
      * Otherwise, the special export processing in the code will be invalid.
      */
     external: [
-      "use-sync-external-store/shim",
+      "react",
       platforms,
+      "use-sync-external-store/shim",
       // /@babel\/runtime/,
     ],
     plugins: [
-      ...babelPlugins,
-      nodeResolve(),
-      typescript({
-        compilerOptions: {
-          lib: ["DOM", "DOM.Iterable", "ES5", "ES6", "ES7", "ESNext"],
-          target: "ESNext",
-        },
-      }),
-      autoExternal(),
       replace({
         "react-platform": platforms,
         preventAssignment: true,
+      }),
+      autoExternal(),
+      nodeResolve(),
+      ...babelPlugins,
+      typescript({
+        tsconfig: "./tsconfig.json",
       }),
       ...terserOpts,
     ]

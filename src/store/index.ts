@@ -230,6 +230,13 @@ export const createStore = <S extends PrimitiveState>(
    */
   const externalMap: ExternalMapType<S> = new Map();
 
+  // Updated handler configuration for proxy
+  const proxySetHandler = {
+    set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
+    // Delete will also play an updating role
+    deleteProperty: (_: S, key: keyof S) => singlePropUpdate(key, undefined as ValueOf<S>, true),
+  } as any as ProxyHandler<StoreMap<S>>;
+
   // A proxy object with the capabilities of updating and data tracking.
   const store = new Proxy(storeMap, {
     get: (_: StoreMap<S>, key: keyof S, receiver: any) => {
@@ -243,14 +250,12 @@ export const createStore = <S extends PrimitiveState>(
 
       return externalMap.get(key as keyof ExternalMapValue<S>) || value;
     },
-    set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
-    // Delete will also play an updating role
-    deleteProperty: (_: S, key: keyof S) => singlePropUpdate(key, undefined as ValueOf<S>, true),
+    ...proxySetHandler,
   } as any as ProxyHandler<StoreMap<S>>) as any as Store<S>;
 
-  // Driver update agent for useStore
-  const storeProxy = new Proxy(storeMap, {
-    get: (_, key: keyof S) => {
+  // Proxy of driver update re-render for useStore
+  const engineStore = new Proxy(storeMap, {
+    get: (_: StoreMap<S>, key: keyof S) => {
       const value = stateMap.get(key);
       if (typeof value === "function") {
         // Invoke a function data hook to grant the ability to update and render function data.
@@ -258,14 +263,18 @@ export const createStore = <S extends PrimitiveState>(
           key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
           stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
         );
-        return (value as AnyFn).bind(store);
+        // todo Consider how to optimize the irrelevant data changes of getters and computed without repeated execution.
+        // Bind engineStore to realize the ability of getters and computed
+        // connectHookUse will record the key of state again to make useState calls.
+        return (value as AnyFn).bind(engineStore);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
         key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
         stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
       );
     },
-  } as ProxyHandler<StoreMap<S>>);
+    ...proxySetHandler,
+  } as any as ProxyHandler<StoreMap<S>>);
 
   externalMap.set("setState", setState);
   externalMap.set("syncUpdate", syncUpdate);
@@ -290,7 +299,7 @@ export const createStore = <S extends PrimitiveState>(
    * 🌟 The reason why it is not changed to store.useStore
    * is due to the consideration of the rules for the use of the hook function.
    */
-  const useStore = () => storeProxy;
+  const useStore = () => engineStore;
 
   const useSubscription = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -301,12 +310,15 @@ export const createStore = <S extends PrimitiveState>(
   function classConnectStore(this: ClassThisPointerType<S>) {
     classThisPointerSet.add(this);
     // Data agents for use by class
-    return new Proxy(storeMap, {
+    const classEngineStore = new Proxy(storeMap, {
       get: (_: StoreMap<S>, key: keyof S) => {
         if (typeof stateMap.get(key) === "function") {
           // A function is counted as a data variable if it has a reference
           connectClassUse.bind(this)(key, stateMap);
-          return (stateMap.get(key) as AnyFn).bind(store);
+          // todo Consider how to optimize the irrelevant data changes of getters and computed without repeated execution.
+          // Bind classEngineStore to realize the ability of getters and computed
+          // connectClassUse will record data references render to state's key again.
+          return (stateMap.get(key) as AnyFn).bind(classEngineStore);
         }
         return externalMap.get(key as keyof ExternalMapValue<S>)
           || connectClassUse.bind(this)(key, stateMap);
@@ -314,6 +326,7 @@ export const createStore = <S extends PrimitiveState>(
       set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
       deleteProperty: (_: S, key: keyof S) => singlePropUpdate(key, undefined as ValueOf<S>, true),
     } as any as ProxyHandler<StoreMap<S>>);
+    return classEngineStore;
   }
 
   // Unmount execution of class components
@@ -336,7 +349,7 @@ export const createStore = <S extends PrimitiveState>(
 
   externalMap.set("useStore", useStore);
   externalMap.set("useSubscription", useSubscription);
-  externalMap.set(__USE_STORE_KEY__, storeProxy);
+  externalMap.set(__USE_STORE_KEY__, engineStore);
   /**
    * @description The reason why the three operation functions for class components
    * — connect, classUnmountProcessing, and classInitialStateRetrieve

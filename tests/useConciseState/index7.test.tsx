@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import { test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { ConciseStoreHeart, useConciseState, useStore } from "../../src";
@@ -9,7 +9,7 @@ test("useConciseState-store", async () => {
     count: number;
     text: string;
   };
-  
+
   function ChildOne(props: ConciseStoreHeart<State>) {
     const { store } = props;
     const { count, text } = useStore(store);
@@ -47,7 +47,7 @@ test("useConciseState-store", async () => {
       </>
     );
   }
-  
+
   const App = () => {
     const { count, text, store } = useConciseState<State>({
       count: 0,

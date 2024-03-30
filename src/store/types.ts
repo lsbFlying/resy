@@ -103,7 +103,7 @@ export type StateFnType<S extends PrimitiveState> = (prevState: Readonly<S>) => 
 export type SetStateAction<S extends PrimitiveState> = State<S> | StateFnType<S>;
 
 /** Type of setState */
-export type SetState<S extends PrimitiveState> = Readonly<{
+export interface SetState<S extends PrimitiveState> {
   /**
    * @param state
    * @param callback
@@ -112,7 +112,7 @@ export type SetState<S extends PrimitiveState> = Readonly<{
     state: SetStateAction<S>,
     callback?: StateCallback<S>,
   ): void;
-}>;
+}
 
 /**
  * Type of callback functions for setState, syncUpdate, and restore
@@ -127,7 +127,7 @@ export type StateCallbackItem<S extends PrimitiveState> = {
 };
 
 /** Type of syncUpdate */
-export type SyncUpdate<S extends PrimitiveState> = Readonly<{
+export interface SyncUpdate<S extends PrimitiveState> {
   /**
    * @param state
    * @param callback
@@ -136,10 +136,10 @@ export type SyncUpdate<S extends PrimitiveState> = Readonly<{
     state: SetStateAction<S>,
     callback?: StateCallback<S>,
   ): void;
-}>;
+}
 
 /** Type of restore */
-export type Restore<S extends PrimitiveState> = Readonly<{
+export interface Restore<S extends PrimitiveState> {
   /**
    * @param callback
    * @description The reason for not naming it reset is due to
@@ -149,7 +149,7 @@ export type Restore<S extends PrimitiveState> = Readonly<{
    * Hence, the choice of the name restore instead of reset.
    */
   restore(callback?: StateCallback<S>): void;
-}>;
+}
 
 /**
  * Type of setOptions
@@ -163,19 +163,19 @@ export type Restore<S extends PrimitiveState> = Readonly<{
  * the configuration of StoreOptions itself should meet and satisfy the vast majority of usage scenarios,
  * so the occurrences where setOptions is needed are still relatively rare.
  */
-export type SetOptions = Readonly<{
+export interface SetOptions {
   setOptions(options: Readonly<{ unmountRestore: boolean }>): void;
-}>;
+}
 
 /** store.useStore() */
-export type UseStore<S extends PrimitiveState> = Readonly<{
+export interface UseStore<S extends PrimitiveState> {
   useStore(): Store<S>;
-}>;
+}
 
 /** store.UseSubscription() */
-export type UseSubscription<S extends PrimitiveState> = Readonly<{
+export interface UseSubscription<S extends PrimitiveState> {
   useSubscription(listener: ListenerType<S>, stateKeys?: (keyof S)[]): void;
-}>;
+}
 
 /** Some of the core tool method types of store */
 export type StoreCoreUtils<S extends PrimitiveState> =
@@ -192,9 +192,9 @@ export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOption
 /** The type of store returned by createStore */
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
 
-export type ConciseStoreHeart<S extends PrimitiveState> = {
+export interface ConciseStoreHeart<S extends PrimitiveState> {
   readonly store: S & StoreCoreUtils<S>;
-};
+}
 
 /** Return type of useConciseState */
 export type ConciseStore<S extends PrimitiveState> = S & StoreCoreUtils<S> & ConciseStoreHeart<S>;

@@ -5,7 +5,6 @@
  * @date 2022-05-05
  * @name createStore
  */
-import { useEffect } from "react";
 import type {
   ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions,
   Store, StateCallback, StoreMapValueType, State, InitialState,
@@ -27,14 +26,14 @@ import {
   protoPointStoreErrorProcessing, setOptionsErrorProcessing,
 } from "../errors";
 import {
-  pushTask, connectHookUse, finallyBatchProcessing, connectStore,
-  mapToObject, objectToMap, classUpdater, connectClassUse,
+  pushTask, connectHookUse, finallyBatchProcessing, connectStore, mapToObject,
+  objectToMap, classUpdater, connectClassUse, effectStateInStateKeys,
 } from "./utils";
 import {
   mergeStateKeys, retrieveReducerState,
   deferRestoreProcessing, initialStateRetrieve,
 } from "../restore";
-import { willUpdatingProcessing } from "../subscribe";
+import { useSubscription as useSubscriptionCore, willUpdatingProcessing } from "../subscribe";
 import { batchUpdate } from "../static";
 
 /**
@@ -182,19 +181,7 @@ export const createStore = <S extends PrimitiveState>(
   const subscribe = (listener: ListenerType<S>, stateKeys?: (keyof S)[]): Unsubscribe => {
     subscribeErrorProcessing(listener, stateKeys);
     const listenerWrap: ListenerType<S> = data => {
-      const listenerKeysExist = stateKeys && stateKeys?.length > 0;
-      /**
-       * @description In fact, when the final subscription is triggered,
-       * each of these outer layer listenerWraps subscribed is activated.
-       * It's just that here, the execution of the inner listener is contingent upon a data change check,
-       * which then determines whether the listener in subscribe should be executed.
-       */
-      if (
-        (
-          listenerKeysExist
-          && Object.keys(data.effectState).some(key => stateKeys.includes(key))
-        ) || !listenerKeysExist
-      ) listener(data);
+      if (effectStateInStateKeys(data.effectState, stateKeys)) listener(data);
     };
 
     listenerSet.add(listenerWrap);
@@ -302,8 +289,7 @@ export const createStore = <S extends PrimitiveState>(
   const useStore = () => engineStore;
 
   const useSubscription = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => subscribe(listener, stateKeys), []);
+    useSubscriptionCore(store, listener, stateKeys);
   };
 
   // Connecting this pointer of the class component (therefore, this cannot be an arrow function)

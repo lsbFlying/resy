@@ -31,3 +31,9 @@ export interface Subscribe<S extends PrimitiveState> {
     stateKeys?: (keyof S)[],
   ): Unsubscribe;
 }
+
+// Internal ref type of useSubscription
+export type SubscriptionRefType<S extends PrimitiveState> = {
+  listener: ListenerType<S>;
+  stateKeys?: (keyof S)[];
+};

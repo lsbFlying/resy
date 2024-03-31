@@ -174,10 +174,9 @@ export interface UseStore<S extends PrimitiveState> {
 
 /**
  * store.UseSubscription()
- * @description The traceability of data references within the listener listening subscription function
- * will not be able to trace the latest data if it is the data in the rendering phase.
- * Of course, if the data can be obtained from store,
- * then it can be read by store directly inside the function.
+ * @description Its advantage is that you only need to consider the data you want to subscribe to,
+ * rather than the psychological burden to consider whether the data reference inside the function can get the latest value.
+ * UseSubscription will reduce your mental burden and allow you to use it normally.
  */
 export interface UseSubscription<S extends PrimitiveState> {
   useSubscription(listener: ListenerType<S>, stateKeys?: (keyof S)[]): void;

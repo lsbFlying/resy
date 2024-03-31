@@ -21,6 +21,10 @@ export const willUpdatingProcessing = <S extends PrimitiveState>(
 
 /**
  * @description Hook of subscribe
+ * The traceability of data references within the listener listening subscription function
+ * will not be able to trace the latest data if it is the data in the rendering phase.
+ * Of course, if the data can be obtained from store,
+ * then it can be read by store directly inside the function.
  */
 export const useSubscription = <S extends PrimitiveState>(store: S, listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps

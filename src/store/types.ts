@@ -174,7 +174,7 @@ export interface UseStore<S extends PrimitiveState> {
 
 /**
  * store.UseSubscription()
- * @description Its advantage is that you only need to consider the data you want to subscribe to,
+ * @description It`s advantage is that you only need to consider the data you want to subscribe to,
  * rather than the psychological burden to consider whether the data reference inside the function can get the latest value.
  * UseSubscription will reduce your mental burden and allow you to use it normally.
  */

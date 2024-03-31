@@ -23,7 +23,7 @@ export const willUpdatingProcessing = <S extends PrimitiveState>(
 
 /**
  * @description Hook of subscribe
- * Its advantage is that you only need to consider the data you want to subscribe to,
+ * It`s advantage is that you only need to consider the data you want to subscribe to,
  * rather than the psychological burden to consider whether the data reference inside the function can get the latest value.
  * UseSubscription will reduce your mental burden and allow you to use it normally.
  */

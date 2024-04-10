@@ -245,20 +245,43 @@ export const createStore = <S extends PrimitiveState>(
     get: (_: StoreMap<S>, key: keyof S) => {
       const value = stateMap.get(key);
       if (typeof value === "function") {
-        // Invoke a function data hook to grant the ability to update and render function data.
-        connectHookUse(
+        try {
+          // Invoke a function data hook to grant the ability to update and render function data.
+          connectHookUse(
+            key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
+            stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
+          );
+          // todo Consider how to optimize the irrelevant data changes of getters and computed without repeated execution.
+          // Bind engineStore to realize the ability of getters and computed
+          // connectHookUse will record the key of state again to make useState calls.
+          return (value as AnyFn).bind(engineStore);
+        } catch (e) {
+          console.error(
+            new Error(
+              `The ${key as string} does not need to be used as hook state. Please check if the outer function where ${
+                key as string
+              } is called is being destructured inside useStore or useConciseState!`
+            )
+          );
+          return (value as AnyFn).bind(store);
+        }
+      }
+      try {
+        return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
           key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
           stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
         );
-        // todo Consider how to optimize the irrelevant data changes of getters and computed without repeated execution.
-        // Bind engineStore to realize the ability of getters and computed
-        // connectHookUse will record the key of state again to make useState calls.
-        return (value as AnyFn).bind(engineStore);
+      } catch (e) {
+        console.error(
+          new Error(
+            `The outer scope function of ${key as string} should not be used as a hook state,`
+            + ` it can be directly called or read by destructuring from the store. Please check if the outer function where ${
+              key as string
+            } is called is being destructured inside useStore or useConciseState.`
+          )
+        );
+        return externalMap.get(key as keyof ExternalMapValue<S>) || value;
       }
-      return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
-        key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
-        stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
-      );
     },
     ...proxySetHandler,
   } as any as ProxyHandler<StoreMap<S>>);

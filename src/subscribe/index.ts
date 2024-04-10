@@ -3,7 +3,7 @@ import type { SchedulerType } from "../scheduler/types";
 import type { ListenerType, SubscriptionRefType } from "./types";
 import type { Store } from "../store/types";
 import { effectStateInStateKeys } from "../store/utils";
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef } from "react";
 
 // Pre-update processing (records the prevBatchState beforehand for later comparison when data changes trigger subscribers)
 export const willUpdatingProcessing = <S extends PrimitiveState>(
@@ -34,18 +34,16 @@ export const useSubscription = <S extends PrimitiveState>(
 ) => {
   const ref = useRef<SubscriptionRefType<S> | null>(null);
 
-  // The ref writing here essentially does not affect the rules of React pure functions.
-  useMemo(() => {
-    /**
-     * @description stateKeys is generally stable,
-     * and it is not recommended to use scenarios with changes in stateKeys,
-     * but the use of complex scenarios is still considered here
-     */
-    ref.current = {
-      listener,
-      stateKeys,
-    };
-  }, [listener, stateKeys]);
+  /**
+   * The ref writing here essentially does not affect the rules of React pure functions.
+   * @description stateKeys is generally stable,
+   * and it is not recommended to use scenarios with changes in stateKeys,
+   * but the use of complex scenarios is still considered here
+   */
+  ref.current = {
+    listener,
+    stateKeys,
+  };
 
   useEffect(() =>
     // Monitor the overall data changes of the store

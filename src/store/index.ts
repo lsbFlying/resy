@@ -244,6 +244,15 @@ export const createStore = <S extends PrimitiveState>(
   const engineStore = new Proxy(storeMap, {
     get: (_: StoreMap<S>, key: keyof S) => {
       const value = stateMap.get(key);
+
+      // Error message alerting to the confusion and improper use of function property data and state,
+      // which does not adhere to the hook usage convention.
+      const errorMsg = `The outer function of ${key as string} is used as a hook state,`
+        + ` but it does not comply with the hook usage rules. Please check if the outer function where ${key as string} is called`
+        + " is being destructured inside useStore or useConciseState."
+        + ` If the outer function of ${key as string} does not need to be used as a hook state,`
+        + " then please call it directly through the store.";
+
       if (typeof value === "function") {
         try {
           // Invoke a function data hook to grant the ability to update and render function data.
@@ -256,13 +265,7 @@ export const createStore = <S extends PrimitiveState>(
           // connectHookUse will record the key of state again to make useState calls.
           return (value as AnyFn).bind(engineStore);
         } catch (e) {
-          console.error(
-            new Error(
-              `The ${key as string} does not need to be used as hook state. Please check if the outer function where ${
-                key as string
-              } is called is being destructured inside useStore or useConciseState!`
-            )
-          );
+          console.error(new Error(errorMsg));
           return (value as AnyFn).bind(store);
         }
       }
@@ -272,14 +275,7 @@ export const createStore = <S extends PrimitiveState>(
           stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
         );
       } catch (e) {
-        console.error(
-          new Error(
-            `The outer scope function of ${key as string} should not be used as a hook state,`
-            + ` it can be directly called or read by destructuring from the store. Please check if the outer function where ${
-              key as string
-            } is called is being destructured inside useStore or useConciseState.`
-          )
-        );
+        console.error(new Error(errorMsg));
         return externalMap.get(key as keyof ExternalMapValue<S>) || value;
       }
     },

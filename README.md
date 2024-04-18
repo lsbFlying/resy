@@ -343,16 +343,16 @@ class AppClass extends ComponentWithStore {
     const { userName } = this.userStore;
     const { theme } = this.themeStore;
     return (
-        <>
-          <span>{userName}</span>
-          <span>{theme}</span>
-          <button onClick={() => { this.userStore.userName = "LD" }}>
-            nameChange
-          </button>
-          <button onClick={() => { this.themeStore.setState({ theme: "light" }) }}>
-            themeChange
-          </button>
-        </>
+      <>
+        <span>{userName}</span>
+        <span>{theme}</span>
+        <button onClick={() => { this.userStore.userName = "LD" }}>
+          nameChange
+        </button>
+        <button onClick={() => { this.themeStore.setState({ theme: "light" }) }}>
+          themeChange
+        </button>
+      </>
     );
   }
 }
@@ -1034,18 +1034,18 @@ function App() {
   const { now } = useStore(timeStore);
 
   return (
-          <>
-            <div>now:{now}</div>
-            <div
-                    onClick={() => {
-                      // time data now recover and also changed initial,
-                      // because of initialState is function return.
-                      store.restore();
-                    }}
-            >
-              reset-btn
-            </div>
-          </>
+    <>
+      <div>now:{now}</div>
+      <div
+        onClick={() => {
+          // time data now recover and also changed initial,
+          // because of initialState is function return.
+          store.restore();
+        }}
+      >
+        reset-btn
+      </div>
+    </>
   );
 }
 ```
@@ -1057,15 +1057,15 @@ function App() {
 ```tsx
 function App() {
   return (
-          <button
-                  onClick={() => {
-                    // Use less scenes, use it with caution
-                    // You can change the unmountRestore parameter setting of createStore
-                    store.setOptions({ unmountRestore: false });
-                  }}
-          >
-            btn
-          </button>
+    <button
+      onClick={() => {
+        // Use less scenes, use it with caution
+        // You can change the unmountRestore parameter setting of createStore
+        store.setOptions({ unmountRestore: false });
+      }}
+    >
+      btn
+    </button>
   );
 }
 ```

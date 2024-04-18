@@ -14,7 +14,7 @@ import { mapToObject } from "../store/utils";
  * Therefore, although subsequent store updates are not actually be executed,
  * they will incidentally synchronize the data in the store with the rendering on the page.
  * This saves one update effect and can be considered a batch update handling across different stores.
- * todo At present, the effect of this characteristic is good, keep observation.
+ * At present, the effect of this characteristic is good, keep observation.
  */
 export const scheduler = <S extends PrimitiveState>() => {
   // task data of updated

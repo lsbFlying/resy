@@ -5,7 +5,6 @@
  * @date 2022-05-05
  * @name createStore
  */
-import { useEffect } from "react";
 import type {
   ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions,
   Store, StateCallback, StoreMapValueType, State, InitialState,
@@ -27,14 +26,14 @@ import {
   protoPointStoreErrorProcessing, setOptionsErrorProcessing,
 } from "../errors";
 import {
-  pushTask, connectHookUse, finallyBatchProcessing, connectStore,
-  mapToObject, objectToMap, classUpdater, connectClassUse,
+  pushTask, connectHookUse, finallyBatchProcessing, connectStore, mapToObject,
+  objectToMap, classUpdater, connectClassUse, effectStateInStateKeys,
 } from "./utils";
 import {
   mergeStateKeys, retrieveReducerState,
   deferRestoreProcessing, initialStateRetrieve,
 } from "../restore";
-import { willUpdatingProcessing } from "../subscribe";
+import { useSubscription as useSubscriptionCore, willUpdatingProcessing } from "../subscribe";
 import { batchUpdate } from "../static";
 
 /**
@@ -182,19 +181,7 @@ export const createStore = <S extends PrimitiveState>(
   const subscribe = (listener: ListenerType<S>, stateKeys?: (keyof S)[]): Unsubscribe => {
     subscribeErrorProcessing(listener, stateKeys);
     const listenerWrap: ListenerType<S> = data => {
-      const listenerKeysExist = stateKeys && stateKeys?.length > 0;
-      /**
-       * @description In fact, when the final subscription is triggered,
-       * each of these outer layer listenerWraps subscribed is activated.
-       * It's just that here, the execution of the inner listener is contingent upon a data change check,
-       * which then determines whether the listener in subscribe should be executed.
-       */
-      if (
-        (
-          listenerKeysExist
-          && Object.keys(data.effectState).some(key => stateKeys.includes(key))
-        ) || !listenerKeysExist
-      ) listener(data);
+      if (effectStateInStateKeys(data.effectState, stateKeys)) listener(data);
     };
 
     listenerSet.add(listenerWrap);
@@ -230,6 +217,13 @@ export const createStore = <S extends PrimitiveState>(
    */
   const externalMap: ExternalMapType<S> = new Map();
 
+  // Updated handler configuration for proxy
+  const proxySetHandler = {
+    set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
+    // Delete will also play an updating role
+    deleteProperty: (_: S, key: keyof S) => singlePropUpdate(key, undefined as ValueOf<S>, true),
+  } as any as ProxyHandler<StoreMap<S>>;
+
   // A proxy object with the capabilities of updating and data tracking.
   const store = new Proxy(storeMap, {
     get: (_: StoreMap<S>, key: keyof S, receiver: any) => {
@@ -243,29 +237,50 @@ export const createStore = <S extends PrimitiveState>(
 
       return externalMap.get(key as keyof ExternalMapValue<S>) || value;
     },
-    set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
-    // Delete will also play an updating role
-    deleteProperty: (_: S, key: keyof S) => singlePropUpdate(key, undefined as ValueOf<S>, true),
+    ...proxySetHandler,
   } as any as ProxyHandler<StoreMap<S>>) as any as Store<S>;
 
-  // Driver update agent for useStore
-  const storeProxy = new Proxy(storeMap, {
-    get: (_, key: keyof S) => {
+  // Proxy of driver update re-render for useStore
+  const engineStore = new Proxy(storeMap, {
+    get: (_: StoreMap<S>, key: keyof S) => {
       const value = stateMap.get(key);
+
+      // Error message alerting to the confusion and improper use of function property data and state,
+      // which does not adhere to the hook usage convention.
+      const errorMsg = `The outer function of ${key as string} is used as a hook state,`
+        + ` but it does not comply with the hook usage rules. Please check if the outer function where ${key as string} is called`
+        + " is being destructured inside useStore or useConciseState."
+        + ` If the outer function of ${key as string} does not need to be used as a hook state,`
+        + " then please call it directly through the store.";
+
       if (typeof value === "function") {
-        // Invoke a function data hook to grant the ability to update and render function data.
-        connectHookUse(
+        try {
+          // Invoke a function data hook to grant the ability to update and render function data.
+          connectHookUse(
+            key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
+            stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
+          );
+          // todo Consider how to optimize the irrelevant data changes of getters and computed without repeated execution.
+          // Bind engineStore to realize the ability of getters and computed
+          // connectHookUse will record the key of state again to make useState calls.
+          return (value as AnyFn).bind(engineStore);
+        } catch (e) {
+          console.error(new Error(errorMsg));
+          return (value as AnyFn).bind(store);
+        }
+      }
+      try {
+        return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
           key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
           stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
         );
-        return (value as AnyFn).bind(store);
+      } catch (e) {
+        console.error(new Error(errorMsg));
+        return externalMap.get(key as keyof ExternalMapValue<S>) || value;
       }
-      return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
-        key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
-        stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
-      );
     },
-  } as ProxyHandler<StoreMap<S>>);
+    ...proxySetHandler,
+  } as any as ProxyHandler<StoreMap<S>>);
 
   externalMap.set("setState", setState);
   externalMap.set("syncUpdate", syncUpdate);
@@ -290,23 +305,25 @@ export const createStore = <S extends PrimitiveState>(
    * 🌟 The reason why it is not changed to store.useStore
    * is due to the consideration of the rules for the use of the hook function.
    */
-  const useStore = () => storeProxy;
+  const useStore = () => engineStore;
 
   const useSubscription = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => subscribe(listener, stateKeys), []);
+    useSubscriptionCore(store, listener, stateKeys);
   };
 
   // Connecting this pointer of the class component (therefore, this cannot be an arrow function)
   function classConnectStore(this: ClassThisPointerType<S>) {
     classThisPointerSet.add(this);
     // Data agents for use by class
-    return new Proxy(storeMap, {
+    const classEngineStore = new Proxy(storeMap, {
       get: (_: StoreMap<S>, key: keyof S) => {
         if (typeof stateMap.get(key) === "function") {
           // A function is counted as a data variable if it has a reference
           connectClassUse.bind(this)(key, stateMap);
-          return (stateMap.get(key) as AnyFn).bind(store);
+          // todo Consider how to optimize the irrelevant data changes of getters and computed without repeated execution.
+          // Bind classEngineStore to realize the ability of getters and computed
+          // connectClassUse will record data references render to state's key again.
+          return (stateMap.get(key) as AnyFn).bind(classEngineStore);
         }
         return externalMap.get(key as keyof ExternalMapValue<S>)
           || connectClassUse.bind(this)(key, stateMap);
@@ -314,6 +331,7 @@ export const createStore = <S extends PrimitiveState>(
       set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
       deleteProperty: (_: S, key: keyof S) => singlePropUpdate(key, undefined as ValueOf<S>, true),
     } as any as ProxyHandler<StoreMap<S>>);
+    return classEngineStore;
   }
 
   // Unmount execution of class components
@@ -336,7 +354,7 @@ export const createStore = <S extends PrimitiveState>(
 
   externalMap.set("useStore", useStore);
   externalMap.set("useSubscription", useSubscription);
-  externalMap.set(__USE_STORE_KEY__, storeProxy);
+  externalMap.set(__USE_STORE_KEY__, engineStore);
   /**
    * @description The reason why the three operation functions for class components
    * — connect, classUnmountProcessing, and classInitialStateRetrieve

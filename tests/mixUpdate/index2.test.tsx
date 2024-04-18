@@ -175,7 +175,7 @@ test("mixUpdate-II", async () => {
   await waitFor(() => {
     const id = setTimeout(() => {
       clearTimeout(id);
-      // console.log("add2", counter, store.count);
+      console.log("add2", counter, store.count);
       // in react18
       expect(counter === 10).toBeTruthy();
       // 🌟 in react17
@@ -187,7 +187,7 @@ test("mixUpdate-II", async () => {
   await waitFor(() => {
     const id = setTimeout(() => {
       clearTimeout(id);
-      // console.log("add3", counter, store.count);
+      console.log("add3", counter, store.count);
       expect(counter === 18).toBeTruthy();
     }, 0);
   });

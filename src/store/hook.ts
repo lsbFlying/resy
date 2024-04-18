@@ -18,6 +18,9 @@ export const useStore = <S extends PrimitiveState>(store: S): S => {
 
 /**
  * A concise version of useState
+ * @description The functionality of useConciseState is not limited to just a concise syntax on the surface.
+ * Its deeper capability is to deconstruct the store and provide sub-components with a doorway
+ * that allows for comprehensive control over the store's data, rendering, updates, and subscriptions.
  * @example:
  * const { count, text, setState } = useConciseState({ count: 0, text: "hello" });
  * equivalent to:

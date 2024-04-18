@@ -9,7 +9,7 @@ import { __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
 /**
  * @description The second parameter configuration item of createStore
  */
-export type StoreOptions = Readonly<{
+export interface StoreOptions {
   /**
    * @description Whether to reset and restore the data to its initial state
    * when all modules used by the current page are unmount.
@@ -17,13 +17,13 @@ export type StoreOptions = Readonly<{
    * it would be set to false, so that the resulting loginStore or themeStore can take effect globally across the system.
    * @default true
    */
-  unmountRestore?: boolean;
+  readonly unmountRestore?: boolean;
   /**
    * Configuration for useConciseState hooks (internal, not recommended externally)
    * @default undefined
    */
-  __useConciseStateMode__?: boolean;
-}>;
+  readonly __useConciseStateMode__?: boolean;
+}
 
 /** Type of key disabled in the initialization parameters */
 export type InitialStateForbiddenKeys =
@@ -73,9 +73,6 @@ export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S>
 // Type of externalMap
 export type ExternalMapType<S extends PrimitiveState> = MapType<ExternalMapValue<S>>;
 
-/** Update the data type of the parameter */
-export type State<S extends PrimitiveState> = Partial<S> | S | null;
-
 /**
  * This object type of class
  * @description This here refers to the subclass object that inherits ComponentWithStore or PureComponentWithStore.
@@ -91,17 +88,8 @@ export type ClassThisPointerType<S extends PrimitiveState> = PrimitiveState
   };
 };
 
-/** Type of setState */
-export type SetState<S extends PrimitiveState> = Readonly<{
-  /**
-   * @param state
-   * @param callback
-   */
-  setState(
-    state: State<S> | StateFnType<S>,
-    callback?: StateCallback<S>,
-  ): void;
-}>;
+/** Update the data type of the parameter */
+export type State<S extends PrimitiveState> = Partial<S> | S | null;
 
 /**
  * The type of update parameter is function parameter
@@ -111,6 +99,20 @@ export type SetState<S extends PrimitiveState> = Readonly<{
  * through simple synchronous code is a very smooth and simple method.
  */
 export type StateFnType<S extends PrimitiveState> = (prevState: Readonly<S>) => State<S>;
+
+export type SetStateAction<S extends PrimitiveState> = State<S> | StateFnType<S>;
+
+/** Type of setState */
+export interface SetState<S extends PrimitiveState> {
+  /**
+   * @param state
+   * @param callback
+   */
+  setState(
+    state: SetStateAction<S>,
+    callback?: StateCallback<S>,
+  ): void;
+}
 
 /**
  * Type of callback functions for setState, syncUpdate, and restore
@@ -125,19 +127,19 @@ export type StateCallbackItem<S extends PrimitiveState> = {
 };
 
 /** Type of syncUpdate */
-export type SyncUpdate<S extends PrimitiveState> = Readonly<{
+export interface SyncUpdate<S extends PrimitiveState> {
   /**
    * @param state
    * @param callback
    */
   syncUpdate(
-    state: State<S> | StateFnType<S>,
+    state: SetStateAction<S>,
     callback?: StateCallback<S>,
   ): void;
-}>;
+}
 
 /** Type of restore */
-export type Restore<S extends PrimitiveState> = Readonly<{
+export interface Restore<S extends PrimitiveState> {
   /**
    * @param callback
    * @description The reason for not naming it reset is due to
@@ -147,7 +149,7 @@ export type Restore<S extends PrimitiveState> = Readonly<{
    * Hence, the choice of the name restore instead of reset.
    */
   restore(callback?: StateCallback<S>): void;
-}>;
+}
 
 /**
  * Type of setOptions
@@ -161,38 +163,54 @@ export type Restore<S extends PrimitiveState> = Readonly<{
  * the configuration of StoreOptions itself should meet and satisfy the vast majority of usage scenarios,
  * so the occurrences where setOptions is needed are still relatively rare.
  */
-export type SetOptions = Readonly<{
-  setOptions(options: { unmountRestore: boolean }): void;
-}>;
+export interface SetOptions {
+  setOptions(options: Readonly<{ unmountRestore: boolean }>): void;
+}
 
 /** store.useStore() */
-export type UseStore<S extends PrimitiveState> = Readonly<{
-  useStore(): S & StoreCoreUtils<S> & SetOptions;
-}>;
+export interface UseStore<S extends PrimitiveState> {
+  useStore(): Store<S>;
+}
 
-/** store.UseSubscription() */
-export type UseSubscription<S extends PrimitiveState> = Readonly<{
+/**
+ * store.UseSubscription()
+ * @description It`s advantage is that you only need to consider the data you want to subscribe to,
+ * rather than the psychological burden to consider whether the data reference inside the function can get the latest value.
+ * UseSubscription will reduce your mental burden and allow you to use it normally.
+ */
+export interface UseSubscription<S extends PrimitiveState> {
   useSubscription(listener: ListenerType<S>, stateKeys?: (keyof S)[]): void;
-}>;
+}
 
 /** Some of the core tool method types of store */
-export type StoreCoreUtils<S extends PrimitiveState> = SetState<S> & SyncUpdate<S> & Restore<S> & Subscribe<S>;
+export type StoreCoreUtils<S extends PrimitiveState> = Readonly<
+  & SetState<S>
+  & SyncUpdate<S>
+  & Restore<S>
+  & Subscribe<S>
+  & UseStore<S>
+  & UseSubscription<S>
+>;
 
 /** Tool method type of store */
-export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & SetOptions & UseStore<S> & UseSubscription<S>;
+export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & Readonly<SetOptions>;
 
 /** The type of store returned by createStore */
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
 
+export type ConciseStoreCore<S extends PrimitiveState> = S & StoreCoreUtils<S>;
+
+export interface ConciseStoreHeart<S extends PrimitiveState> {
+  readonly store: ConciseStoreCore<S>;
+}
+
 /** Return type of useConciseState */
-export type ConciseStore<S extends PrimitiveState> = S & StoreCoreUtils<S> & {
-  readonly store: S & StoreCoreUtils<S>;
-};
+export type ConciseStore<S extends PrimitiveState> = S & StoreCoreUtils<S> & ConciseStoreHeart<S>;
 
 /** thisType type used to initialize store when initialState is a function */
 export type InitialStore<S extends PrimitiveState> = {
   [K in keyof S]: K extends InitialStateForbiddenKeys ? never : S[K];
-} & StoreCoreUtils<S> & SetOptions;
+} & Store<S>;
 
 /** Parameter types disabled for initialization of InitialState */
 export type PrimateForbiddenType =
@@ -209,8 +227,7 @@ export type PrimateForbiddenType =
   | WeakRef<any>
   | RegExp
   | BigInt
-  | Date
-  | Window;
+  | Date;
 
 /** Parameter types with this type pointing to identification */
 export type StateWithThisType<S extends PrimitiveState> = S extends PrimateForbiddenType

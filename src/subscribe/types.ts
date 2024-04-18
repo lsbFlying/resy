@@ -1,7 +1,7 @@
-import type { Callback, PrimitiveState } from "../types";
+import type { PrimitiveState } from "../types";
 
 /** Type of unsubscribe */
-export type Unsubscribe = Callback;
+export type Unsubscribe = () => void;
 
 /**
  * The parameter type of the subscription listening function
@@ -20,7 +20,7 @@ export type ListenerParams<S extends PrimitiveState> = {
 export type ListenerType<S extends PrimitiveState> = (data: ListenerParams<S>) => void;
 
 /** Type of subscribe */
-export type Subscribe<S extends PrimitiveState> = Readonly<{
+export interface Subscribe<S extends PrimitiveState> {
   /**
    * @param listener
    * @param stateKeys Array of monitored data attributes
@@ -30,4 +30,10 @@ export type Subscribe<S extends PrimitiveState> = Readonly<{
     listener: ListenerType<S>,
     stateKeys?: (keyof S)[],
   ): Unsubscribe;
-}>;
+}
+
+// Internal ref type of useSubscription
+export type SubscriptionRefType<S extends PrimitiveState> = {
+  listener: ListenerType<S>;
+  stateKeys?: (keyof S)[];
+};

@@ -367,7 +367,9 @@ export const classSignal = <S extends PrimitiveState>(value: ValueOf<S>, store: 
    * Unlike with hook components, where enginStore can be used directly within the component to indirectly call useState,
    * class components require connecting to the store via connectStore before they can update and render.
    */
-  value.AnyClassCompMemo = value.AnyClassCompMemo ?? class AnyClassCompMemo extends PureComponentWithStore<Record<string, unknown>, S> {
+  value.AnyClassCompMemo = value.AnyClassCompMemo ?? class AnyClassCompMemo extends PureComponentWithStore<
+    Record<string, unknown>, S
+  > {
     store = this.connectStore(store);
     render() {
       return (value as AnyFn).bind(this.store, ...Object.values(this.props))() as ReactNode;

@@ -1,15 +1,17 @@
-import type { PrimitiveState, ValueOf, MapType, Callback } from "../types";
+import type { PrimitiveState, ValueOf, MapType, Callback, AnyFn } from "../types";
 import type {
   StoreMapValue, StoreMapValueType, StoreMap, InitialState,
-  StateRefCounterMapType, State, ClassThisPointerType, StoreOptions,
+  StateRefCounterMapType, State, ClassThisPointerType, StoreOptions, Store,
 } from "./types";
 import type { SchedulerType } from "../scheduler/types";
 import type { ListenerType } from "../subscribe/types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../restore/types";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
+import React, { type ReactNode, memo } from "react";
 import { initialStateRetrieve, deferRestoreProcessing } from "../restore";
 import { batchUpdate } from "../static";
 import { __CLASS_STATE_REF_SET_KEY__ } from "../classConnect/static";
+import { PureComponentWithStore } from "../classConnect";
 
 /**
  * @description Additional references are utilized to ensure the compatibility
@@ -323,4 +325,62 @@ export const effectStateInStateKeys = <S extends PrimitiveState>(
     effectExecFlag = true;
   }
   return effectExecFlag;
+};
+
+/**
+ * @description Hook State granularity componentization handler function.
+ */
+export const hookSignal = <S extends PrimitiveState>(
+  value: ValueOf<S>,
+  engineStore: StoreMap<S>,
+) => {
+  // Return the functionality of 'pseudo-computed properties' as the component.
+  value.AnyHookCompMemo = value.AnyHookCompMemo ?? memo((props: Record<string, unknown>) => (
+    /**
+     * @description Binding engineStore essentially allows the 'pseudo-computed property' function
+     * to indirectly invoke useState by reading data properties through engineStore,
+     * achieving a componentized return result.
+     */
+    (value as AnyFn).bind(engineStore, ...Object.values(props))() as ReactNode
+  ));
+
+  const { AnyHookCompMemo } = value;
+
+  /**
+   * @description By passing arguments as props to AnyFnMemo through args,
+   * and then converting them back to args from props inside the component using Object.values(props),
+   * the functionality of passing arguments to computed properties is achieved,
+   * while also having the effect of memoization optimization within the computed property function.
+   */
+  return (...args: unknown[]) => <AnyHookCompMemo {...args} />;
+};
+
+/**
+ * @description Class State granularity componentization handler function.
+ */
+export const classSignal = <S extends PrimitiveState>(value: ValueOf<S>, store: Store<S>) => {
+  // Return the functionality of 'pseudo-computed properties' as the component.
+  /**
+   * @description Binding engineStore essentially allows the 'pseudo-computed property' function
+   * to indirectly invoke useState by reading data properties through engineStore,
+   * achieving a componentized return result.
+   * Unlike with hook components, where enginStore can be used directly within the component to indirectly call useState,
+   * class components require connecting to the store via connectStore before they can update and render.
+   */
+  value.AnyClassCompMemo = value.AnyClassCompMemo ?? class AnyClassCompMemo extends PureComponentWithStore<Record<string, unknown>, S> {
+    store = this.connectStore(store);
+    render() {
+      return (value as AnyFn).bind(this.store, ...Object.values(this.props))() as ReactNode;
+    }
+  };
+
+  const { AnyClassCompMemo } = value;
+
+  /**
+   * @description By passing arguments as props to AnyFnMemo through args,
+   * and then converting them back to args from props inside the component using Object.values(props),
+   * the functionality of passing arguments to computed properties is achieved,
+   * while also having the effect of memoization optimization within the computed property function.
+   */
+  return (...args: unknown[]) => <AnyClassCompMemo {...args} />;
 };

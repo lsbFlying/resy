@@ -37,14 +37,20 @@ test("functionProp-useStore", async () => {
       // This is not recommended, but the correct execution and return of the results are still supported,
       // and an error will be reported in the console.
       const value = testFn3();
-      expect(value === "0_testFn3").toBeTruthy();
+      // console.log("testFn3-value", value);
+      expect(value !== "0_testFn3").toBeTruthy();
+      expect((value as any)["$$typeof"].toString() === "Symbol(react.element)").toBeTruthy();
+      expect((value as any)["type"]["$$typeof"].toString() === "Symbol(react.memo)").toBeTruthy();
     }, []);
 
     useEffect(() => {
       // This is not recommended, but the correct execution and return of the results are still supported,
       // and an error will be reported in the console.
       const value = testFn4();
-      expect(value === "0_testFn3_testFn4").toBeTruthy();
+      // console.log("testFn4-value", value);
+      expect(value !== "0_testFn3_testFn4").toBeTruthy();
+      expect((value as any)["$$typeof"].toString() === "Symbol(react.element)").toBeTruthy();
+      expect((value as any)["type"]["$$typeof"].toString() === "Symbol(react.memo)").toBeTruthy();
     }, []);
 
     return (

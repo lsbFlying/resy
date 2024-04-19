@@ -26,8 +26,8 @@ import {
   protoPointStoreErrorProcessing, setOptionsErrorProcessing,
 } from "../errors";
 import {
-  pushTask, connectHookUse, finallyBatchProcessing, connectStore, mapToObject,
-  objectToMap, classUpdater, connectClassUse, effectStateInStateKeys,
+  pushTask, connectHookUse, finallyBatchProcessing, connectStore, mapToObject, objectToMap,
+  classUpdater, connectClassUse, effectStateInStateKeys, hookSignal, classSignal,
 } from "./utils";
 import {
   mergeStateKeys, retrieveReducerState,
@@ -245,39 +245,19 @@ export const createStore = <S extends PrimitiveState>(
     get: (_: StoreMap<S>, key: keyof S) => {
       const value = stateMap.get(key);
 
-      // Error message alerting to the confusion and improper use of function property data and state,
-      // which does not adhere to the hook usage convention.
-      const errorMsg = `The outer function of ${key as string} is used as a hook state,`
-        + ` but it does not comply with the hook usage rules. Please check if the outer function where ${key as string} is called`
-        + " is being destructured inside useStore or useConciseState."
-        + ` If the outer function of ${key as string} does not need to be used as a hook state,`
-        + " then please call it directly through the store.";
-
       if (typeof value === "function") {
-        try {
-          // Invoke a function data hook to grant the ability to update and render function data.
-          connectHookUse(
-            key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
-            stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
-          );
-          // todo Consider how to optimize the irrelevant data changes of getters and computed without repeated execution.
-          // Bind engineStore to realize the ability of getters and computed
-          // connectHookUse will record the key of state again to make useState calls.
-          return (value as AnyFn).bind(engineStore);
-        } catch (e) {
-          console.error(new Error(errorMsg));
-          return (value as AnyFn).bind(store);
-        }
-      }
-      try {
-        return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
+        // Invoke a function data hook to grant the ability to update and render function data.
+        connectHookUse(
           key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
           stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
         );
-      } catch (e) {
-        console.error(new Error(errorMsg));
-        return externalMap.get(key as keyof ExternalMapValue<S>) || value;
+        return hookSignal(value, engineStore);
       }
+
+      return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
+        key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
+        stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
+      );
     },
     ...proxySetHandler,
   } as any as ProxyHandler<StoreMap<S>>);
@@ -315,23 +295,18 @@ export const createStore = <S extends PrimitiveState>(
   function classConnectStore(this: ClassThisPointerType<S>) {
     classThisPointerSet.add(this);
     // Data agents for use by class
-    const classEngineStore = new Proxy(storeMap, {
+    return new Proxy(storeMap, {
       get: (_: StoreMap<S>, key: keyof S) => {
-        if (typeof stateMap.get(key) === "function") {
-          // A function is counted as a data variable if it has a reference
+        const value = stateMap.get(key);
+        if (typeof value === "function") {
           connectClassUse.bind(this)(key, stateMap);
-          // todo Consider how to optimize the irrelevant data changes of getters and computed without repeated execution.
-          // Bind classEngineStore to realize the ability of getters and computed
-          // connectClassUse will record data references render to state's key again.
-          return (stateMap.get(key) as AnyFn).bind(classEngineStore);
+          return classSignal(value, store);
         }
-        return externalMap.get(key as keyof ExternalMapValue<S>)
-          || connectClassUse.bind(this)(key, stateMap);
+        return externalMap.get(key as keyof ExternalMapValue<S>) || connectClassUse.bind(this)(key, stateMap);
       },
       set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
       deleteProperty: (_: S, key: keyof S) => singlePropUpdate(key, undefined as ValueOf<S>, true),
     } as any as ProxyHandler<StoreMap<S>>);
-    return classEngineStore;
   }
 
   // Unmount execution of class components

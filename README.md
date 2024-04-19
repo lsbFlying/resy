@@ -343,16 +343,16 @@ class AppClass extends ComponentWithStore {
     const { userName } = this.userStore;
     const { theme } = this.themeStore;
     return (
-      <>
-        <span>{userName}</span>
-        <span>{theme}</span>
-        <button onClick={() => { this.userStore.userName = "LD" }}>
-          nameChange
-        </button>
-        <button onClick={() => { this.themeStore.setState({ theme: "light" }) }}>
-          themeChange
-        </button>
-      </>
+        <>
+          <span>{userName}</span>
+          <span>{theme}</span>
+          <button onClick={() => { this.userStore.userName = "LD" }}>
+            nameChange
+          </button>
+          <button onClick={() => { this.themeStore.setState({ theme: "light" }) }}>
+            themeChange
+          </button>
+        </>
     );
   }
 }
@@ -388,6 +388,114 @@ function App() {
       <button onClick={btn2}>btn2</button>
     </>
   );
+}
+```
+
+</details>
+
+<details>
+<summary>computed / getters like</summary>
+
+#### hook
+```tsx
+import { createStore } from "resy";
+
+let textProExecCounter = 0;
+let textProParamChangeExecCounter = 0;
+
+const store = createStore({
+  count: 0,
+  countChange() {
+    this.count++;
+  },
+  text: "ok",
+  getTextPro(str?: number | string) {
+    textProExecCounter++;
+    /**
+     * In version 11, there are plans to introduce a concept aligned with JavaScript's logical understanding,
+     * tentatively referred to as 'pseudo-auto-computation', which can be initially understood as 'computed properties'.
+     * Here, if getTextPro functions as a computed property
+     * (meaning the function getTextPro is treated as such when being destructured via useStore),
+     * then 'this' is akin to the renderStore returned by useStore(store),
+     * and it needs to comply with the rules of hooks usage (i.e., used at the top level).
+     */
+    const { text } = this;
+    // Returns the final computed result for rendering.
+    return `${str ?? ""}_${text}_world`;
+  },
+  getTextProParamChange(param?: number | string) {
+    textProParamChangeExecCounter++;
+    const { text } = this;
+    // Returns the final computed result for rendering.
+    return `${param ?? ""}_${text}_world`;
+  },
+});
+
+const App = () => {
+  const { count, getTextPro, getTextProParamChange } = store.useStore();
+
+  return (
+    <div>
+      <div>count:{count}</div>
+      {/**
+       * However, unlike Vue's computed properties,
+       * Resy adopts a feature that closely aligns with the native understanding of JavaScript.
+       * Computed properties are, after all, functions; thus, in this case, the function invocation approach is utilized.
+       */}
+      <div>textPro:{getTextPro("none")}</div>
+      <div>textProParamChange:{getTextProParamChange(count)}</div>
+      <button
+        onClick={() => {
+          /**
+           * countChange is not treated as a computed property and does not need to be destructured from useStore.
+           * Calling it directly through the store, it is then used as an action.
+           */
+          store.countChange();
+        }}
+      >
+        countChange
+      </button>
+      <button
+        onClick={() => {
+          // When updating text here, getTextPro acts as a computed property and will update the rendering of the App component.
+          store.text = "hello";
+        }}
+      >
+        textChange
+      </button>
+    </div>
+  );
+};
+
+```
+
+#### class
+
+```tsx
+import { createStore, ComponentWithStore } from "resy";
+
+let textProExecCounter = 0;
+let textProParamChangeExecCounter = 0;
+
+class App extends ComponentWithStore {
+  store = this.connectStore(store);
+
+  render() {
+    const { count, getTextPro, getTextProParamChange } = this.store;
+    return (
+      <div>
+        <div>count:{count}</div>
+        <div>textPro:{getTextPro("none")}</div>
+        <div>textProParamChange:{getTextProParamChange(count)}</div>
+        <button onClick={() => store.countChange()}>
+          countChange
+        </button>
+        <button onClick={() => store.text = "hello"}>
+          textChange
+        </button>
+      </div>
+    );
+  }
 }
 ```
 
@@ -1032,7 +1140,7 @@ const timeStore = createStore(() => {
 
 function App() {
   const { now } = useStore(timeStore);
-
+  
   return (
     <>
       <div>now:{now}</div>

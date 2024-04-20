@@ -409,6 +409,8 @@ const store = createStore({
     this.count++;
   },
   text: "ok",
+  // Updates to count will not cause getTextPro to execute again,
+  // because data references to count are not used within getTextPro
   getTextPro(str?: number | string) {
     textProExecCounter++;
     /**
@@ -439,8 +441,9 @@ const App = () => {
       <div>count:{count}</div>
       {/**
        * However, unlike Vue's computed properties,
-       * Resy adopts a feature that closely aligns with the native understanding of JavaScript.
-       * Computed properties are, after all, functions; thus, in this case, the function invocation approach is utilized.
+       * resy adopts a feature that closely aligns with the native understanding of JavaScript.
+       * computed properties are after all functions,
+       * thus, in this case, the function invocation approach is utilized.
        */}
       <div>textPro:{getTextPro("none")}</div>
       <div>textProParamChange:{getTextProParamChange(count)}</div>

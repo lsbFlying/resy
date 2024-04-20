@@ -30,8 +30,7 @@ import {
   classUpdater, connectClassUse, effectStateInStateKeys, hookSignal, classSignal,
 } from "./utils";
 import {
-  mergeStateKeys, retrieveReducerState,
-  deferRestoreProcessing, initialStateRetrieve,
+  mergeStateKeys, retrieveReducerState, deferRestoreProcessing, initialStateRetrieve,
 } from "../restore";
 import { useSubscription as useSubscriptionCore, willUpdatingProcessing } from "../subscribe";
 import { batchUpdate } from "../static";

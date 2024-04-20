@@ -1,6 +1,6 @@
-import { useMemo } from "react";
 import type { ConciseStore, InitialState } from "./types";
 import type { PrimitiveState } from "../types";
+import { useMemo } from "react";
 import { __USE_STORE_KEY__ } from "./static";
 import { storeErrorProcessing } from "../errors";
 import { createStore } from "./index";

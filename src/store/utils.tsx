@@ -7,7 +7,7 @@ import type { SchedulerType } from "../scheduler/types";
 import type { ListenerType } from "../subscribe/types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../restore/types";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
-import React, { type ReactNode, memo } from "react";
+import React, { memo } from "react";
 import { initialStateRetrieve, deferRestoreProcessing } from "../restore";
 import { batchUpdate } from "../static";
 import { __CLASS_STATE_REF_SET_KEY__ } from "../classConnect/static";
@@ -341,7 +341,8 @@ export const hookSignal = <S extends PrimitiveState>(
      * to indirectly invoke useState by reading data properties through engineStore,
      * achieving a componentized return result.
      */
-    (value as AnyFn).bind(engineStore, ...Object.values(props))() as ReactNode
+    // Prevent different versions of react from having different descriptions, which can be replaced with any
+    (value as AnyFn).bind(engineStore, ...Object.values(props))() as any
   ));
 
   const { AnyHookCompMemo } = value;
@@ -372,7 +373,8 @@ export const classSignal = <S extends PrimitiveState>(value: ValueOf<S>, store: 
   > {
     store = this.connectStore(store);
     render() {
-      return (value as AnyFn).bind(this.store, ...Object.values(this.props))() as ReactNode;
+      // Prevent different versions of react from having different descriptions, which can be replaced with any
+      return (value as AnyFn).bind(this.store, ...Object.values(this.props))() as any;
     }
   };
 

@@ -1,7 +1,7 @@
 import type { PrimitiveState, ValueOf, MapType, Callback, AnyFn } from "../types";
 import type {
-  StoreMapValue, StoreMapValueType, StoreMap, InitialState,
-  StateRefCounterMapType, State, ClassThisPointerType, StoreOptions, Store,
+  StoreMapValue, StoreMapValueType, StoreMap, InitialState, Store,
+  StateRefCounterMapType, State, ClassThisPointerType, StoreOptions,
 } from "./types";
 import type { SchedulerType } from "../scheduler/types";
 import type { ListenerType } from "../subscribe/types";

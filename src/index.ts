@@ -1,5 +1,5 @@
 export { createStore } from "./store";
-export { useStore, useConciseState } from "./store/hook";
+export * from "./store/hook";
 export type {
   StoreOptions, InitialStateForbiddenKeys, State, PrimateForbiddenType, ConciseStore,
   SetState, StateFnType, StateCallback, SyncUpdate, Restore, SetOptions, UseStore,

@@ -25,17 +25,6 @@ export interface StoreOptions {
   readonly __useConciseStateMode__?: boolean;
 }
 
-/** Type of key disabled in the initialization parameters */
-export type InitialStateForbiddenKeys =
-  | "setState"
-  | "syncUpdate"
-  | "subscribe"
-  | "restore"
-  | "setOptions"
-  | "useStore"
-  | "useSubscription"
-  | "store";
-
 /**
  * @description Type of storeMapValue
  */
@@ -54,6 +43,31 @@ export type StoreMapValueType<S extends PrimitiveState> = {
   // An updater for updating source data
   updater: Callback;
 };
+
+/** Some of the core tool method types of store */
+export type StoreCoreUtils<S extends PrimitiveState> = Readonly<
+  & SetState<S>
+  & SyncUpdate<S>
+  & Restore<S>
+  & Subscribe<S>
+  & UseStore<S>
+  & UseSubscription<S>
+>;
+
+/** Tool method type of store */
+export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & Readonly<SetOptions>;
+
+/** The type of store returned by createStore */
+export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
+
+export type ConciseStoreCore<S extends PrimitiveState> = S & StoreCoreUtils<S>;
+
+export interface ConciseStoreHeart<S extends PrimitiveState> {
+  readonly store: ConciseStoreCore<S>;
+}
+
+/** Return type of useConciseState */
+export type ConciseStore<S extends PrimitiveState> = S & StoreCoreUtils<S> & ConciseStoreHeart<S>;
 
 export type StoreMapValue<S extends PrimitiveState> = MapType<StoreMapValueType<S>>;
 // Type of storeMap
@@ -182,30 +196,8 @@ export interface UseSubscription<S extends PrimitiveState> {
   useSubscription(listener: ListenerType<S>, stateKeys?: (keyof S)[]): void;
 }
 
-/** Some of the core tool method types of store */
-export type StoreCoreUtils<S extends PrimitiveState> = Readonly<
-  & SetState<S>
-  & SyncUpdate<S>
-  & Restore<S>
-  & Subscribe<S>
-  & UseStore<S>
-  & UseSubscription<S>
->;
-
-/** Tool method type of store */
-export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & Readonly<SetOptions>;
-
-/** The type of store returned by createStore */
-export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
-
-export type ConciseStoreCore<S extends PrimitiveState> = S & StoreCoreUtils<S>;
-
-export interface ConciseStoreHeart<S extends PrimitiveState> {
-  readonly store: ConciseStoreCore<S>;
-}
-
-/** Return type of useConciseState */
-export type ConciseStore<S extends PrimitiveState> = S & StoreCoreUtils<S> & ConciseStoreHeart<S>;
+/** Type of key disabled in the initialization parameters */
+export type InitialStateForbiddenKeys = keyof StoreUtils<PrimitiveState> | "store";
 
 /** thisType type used to initialize store when initialState is a function */
 export type InitialStore<S extends PrimitiveState> = {

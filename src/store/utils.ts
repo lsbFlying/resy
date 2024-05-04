@@ -4,7 +4,7 @@ import type {
   StateRefCounterMapType, State, ClassThisPointerType, StoreOptions,
 } from "./types";
 import type { SchedulerType } from "../scheduler/types";
-import type { ListenerType } from "../subscribe/types";
+import type { ListenerParams, ListenerType } from "../subscribe/types";
 import type { StateRestoreAccomplishedMapType, InitialFnCanExecMapType } from "../restore/types";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { initialStateRetrieve, deferRestoreProcessing } from "../restore";
@@ -255,7 +255,7 @@ export const finallyBatchProcessing = <S extends PrimitiveState>(
         }
 
         // Make a shallow clone of the "taskDataMap" data for the "effectState" of "subscribe",
-        // because the task data will then be washed away.
+        // Perform a shallowClone before executing flushTask, otherwise, it might become impossible to retrieve `taskDataMap`.
         const effectStateTemp = listenerSet.size > 0 ? shallowCloneMap(taskDataMap) : undefined;
 
         /**
@@ -280,15 +280,25 @@ export const finallyBatchProcessing = <S extends PrimitiveState>(
 
         // Trigger the execution of subscription snooping
         if (listenerSet.size > 0) {
-          const listenerData = {
-            effectState: mapToObject(effectStateTemp!),
-            nextState: mapToObject(stateMap),
-            prevState: mapToObject(prevBatchState),
-          };
+          // Reduce the burden of executing `mapToObject` on three data sets through proxy.
+          const listenerDataProxy = new Proxy({} as ListenerParams<S>, {
+            get(_: ListenerParams<S>, listenerDataKey: keyof ListenerParams<S>): any {
+              if (listenerDataKey === "effectState") {
+                return mapToObject(effectStateTemp!);
+              }
+              if (listenerDataKey === "nextState") {
+                return mapToObject(stateMap!);
+              }
+              if (listenerDataKey === "prevState") {
+                return mapToObject(prevBatchState!);
+              }
+            }
+          } as ProxyHandler<ListenerParams<S>>);
+
           listenerSet.forEach(item => {
             // the clone returned by mapToObject ensures that the externally subscribed data
             // maintains it`s purity and security as much as possible in terms of usage.
-            item(listenerData);
+            item(listenerDataProxy);
           });
         }
       });

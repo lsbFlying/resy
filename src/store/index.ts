@@ -92,7 +92,7 @@ export const createStore = <S extends PrimitiveState>(
   const classThisPointerSet = new Set<ClassThisPointerType<S>>();
 
   const setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    willUpdatingProcessing(schedulerProcessor, prevBatchState, stateMap);
+    willUpdatingProcessing(listenerSet, schedulerProcessor, prevBatchState, stateMap);
 
     let stateTemp = state;
 
@@ -155,12 +155,12 @@ export const createStore = <S extends PrimitiveState>(
 
   // Reset recovery initialization state data
   const restore = (callback?: StateCallback<S>) => {
-    willUpdatingProcessing(schedulerProcessor, prevBatchState, stateMap);
+    willUpdatingProcessing(listenerSet, schedulerProcessor, prevBatchState, stateMap);
 
     retrieveReducerState(reducerState, initialState);
 
     const state = {} as State<S>;
-    mergeStateKeys(reducerState, prevBatchState).forEach(key => {
+    mergeStateKeys(reducerState, stateMap).forEach(key => {
       const originValue = reducerState[key];
       if (!Object.is(originValue, stateMap.get(key))) {
         state![key] = originValue;
@@ -202,7 +202,7 @@ export const createStore = <S extends PrimitiveState>(
   // Data updates for a single attribute
   const singlePropUpdate = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
     if (!Object.is(value, stateMap.get(key))) {
-      willUpdatingProcessing(schedulerProcessor, prevBatchState, stateMap);
+      willUpdatingProcessing(listenerSet, schedulerProcessor, prevBatchState, stateMap);
       pushTask(
         key, value, stateMap, schedulerProcessor, optionsTemp,
         reducerState, storeStateRefCounterMap, storeMap,

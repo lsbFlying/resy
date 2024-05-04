@@ -5,13 +5,15 @@ import type { Store } from "../store/types";
 import { effectStateInStateKeys } from "../store/utils";
 import { useEffect, useRef } from "react";
 
-// Pre-update processing (records the prevBatchState beforehand for later comparison when data changes trigger subscribers)
+// Pre-update processing
+// records the prevBatchState beforehand for later comparison when data changes trigger subscribers
 export const willUpdatingProcessing = <S extends PrimitiveState>(
+  listenerSet: Set<ListenerType<S>>,
   schedulerProcessor: MapType<SchedulerType<S>>,
   prevBatchState: MapType<S>,
   stateMap: MapType<S>,
 ) => {
-  if (!schedulerProcessor.get("willUpdating")) {
+  if (listenerSet.size > 0 && !schedulerProcessor.get("willUpdating")) {
     schedulerProcessor.set("willUpdating", true);
     // Clear first to prevent store from having delete operations that cause prevBatchState to retain deleted data
     prevBatchState.clear();

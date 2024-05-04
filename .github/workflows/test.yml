@@ -20,19 +20,19 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # 下载仓库源码
+      # download source code
       - name: Checkout
         uses: actions/checkout@master
 
-      # 安装依赖 & 运行测试生成测试覆盖率报告
+      - name: Install pnpm
+        run: npm install -g pnpm
+
       - name: Install and test & coverage
         run: |
-          pnpm install
+          pnpm i --frozen-lockfile
           npm test
 
-      # 上传测试覆盖率报告到 codecov
       - name: Upload coverage to Codecov
-        # 使用codecov官方提供的action
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

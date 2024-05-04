@@ -27,7 +27,7 @@ jobs:
       # 安装依赖 & 运行测试生成测试覆盖率报告
       - name: Install and test & coverage
         run: |
-          npm install
+          pnpm install
           npm test
 
       # 上传测试覆盖率报告到 codecov

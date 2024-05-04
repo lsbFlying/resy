@@ -406,8 +406,8 @@ const store = createStore({
   getTextPro(str?: number | string) {
     /**
      * @description Here, using `useStore` works fine even in class components,
-     * as we have made it compatible. In fact,
-     * if it's needed only in class components,
+     * as we have made it compatible.
+     * In fact, if it's needed only in class components,
      * you can directly use `this` to achieve the purpose of referencing data internally within the function for rendering.
      * 🌟 The reason for using `this.useStore()` within `getTextPro` is because,
      * in the demo below, the `App` component doesn't reference the `text` data within `store.useStore()`.

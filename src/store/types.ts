@@ -193,14 +193,14 @@ export interface UseStore<S extends PrimitiveState> {
  * it is more primitive compared to the attribute `value`,
  * and it also avoids conflicts with the same attribute name `value`.
  */
-export type SignalNode<T extends ReactNode> = T & ReactNode & { valueOf(): T };
+export type SignalMeta<T extends ReactNode> = T & ReactNode & { valueOf(): T };
 
-export type SignalDataType<S extends PrimitiveState> = {
-  [K in keyof S]: SignalNode<S[K]>;
+export type SignalsType<S extends PrimitiveState> = {
+  [K in keyof S]: SignalMeta<S[K]>;
 };
 
 /** The type of signal-store returned by useSignal */
-export type SignalStore<S extends PrimitiveState> = SignalDataType<S> & StoreUtils<S>;
+export type SignalStore<S extends PrimitiveState> = SignalsType<S> & StoreUtils<S>;
 
 export interface UseSignal<S extends PrimitiveState> {
   useSignal(): SignalStore<S>;

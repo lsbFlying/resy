@@ -4,7 +4,8 @@ export type {
   StoreOptions, InitialStateForbiddenKeys, State, PrimateForbiddenType, ConciseStore,
   SetState, StateFnType, StateCallback, SyncUpdate, Restore, SetOptions, UseStore,
   StoreCoreUtils, StoreUtils, Store, InitialStore, StateWithThisType, InitialState,
-  ConciseStoreHeart, SetStateAction, ConciseStoreCore,
+  ConciseStoreHeart, SetStateAction, ConciseStoreCore, UseSignal, SignalStore,
+  SignalsType, SignalMeta,
 } from "./store/types";
 
 export { useSubscription } from "./subscribe";

@@ -48,6 +48,7 @@ export const whatsType = (value: unknown): NativeDataType => {
     case "[object global]":
       return "Global";
     default:
+      // for-example: "array-like" arguments
       return "Unknown";
   }
 };

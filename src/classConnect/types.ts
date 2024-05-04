@@ -8,7 +8,7 @@ import {
 /**
  * Performs some action. This method should not be overridden in subclasses.
  * Even if you rewrite it, your rewriting method won't work.
- * @method connectStore
+ * @interface connectStore
  * @description This is an important method that is core to the functionality of this class.
  */
 export type ConnectStoreType = {

@@ -26,8 +26,8 @@ import {
   protoPointStoreErrorProcessing, setOptionsErrorProcessing,
 } from "../errors";
 import {
-  pushTask, connectHookUse, finallyBatchProcessing, connectStore, mapToObject, objectToMap,
-  classUpdater, connectClassUse, effectStateInStateKeys, hookSignal, classSignal,
+  pushTask, connectHookUse, finallyBatchProcessing, connectStore, mapToObject,
+  objectToMap, classUpdater, connectClassUse, effectStateInStateKeys,
 } from "./utils";
 import {
   mergeStateKeys, retrieveReducerState, deferRestoreProcessing, initialStateRetrieve,
@@ -105,12 +105,15 @@ export const createStore = <S extends PrimitiveState>(
       stateErrorProcessing(stateTemp, "setState | syncUpdate");
       // The update of hook is an independent update dispatch action, and traversal processing is needed to unify the stack.
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
-        pushTask(
-          key, (stateTemp as S)[key], stateMap, schedulerProcessor,
-          optionsTemp, reducerState, storeStateRefCounterMap,
-          storeMap, stateRestoreAccomplishedMap, initialFnCanExecMap,
-          classThisPointerSet, initialState,
-        );
+        const value = (stateTemp as S)[key];
+        if (!Object.is(value, stateMap.get(key))) {
+          pushTask(
+            key, value, stateMap, schedulerProcessor,
+            optionsTemp, reducerState, storeStateRefCounterMap,
+            storeMap, stateRestoreAccomplishedMap, initialFnCanExecMap,
+            classThisPointerSet, initialState,
+          );
+        }
       });
     }
 
@@ -198,14 +201,16 @@ export const createStore = <S extends PrimitiveState>(
 
   // Data updates for a single attribute
   const singlePropUpdate = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
-    willUpdatingProcessing(schedulerProcessor, prevBatchState, stateMap);
-    pushTask(
-      key, value, stateMap, schedulerProcessor, optionsTemp,
-      reducerState, storeStateRefCounterMap, storeMap,
-      stateRestoreAccomplishedMap, initialFnCanExecMap,
-      classThisPointerSet, initialState, isDelete,
-    );
-    finallyBatchProcessing(schedulerProcessor, prevBatchState, stateMap, listenerSet);
+    if (!Object.is(value, stateMap.get(key))) {
+      willUpdatingProcessing(schedulerProcessor, prevBatchState, stateMap);
+      pushTask(
+        key, value, stateMap, schedulerProcessor, optionsTemp,
+        reducerState, storeStateRefCounterMap, storeMap,
+        stateRestoreAccomplishedMap, initialFnCanExecMap,
+        classThisPointerSet, initialState, isDelete,
+      );
+      finallyBatchProcessing(schedulerProcessor, prevBatchState, stateMap, listenerSet);
+    }
     return true;
   };
 
@@ -250,7 +255,7 @@ export const createStore = <S extends PrimitiveState>(
           key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
           stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
         );
-        return hookSignal(value, engineStore);
+        return (value as AnyFn).bind(store);
       }
 
       return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
@@ -296,10 +301,16 @@ export const createStore = <S extends PrimitiveState>(
     // Data agents for use by class
     return new Proxy(storeMap, {
       get: (_: StoreMap<S>, key: keyof S) => {
+        // Compatible with scenarios where both hook components and class components are used together.
+        if (key === "useStore") {
+          return () => this.store;
+        }
         const value = stateMap.get(key);
         if (typeof value === "function") {
           connectClassUse.bind(this)(key, stateMap);
-          return classSignal(value, store);
+          // In class components, there is no rigid restriction like the Hooks rules on state,
+          // so here you can confidently use `this.store` as `engineStore`.
+          return (value as AnyFn).bind(this.store);
         }
         return externalMap.get(key as keyof ExternalMapValue<S>) || connectClassUse.bind(this)(key, stateMap);
       },

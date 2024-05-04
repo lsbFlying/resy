@@ -394,73 +394,51 @@ function App() {
 </details>
 
 <details>
-<summary>computed / getters like</summary>
+<summary>Function returns rendering</summary>
 
 #### hook
 ```tsx
-import { createStore } from "resy";
-
-let textProExecCounter = 0;
-let textProParamChangeExecCounter = 0;
+import { createStore } from "@shein/resy";
 
 const store = createStore({
   count: 0,
-  countChange() {
-    this.count++;
-  },
   text: "ok",
-  // Updates to count will not cause getTextPro to execute again,
-  // because data references to count are not used within getTextPro
   getTextPro(str?: number | string) {
-    textProExecCounter++;
     /**
-     * In version 11, there are plans to introduce a concept aligned with JavaScript's logical understanding,
-     * tentatively referred to as 'pseudo-auto-computation', which can be initially understood as 'computed properties'.
-     * Here, if getTextPro functions as a computed property
-     * (meaning the function getTextPro is treated as such when being destructured via useStore),
-     * then 'this' is akin to the renderStore returned by useStore(store),
-     * and it needs to comply with the rules of hooks usage (i.e., used at the top level).
+     * @description Here, using `useStore` works fine even in class components,
+     * as we have made it compatible. In fact,
+     * if it's needed only in class components,
+     * you can directly use `this` to achieve the purpose of referencing data internally within the function for rendering.
+     * 🌟 The reason for using `this.useStore()` within `getTextPro` is because,
+     * in the demo below, the `App` component doesn't reference the `text` data within `store.useStore()`.
+     * Therefore, when updating the `text` state, if `useStore` isn't called inside `getTextPro`,
+     * it won't be possible to track the reference to the data for updates. Of course,
+     * this example is specific to hook components. As mentioned earlier,
+     * in class components, `this.useStore()` isn't actually necessary; you could directly use `this`.
+     * However, the usage of `this.useStore()` within `getTextPro` remains compatible even if `getTextPro` is placed inside a class component.
      */
-    const { text } = this;
-    // Returns the final computed result for rendering.
+    const { text } = this.useStore();
+    // Returns the final result for rendering.
     return `${str ?? ""}_${text}_world`;
-  },
-  getTextProParamChange(param?: number | string) {
-    textProParamChangeExecCounter++;
-    const { text } = this;
-    // Returns the final computed result for rendering.
-    return `${param ?? ""}_${text}_world`;
   },
 });
 
 const App = () => {
-  const { count, getTextPro, getTextProParamChange } = store.useStore();
+  const { count, getTextPro } = store.useStore();
 
   return (
     <div>
       <div>count:{count}</div>
-      {/**
-       * However, unlike Vue's computed properties,
-       * resy adopts a feature that closely aligns with the native understanding of JavaScript.
-       * computed properties are after all functions,
-       * thus, in this case, the function invocation approach is utilized.
-       */}
       <div>textPro:{getTextPro("none")}</div>
-      <div>textProParamChange:{getTextProParamChange(count)}</div>
       <button
         onClick={() => {
-          /**
-           * countChange is not treated as a computed property and does not need to be destructured from useStore.
-           * Calling it directly through the store, it is then used as an action.
-           */
-          store.countChange();
+          store.count++;
         }}
       >
         countChange
       </button>
       <button
         onClick={() => {
-          // When updating text here, getTextPro acts as a computed property and will update the rendering of the App component.
           store.text = "hello";
         }}
       >
@@ -475,22 +453,18 @@ const App = () => {
 #### class
 
 ```tsx
-import { createStore, ComponentWithStore } from "resy";
-
-let textProExecCounter = 0;
-let textProParamChangeExecCounter = 0;
+import { createStore, ComponentWithStore } from "@shein/resy";
 
 class App extends ComponentWithStore {
   store = this.connectStore(store);
 
   render() {
-    const { count, getTextPro, getTextProParamChange } = this.store;
+    const { count, getTextPro } = this.store;
     return (
       <div>
         <div>count:{count}</div>
         <div>textPro:{getTextPro("none")}</div>
-        <div>textProParamChange:{getTextProParamChange(count)}</div>
-        <button onClick={() => store.countChange()}>
+        <button onClick={() => store.count++}>
           countChange
         </button>
         <button onClick={() => store.text = "hello"}>

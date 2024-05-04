@@ -8,6 +8,7 @@ import { __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_CONNECT_STORE_KEY__ } from "
 /**
  * @class ComponentWithStore
  * @classdesc The public base class can connect to the store
+ * @implements ConnectStoreType
  */
 export class ComponentWithStore<P = {}, S = {}, SS = any> extends Component<P, S, SS> implements ConnectStoreType {
   constructor(props: P) {
@@ -40,6 +41,7 @@ export class ComponentWithStore<P = {}, S = {}, SS = any> extends Component<P, S
 /**
  * @class PureComponentWithStore
  * @classdesc The public base class can connect to the store
+ * @implements ConnectStoreType
  */
 export class PureComponentWithStore<P = {}, S = {}, SS = any> extends PureComponent<P, S, SS> implements ConnectStoreType {
   constructor(props: P) {

@@ -1,7 +1,7 @@
 import type { PrimitiveState, ValueOf, MapType, Callback } from "../types";
 import type {
   StoreMapValue, StoreMapValueType, StoreMap, InitialState,
-  StateRefCounterMapType, State, ClassThisPointerType, StoreOptions,
+  StateRefCounterMapType, State, ClassThisPointerType, StoreOptions, SignalMapType,
 } from "./types";
 import type { SchedulerType } from "../scheduler/types";
 import type { ListenerParams, ListenerType } from "../subscribe/types";
@@ -57,6 +57,7 @@ export const connectStore = <S extends PrimitiveState>(
   schedulerProcessor: MapType<SchedulerType<S>>,
   initialFnCanExecMap: InitialFnCanExecMapType,
   classThisPointerSet: Set<ClassThisPointerType<S>>,
+  signalMap: SignalMapType<S>,
   initialState?: InitialState<S>,
 ) => {
   // Resolve the problem that the initialization attribute may be undefined
@@ -80,7 +81,7 @@ export const connectStore = <S extends PrimitiveState>(
       deferRestoreProcessing(
         options, reducerState, stateMap, storeStateRefCounterMap,
         stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap,
-        classThisPointerSet, initialState, () => {
+        classThisPointerSet, signalMap, initialState, () => {
           // Release memory if there are no component references
           if (!singlePropStoreChangeSet.size) storeMap.delete(key);
         },
@@ -122,18 +123,19 @@ export const connectHookUse = <S extends PrimitiveState>(
   schedulerProcessor: MapType<SchedulerType<S>>,
   initialFnCanExecMap: InitialFnCanExecMapType,
   classThisPointerSet: Set<ClassThisPointerType<S>>,
+  signalMap: SignalMapType<S>,
   initialState?: InitialState<S>,
 ) => {
   // Perform refresh recovery logic if initialState is a function
   initialStateRetrieve(
     reducerState, stateMap, storeStateRefCounterMap, stateRestoreAccomplishedMap,
-    initialFnCanExecMap, classThisPointerSet, initialState,
+    initialFnCanExecMap, classThisPointerSet, signalMap, initialState,
   );
   return (
     connectStore(
-      key, options, reducerState, stateMap,
-      storeStateRefCounterMap, storeMap, stateRestoreAccomplishedMap,
-      schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
+      key, options, reducerState, stateMap, storeStateRefCounterMap, storeMap,
+      stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap,
+      classThisPointerSet, signalMap, initialState,
     ).get(key)!.get("useOriginState") as StoreMapValueType<S>["useOriginState"]
   )();
 };
@@ -193,6 +195,7 @@ export const pushTask = <S extends PrimitiveState>(
   stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType,
   initialFnCanExecMap: InitialFnCanExecMapType,
   classThisPointerSet: Set<ClassThisPointerType<S>>,
+  signalMap: SignalMapType<S>,
   initialState?: InitialState<S>,
   isDelete?: boolean,
 ) => {
@@ -212,9 +215,9 @@ export const pushTask = <S extends PrimitiveState>(
       // Status updates for hook components
       (
         connectStore(
-          key, options, reducerState, stateMap,
-          storeStateRefCounterMap, storeMap, stateRestoreAccomplishedMap,
-          schedulerProcessor, initialFnCanExecMap, classThisPointerSet, initialState,
+          key, options, reducerState, stateMap, storeStateRefCounterMap, storeMap,
+          stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap,
+          classThisPointerSet, signalMap, initialState,
         ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
       )();
     },

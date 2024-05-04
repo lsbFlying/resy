@@ -51,6 +51,7 @@ export type StoreCoreUtils<S extends PrimitiveState> = Readonly<
   & Restore<S>
   & Subscribe<S>
   & UseStore<S>
+  & UseSignal<S>
   & UseSubscription<S>
 >;
 
@@ -186,6 +187,10 @@ export interface UseStore<S extends PrimitiveState> {
   useStore(): Store<S>;
 }
 
+export interface UseSignal<S extends PrimitiveState> {
+  useSignal(): Store<S>;
+}
+
 /**
  * store.UseSubscription()
  * @description It`s advantage is that you only need to consider the data you want to subscribe to,
@@ -237,3 +242,5 @@ export type InitialState<S extends PrimitiveState> = (() => StateWithThisType<S>
 export type StateRefCounterMapType = MapType<{
   counter: number;
 }>;
+
+export type SignalMapType<S extends PrimitiveState> = Map<keyof S, any>;

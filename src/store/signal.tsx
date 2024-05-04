@@ -12,10 +12,10 @@ import { whatsType, hasOwnProperty } from "../utils";
  */
 const saveRun = <S extends PrimitiveState>(
   key: keyof S,
-  value: ValueOf<S> | undefined,
   store: Store<S>,
   enginStore: StoreMap<S>,
-  args: unknown[],
+  value?: ValueOf<S>,
+  ...args: unknown[]
 ) => {
   if (typeof value === "function") {
     try {
@@ -33,10 +33,10 @@ const saveRun = <S extends PrimitiveState>(
 
 const signalCore = <S extends PrimitiveState>(
   key: keyof S,
-  value: ValueOf<S> | undefined,
   signalMap: SignalMapType<S>,
   store: Store<S>,
   enginStore: StoreMap<S>,
+  value?: ValueOf<S>,
   ...args: unknown[]
 ) => {
   /**
@@ -79,7 +79,7 @@ const signalCore = <S extends PrimitiveState>(
          * the JavaScript engine is made to search for and invoke an object's `Symbol.toPrimitive` property (if it exists).
          */
         [Symbol.toPrimitive]() {
-          return saveRun(key, value, store, enginStore, args);
+          return saveRun(key, store, enginStore, value, ...args);
         },
       } as any, {
         get(target: any, prop: string | symbol, receiver: any): any {
@@ -90,7 +90,10 @@ const signalCore = <S extends PrimitiveState>(
           if (markAsRendering) {
             return Reflect.get(target, prop, receiver);
           }
-          const fnReturnRes = saveRun(key, value, store, enginStore, args) as unknown;
+          if (prop === "valueOf") {
+            return () => saveRun(key, store, enginStore, value, ...args);
+          }
+          const fnReturnRes = saveRun(key, store, enginStore, value, ...args);
           // Array type
           if (whatsType(fnReturnRes) === "Array" && hasOwnProperty.call(Array.prototype, prop)) {
             return whatsType(Array.prototype[prop as any]) === "Function"
@@ -121,6 +124,7 @@ const signalCore = <S extends PrimitiveState>(
             // The "?." operator is used to guard against the possibility of null or undefined values.
             return (fnReturnRes as any)?.[prop];
           }
+          return Reflect.get(target, prop, receiver);
         }
       }),
     );
@@ -133,10 +137,10 @@ const signalCore = <S extends PrimitiveState>(
  */
 export const createSignal = <S extends PrimitiveState>(
   key: keyof S,
-  value: ValueOf<S> | undefined,
   signalMap: SignalMapType<S>,
   store: Store<S>,
   enginStore: StoreMap<S>,
+  value?: ValueOf<S>,
 ) => {
   /**
    * @description By passing arguments as props to AnyFnMemo through args,
@@ -149,8 +153,8 @@ export const createSignal = <S extends PrimitiveState>(
     signalMap.set(
       key,
       typeof value === "function"
-        ? (...args: unknown[]) => signalCore(key, value, signalMap, store, enginStore, ...args)
-        : signalCore(key, value, signalMap, store, enginStore)
+        ? (...args: unknown[]) => signalCore(key, signalMap, store, enginStore, value, ...args)
+        : signalCore(key, signalMap, store, enginStore, value)
     );
   }
 

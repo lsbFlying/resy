@@ -275,11 +275,11 @@ export const createStore = <S extends PrimitiveState>(
       const value = stateMap.get(key);
 
       if (typeof value === "function") {
-        return createSignal(key, value, signalMap, store, engineStore);
+        return createSignal(key, signalMap, store, engineStore, value);
       }
 
       return externalMap.get(key as keyof ExternalMapValue<S>)
-        || createSignal(key, value, signalMap, store, engineStore);
+        || createSignal(key, signalMap, store, engineStore, value);
     },
     ...proxySetHandler,
   } as any as ProxyHandler<StoreMap<S>>);

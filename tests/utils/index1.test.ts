@@ -35,6 +35,13 @@ test("utils", () => {
     value29 = BigInt("8374654835683476853476"),
     value30 = 8374654835683476853476n;
 
+  // "arguments" is array-like object, it does not have an accurate type description in JS
+  function testUnknown() {
+    // eslint-disable-next-line prefer-rest-params
+    expect(whatsType(arguments) === "Unknown").toBeTruthy();
+  }
+  testUnknown();
+
   expect(whatsType(value0) === "Number").toBeTruthy();
   expect(whatsType(value1) === "Number").toBeTruthy();
   expect(whatsType(value2) === "String").toBeTruthy();
@@ -69,8 +76,11 @@ test("utils", () => {
   // 🌟 The test execution here is slightly different from the test execution result of the browser,
   // and it should be related to the small changes in the global object of vitest's test environment.
   // console.log(typeof window, window.__proto__, Window.prototype, whatsType(window), whatsType(global));
+  // console.log(window, whatsType(window) === "Global");
   // expect(whatsType(window) === "Global").toBeTruthy();
+  // It's right in the browser.
   // expect(whatsType(window) === "Window").toBeTruthy();
   // The global object global in node, but this is not necessarily a global object in a simulated node environment
+  // console.log(global === window);
   // expect(whatsType(global) === "Global").toBeTruthy();
 });

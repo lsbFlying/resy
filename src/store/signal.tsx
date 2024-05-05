@@ -128,7 +128,7 @@ const signalCore = <S extends PrimitiveState>(
   if (!signalMap.has(signalKey)) {
     signalMap.set(
       signalKey,
-      new Proxy(<Viewer {...args} /> as any, {
+      new Proxy(<Viewer {...args} />, {
         get(target: any, prop: string | symbol, receiver: any): any {
           // The current data element is directly rendered as a ReactNode.
           if (prop === "$$typeof") {

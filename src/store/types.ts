@@ -195,10 +195,10 @@ export interface UseStore<S extends PrimitiveState> {
  * Additionally, an urgent issue is that `value` cannot address the access of
  * function properties to the `value` value.
  */
-export type SignalMeta<T extends ReactNode> = T & ReactNode & { valueOf(): T };
+export type Signal<T extends ReactNode> = T & ReactNode & { valueOf(): T };
 
 export type SignalsType<S extends PrimitiveState> = {
-  [K in keyof S]: SignalMeta<S[K]>;
+  [K in keyof S]: Signal<S[K]>;
 };
 
 /** The type of signal-store returned by useSignal */

@@ -111,9 +111,9 @@ const signalCore = <S extends PrimitiveState>(
         store = this.connectStore(store);
         render() {
           if (typeof value === "function") {
-            return (value as AnyFn).bind(this.store, ...Object.values(this.props))() as ReactNode;
+            return ((value as AnyFn).bind(this.store, ...Object.values(this.props))() ?? null) as ReactNode;
           }
-          return this.store[key] as ReactNode;
+          return (this.store[key] ?? null) as ReactNode;
         }
       },
     );

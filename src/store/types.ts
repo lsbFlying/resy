@@ -201,7 +201,7 @@ export interface UseStore<S extends PrimitiveState> {
 export type Signal<T extends ReactNode> = T & ReactNode & { valueOf(): T };
 
 export type SignalsType<S extends PrimitiveState> = {
-  [K in keyof S]: Signal<S[K]>;
+  [K in (keyof S extends undefined ? never : keyof S)]: Signal<S[K]>;
 };
 
 /** The type of signal-store returned by useSignal */

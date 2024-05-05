@@ -13,5 +13,11 @@ export type NativeDataType =
   | "Object" | "Function" | "Array" | "Date" | "RegExp"
   | "Map" | "Set" | "WeakMap" | "WeakSet"
   | "WeakRef" | "BigInt"
+  | "Promise" | "FormData" | "Blob" | "File" | "Error"
+  | "CustomEvent" | "Storage"
+  | "WebSocket" | "ArrayBuffer" | "DataView"
+  | "Uint8Array" | "Int8Array" | "Uint8ClampedArray" | "Int16Array" | "Uint16Array" | "Int32Array"
+  | "Uint32Array" | "Float32Array" | "Float64Array" | "BigInt64Array" | "BigUint64Array"
+  | "XMLHttpRequest" | "Headers" | "Request" | "Response"
   | "Window" | "Global"
   | "Unknown";

@@ -45,46 +45,15 @@ const switchSignalDataType = (
   value: any,
   markAsRendering: boolean,
 ) => {
-  switch (whatsType(value)) {
-    case "String":
-      return signalFnOrPrimitive(String.prototype, prop, value);
-    case "Number":
-      return signalFnOrPrimitive(Number.prototype, prop, value);
-    case "Boolean":
-      return signalFnOrPrimitive(Boolean.prototype, prop, value);
-    case "Object":
-      return signalFnOrPrimitive(Object.prototype, prop, value);
-    case "Array":
-      return signalFnOrPrimitive(Array.prototype, prop, value);
-    case "Set":
-      return signalFnOrPrimitive(Set.prototype, prop, value);
-    case "Map":
-      return signalFnOrPrimitive(Map.prototype, prop, value);
-    case "Function":
-      return signalFnOrPrimitive(Function.prototype, prop, value);
-    case "Date":
-      return signalFnOrPrimitive(Date.prototype, prop, value);
-    case "Symbol":
-      return signalFnOrPrimitive(Symbol.prototype, prop, value);
-    case "WeakSet":
-      return signalFnOrPrimitive(WeakSet.prototype, prop, value);
-    case "WeakMap":
-      return signalFnOrPrimitive(WeakMap.prototype, prop, value);
-    case "RegExp":
-      return signalFnOrPrimitive(RegExp.prototype, prop, value);
-    case "WeakRef":
-      return signalFnOrPrimitive(WeakRef.prototype, prop, value);
-    case "BigInt":
-      return signalFnOrPrimitive(BigInt.prototype, prop, value);
-    case "Window":
-      return signalFnOrPrimitive(Window.prototype, prop, value);
-    default:
-      if (!markAsRendering) {
-        // The "?." operator is used to guard against the possibility of null or undefined values.
-        return (value as any)?.[prop];
-      }
-      return Reflect.get(target, prop, receiver);
+  const type = whatsType(value);
+  if ((globalThis as any)[type]) {
+    return signalFnOrPrimitive((globalThis as any)[type].prototype, prop, value);
   }
+  if (!markAsRendering) {
+    // The "?." operator is used to guard against the possibility of null or undefined values.
+    return (value as any)?.[prop];
+  }
+  return Reflect.get(target, prop, receiver);
 };
 
 const signalCore = <S extends PrimitiveState>(

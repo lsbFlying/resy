@@ -1,4 +1,7 @@
 {
+  "globals": {
+    "globalThis": "readonly"
+  },
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": "latest",

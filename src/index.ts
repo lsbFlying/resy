@@ -5,7 +5,7 @@ export type {
   SetState, StateFnType, StateCallback, SyncUpdate, Restore, SetOptions, UseStore,
   StoreCoreUtils, StoreUtils, Store, InitialStore, StateWithThisType, InitialState,
   ConciseStoreHeart, SetStateAction, ConciseStoreCore, UseSignal, SignalStore,
-  SignalsType, SignalMeta,
+  SignalsType, Signal,
 } from "./store/types";
 
 export { useSubscription } from "./subscribe";

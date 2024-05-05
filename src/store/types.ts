@@ -194,6 +194,8 @@ export interface UseStore<S extends PrimitiveState> {
  * and it also avoids conflicts with the same attribute name `value`.
  * Additionally, an urgent issue is that `value` cannot address the access of
  * function properties to the `value` value.
+ * And `valueOf` will work in conjunction with `Symbol.toPrimitive`
+ * to produce a more native data value tracing effect.
  */
 export type Signal<T extends ReactNode> = T & ReactNode & { valueOf(): T };
 

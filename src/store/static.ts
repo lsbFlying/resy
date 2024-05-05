@@ -3,3 +3,9 @@ export const __REGENERATIVE_SYSTEM_KEY__ = Symbol("regenerativeSystemKey");
 
 // The key of useStore
 export const __USE_STORE_KEY__ = Symbol("useStoreKey");
+
+// The key of viewer suffix key
+export const __VIEWER_SUFFIX_KEY__ = "_ViewerSuffixKey";
+
+// The key of signal suffix key
+export const __SIGNAL_SUFFIX_KEY__ = "_SignalSuffixKey";

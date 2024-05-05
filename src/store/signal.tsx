@@ -1,5 +1,5 @@
 import type { PrimitiveState, ValueOf, AnyFn } from "../types";
-import type { StoreMap, Store, SignalMapType } from "./types";
+import type { StoreMap, Store, SignalMapType, SignalGetter } from "./types";
 import React, { type ReactNode } from "react";
 import { PureComponentWithStore } from "../classConnect";
 import { whatsType } from "../utils";
@@ -148,4 +148,14 @@ export const createSignal = <S extends PrimitiveState>(
   }
 
   return signalMap.get(key);
+};
+
+/**
+ * todo waiting developing
+ * @description Create a signal space for the rendering expression
+ * @param sg The `SignalGetter` function internally returns an arbitrary renderable expression.
+ */
+export const signal = (sg: SignalGetter) => {
+  console.log(sg);
+  return sg();
 };

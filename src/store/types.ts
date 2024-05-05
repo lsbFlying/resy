@@ -211,6 +211,8 @@ export interface UseSignal<S extends PrimitiveState> {
   useSignal(): SignalStore<S>;
 }
 
+export type SignalGetter = <T extends ReactNode>() => T;
+
 /**
  * store.UseSubscription()
  * @description It`s advantage is that you only need to consider the data you want to subscribe to,

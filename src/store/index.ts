@@ -19,7 +19,7 @@ import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__,
   __CLASS_INITIAL_STATE_RETRIEVE_KEY__,
 } from "../classConnect/static";
-import { __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
+import { __REGENERATIVE_SYSTEM_KEY__, __USE_SIGNAL_STORE_KEY__, __USE_STORE_KEY__ } from "./static";
 import { hasOwnProperty } from "../utils";
 import {
   stateErrorProcessing, optionsErrorProcessing, subscribeErrorProcessing,
@@ -361,6 +361,7 @@ export const createStore = <S extends PrimitiveState>(
   externalMap.set("useSignal", useSignal);
   externalMap.set("useSubscription", useSubscription);
   externalMap.set(__USE_STORE_KEY__, engineStore);
+  externalMap.set(__USE_SIGNAL_STORE_KEY__, signalStore);
   /**
    * @description The reason why the three operation functions for class components
    * — connect, classUnmountProcessing, and classInitialStateRetrieve

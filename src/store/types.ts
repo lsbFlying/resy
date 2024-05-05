@@ -5,7 +5,7 @@ import type {
   ClassConnectStoreType, ClassUnmountProcessingType, ClassStateRefSetType,
   ClassInitialStateRetrieveType, ClassThisPointerStoresType,
 } from "../classConnect/types";
-import { __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
+import { __REGENERATIVE_SYSTEM_KEY__, __USE_SIGNAL_STORE_KEY__, __USE_STORE_KEY__ } from "./static";
 
 /**
  * @description The second parameter configuration item of createStore
@@ -83,6 +83,7 @@ export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S>
   & {
   [__REGENERATIVE_SYSTEM_KEY__]: symbol;
   [__USE_STORE_KEY__]: object;
+  [__USE_SIGNAL_STORE_KEY__]: object;
   readonly store: Store<S>;
 };
 

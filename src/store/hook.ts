@@ -1,7 +1,7 @@
 import type { ConciseStore, InitialState } from "./types";
 import type { PrimitiveState } from "../types";
 import { useMemo } from "react";
-import { __USE_STORE_KEY__ } from "./static";
+import { __USE_SIGNAL_STORE_KEY__, __USE_STORE_KEY__ } from "./static";
 import { storeErrorProcessing } from "../errors";
 import { createStore } from "./index";
 
@@ -14,6 +14,17 @@ import { createStore } from "./index";
 export const useStore = <S extends PrimitiveState>(store: S): S => {
   storeErrorProcessing(store, "useStore");
   return store[__USE_STORE_KEY__ as keyof S];
+};
+
+/**
+ * useSignal api
+ * @description useSignal(store) === store.useSignal()
+ * @param store
+ * @return store
+ */
+export const useSignal = <S extends PrimitiveState>(store: S): S => {
+  storeErrorProcessing(store, "useSignal");
+  return store[__USE_SIGNAL_STORE_KEY__ as keyof S];
 };
 
 /**

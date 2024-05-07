@@ -15,3 +15,9 @@ export const __SIGNAL_SUFFIX_KEY__ = "_SignalSuffixKey";
 
 // string constants for signal internal deep stitching attributes
 export const __DEEP_SPLICE_KEY__ = "$$&&deepSpliceKey&&$$";
+
+/**
+ * @description The key of the extra name of the store function property
+ * Identify and judge the subsequent function attributes in the processing of signal
+ */
+export const __STORE_FN_NAME__ = Symbol("StoreFnName");

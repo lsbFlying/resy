@@ -6,7 +6,7 @@ import { whatsType } from "../utils";
 import { __DEEP_SPLICE_KEY__, __SIGNAL_SUFFIX_KEY__, __VIEWER_SUFFIX_KEY__ } from "./static";
 
 /**
- * @description "signal-like"
+ * @description create "signal-like"
  */
 export const createSignal = <S extends PrimitiveState>(
   key: keyof S,

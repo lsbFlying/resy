@@ -1,4 +1,4 @@
-import type { ConciseStore, InitialState } from "./types";
+import type { ConciseStore, InitialState, SignalStore } from "./types";
 import type { PrimitiveState } from "../types";
 import { useMemo } from "react";
 import { __USE_SIGNAL_STORE_KEY__, __USE_STORE_KEY__ } from "./static";
@@ -22,7 +22,7 @@ export const useStore = <S extends PrimitiveState>(store: S): S => {
  * @param store
  * @return store
  */
-export const useSignal = <S extends PrimitiveState>(store: S): S => {
+export const useSignal = <S extends PrimitiveState>(store: S): SignalStore<S> => {
   storeErrorProcessing(store, "useSignal");
   return store[__USE_SIGNAL_STORE_KEY__ as keyof S];
 };

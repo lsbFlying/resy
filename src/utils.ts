@@ -1,4 +1,4 @@
-import type { NativeDataType } from "./types";
+import type { NativeDataType, PrimitiveValueType } from "./types";
 
 export const hasOwnProperty = Object.prototype.hasOwnProperty;
 
@@ -109,4 +109,17 @@ export const whatsType = (value: unknown): NativeDataType => {
       // Other type, for-example: HTMLElement
       return type as NativeDataType;
   }
+};
+
+const primitiveMap = new Map<PrimitiveValueType, PrimitiveValueType>(Object.entries({
+  Number: "Number",
+  String: "String",
+  Boolean: "Boolean",
+  Undefined: "Undefined",
+  Null: "Null",
+  Symbol: "Symbol",
+}) as any);
+
+export const isPrimitive = (value: unknown): boolean => {
+  return primitiveMap.has(whatsType(value) as PrimitiveValueType);
 };

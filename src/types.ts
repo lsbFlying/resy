@@ -8,8 +8,9 @@ export type ValueOf<S extends PrimitiveState> = S[keyof S];
 
 export type MapType<S extends PrimitiveState> = Map<keyof S, ValueOf<S>>;
 
-export type NativeDataType =
-  | "Number" | "String" | "Boolean" | "Undefined" | "Null" | "Symbol"
+export type PrimitiveValueType = "Number" | "String" | "Boolean" | "Undefined" | "Null" | "Symbol";
+
+export type ComplexValueType =
   | "Object" | "Function" | "Array" | "Date" | "RegExp"
   | "Map" | "Set" | "WeakMap" | "WeakSet"
   | "WeakRef" | "BigInt"
@@ -21,3 +22,5 @@ export type NativeDataType =
   | "XMLHttpRequest" | "Headers" | "Request" | "Response"
   | "Window" | "Global"
   | "Unknown";
+
+export type NativeDataType = PrimitiveValueType | ComplexValueType;

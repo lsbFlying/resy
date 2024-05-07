@@ -1,5 +1,4 @@
 export { createStore } from "./store";
-// export { signal } from "./store/signal";
 export * from "./store/hook";
 export type {
   StoreOptions, InitialStateForbiddenKeys, State, PrimateForbiddenType, ConciseStore,
@@ -16,3 +15,4 @@ export { ComponentWithStore, PureComponentWithStore } from "./classConnect";
 export type { ConnectStoreType, ClassStoreType } from "./classConnect/types";
 
 export * from "./types";
+export * from "./utils";

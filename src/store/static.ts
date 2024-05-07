@@ -12,3 +12,6 @@ export const __VIEWER_SUFFIX_KEY__ = "_ViewerSuffixKey";
 
 // The key of signal suffix key
 export const __SIGNAL_SUFFIX_KEY__ = "_SignalSuffixKey";
+
+// string constants for signal internal deep stitching attributes
+export const __DEEP_SPLICE_KEY__ = "$$&&deepSpliceKey&&$$";

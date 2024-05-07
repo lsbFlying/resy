@@ -46,6 +46,7 @@ const reduceGetDeepValue = <S extends PrimitiveState>(
     if (prevValue?.[__STORE_FN_NAME__] === __STORE_FN_NAME__) {
       return (prevValue as AnyFn).bind(engineStore, ...args)();
     }
+    // todo waiting considering what todo “?? prevValue”
     const renderValue = prevValue?.[prop] ?? prevValue;
     return typeof renderValue === "function"
     // Keep this pointing of internal objects to facilitate subsequent update rendering.
@@ -63,30 +64,14 @@ const saveRun = <S extends PrimitiveState>(
   key: keyof S,
   store: Store<S>,
   engineStore: StoreMap<S>,
-  value?: ValueOf<S>,
   ...args: unknown[]
 ) => {
   const keys = (key as string).split(__DEEP_SPLICE_KEY__);
-  // complex
-  if (keys.length > 1) {
-    try {
-      return reduceGetDeepValue(keys, engineStore, ...args);
-    } catch (e) {
-      return reduceGetDeepValue(keys, store, ...args);
-    }
-  }
-  // primitive
-  if (typeof value === "function") {
-    try {
-      return (value as AnyFn).bind(engineStore, ...args)();
-    } catch (e) {
-      return (value as AnyFn).bind(store, ...args)();
-    }
-  }
   try {
-    return (engineStore as any)[key];
+    // todo waiting resolve obj().count cant update
+    return reduceGetDeepValue(keys, engineStore, ...args);
   } catch (e) {
-    return value;
+    return reduceGetDeepValue(keys, store, ...args);
   }
 };
 
@@ -172,14 +157,9 @@ const signalCore = <S extends PrimitiveState>(
         store = this.connectStore(store);
         render() {
           const keys = (key as string).split(__DEEP_SPLICE_KEY__);
-          // complex
-          if (keys.length > 1) {
-            return (
-              reduceGetDeepValue(keys, this.store, ...Object.values(this.props)) ?? null
-            ) as ReactNode;
-          }
-          // primitive
-          return (this.store[key] ?? null) as ReactNode;
+          return (
+            reduceGetDeepValue(keys, this.store, ...Object.values(this.props)) ?? null
+          ) as ReactNode;
         }
       },
     );
@@ -203,11 +183,11 @@ const signalCore = <S extends PrimitiveState>(
       new Proxy({
         ...<Viewer key={key} {...args} />,
         [Symbol.toPrimitive]() {
-          return saveRun(key, store, engineStore, value, ...args);
+          return saveRun(key, store, engineStore, ...args);
         },
         // todo waiting considering
         // valueOf() {
-        //   return saveRun(key, store, engineStore, value, ...args);
+        //   return saveRun(key, store, engineStore, ...args);
         // },
         [Symbol.iterator]() {
           return {
@@ -245,7 +225,7 @@ const signalCore = <S extends PrimitiveState>(
             return Reflect.get(target, prop, receiver);
           }
           if (prop === Symbol.toStringTag) {
-            return whatsType(saveRun(key, store, engineStore, value, ...args));
+            return whatsType(saveRun(key, store, engineStore, ...args));
           }
           return getDeepValue(
             target, prop as string, receiver, key, signalMap,

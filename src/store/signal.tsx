@@ -159,10 +159,9 @@ const signalCore = <S extends PrimitiveState>(
         [Symbol.toPrimitive]() {
           return saveRun(key, store, engineStore, undefined, undefined, ...args);
         },
-        // todo waiting considering
-        // valueOf() {
-        //   return saveRun(key, store, engineStore, undefined, undefined, ...args);
-        // },
+        valueOf() {
+          return saveRun(key, store, engineStore, undefined, undefined, ...args);
+        },
         /**
          * @description “Symbol.toStringTag” itself is a string property.
          * Here, it is necessary to use a getter in a meta-programming approach
@@ -227,7 +226,12 @@ const signalCore = <S extends PrimitiveState>(
                * If it's not on the data instance, and we use the prototype method for calling,
                * it will result in an error.
                */
-              return (...args: unknown[]) => ((value as any)?.[prop] as AnyFn)(...args);
+              return (...args: unknown[]) => (
+                (saveRun(
+                  key, store, engineStore, undefined,
+                  undefined, ...args
+                ))?.[prop] as AnyFn
+              )?.(...args);
             }
             return createSignal(
               nextKey, signalMap, store, engineStore,
@@ -262,7 +266,7 @@ export const signal = <T extends ReactNode>(sg: SignalGetter<T>): T => {
       () => true,
     );
   }
-  
+
   const { Memo } = sgRef.current;
   return <Memo /> as T;
 };

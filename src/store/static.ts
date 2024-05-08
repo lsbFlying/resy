@@ -22,3 +22,11 @@ export const signalSymbolPropsSet =
     .add(Symbol.toPrimitive)
     .add(Symbol.toStringTag)
     .add(Symbol.iterator);
+
+export const prototypeSpecialKeyFnSet =
+  new Set<string>()
+    .add("get")
+    .add("set")
+    .add("add")
+    .add("has")
+    .add("delete");

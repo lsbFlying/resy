@@ -4,7 +4,7 @@ import React, { memo, useRef, type ReactNode, type FunctionComponent } from "rea
 import { PureComponentWithStore } from "../classConnect";
 import { whatsType } from "../utils";
 import {
-  __DEEP_SPLICE_KEY__, __SIGNAL_SUFFIX_KEY__, __VIEWER_SUFFIX_KEY__, signalSymbolPropsSet,
+  __DEEP_SPLICE_KEY__, __SIGNAL_SUFFIX_KEY__, __VIEWER_SUFFIX_KEY__, prototypeSpecialKeyFnSet, signalSymbolPropsSet,
 } from "./static";
 
 const reduceGetValue = <S extends PrimitiveState>(
@@ -16,6 +16,7 @@ const reduceGetValue = <S extends PrimitiveState>(
   const keys = (key as string).split(__DEEP_SPLICE_KEY__);
   return keys.reduce((prevValue: any, prop: string) => {
     const nextValue = prevValue?.[prop];
+    // todo 这里先不考虑Map、Set等set、add、get等方法的情况，只考虑object、Array
     return typeof nextValue === "function"
       // "this" pointer of the function here should be the property object that the function itself is attached to.
       ? nextValue.bind(prevValue, ...args)()
@@ -226,12 +227,20 @@ const signalCore = <S extends PrimitiveState>(
                * If it's not on the data instance, and we use the prototype method for calling,
                * it will result in an error.
                */
-              return (...args: unknown[]) => (
-                (saveRun(
-                  key, store, engineStore, undefined,
-                  undefined, ...args
-                ))?.[prop] as AnyFn
-              )?.(...args);
+              return (...args: unknown[]) => {
+                // todo nextKey replace key for array ok, for map need nextKey --- considering resolve
+                const nextValue = (((value)?.[prop] as AnyFn)?.(...args)) as ValueOf<S>;
+                const nextPathKey = (
+                  prototypeSpecialKeyFnSet.has(prop as string)
+                    ? args[0]
+                    : prop
+                ) as string;
+                return createSignal(
+                  whatsType(value) === "Array" ? key : nextKey,
+                  signalMap, store, engineStore,
+                  reduceInitialValue, nextValue, nextPathKey,
+                );
+              };
             }
             return createSignal(
               nextKey, signalMap, store, engineStore,

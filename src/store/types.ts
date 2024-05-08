@@ -1,6 +1,6 @@
-import type { Callback, ValueOf, PrimitiveState, MapType } from "../types";
+import type { Callback, ValueOf, PrimitiveState, MapType, PrimitiveValueType } from "../types";
 import type { Subscribe, ListenerType } from "../subscribe/types";
-import type { ReactNode } from "react";
+import type { NamedExoticComponent, ReactNode } from "react";
 import type {
   ClassConnectStoreType, ClassUnmountProcessingType, ClassStateRefSetType,
   ClassInitialStateRetrieveType, ClassThisPointerStoresType,
@@ -198,7 +198,9 @@ export interface UseStore<S extends PrimitiveState> {
  * And `valueOf` will work in conjunction with `Symbol.toPrimitive`
  * to produce a more native data value tracing effect.
  */
-export type Signal<T extends ReactNode> = T & ReactNode & { valueOf(): T };
+export type Signal<T extends ReactNode> = T extends PrimitiveValueType
+  ? T & ReactNode & { valueOf(): T }
+  : T;
 
 export type SignalsType<S extends PrimitiveState> = {
   [K in (keyof S extends undefined ? never : keyof S)]: Signal<S[K]>;
@@ -211,7 +213,12 @@ export interface UseSignal<S extends PrimitiveState> {
   useSignal(): SignalStore<S>;
 }
 
-export type SignalGetter = <T extends ReactNode>() => T;
+export type SignalGetter<T> = () => T;
+
+export type SignalRefType<T extends ReactNode> = {
+  sg: SignalGetter<T>;
+  Memo?: NamedExoticComponent;
+};
 
 /**
  * store.UseSubscription()

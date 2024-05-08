@@ -245,40 +245,47 @@ export const createStore = <S extends PrimitiveState>(
     ...proxySetHandler,
   } as any as ProxyHandler<StoreMap<S>>) as any as Store<S>;
 
-  // Proxy of driver update re-render for useStore
-  const engineStore = new Proxy(storeMap, {
-    get: (_: StoreMap<S>, key: keyof S) => {
-      const value = stateMap.get(key);
+  const genEngineStore = (isSignal?: boolean) => {
+    const engine = new Proxy(storeMap, {
+      get: (_: StoreMap<S>, key: keyof S) => {
+        const value = stateMap.get(key);
 
-      if (typeof value === "function") {
-        // Invoke a function data hook to grant the ability to update and render function data.
-        connectHookUse(
+        if (typeof value === "function") {
+          // Invoke a function data hook to grant the ability to update and render function data.
+          connectHookUse(
+            key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
+            stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap,
+            classThisPointerSet, signalMap, initialState,
+          );
+          return (value as AnyFn).bind(isSignal ? engine : store);
+        }
+
+        return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
           key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
           stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap,
           classThisPointerSet, signalMap, initialState,
         );
-        return (value as AnyFn).bind(store);
-      }
+      },
+      ...proxySetHandler,
+    } as any as ProxyHandler<StoreMap<S>>);
+    return engine;
+  };
 
-      return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
-        key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap, storeMap,
-        stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap,
-        classThisPointerSet, signalMap, initialState,
-      );
-    },
-    ...proxySetHandler,
-  } as any as ProxyHandler<StoreMap<S>>);
+  // Proxy of driver update re-render for useStore
+  const engineStore = genEngineStore();
+
+  const signalEngineStore = genEngineStore(true);
 
   const signalStore = new Proxy(storeMap, {
     get: (_: StoreMap<S>, key: keyof S) => {
       const value = stateMap.get(key);
 
       if (typeof value === "function") {
-        return createSignal(key, signalMap, store, engineStore, undefined, value);
+        return createSignal(key, signalMap, store, signalEngineStore, undefined, value);
       }
 
       return externalMap.get(key as keyof ExternalMapValue<S>)
-        || createSignal(key, signalMap, store, engineStore, undefined, value);
+        || createSignal(key, signalMap, store, signalEngineStore, undefined, value);
     },
     ...proxySetHandler,
   } as any as ProxyHandler<StoreMap<S>>);

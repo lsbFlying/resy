@@ -1,4 +1,5 @@
 export { createStore } from "./store";
+export { signal } from "./store/signal";
 export * from "./store/hook";
 export type {
   StoreOptions, InitialStateForbiddenKeys, State, PrimateForbiddenType, ConciseStore,

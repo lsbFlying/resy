@@ -1,6 +1,6 @@
 import type { PrimitiveState, ValueOf, AnyFn } from "../types";
-import type { Store, SignalMapType, SignalGetter, StoreMap } from "./types";
-import React, { type ReactNode } from "react";
+import type { Store, SignalMapType, SignalGetter, StoreMap, SignalRefType } from "./types";
+import React, { memo, useRef, type ReactNode, type FunctionComponent } from "react";
 import { PureComponentWithStore } from "../classConnect";
 import { whatsType } from "../utils";
 import {
@@ -32,7 +32,7 @@ const reduceGetValue = <S extends PrimitiveState>(
 const saveRun = <S extends PrimitiveState>(
   key: keyof S,
   store: Store<S>,
-  engineStore: StoreMap<S>,
+  engineStore: StoreMap<S> | Store<S>,
   reduceInitialValue: any,
   reduceInitialPathKey?: string,
   ...args: unknown[]
@@ -72,9 +72,13 @@ export const createSignal = <S extends PrimitiveState>(
            * it avoids the redundant computation of tracing data from the beginning specifically for functions.
            * Here, in order to proxy the data returned from within the function again,
            * it is inevitable to execute the function once more to acquire the returned data.
+           * 🌟 Here, the primary goal is to obtain the return value of the function.
+           * Therefore, it is not necessary to provide
+           * the actual `engineStore` as the `engineStore` parameter in the `saveRun` function;
+           * a regular store will suffice.
            */
           const curValue = saveRun(
-            (reduceInitialPathKey ?? key) as string, store, engineStore,
+            (reduceInitialPathKey ?? key) as string, store, store,
             reduceInitialValue, reduceInitialPathKey, ...args
           );
           // eslint-disable-next-line @typescript-eslint/no-use-before-define
@@ -217,7 +221,13 @@ const signalCore = <S extends PrimitiveState>(
              * Therefore, it is executed safely here using try catch.
              */
             if (typeof (globalThis as any)?.[type]?.prototype?.[prop as any] === "function") {
-              return (...args: unknown[]) => (nextValue as AnyFn)(...args);
+              /**
+               * @description Here, we cannot directly replace `(value as any)?.[prop]` with `nextValue`
+               * because `nextValue` itself is obtained directly from the prototype chain as an original method.
+               * If it's not on the data instance, and we use the prototype method for calling,
+               * it will result in an error.
+               */
+              return (...args: unknown[]) => ((value as any)?.[prop] as AnyFn)(...args);
             }
             return createSignal(
               nextKey, signalMap, store, engineStore,
@@ -237,11 +247,22 @@ const signalCore = <S extends PrimitiveState>(
 };
 
 /**
- * todo waiting developing
- * @description Create a signal space for the rendering expression
- * @param sg The `SignalGetter` function internally returns an arbitrary renderable expression.
+ * @description Create a signal space for the rendering
+ * @param sg The `SignalGetter` function internally returns an arbitrary renderable result.
  */
-export const signal = (sg: SignalGetter) => {
-  console.log(sg);
-  return sg();
+export const signal = <T extends ReactNode>(sg: SignalGetter<T>): T => {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const sgRef = useRef<SignalRefType<T>>({ sg });
+
+  sgRef.current.sg = sg;
+
+  if (!sgRef.current.Memo) {
+    sgRef.current.Memo = memo(
+      (() => sgRef.current.sg()) as FunctionComponent,
+      () => true,
+    );
+  }
+  
+  const { Memo } = sgRef.current;
+  return <Memo /> as T;
 };

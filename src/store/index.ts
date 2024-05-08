@@ -18,9 +18,7 @@ import { scheduler } from "../scheduler";
 import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__, __CLASS_INITIAL_STATE_RETRIEVE_KEY__,
 } from "../classConnect/static";
-import {
-  __REGENERATIVE_SYSTEM_KEY__, __STORE_FN_NAME__, __USE_SIGNAL_STORE_KEY__, __USE_STORE_KEY__,
-} from "./static";
+import { __REGENERATIVE_SYSTEM_KEY__, __USE_SIGNAL_STORE_KEY__, __USE_STORE_KEY__ } from "./static";
 import { hasOwnProperty } from "../utils";
 import {
   stateErrorProcessing, optionsErrorProcessing, subscribeErrorProcessing,
@@ -239,9 +237,7 @@ export const createStore = <S extends PrimitiveState>(
       const value = stateMap.get(key);
       if (typeof value === "function") {
         // Bind to the store for the convenience of using this as well as calling some related objects in externalMap.
-        const storeFn = (value as AnyFn).bind(store);
-        (storeFn as any)[__STORE_FN_NAME__] = __STORE_FN_NAME__;
-        return storeFn;
+        return (value as AnyFn).bind(store);
       }
 
       return externalMap.get(key as keyof ExternalMapValue<S>) || value;
@@ -261,9 +257,7 @@ export const createStore = <S extends PrimitiveState>(
           stateRestoreAccomplishedMap, schedulerProcessor, initialFnCanExecMap,
           classThisPointerSet, signalMap, initialState,
         );
-        const storeFn = (value as AnyFn).bind(store);
-        (storeFn as any)[__STORE_FN_NAME__] = __STORE_FN_NAME__;
-        return storeFn;
+        return (value as AnyFn).bind(store);
       }
 
       return externalMap.get(key as keyof ExternalMapValue<S>) || connectHookUse(
@@ -280,12 +274,11 @@ export const createStore = <S extends PrimitiveState>(
       const value = stateMap.get(key);
 
       if (typeof value === "function") {
-        value[__STORE_FN_NAME__] = __STORE_FN_NAME__;
-        return createSignal(key, signalMap, store, engineStore, value);
+        return createSignal(key, signalMap, store, engineStore, undefined, value);
       }
 
       return externalMap.get(key as keyof ExternalMapValue<S>)
-        || createSignal(key, signalMap, store, engineStore, value);
+        || createSignal(key, signalMap, store, engineStore, undefined, value);
     },
     ...proxySetHandler,
   } as any as ProxyHandler<StoreMap<S>>);
@@ -336,9 +329,7 @@ export const createStore = <S extends PrimitiveState>(
           connectClassUse.bind(this)(key, stateMap);
           // In class components, there is no rigid restriction like the Hooks rules on state,
           // so here you can confidently use `this.store` as `engineStore`.
-          const storeFn = (value as AnyFn).bind(this.store);
-          (storeFn as any)[__STORE_FN_NAME__] = __STORE_FN_NAME__;
-          return storeFn;
+          return (value as AnyFn).bind(this.store);
         }
         return externalMap.get(key as keyof ExternalMapValue<S>) || connectClassUse.bind(this)(key, stateMap);
       },

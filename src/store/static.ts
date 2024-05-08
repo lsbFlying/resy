@@ -14,10 +14,11 @@ export const __VIEWER_SUFFIX_KEY__ = "_ViewerSuffixKey";
 export const __SIGNAL_SUFFIX_KEY__ = "_SignalSuffixKey";
 
 // string constants for signal internal deep stitching attributes
-export const __DEEP_SPLICE_KEY__ = "$$&&deepSpliceKey&&$$";
+export const __DEEP_SPLICE_KEY__ = "_$_¥_$_";
 
-/**
- * @description The key of the extra name of the store function property
- * Identify and judge the subsequent function attributes in the processing of signal
- */
-export const __STORE_FN_NAME__ = Symbol("StoreFnName");
+// Properties of proxies within signals that require special handling
+export const signalSymbolPropsSet =
+  new Set<symbol>()
+    .add(Symbol.toPrimitive)
+    .add(Symbol.toStringTag)
+    .add(Symbol.iterator);

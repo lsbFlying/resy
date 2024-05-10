@@ -18,15 +18,16 @@ export const __DEEP_SPLICE_KEY__ = "_$_¥_$_";
 
 // Properties of proxies within signals that require special handling
 export const signalSymbolPropsSet =
-  new Set<symbol>()
+  new Set<"valueOf" | symbol>()
     .add(Symbol.toPrimitive)
     .add(Symbol.toStringTag)
-    .add(Symbol.iterator);
+    .add(Symbol.iterator)
+    .add("valueOf");
 
-export const prototypeSpecialKeyFnSet =
+export const mapSetlKeys =
   new Set<string>()
     .add("get")
-    .add("set")
     .add("add")
     .add("has")
-    .add("delete");
+    .add("delete")
+    .add("deref");

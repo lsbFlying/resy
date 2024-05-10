@@ -4,7 +4,8 @@ import React, { memo, useRef, type ReactNode, type FunctionComponent } from "rea
 import { PureComponentWithStore } from "../classConnect";
 import { whatsType } from "../utils";
 import {
-  __DEEP_SPLICE_KEY__, __SIGNAL_SUFFIX_KEY__, __VIEWER_SUFFIX_KEY__, prototypeSpecialKeyFnSet, signalSymbolPropsSet,
+  __DEEP_SPLICE_KEY__, __SIGNAL_SUFFIX_KEY__, __VIEWER_SUFFIX_KEY__,
+  mapSetlKeys, signalSymbolPropsSet,
 } from "./static";
 
 const reduceGetValue = <S extends PrimitiveState>(
@@ -16,7 +17,9 @@ const reduceGetValue = <S extends PrimitiveState>(
   const keys = (key as string).split(__DEEP_SPLICE_KEY__);
   return keys.reduce((prevValue: any, prop: string) => {
     const nextValue = prevValue?.[prop];
-    // todo 这里先不考虑Map、Set等set、add、get等方法的情况，只考虑object、Array
+    // todo 这里先不考虑Map、Set等set、add、get等方法的情况，
+    //  因为在“typeof (globalThis as any)?.[type]?.prototype?.[prop as any] === "function"”
+    //  这里的判断中已经将这些函数的参数作为pathKey传到args中了
     return typeof nextValue === "function"
       // "this" pointer of the function here should be the property object that the function itself is attached to.
       ? nextValue.bind(prevValue, ...args)()
@@ -53,9 +56,10 @@ export const createSignal = <S extends PrimitiveState>(
   signalMap: SignalMapType<S>,
   store: Store<S>,
   engineStore: StoreMap<S>,
-  reduceInitialValue: any,
   value?: ValueOf<S>,
+  reduceInitialValue?: any,
   reduceInitialPathKey?: string,
+  ...args: unknown[]
 ) => {
   /**
    * @description By passing arguments as props to AnyFnMemo through args,
@@ -84,14 +88,14 @@ export const createSignal = <S extends PrimitiveState>(
           );
           // eslint-disable-next-line @typescript-eslint/no-use-before-define
           return signalCore(
-            key, signalMap, store, engineStore, curValue,
-            curValue, reduceInitialPathKey, ...args
+            key, signalMap, store, engineStore,
+            curValue, curValue, ...args
           );
         }
         // eslint-disable-next-line @typescript-eslint/no-use-before-define
         : signalCore(
           key, signalMap, store, engineStore,
-          reduceInitialValue, value, reduceInitialPathKey,
+          reduceInitialValue, value, ...args
         ),
     );
   }
@@ -182,8 +186,8 @@ const signalCore = <S extends PrimitiveState>(
                   done: false,
                   value: createSignal(
                     `${key as string}${__DEEP_SPLICE_KEY__}${this.index}`,
-                    signalMap, store, engineStore, undefined,
-                    (value as any)[this.index], undefined,
+                    signalMap, store, engineStore, value?.[this.index],
+                    reduceInitialValue, `${this.index}`, ...args
                   ),
                 };
               }
@@ -207,7 +211,7 @@ const signalCore = <S extends PrimitiveState>(
           }
           const type = whatsType(value);
 
-          const nextValue = (value as any)?.[prop];
+          const nextValue = value?.[prop];
 
           // nextKey is also used to ensure the uniqueness of attribute paths
           const nextKey = `${key as string}${__DEEP_SPLICE_KEY__}${prop as string}`;
@@ -222,34 +226,38 @@ const signalCore = <S extends PrimitiveState>(
              */
             if (typeof (globalThis as any)?.[type]?.prototype?.[prop as any] === "function") {
               /**
-               * @description Here, we cannot directly replace `(value as any)?.[prop]` with `nextValue`
+               * @description Here, we cannot directly replace `value?.[prop]` with `nextValue`
                * because `nextValue` itself is obtained directly from the prototype chain as an original method.
                * If it's not on the data instance, and we use the prototype method for calling,
                * it will result in an error.
                */
               return (...args: unknown[]) => {
-                // todo nextKey replace key for array ok, for map need nextKey --- considering resolve
-                const nextValue = (((value)?.[prop] as AnyFn)?.(...args)) as ValueOf<S>;
-                const nextPathKey = (
-                  prototypeSpecialKeyFnSet.has(prop as string)
-                    ? args[0]
-                    : prop
-                ) as string;
-                return createSignal(
-                  whatsType(value) === "Array" ? key : nextKey,
-                  signalMap, store, engineStore,
-                  reduceInitialValue, nextValue, nextPathKey,
-                );
+                // todo 这里需要考虑map、set等方法的调用参数作为下一个pathKey的情况
+                if (mapSetlKeys.has(prop as string)) {
+                  return createSignal(
+                    nextKey, signalMap, store, engineStore,
+                    ((value?.[prop] as AnyFn)?.(...args)) as ValueOf<S>,
+                    reduceInitialValue, args?.[0] as string, ...args
+                  );
+                }
+                if (whatsType(value) === "Array") {
+                  return createSignal(
+                    nextKey, signalMap, store, engineStore, value,
+                    reduceInitialValue, prop as string, ...args
+                  );
+                }
+                // todo waiting test sure
+                return (value?.[prop] as AnyFn)(...args);
               };
             }
             return createSignal(
-              nextKey, signalMap, store, engineStore,
-              reduceInitialValue, nextValue, prop as string,
+              nextKey, signalMap, store, engineStore, nextValue,
+              reduceInitialValue, prop as string, ...args
             );
           } catch (e) {
             return createSignal(
-              nextKey, signalMap, store, engineStore,
-              reduceInitialValue, nextValue, prop as string,
+              nextKey, signalMap, store, engineStore, nextValue,
+              reduceInitialValue, prop as string, ...args
             );
           }
         }

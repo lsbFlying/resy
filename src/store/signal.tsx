@@ -4,8 +4,7 @@ import React, { memo, useRef, type ReactNode, type FunctionComponent } from "rea
 import { PureComponentWithStore } from "../classConnect";
 import { whatsType } from "../utils";
 import {
-  __DEEP_SPLICE_KEY__, __SIGNAL_SUFFIX_KEY__, __VIEWER_SUFFIX_KEY__,
-  mapSetlKeys, signalSymbolPropsSet,
+  __DEEP_SPLICE_KEY__, __SIGNAL_SUFFIX_KEY__, __VIEWER_SUFFIX_KEY__, mapSetKeys, signalSymbolPropsSet,
 } from "./static";
 
 const reduceGetValue = <S extends PrimitiveState>(
@@ -17,9 +16,12 @@ const reduceGetValue = <S extends PrimitiveState>(
   const keys = (key as string).split(__DEEP_SPLICE_KEY__);
   return keys.reduce((prevValue: any, prop: string) => {
     const nextValue = prevValue?.[prop];
-    // todo 这里先不考虑Map、Set等set、add、get等方法的情况，
-    //  因为在“typeof (globalThis as any)?.[type]?.prototype?.[prop as any] === "function"”
-    //  这里的判断中已经将这些函数的参数作为pathKey传到args中了
+    /**
+     * @description Here, there is no need to consider
+     * the prototype methods such as `set`, `add`, `get`, etc., of `Map` and `Set`.
+     * This is because, in the assessment of `typeof (globalThis as any)?.[type]?.prototype?.[prop as any] === "function"`,
+     * the arguments for these functions have already been passed into `args` as `pathKey`.
+     */
     return typeof nextValue === "function"
       // "this" pointer of the function here should be the property object that the function itself is attached to.
       ? nextValue.bind(prevValue, ...args)()
@@ -205,6 +207,13 @@ const signalCore = <S extends PrimitiveState>(
            * @description When the original primitive value or stringTag is needed,
            * it may involve some sort of conversion, comparison, and so on.
            * Therefore, an attempt is made here to link the data state through the engineStore.
+           * The `signalSymbolPropsSet` includes a `valueOf` property,
+           * which is considered for dynamic handling with `useState`,
+           * mainly to accommodate certain JavaScript expression scenarios.
+           * Expressions such as `===`, `??`, `||`, `?`, and `|` are not supported because the signal is actually a proxy object.
+           * For these expressions that essentially point to real data values,
+           * the proxy object does not meet the requirements.
+           * Therefore, temporarily using `valueOf` as an alternative solution is being considered.
            */
           if (markAsRendering || signalSymbolPropsSet.has(prop as symbol)) {
             return Reflect.get(target, prop, receiver);
@@ -225,29 +234,46 @@ const signalCore = <S extends PrimitiveState>(
              * Therefore, it is executed safely here using try catch.
              */
             if (typeof (globalThis as any)?.[type]?.prototype?.[prop as any] === "function") {
-              /**
-               * @description Here, we cannot directly replace `value?.[prop]` with `nextValue`
-               * because `nextValue` itself is obtained directly from the prototype chain as an original method.
-               * If it's not on the data instance, and we use the prototype method for calling,
-               * it will result in an error.
-               */
               return (...args: unknown[]) => {
-                // todo 这里需要考虑map、set等方法的调用参数作为下一个pathKey的情况
-                if (mapSetlKeys.has(prop as string)) {
-                  return createSignal(
-                    nextKey, signalMap, store, engineStore,
-                    ((value?.[prop] as AnyFn)?.(...args)) as ValueOf<S>,
-                    reduceInitialValue, args?.[0] as string, ...args
-                  );
-                }
+                /**
+                 * @description Here, the handling of array types needs to be distinguished from that of `map`、 `set` etc.
+                 * Given that an array can directly serve as a ReactNode,
+                 * or can use prototype methods like `map` to return a ReactNode,
+                 * we treat the `map` and other prototype methods of an array as the second and final level of proxied `pathKey`.
+                 * Meanwhile, the array data itself remains as the `nextValue` used in conjunction
+                 * with these prototype methods for retrieval and invocation.
+                 */
                 if (whatsType(value) === "Array") {
                   return createSignal(
                     nextKey, signalMap, store, engineStore, value,
                     reduceInitialValue, prop as string, ...args
                   );
                 }
-                // todo waiting test sure
-                return (value?.[prop] as AnyFn)(...args);
+                // Here, it is necessary to consider the case where the arguments of methods
+                // like `map`, `set`, etc., serve as the next `pathKey`.
+                if (mapSetKeys.has(prop as string)) {
+                  /**
+                   * @description Here, we cannot directly replace `value?.[prop]` with `nextValue`,
+                   * because `nextValue` itself is obtained directly from the prototype chain as an original method.
+                   * If it's not on the data instance, and we use the prototype method for calling,
+                   * it will result in an error. For example,
+                   * if `value` is data of the Map type, and `prop` is a method on the prototype of Map like `get`,
+                   * then directly using `xMap.get` actually retrieves the original method from its prototype chain.
+                   * It lacks the context of the Map instance as its calling source,
+                   * which will result in an error in subsequent calls,
+                   * informing you that the calling source is `undefined` or `null`.
+                   */
+                  return createSignal(
+                    nextKey, signalMap, store, engineStore,
+                    ((value?.[prop] as AnyFn)?.(...args)) as ValueOf<S>,
+                    reduceInitialValue, args?.[0] as string, ...args
+                  );
+                }
+                return createSignal(
+                  nextKey, signalMap, store, engineStore,
+                  ((value?.[prop] as AnyFn)?.(...args)) as ValueOf<S>,
+                  reduceInitialValue, args?.[0] as string, ...args
+                );
               };
             }
             return createSignal(

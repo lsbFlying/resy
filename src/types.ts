@@ -8,6 +8,8 @@ export type ValueOf<S extends PrimitiveState> = S[keyof S];
 
 export type MapType<S extends PrimitiveState> = Map<keyof S, ValueOf<S>>;
 
+export type PrimitiveType = number | string | boolean | undefined | null | symbol;
+
 export type PrimitiveValueType = "Number" | "String" | "Boolean" | "Undefined" | "Null" | "Symbol";
 
 export type ComplexValueType =

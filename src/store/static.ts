@@ -24,7 +24,7 @@ export const signalSymbolPropsSet =
     .add(Symbol.iterator)
     .add("valueOf");
 
-export const mapSetlKeys =
+export const mapSetKeys =
   new Set<string>()
     .add("get")
     .add("add")

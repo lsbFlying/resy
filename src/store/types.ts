@@ -202,12 +202,12 @@ type NativeValueOfType<T extends ReactNode> = { valueOf(): T };
 
 export type Signal<T extends ReactNode> = T & NativeValueOfType<T>;
 
-export type SignalsState<S extends PrimitiveState> = {
+export type SignalState<S extends PrimitiveState> = {
   [K in (keyof S extends undefined ? never : keyof S)]: Signal<S[K]>;
 };
 
 /** The type of signal-store returned by useSignal */
-export type SignalStore<S extends PrimitiveState> = SignalsState<S> & StoreUtils<S>;
+export type SignalStore<S extends PrimitiveState> = SignalState<S> & StoreUtils<S>;
 
 export interface UseSignal<S extends PrimitiveState> {
   useSignal(): SignalStore<S>;

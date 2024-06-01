@@ -1,7 +1,5 @@
 <div align="center">
 <img src="./resy-logo.svg" alt="resy">
-<h3>react state manager</h3>
-<h4>Support React Native、Mini Apps</h4>
 
 [![GitHub license](https://img.shields.io/github/license/lsbFlying/resy?style=flat-square)](https://github.com/lsbFlying/resy/blob/master/LICENSE)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lsbFlying/resy/test.yml?branch=master&color=blue&style=flat-square)](https://github.com/lsbFlying/resy/actions/workflows/test.yml)
@@ -11,6 +9,10 @@
 [![react](https://img.shields.io/badge/React-%3E%3D16.8.0-green.svg?style=flat-square)](https://img.shields.io/badge/React-%3E%3D16.0.0-green.svg?style=flat-square)
 
 </div>
+
+### Introduce
+- 😊 React State Manager.
+- 😊 Support React-Native、Mini-Apps.
 
 ### Features
 - 😎 Easy!!!
@@ -398,7 +400,7 @@ function App() {
 
 #### hook
 ```tsx
-import { createStore } from "@shein/resy";
+import { createStore } from "resy";
 
 const store = createStore({
   count: 0,
@@ -453,7 +455,7 @@ const App = () => {
 #### class
 
 ```tsx
-import { createStore, ComponentWithStore } from "@shein/resy";
+import { createStore, ComponentWithStore } from "resy";
 
 class App extends ComponentWithStore {
   store = this.connectStore(store);

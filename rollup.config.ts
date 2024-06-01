@@ -10,30 +10,17 @@ import {
 } from "@rollup/plugin-babel";
 
 const input = "src/index.ts";
-const umdOutputName = "resy";
-const modules = ["cjs", "esm", "umd", "system"];
 
-function createPlatformsBuildConfig() {
-  return ["dom", "native"].map(item => ({
-    input: `src/platforms/${item}.ts`,
-    external: [`react-${item}`],
-    output: modules.map(itemM => {
-      const umdOpts = itemM === "umd"
-        ? {
-          name: `${umdOutputName}-${item}`,
-          globals: {
-            [`react-${item}`]: item === "dom" ? "ReactDom" : "ReactNative",
-          },
-        }
-        : {};
-      return {
-        format: itemM,
-        dir: itemM === "cjs" ? "dist" : `dist/${itemM}`,
-        entryFileNames: `platform${item === "dom" ? "" : ".native"}.js`,
-        ...umdOpts,
-      };
-    }),
-  }));
+function createPlatformsBuildConfig(platform: "dom" | "native", format: "cjs" | "esm") {
+  return {
+    input: `src/platforms/${platform}.ts`,
+    external: [`react-${platform}`],
+    output: [{
+      format,
+      dir: "dist",
+      entryFileNames: `platform.${format}${platform === "dom" ? "" : ".native"}.js`,
+    }],
+  };
 }
 
 function createTsDeclareFileBuildConfig() {
@@ -49,10 +36,10 @@ function createTsDeclareFileBuildConfig() {
     " * Released under the MIT License.\n" +
     " */";
 
-  return modules.map(item => ({
+  return {
     input,
     output: {
-      file: `dist${item === "cjs" ? "/resy.d.ts" : `/${item}/index.d.ts`}`,
+      file: "dist/resy.d.ts",
       format: "esm",
       banner,
     },
@@ -65,43 +52,37 @@ function createTsDeclareFileBuildConfig() {
         },
       }),
     ],
-  }));
+  };
 }
 
-function createModuleBuildConfig(
-  format: "cjs" | "esm" | "umd" | "system",
-  isTerser?: boolean,
-) {
-  const umdNameOpts = format === "umd"
-    ? { name: umdOutputName }
-    : {};
-  const fileOpts = {
-    umd: "/umd",
-    system: "/system",
-    esm: "/esm",
+function createModuleBuildConfig(format: "cjs" | "esm", isTerser?: boolean) {
+  const platforms = `./platform.${format}`;
+  const terserOpts = isTerser ? [terser()] : [];
+
+  return {
+    input,
+    output: {
+      file: `dist/resy.${format}.${isTerser ? "prod." : ""}js`,
+      format,
+    },
     /**
-     * @description Although modern browsers and the latest version of Node.js support ESM,
-     * the CJS module can be used seamlessly in most JavaScript environments,
-     * including older versions of Node.js and some tool chains.
-     * So the CJS module is exported by default.
+     * @description Because use-sync-external-store, this package only exports CJS modules.
+     * So here we need to do a separate special identification of an external extension.
+     * Otherwise, the special export processing in the code will be invalid.
      */
-    cjs: "",
-  };
-
-  const platforms = "./platform";
-  const umdOutputGlobalOpts = format === "umd"
-    ? {
-      globals: {
-        react: "React",
-        "./platform": "ReactPlatformExports",
-        "use-sync-external-store/shim": "useSyncExternalStoreExports",
-      },
-    }
-    : {};
-
-  const babelPlugins = format === "umd" || format === "system"
-    ? []
-    : [
+    external: [
+      "react",
+      platforms,
+      "use-sync-external-store/shim",
+      // /@babel\/runtime/,
+    ],
+    plugins: [
+      replace({
+        "react-platform": platforms,
+        preventAssignment: true,
+      }),
+      autoExternal(),
+      nodeResolve(),
       babel({
         /**
          * @description I forgot which version of "@ rollup/plugin label" requires the display
@@ -142,44 +123,6 @@ function createModuleBuildConfig(
       // getBabelOutputPlugin({
       //   configFile: "./babel.config.js",
       // }),
-    ];
-
-  const terserOpts = isTerser ? [terser()] : [];
-
-  const suffixOpts = {
-    umd: "",
-    system: "",
-    esm: "",
-    cjs: "cjs.",
-  };
-
-  return {
-    input,
-    output: {
-      file: `dist${fileOpts[format]}/resy.${suffixOpts[format]}${isTerser ? "prod." : ""}js`,
-      format,
-      ...umdNameOpts,
-      ...umdOutputGlobalOpts,
-    },
-    /**
-     * @description Because use-sync-external-store, this package only exports CJS modules.
-     * So here we need to do a separate special identification of an external extension.
-     * Otherwise, the special export processing in the code will be invalid.
-     */
-    external: [
-      "react",
-      platforms,
-      "use-sync-external-store/shim",
-      // /@babel\/runtime/,
-    ],
-    plugins: [
-      replace({
-        "react-platform": platforms,
-        preventAssignment: true,
-      }),
-      autoExternal(),
-      nodeResolve(),
-      ...babelPlugins,
       typescript({
         tsconfig: "./tsconfig.json",
       }),
@@ -189,9 +132,13 @@ function createModuleBuildConfig(
 }
 
 export default [
-  ...createPlatformsBuildConfig(),
-  ...createTsDeclareFileBuildConfig(),
-  ...[...modules, ...modules].map((item, index) => (
-    createModuleBuildConfig(item as any, index > 3)
-  )),
+  createPlatformsBuildConfig("dom", "cjs"),
+  createPlatformsBuildConfig("native", "cjs"),
+  createPlatformsBuildConfig("dom", "esm"),
+  createPlatformsBuildConfig("native", "esm"),
+  createTsDeclareFileBuildConfig(),
+  createModuleBuildConfig("cjs"),
+  createModuleBuildConfig("cjs", true),
+  createModuleBuildConfig("esm"),
+  createModuleBuildConfig("esm", true),
 ];

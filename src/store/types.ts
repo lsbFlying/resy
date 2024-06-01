@@ -1,4 +1,4 @@
-import type { Callback, ValueOf, PrimitiveState, MapType } from "../types";
+import { Callback, ValueOf, PrimitiveState, MapType, NativeDataType } from "../types";
 import type { Subscribe, ListenerType } from "../subscribe/types";
 import type { NamedExoticComponent, ReactNode } from "react";
 import type {
@@ -197,10 +197,13 @@ export interface UseStore<S extends PrimitiveState> {
  * function properties to the `value` value.
  * And `valueOf` will work in conjunction with `Symbol.toPrimitive`
  * to produce a more native data value tracing effect.
+ * at the same time,
+ * the valueOf is used for these operators of "‘x ? y : z’、===、!==、&&、||、&&=、||=、??、??=、!、void"
+ * can get the correct operation results.
+ *
+ * And the typeOf is used for to solve the problem that typeof operators can not get the actual type of data.
  */
-type NativeValueOfType<T extends ReactNode> = { valueOf(): T };
-
-export type Signal<T extends ReactNode> = T & NativeValueOfType<T>;
+export type Signal<T extends ReactNode> = T & { valueOf(): T } & { typeOf(): NativeDataType };
 
 export type SignalState<S extends PrimitiveState> = {
   [K in (keyof S extends undefined ? never : keyof S)]: Signal<S[K]>;
@@ -213,10 +216,10 @@ export interface UseSignal<S extends PrimitiveState> {
   useSignal(): SignalStore<S>;
 }
 
-export type SignalGetter<T> = () => T;
+export type Metaverse<T> = () => T;
 
 export type SignalRefType<T extends ReactNode> = {
-  sg: SignalGetter<T>;
+  meta: Metaverse<T>;
   Memo?: NamedExoticComponent;
 };
 
@@ -273,3 +276,5 @@ export type StateRefCounterMapType = MapType<{
 }>;
 
 export type SignalMapType<S extends PrimitiveState> = Map<keyof S, any>;
+
+export type Constructor<T> = new (...args: any[]) => T;

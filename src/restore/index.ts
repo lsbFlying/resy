@@ -131,8 +131,8 @@ export const initialStateRetrieve = <S extends PrimitiveState>(
     && !stateRestoreAccomplishedMap.get("initialStateRetrieveAccomplished")
   ) {
     stateRestoreAccomplishedMap.set("initialStateRetrieveAccomplished", true);
+    initialFnCanExecMap.set("canExec", undefined);
     restoreProcessing(reducerState, stateMap, signalMap, initialState);
-    initialFnCanExecMap.set("canExec", true);
   }
 };
 

@@ -8,15 +8,15 @@ export type ValueOf<S extends PrimitiveState> = S[keyof S];
 
 export type MapType<S extends PrimitiveState> = Map<keyof S, ValueOf<S>>;
 
-export type PrimitiveType = number | string | boolean | undefined | null | symbol;
+// export type PrimitiveType = number | string | boolean | undefined | null | symbol;
 
 export type PrimitiveValueType = "Number" | "String" | "Boolean" | "Undefined" | "Null" | "Symbol";
 
 export type ComplexValueType =
   | "Object" | "Function" | "Array" | "Date" | "RegExp"
   | "Map" | "Set" | "WeakMap" | "WeakSet"
-  | "WeakRef" | "BigInt"
-  | "Promise" | "FormData" | "Blob" | "File" | "Error"
+  | "WeakRef" | "BigInt" | "Arguments"
+  | "Promise" | "AsyncFunction" | "FormData" | "Blob" | "File" | "Error"
   | "CustomEvent" | "Storage"
   | "WebSocket" | "ArrayBuffer" | "DataView"
   | "Uint8Array" | "Int8Array" | "Uint8ClampedArray" | "Int16Array" | "Uint16Array" | "Int32Array"

@@ -61,13 +61,20 @@ test("utils", () => {
     value53 = new XMLHttpRequest(),
     value54 = new Headers(),
     value55 = new Request("https://example.com", { method: "GET", headers: value54 }),
-    value56 = new Response("body", { status: 200, statusText: "OK", headers: value54 })
+    value56 = new Response("body", { status: 200, statusText: "OK", headers: value54 }),
+    value57 = async () => "",
+    value58 = new AggregateError([new Error("some error")], "Hello")
   ;
 
-  // "arguments" is array-like object, it does not have an accurate type description in JS
+  /**
+   * @description "arguments" is array-like object,
+   * it does not have an accurate type description in JS
+   * Earlier versions of node would return arguments with the type Unknown,
+   * and subsequent new versions of node would identify arguments as its own special Arguments type.
+   */
   function testUnknown() {
     // eslint-disable-next-line prefer-rest-params
-    expect(whatsType(arguments) === "Unknown").toBeTruthy();
+    expect(whatsType(arguments) === "Arguments").toBeTruthy();
   }
   testUnknown();
 
@@ -129,6 +136,8 @@ test("utils", () => {
   expect(whatsType(value54) === "Headers").toBeTruthy();
   expect(whatsType(value55) === "Request").toBeTruthy();
   expect(whatsType(value56) === "Response").toBeTruthy();
+  expect(whatsType(value57) === "AsyncFunction").toBeTruthy();
+  expect(whatsType(value58) === "Error").toBeTruthy();
 
   // 🌟 The test execution here is slightly different from the test execution result of the browser,
   // and it should be related to the small changes in the global object of vitest's test environment.

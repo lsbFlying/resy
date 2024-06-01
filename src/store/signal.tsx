@@ -1,13 +1,13 @@
 import type { PrimitiveState, ValueOf, AnyFn } from "../types";
-import type { Store, SignalMapType, SignalGetter, StoreMap, SignalRefType } from "./types";
+import type { Store, SignalMapType, Metaverse, StoreMap, SignalRefType } from "./types";
 import React, { memo, useRef, type ReactNode, type FunctionComponent } from "react";
 import { PureComponentWithStore } from "../classConnect";
 import { whatsType } from "../utils";
 import {
-  __DEEP_SPLICE_KEY__, __SIGNAL_SUFFIX_KEY__, __VIEWER_SUFFIX_KEY__, mapSetKeys, signalSymbolPropsSet,
+  __DEEP_SPLICE_KEY__, __SIGNAL_SUFFIX_KEY__, __VIEWER_SUFFIX_KEY__, instanceMap, mapSetKeys, signalSymbolPropsSet,
 } from "./static";
 
-const reduceGetValue = <S extends PrimitiveState>(
+const reduceValue = <S extends PrimitiveState>(
   key: string,
   engineStore: StoreMap<S> | Store<S>,
   reduceInitialValue: any,
@@ -44,9 +44,9 @@ const saveRun = <S extends PrimitiveState>(
   ...args: unknown[]
 ) => {
   try {
-    return reduceGetValue((reduceInitialPathKey ?? key) as string, engineStore, reduceInitialValue, ...args);
+    return reduceValue((reduceInitialPathKey ?? key) as string, engineStore, reduceInitialValue, ...args);
   } catch (e) {
-    return reduceGetValue((reduceInitialPathKey ?? key) as string, store, reduceInitialValue, ...args);
+    return reduceValue((reduceInitialPathKey ?? key) as string, store, reduceInitialValue, ...args);
   }
 };
 
@@ -105,6 +105,15 @@ export const createSignal = <S extends PrimitiveState>(
   return signalMap.get(key);
 };
 
+/**
+ * TODO Currently, Signal can't directly handle the operators
+ *  "typeof、‘x ? y : z’、===, !==, &&, ||, &&=, ||=, ??, ??=, !, void".
+ *  To achieve the correct results,
+ *  it needs to rely on the assistance of the `valueOf` and `typeOf` methods.
+ * @description The underlying reason is that these operators involve operations on primitive,
+ * low-level memory or data values. Since Signal's data is proxied,
+ * it's currently not possible to directly access these underlying proxied values through the proxy.
+ */
 const signalCore = <S extends PrimitiveState>(
   key: keyof S,
   signalMap: SignalMapType<S>,
@@ -136,7 +145,7 @@ const signalCore = <S extends PrimitiveState>(
            * Subsequent updates can then perform the corresponding rendering updates based on the records of data references used.
            */
           return (
-            reduceGetValue(
+            reduceValue(
               key as string, this.store,
               undefined, ...Object.values(this.props),
             ) ?? null
@@ -153,6 +162,11 @@ const signalCore = <S extends PrimitiveState>(
 
   const signalKey = `${key as string}${__SIGNAL_SUFFIX_KEY__}`;
   if (!signalMap.has(signalKey)) {
+    // To ensure the correctness of the "in" operator,
+    // it's necessary to extend the functionality for object and function types.
+    const isFnOrObj = typeof value === "function" || typeof value === "object";
+    const valueObj = isFnOrObj ? { ...value } : null;
+
     signalMap.set(
       signalKey,
       /**
@@ -162,12 +176,25 @@ const signalCore = <S extends PrimitiveState>(
        * Hence, here the React element object <Viewer {...args} /> is proxied by default.
        */
       new Proxy({
-        ...<Viewer key={key} {...args} />,
+        ...<Viewer {...args} />,
+        ...valueObj,
         [Symbol.toPrimitive]() {
           return saveRun(key, store, engineStore, undefined, undefined, ...args);
         },
+        /**
+         * @description This isn't a very common coding practice,
+         * but it's more about ensuring stable execution within the Signal code,
+         * particularly when dealing with the "instanceof" operator on Signal data.
+         */
+        [Symbol.hasInstance]() {
+          const valueLast = saveRun(key, store, engineStore, undefined, undefined, ...args);
+          return valueLast instanceof instanceMap.get(whatsType(valueLast))!;
+        },
         valueOf() {
           return saveRun(key, store, engineStore, undefined, undefined, ...args);
+        },
+        typeOf() {
+          return whatsType(saveRun(key, store, engineStore, undefined, undefined, ...args));
         },
         /**
          * @description “Symbol.toStringTag” itself is a string property.
@@ -218,6 +245,11 @@ const signalCore = <S extends PrimitiveState>(
           if (markAsRendering || signalSymbolPropsSet.has(prop as symbol)) {
             return Reflect.get(target, prop, receiver);
           }
+
+          /**
+           * @description Due to the possibility of data type changes during data updates,
+           * secondary type confirmation is performed during each processing to ensure the accuracy of the type results
+           */
           const type = whatsType(value);
 
           const nextValue = value?.[prop];
@@ -243,7 +275,7 @@ const signalCore = <S extends PrimitiveState>(
                  * Meanwhile, the array data itself remains as the `nextValue` used in conjunction
                  * with these prototype methods for retrieval and invocation.
                  */
-                if (whatsType(value) === "Array") {
+                if (type === "Array") {
                   return createSignal(
                     nextKey, signalMap, store, engineStore, value,
                     reduceInitialValue, prop as string, ...args
@@ -294,18 +326,19 @@ const signalCore = <S extends PrimitiveState>(
 };
 
 /**
+ * TODO Not yet fully developed.
  * @description Create a signal space for the rendering
- * @param sg The `SignalGetter` function internally returns an arbitrary renderable result.
+ * @param meta The `Metaverse` function internally returns an arbitrary renderable result.
  */
-export const signal = <T extends ReactNode>(sg: SignalGetter<T>): T => {
+export const signal = <T extends ReactNode>(meta: Metaverse<T>): T => {
   // eslint-disable-next-line react-hooks/rules-of-hooks
-  const sgRef = useRef<SignalRefType<T>>({ sg });
+  const sgRef = useRef<SignalRefType<T>>({ meta });
 
-  sgRef.current.sg = sg;
+  sgRef.current.meta = meta;
 
   if (!sgRef.current.Memo) {
     sgRef.current.Memo = memo(
-      (() => sgRef.current.sg()) as FunctionComponent,
+      (() => sgRef.current.meta()) as FunctionComponent,
       () => true,
     );
   }

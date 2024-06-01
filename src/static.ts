@@ -10,7 +10,7 @@ export const __DEV__ = NODE_ENV === "development";
 
 /**
  * @description To be deprecated
- * todo It is anticipated that following the stabilization of React version 19,
+ * TODO It is anticipated that following the stabilization of React version 19,
  *  the use of `unstable_batchedUpdates` might be considered for discontinuation,
  *  given that these unstable APIs were already unsupported in React version 18.
  */

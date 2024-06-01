@@ -77,9 +77,13 @@ export const createStore = <S extends PrimitiveState>(
   // This is the identification of whether the logical execution of the reset recovery is complete (to prevent multiple resets)
   const stateRestoreAccomplishedMap: StateRestoreAccomplishedMapType = new Map();
 
-  // Use Map and Set to improve performance without changing initialState, and Map and Set will be dominant in memory
+  /**
+   * @description Use Map and Set to improve performance,
+   * "Simultaneously, it can keep the `initialState` unchanged,
+   * and `Map`、 `Set` have advantages in terms of memory usage."
+   */
   const stateMap: MapType<S> = objectToMap(reducerState);
-  // Data status of the previous batch
+  // Data status of the previous update batch
   const prevBatchState: MapType<S> = objectToMap(reducerState);
 
   // Subscription listener stack
@@ -324,25 +328,25 @@ export const createStore = <S extends PrimitiveState>(
   // Connecting this pointer of the class component (therefore, this cannot be an arrow function)
   function classConnectStore(this: ClassThisPointerType<S>) {
     classThisPointerSet.add(this);
-    // Data agents for use by class
-    return new Proxy(storeMap, {
+    // Data agents for use by class components
+    const engineStore = new Proxy(storeMap, {
       get: (_: StoreMap<S>, key: keyof S) => {
         // Compatible with scenarios where both hook components and class components are used together.
         if (key === "useStore") {
-          return () => this.store;
+          return () => engineStore;
         }
         const value = stateMap.get(key);
         if (typeof value === "function") {
           connectClassUse.bind(this)(key, stateMap);
           // In class components, there is no rigid restriction like the Hooks rules on state,
-          // so here you can confidently use `this.store` as `engineStore`.
-          return (value as AnyFn).bind(this.store);
+          // so here you can confidently use `engineStore`.
+          return (value as AnyFn).bind(engineStore);
         }
         return externalMap.get(key as keyof ExternalMapValue<S>) || connectClassUse.bind(this)(key, stateMap);
       },
-      set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singlePropUpdate(key, value),
-      deleteProperty: (_: S, key: keyof S) => singlePropUpdate(key, undefined as ValueOf<S>, true),
+      ...proxySetHandler,
     } as any as ProxyHandler<StoreMap<S>>);
+    return engineStore;
   }
 
   // Unmount execution of class components

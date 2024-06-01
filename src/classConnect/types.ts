@@ -16,7 +16,7 @@ export type ConnectStoreType = {
 };
 
 /** This is the data type returned by the class after connecting to the store */
-export type ClassStoreType<S extends PrimitiveState> = S & StoreCoreUtils<S> & SetOptions;
+export type ClassStoreType<S extends PrimitiveState> = S & SetOptions & StoreCoreUtils<S>;
 
 // This is the connection type used by the base classes ComponentWithStore and PureComponentWithStore in the class component
 export type ClassConnectStoreType = {

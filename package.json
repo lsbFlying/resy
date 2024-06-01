@@ -7,23 +7,24 @@
   "homepage": "https://github.com/lsbFlying/resy",
   "bugs": "https://github.com/lsbFlying/resy/issues",
   "main": "index.js",
-  "module": "dist/esm/index.js",
+  "module": "dist/resy.esm.js",
   "types": "dist/resy.d.ts",
   "files": [
     "index.js",
+    "index.mjs",
+    "tsconfig.json",
     "dist"
   ],
   "exports": {
-    "./package.json": "./package.json",
     ".": {
       "import": {
-        "types": "./dist/esm/index.d.ts",
+        "types": "./dist/resy.d.ts",
         "node": {
-          "production": "./dist/esm/resy.prod.js",
-          "development": "./dist/esm/resy.js",
-          "default": "./dist/esm/index.js"
+          "production": "./dist/resy.esm.prod.js",
+          "development": "./dist/resy.esm.js",
+          "default": "./index.mjs"
         },
-        "default": "./dist/esm/index.js"
+        "default": "./index.mjs"
       },
       "require": {
         "types": "./dist/resy.d.ts",
@@ -34,84 +35,14 @@
         },
         "default": "./index.js"
       }
-    },
-    "./dist/esm": {
-      "import": {
-        "types": "./dist/esm/index.d.ts",
-        "node": {
-          "production": "./dist/esm/resy.prod.js",
-          "development": "./dist/esm/resy.js",
-          "default": "./dist/esm/index.js"
-        },
-        "default": "./dist/esm/index.js"
-      },
-      "module": {
-        "types": "./dist/esm/index.d.ts",
-        "node": {
-          "production": "./dist/esm/resy.prod.js",
-          "development": "./dist/esm/resy.js",
-          "default": "./dist/esm/index.js"
-        },
-        "default": "./dist/esm/index.js"
-      },
-      "default": {
-        "types": "./dist/esm/index.d.ts",
-        "default": "./dist/esm/index.js"
-      }
-    },
-    "./dist/umd": {
-      "import": {
-        "types": "./dist/umd/index.d.ts",
-        "node": {
-          "production": "./dist/umd/resy.prod.js",
-          "development": "./dist/umd/resy.js",
-          "default": "./dist/umd/index.js"
-        },
-        "default": "./dist/umd/index.js"
-      },
-      "module": {
-        "types": "./dist/umd/index.d.ts",
-        "node": {
-          "production": "./dist/umd/resy.prod.js",
-          "development": "./dist/umd/resy.js",
-          "default": "./dist/umd/index.js"
-        },
-        "default": "./dist/umd/index.js"
-      },
-      "default": {
-        "types": "./dist/umd/index.d.ts",
-        "default": "./dist/umd/index.js"
-      }
-    },
-    "./dist/system": {
-      "import": {
-        "types": "./dist/system/index.d.ts",
-        "node": {
-          "production": "./dist/system/resy.prod.js",
-          "development": "./dist/system/resy.js",
-          "default": "./dist/system/index.js"
-        },
-        "default": "./dist/system/index.js"
-      },
-      "module": {
-        "types": "./dist/system/index.d.ts",
-        "node": {
-          "production": "./dist/system/resy.prod.js",
-          "development": "./dist/system/resy.js",
-          "default": "./dist/system/index.js"
-        },
-        "default": "./dist/system/index.js"
-      },
-      "default": {
-        "types": "./dist/system/index.d.ts",
-        "default": "./dist/system/index.js"
-      }
     }
   },
   "scripts": {
+    "start": "vite",
+    "dev": "vite",
     "test": "vitest run --coverage --environment jsdom",
-    "test:dev": "vitest --ui --coverage --environment jsdom",
-    "build": "rollup -c --configPlugin @rollup/plugin-typescript && node create.entry.file.js",
+    "test:dev": "rm -rf coverage && vitest --ui --coverage --environment jsdom",
+    "build": "rm -rf dist && rollup -c --configPlugin @rollup/plugin-typescript",
     "prepublishOnly": "rm -rf dist coverage && npm test && npm run build"
   },
   "publishConfig": {
@@ -132,7 +63,7 @@
     "@rollup/plugin-typescript": "^11.1.6",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.3.1",
-    "@types/node": "^20.12.7",
+    "@types/node": "^20.12.13",
     "@types/react": "^18.2.79",
     "@types/react-dom": "^18.2.25",
     "@types/rollup-plugin-auto-external": "^2.0.5",
@@ -148,16 +79,15 @@
     "eslint-plugin-react": "^7.34.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "jsdom": "^24.0.0",
-    "node": "^21.7.3",
-    "prettier": "^3.2.5",
+    "node": "^20.13.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-native": "^0.73.6",
     "rollup": "^4.14.3",
     "rollup-plugin-auto-external": "^2.0.0",
     "rollup-plugin-dts": "^6.1.0",
-    "tslib": "^2.6.2",
     "typescript": "^5.4.5",
+    "vite": "^5.2.11",
     "vitest": "^1.5.0"
   },
   "engines": {
@@ -169,15 +99,20 @@
   ],
   "license": "MIT",
   "keywords": [
+    "resy",
+    "react",
+    "state",
+    "easy",
+    "react-state-easy",
+    "signal",
+    "useSignal",
+    "createSignal",
+    "signal-react",
+    "react-signal",
     "reactive",
     "reactive-state",
-    "react",
-    "hooks",
-    "flux",
     "redux",
     "store",
-    "state",
-    "resy",
     "proxy",
     "manager",
     "management"

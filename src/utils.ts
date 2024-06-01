@@ -1,4 +1,7 @@
-import type { NativeDataType, PrimitiveValueType } from "./types";
+import type {
+  NativeDataType,
+  // PrimitiveValueType,
+} from "./types";
 
 export const hasOwnProperty = Object.prototype.hasOwnProperty;
 
@@ -45,6 +48,8 @@ export const whatsType = (value: unknown): NativeDataType => {
 
     case "[object Promise]":
       return "Promise";
+    case "[object AsyncFunction]":
+      return "AsyncFunction";
     case "[object FormData]":
       return "FormData";
     case "[object Blob]":
@@ -101,25 +106,23 @@ export const whatsType = (value: unknown): NativeDataType => {
       return "Global";
     case "[object global]":
       return "Global";
+    case "[object Arguments]":
+      return "Arguments";
     default:
-      if (type === "[object Unknown]") {
-        // for-example: "array-like" arguments
-        return "Unknown";
-      }
       // Other type, for-example: HTMLElement
       return type as NativeDataType;
   }
 };
 
-const primitiveMap = new Map<PrimitiveValueType, PrimitiveValueType>(Object.entries({
-  Number: "Number",
-  String: "String",
-  Boolean: "Boolean",
-  Undefined: "Undefined",
-  Null: "Null",
-  Symbol: "Symbol",
-}) as any);
+// const primitiveMap = new Map<PrimitiveValueType, PrimitiveValueType>(Object.entries({
+//   Number: "Number",
+//   String: "String",
+//   Boolean: "Boolean",
+//   Undefined: "Undefined",
+//   Null: "Null",
+//   Symbol: "Symbol",
+// }) as any);
 
-export const isPrimitive = (value: unknown): boolean => {
-  return primitiveMap.has(whatsType(value) as PrimitiveValueType);
-};
+// export const isPrimitive = (value: unknown): boolean => {
+//   return primitiveMap.has(whatsType(value) as PrimitiveValueType);
+// };

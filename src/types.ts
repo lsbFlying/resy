@@ -22,7 +22,6 @@ export type ComplexValueType =
   | "Uint8Array" | "Int8Array" | "Uint8ClampedArray" | "Int16Array" | "Uint16Array" | "Int32Array"
   | "Uint32Array" | "Float32Array" | "Float64Array" | "BigInt64Array" | "BigUint64Array"
   | "XMLHttpRequest" | "Headers" | "Request" | "Response"
-  | "Window" | "Global"
-  | "Unknown";
+  | "Window" | "Global";
 
 export type NativeDataType = PrimitiveValueType | ComplexValueType;

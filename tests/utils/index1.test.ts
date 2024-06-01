@@ -72,11 +72,11 @@ test("utils", () => {
    * Earlier versions of node would return arguments with the type Unknown,
    * and subsequent new versions of node would identify arguments as its own special Arguments type.
    */
-  function testUnknown() {
+  function testArguments() {
     // eslint-disable-next-line prefer-rest-params
     expect(whatsType(arguments) === "Arguments").toBeTruthy();
   }
-  testUnknown();
+  testArguments();
 
   expect(whatsType(value0) === "Number").toBeTruthy();
   expect(whatsType(value1) === "Number").toBeTruthy();

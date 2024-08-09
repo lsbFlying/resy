@@ -398,7 +398,7 @@ function App() {
 
 #### hook
 ```tsx
-import { createStore } from "@shein/resy";
+import { createStore } from "resy";
 
 const store = createStore({
   count: 0,
@@ -453,7 +453,7 @@ const App = () => {
 #### class
 
 ```tsx
-import { createStore, ComponentWithStore } from "@shein/resy";
+import { createStore, ComponentWithStore } from "resy";
 
 class App extends ComponentWithStore {
   store = this.connectStore(store);

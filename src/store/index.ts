@@ -8,20 +8,22 @@
 import type {
   ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions, Store,
   StateCallback, StoreMapValueType, State, InitialState, StateRefCounterMapType,
-  StateWithThisType, InnerStoreOptions,
+  StateWithThisType, ModeType, InnerStoreOptions,
 } from "./types";
 import type { InitialFnCanExecMapType } from "../restore/types";
 import type { Unsubscribe, ListenerType } from "../subscribe/types";
 import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import type { ClassInstanceTypeOfConnectStore } from "../classConnect/types";
 import type { SchedulerType } from "../scheduler/types";
+import type { SignalMetaMapType } from "../signal/types";
 import { scheduler } from "../scheduler";
 import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__,
   __CLASS_INITIAL_STATE_RETRIEVE_KEY__,
 } from "../classConnect/static";
 import {
-  __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__,
+  __REGENERATIVE_SYSTEM_KEY__, __STATE_REF_COUNTER_KEY__,
+  __STORE_NAMESPACE__, __USE_STORE_KEY__,
 } from "./static";
 import { hasOwnProperty } from "../utils";
 import {
@@ -39,6 +41,7 @@ import {
 import { useSubscription as useSubscriptionCore } from "../subscribe";
 import { willUpdatingProcessing } from "../subscribe/utils";
 import { __DEV__, batchUpdate } from "../static";
+import { createSignal } from "../signal/core";
 import { useDebugValue } from "react";
 
 /**
@@ -67,10 +70,12 @@ export const createStore = <S extends PrimitiveState>(
     ? {
       __useConciseState__: (options as InnerStoreOptions).__useConciseState__ ?? undefined,
       unmountRestore: options.unmountRestore ?? true,
+      __mode__: ((options as InnerStoreOptions).__mode__ ?? "state") as ModeType,
       namespace: options.namespace ?? undefined,
     }
     : {
       unmountRestore: true,
+      __mode__: "state" as ModeType,
     };
 
   stateErrorProcessing({ state: reducerState, options: optionsTemp });
@@ -97,6 +102,9 @@ export const createStore = <S extends PrimitiveState>(
   // The core map of store
   const storeMap: StoreMap<S> = new Map();
 
+  // The "map container" of signal-type meta-data
+  const signalMetaMap: SignalMetaMapType<S> = new Map();
+
   // The storage stack of this proxy object for the class component
   const classThisPointerSet = new Set<ClassInstanceTypeOfConnectStore<S>>();
 
@@ -119,7 +127,7 @@ export const createStore = <S extends PrimitiveState>(
           pushTask(
             key, value, stateMap, schedulerProcessor, optionsTemp, reducerState,
             storeStateRefCounterMap, storeMap, initialFnCanExecMap,
-            classThisPointerSet, initialState,
+            classThisPointerSet, signalMetaMap, initialState,
           );
         }
       });
@@ -154,7 +162,7 @@ export const createStore = <S extends PrimitiveState>(
             connectStore(
               key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap,
               storeMap, schedulerProcessor, initialFnCanExecMap,
-              classThisPointerSet, initialState,
+              classThisPointerSet, signalMetaMap, initialState,
             ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
           )();
         });
@@ -176,7 +184,7 @@ export const createStore = <S extends PrimitiveState>(
         pushTask(
           key, originValue, stateMap, schedulerProcessor, optionsTemp,
           reducerState, storeStateRefCounterMap, storeMap, initialFnCanExecMap,
-          classThisPointerSet, initialState, !hasOwnProperty.call(reducerState, key),
+          classThisPointerSet, signalMetaMap, initialState, !hasOwnProperty.call(reducerState, key),
         );
       }
     });
@@ -215,7 +223,7 @@ export const createStore = <S extends PrimitiveState>(
       pushTask(
         key, value, stateMap, schedulerProcessor, optionsTemp, reducerState,
         storeStateRefCounterMap, storeMap, initialFnCanExecMap,
-        classThisPointerSet, initialState, isDelete,
+        classThisPointerSet, signalMetaMap, initialState, isDelete,
       );
       finallyBatchProcessing(schedulerProcessor, prevBatchState, stateMap, listenerSet);
     }
@@ -275,17 +283,24 @@ export const createStore = <S extends PrimitiveState>(
         const stateFnValue = connectHook(
           key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap,
           storeMap, schedulerProcessor, initialFnCanExecMap,
-          classThisPointerSet, initialState,
+          classThisPointerSet, signalMetaMap, initialState,
         );
         return (...args: any[]) => (stateFnValue as AnyFn).apply(store, args);
       }
       return externalMap.get(key as keyof ExternalMapValue<S>) || connectHook(
         key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap,
         storeMap, schedulerProcessor, initialFnCanExecMap,
-        classThisPointerSet, initialState,
+        classThisPointerSet, signalMetaMap, initialState,
       );
     },
     ...proxySetHandler,
+  } as any as ProxyHandler<StoreMap<S>>);
+
+  const signals = new Proxy(storeMap, {
+    get: (_: StoreMap<S>, key: keyof S) => (
+      externalMap.get(key as keyof ExternalMapValue<S>)
+      || createSignal(key, signalMetaMap, store, stateMap.get(key)!, new Map())
+    ),
   } as any as ProxyHandler<StoreMap<S>>);
 
   externalMap.set("setState", setState);
@@ -347,17 +362,26 @@ export const createStore = <S extends PrimitiveState>(
     deferRestoreProcessing(
       optionsTemp, reducerState, stateMap, storeStateRefCounterMap,
       schedulerProcessor, initialFnCanExecMap,
-      classThisPointerSet, initialState,
+      classThisPointerSet, signalMetaMap, initialState,
     );
   }
 
   // The initialization function of createStore resets the recovery process for class component
   const classInitialStateRetrieve = () => {
-    initialStateRetrieve(reducerState, stateMap, initialFnCanExecMap, initialState);
+    initialStateRetrieve(reducerState, stateMap, initialFnCanExecMap, signalMetaMap, initialState);
   };
 
-  externalMap.set("useStore", useStore);
-  externalMap.set("useSubscription", useSubscription);
+  /**
+   * @description "Differentiate the usage mode of signal and state to avoid mixing them together,
+   * and it is also advised against combining their use."
+   */
+  if (optionsTemp.__mode__ === "state") {
+    externalMap.set("useStore", useStore);
+    externalMap.set("useSubscription", useSubscription);
+  } else {
+    externalMap.set("signals", signals);
+    externalMap.set(__STATE_REF_COUNTER_KEY__, storeStateRefCounterMap);
+  }
 
   /**
    * @description Here, __USE_STORE_KEY__ is not placed under the branch where optionsTemp.__mode__ === "state",

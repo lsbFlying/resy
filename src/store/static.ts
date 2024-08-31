@@ -4,5 +4,13 @@ export const __REGENERATIVE_SYSTEM_KEY__ = Symbol("regenerativeSystemKey");
 // The key of useStore
 export const __USE_STORE_KEY__ = Symbol("useStoreKey");
 
+/**
+ * @description A data reference counter,
+ * which is made available for use by the `signal` function.
+ * Through the store, it is possible to access the counter to track the usage count of the `signal` function,
+ * for the purpose of facilitating logical judgments during subsequent restoration processes.
+ */
+export const __STATE_REF_COUNTER_KEY__ = Symbol("stateRefCounterKey");
+
 // The key of store namespace
 export const __STORE_NAMESPACE__ = Symbol("storeNamespace");

@@ -56,8 +56,9 @@ export function constructorProcessing<S extends PrimitiveState>(this: ClassInsta
 export function connectStoreCore<S extends PrimitiveState>(
   this: ClassInstanceTypeOfConnectStore<S>,
   store: Store<S> | ConciseStoreCore<S>,
+  __isMetaViewer__?: boolean,
 ): ClassStoreType<S> {
-  storeErrorProcessing(store, "connectStore");
+  storeErrorProcessing(store, "connectStore", __isMetaViewer__);
   store[__CLASS_INITIAL_STATE_RETRIEVE_KEY__ as keyof S]();
   this[__CLASS_THIS_POINTER_STORES_KEY__].add(store);
   // Transform the called object to get this pointer of class,

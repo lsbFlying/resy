@@ -30,8 +30,8 @@ export class ComponentWithStore<
 
   [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
 
-  connectStore<S extends PrimitiveState>(store: Store<S> | ConciseStoreCore<S>): ClassStoreType<S> {
-    return connectStoreCore.apply(this as any, [store]) as ClassStoreType<S>;
+  connectStore<S extends PrimitiveState>(store: Store<S> | ConciseStoreCore<S>, __isMetaViewer__?: boolean): ClassStoreType<S> {
+    return connectStoreCore.apply(this as any, [store, __isMetaViewer__]) as ClassStoreType<S>;
   }
 }
 
@@ -58,7 +58,7 @@ export class PureComponentWithStore<
 
   [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
 
-  connectStore<S extends PrimitiveState>(store: Store<S> | ConciseStoreCore<S>): ClassStoreType<S> {
-    return connectStoreCore.apply(this as any, [store]) as ClassStoreType<S>;
+  connectStore<S extends PrimitiveState>(store: Store<S> | ConciseStoreCore<S>, __isMetaViewer__?: boolean): ClassStoreType<S> {
+    return connectStoreCore.apply(this as any, [store, __isMetaViewer__]) as ClassStoreType<S>;
   }
 }

@@ -1,13 +1,13 @@
 import React from "react";
-import { createStore } from "../src";
+import { createSignals } from "../src";
 
-const store = createStore({
+const store = createSignals({
   count: 0,
   text: "hello",
 });
 
 const App = () => {
-  const { count, text } = store.useStore();
+  const { count, text } = store.signals;
 
   return (
     <>

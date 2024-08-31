@@ -3,6 +3,7 @@ import type {
   StoreMapValue, StoreMapValueType, StoreMap, InitialState,
   StateRefCounterMapType, State, StoreOptions,
 } from "./types";
+import type { SignalMetaMapType } from "../signal/types";
 import type { SchedulerType } from "../scheduler/types";
 import type { ListenerParams, ListenerType } from "../subscribe/types";
 import type { InitialFnCanExecMapType } from "../restore/types";
@@ -33,6 +34,7 @@ export const connectStore = <S extends PrimitiveState>(
   schedulerProcessor: MapType<SchedulerType<S>>,
   initialFnCanExecMap: InitialFnCanExecMapType,
   classThisPointerSet: Set<ClassInstanceTypeOfConnectStore<S>>,
+  signalMetaMap: SignalMetaMapType<S>,
   initialState?: InitialState<S>,
 ) => {
   // Resolve the problem that the initialization attribute may be undefined
@@ -56,7 +58,7 @@ export const connectStore = <S extends PrimitiveState>(
       deferRestoreProcessing(
         options, reducerState, stateMap, storeStateRefCounterMap,
         schedulerProcessor, initialFnCanExecMap, classThisPointerSet,
-        initialState, () => {
+        signalMetaMap, initialState, () => {
           // Release memory if there are no component references
           if (!singleStoreChangeSet.size) {
             storeMap.delete(key);
@@ -99,15 +101,16 @@ export const connectHook = <S extends PrimitiveState>(
   schedulerProcessor: MapType<SchedulerType<S>>,
   initialFnCanExecMap: InitialFnCanExecMapType,
   classThisPointerSet: Set<ClassInstanceTypeOfConnectStore<S>>,
+  signalMetaMap: SignalMetaMapType<S>,
   initialState?: InitialState<S>,
 ) => {
   // Perform refresh recovery logic if initialState is a function
-  initialStateRetrieve(reducerState, stateMap, initialFnCanExecMap, initialState);
+  initialStateRetrieve(reducerState, stateMap, initialFnCanExecMap, signalMetaMap, initialState);
   return (
     connectStore(
       key, options, reducerState, stateMap, storeStateRefCounterMap,
       storeMap, schedulerProcessor, initialFnCanExecMap,
-      classThisPointerSet, initialState,
+      classThisPointerSet, signalMetaMap, initialState,
     ).get(key)!.get("useOriginState") as StoreMapValueType<S>["useOriginState"]
   )();
 };
@@ -151,6 +154,8 @@ export const classUpdater = <S extends PrimitiveState>(
        * Therefore, this is always safe, and it can avoid unnecessary re-renders.
        * 🌟 Adding "?.has" is to prevent some class components from making an empty connection,
        * that is, connecting to the store but not using it. Generally speaking, this is not done,
+       * and the signal mode does not require class components to use Api such as ComponentWithStore to connect to the store,
+       * but it is necessary to prevent scenarios where unintended invalid code is used. 😯
        */
       classThisPointerItem[__CLASS_STATE_REF_SET_KEY__]?.has(key) && (
         classThisPointerItem.setState({ [key]: value } as State<S>)
@@ -173,6 +178,7 @@ export const pushTask = <S extends PrimitiveState>(
   storeMap: StoreMap<S>,
   initialFnCanExecMap: InitialFnCanExecMapType,
   classThisPointerSet: Set<ClassInstanceTypeOfConnectStore<S>>,
+  signalMetaMap: SignalMetaMapType<S>,
   initialState?: InitialState<S>,
   isDelete?: boolean,
 ) => {
@@ -194,7 +200,7 @@ export const pushTask = <S extends PrimitiveState>(
         connectStore(
           key, options, reducerState, stateMap, storeStateRefCounterMap,
           storeMap, schedulerProcessor, initialFnCanExecMap,
-          classThisPointerSet, initialState,
+          classThisPointerSet, signalMetaMap, initialState,
         ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
       )();
     },

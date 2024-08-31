@@ -3,8 +3,10 @@ import type { Subscribe, ListenerType } from "../subscribe/types";
 import type {
   ClassConnectStoreType, ClassUnmountProcessingType, ClassInitialStateRetrieveType,
 } from "../classConnect/types";
+import type { SignalsType } from "../signal/types";
 import {
-  __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__,
+  __REGENERATIVE_SYSTEM_KEY__, __STATE_REF_COUNTER_KEY__,
+  __STORE_NAMESPACE__, __USE_STORE_KEY__,
 } from "./static";
 
 /**
@@ -34,7 +36,14 @@ export interface InnerStoreOptions extends StoreOptions {
    * @default undefined
    */
   readonly __useConciseState__?: boolean;
+  /**
+   * @description Configuration for createSignals api (Internal use, do not use externally)
+   * @default "state"
+   */
+  readonly __mode__?: ModeType;
 }
+
+export type ModeType = "signal" | "state";
 
 /**
  * @description Type of storeMapValue
@@ -92,9 +101,11 @@ export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S>
   & ClassConnectStoreType
   & ClassUnmountProcessingType
   & ClassInitialStateRetrieveType
+  & SignalsType<S>
   & {
   [__REGENERATIVE_SYSTEM_KEY__]: symbol;
   [__USE_STORE_KEY__]: object;
+  [__STATE_REF_COUNTER_KEY__]: StateRefCounterMapType;
   [__STORE_NAMESPACE__]?: string;
   readonly store: Store<S>;
 };
@@ -197,7 +208,7 @@ export interface UseSubscription<S extends PrimitiveState> {
 }
 
 /** Type of key disabled in the initialization parameters */
-export type InitialStateForbiddenKeys = keyof StoreUtils<PrimitiveState> | "store";
+export type InitialStateForbiddenKeys = keyof StoreUtils<PrimitiveState> | "store" | "signals";
 
 /** thisType type used to initialize store when initialState is a function */
 export type InitialStore<S extends PrimitiveState> = {

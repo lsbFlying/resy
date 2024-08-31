@@ -1,6 +1,7 @@
 import type { PrimitiveState, MapType, Callback } from "../types";
 import type { InitialFnCanExecMapType } from "./types";
 import type { InitialState, StateRefCounterMapType, StoreOptions } from "../store/types";
+import type { SignalMetaMapType } from "../signal/types";
 import type { SchedulerType } from "../scheduler/types";
 import type { ClassInstanceTypeOfConnectStore } from "../classConnect/types";
 import { hasOwnProperty } from "../utils";
@@ -60,6 +61,7 @@ export const retrieveReducerState = <S extends PrimitiveState>(
 const restoreProcessing = <S extends PrimitiveState>(
   reducerState: S,
   stateMap: MapType<S>,
+  signalMetaMap: SignalMetaMapType<S>,
   initialState?: InitialState<S>,
 ) => {
   retrieveReducerState(reducerState, initialState);
@@ -68,6 +70,7 @@ const restoreProcessing = <S extends PrimitiveState>(
       ? stateMap.set(key, reducerState[key])
       : stateMap.delete(key);
   });
+  signalMetaMap.clear();
 };
 
 /**
@@ -84,6 +87,7 @@ const unmountRestore = <S extends PrimitiveState>(
   storeStateRefCounterMap: StateRefCounterMapType,
   initialFnCanExecMap: InitialFnCanExecMapType,
   classThisPointerSet: Set<ClassInstanceTypeOfConnectStore<S>>,
+  signalMetaMap: SignalMetaMapType<S>,
   initialState?: InitialState<S>,
 ) => {
   const noRefFlag = !classThisPointerSet.size
@@ -95,7 +99,7 @@ const unmountRestore = <S extends PrimitiveState>(
    * thus optimizing code execution efficiency.
    */
   if (options.unmountRestore && noRefFlag && typeof initialState !== "function") {
-    restoreProcessing(reducerState, stateMap, initialState);
+    restoreProcessing(reducerState, stateMap, signalMetaMap, initialState);
   }
   if (typeof initialState === "function" && noRefFlag) {
     initialFnCanExecMap.set("canExec", true);
@@ -107,12 +111,13 @@ export const initialStateRetrieve = <S extends PrimitiveState>(
   reducerState: S,
   stateMap: MapType<S>,
   initialFnCanExecMap: InitialFnCanExecMapType,
+  signalMetaMap: SignalMetaMapType<S>,
   initialState?: InitialState<S>,
 ) => {
   // The relevant judgment logic is similar to unmountRestore.
   if (initialFnCanExecMap.get("canExec")) {
     initialFnCanExecMap.set("canExec", null);
-    restoreProcessing(reducerState, stateMap, initialState);
+    restoreProcessing(reducerState, stateMap, signalMetaMap, initialState);
   }
 };
 
@@ -141,6 +146,7 @@ export function deferRestoreProcessing<S extends PrimitiveState>(
   schedulerProcessor: MapType<SchedulerType<S>>,
   initialFnCanExecMap: InitialFnCanExecMapType,
   classThisPointerSet: Set<ClassInstanceTypeOfConnectStore<S>>,
+  signalMetaMap: SignalMetaMapType<S>,
   initialState?: InitialState<S>,
   callback?: Callback,
 ) {
@@ -150,7 +156,7 @@ export function deferRestoreProcessing<S extends PrimitiveState>(
       if (!storeStateRefCounterMap.get("counter") && !classThisPointerSet.size) {
         unmountRestore(
           options, reducerState, stateMap, storeStateRefCounterMap,
-          initialFnCanExecMap, classThisPointerSet, initialState,
+          initialFnCanExecMap, classThisPointerSet, signalMetaMap, initialState,
         );
       }
       callback?.();

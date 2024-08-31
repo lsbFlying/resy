@@ -15,9 +15,10 @@ import {
  * }
  * @interface connectStore
  * @param store
+ * @param __isMetaViewer__ Internal use
  */
 export type ConnectStoreType = Readonly<{
-  connectStore<S extends PrimitiveState>(store: Store<S> | ConciseStoreCore<S>): ClassStoreType<S>;
+  connectStore<S extends PrimitiveState>(store: Store<S> | ConciseStoreCore<S>, __isMetaViewer__?: boolean): ClassStoreType<S>;
 }>;
 
 /** This is the data type returned by the class after connecting to the store */

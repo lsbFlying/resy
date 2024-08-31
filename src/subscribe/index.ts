@@ -1,6 +1,7 @@
 import type { PrimitiveState } from "../types";
 import type { ListenerType, SubscriptionRefType } from "./types";
 import type { Store } from "../store/types";
+import type { SignalStore } from "../signal/types";
 import { effectStateInListenerKeys } from "../store/utils";
 import { useEffect, useRef } from "react";
 import { storeErrorProcessing, subscribeErrorProcessing } from "../store/errors";
@@ -12,7 +13,7 @@ import { storeErrorProcessing, subscribeErrorProcessing } from "../store/errors"
  * UseSubscription will reduce your mental burden and allow you to use it normally.
  */
 export const useSubscription = <S extends PrimitiveState>(
-  store: Store<S>,
+  store: Store<S> | SignalStore<S>,
   listener: ListenerType<S>,
   stateKeys?: (keyof S)[],
 ) => {

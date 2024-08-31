@@ -16,6 +16,7 @@
 ### Features
 - 😎 Easy!!!
 - 😎 Support for class and hook
+- 😎 Support fine-grained updates of signal data
 - 😎 Better performance optimization
 - 😎 Support React-Native、Mini-Apps.
 

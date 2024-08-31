@@ -1,22 +1,27 @@
 import type { PrimitiveState } from "../types";
-import type { StoreCoreUtils, SetOptions, Store } from "../store/types";
+import type { ConciseStoreCore, SetOptions, State, Store, StoreCoreUtils } from "../store/types";
 import {
-  __CLASS_INITIAL_STATE_RETRIEVE_KEY__, __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_STATE_REF_SET_KEY__,
-  __CLASS_UNMOUNT_PROCESSING_KEY__, __CLASS_CONNECT_STORE_KEY__,
+  __CLASS_INITIAL_STATE_RETRIEVE_KEY__, __CLASS_THIS_POINTER_STORES_KEY__,
+  __CLASS_STATE_REF_SET_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__, __CLASS_CONNECT_STORE_KEY__,
 } from "./static";
 
 /**
- * Performs some action. This method should not be overridden in subclasses.
- * Even if you rewrite it, your rewriting method won't work.
- * @interface connectStore
  * @description This is an important method that is core to the functionality of this class.
+ * Performs some action. This method should not be overridden in subclasses.
+ * Even if you rewrite it, your rewriting method should be like this below:
+ * connectStore<S extends PrimitiveState>(store: S): S & SetOptions & StoreCoreUtils<S> {
+ *   ...
+ *   return super.connectStore(store);
+ * }
+ * @interface connectStore
+ * @param store
  */
-export type ConnectStoreType = {
-  connectStore<S extends PrimitiveState>(store: S): S;
-};
+export type ConnectStoreType = Readonly<{
+  connectStore<S extends PrimitiveState>(store: Store<S> | ConciseStoreCore<S>): ClassStoreType<S>;
+}>;
 
 /** This is the data type returned by the class after connecting to the store */
-export type ClassStoreType<S extends PrimitiveState> = S & StoreCoreUtils<S> & SetOptions;
+export type ClassStoreType<S extends PrimitiveState> = S & StoreCoreUtils<S> & Readonly<SetOptions>;
 
 // This is the connection type used by the base classes ComponentWithStore and PureComponentWithStore in the class component
 export type ClassConnectStoreType = {
@@ -42,3 +47,16 @@ export type ClassUnmountProcessingType = {
 export type ClassInitialStateRetrieveType = {
   [__CLASS_INITIAL_STATE_RETRIEVE_KEY__](): void;
 };
+
+/** This class type of connect store */
+export type ClassInstanceTypeOfConnectStore<S extends PrimitiveState> =
+  PrimitiveState &
+  Readonly<{ setState(state: State<S>): void }> &
+  ClassConnectStoreType &
+  ClassThisPointerStoresType &
+  ClassStateRefSetType<S> &
+  {
+    updater: {
+      isMounted(classComponentInstance: any): boolean;
+    };
+  };

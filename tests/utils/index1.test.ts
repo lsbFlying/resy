@@ -33,14 +33,50 @@ test("utils", () => {
     value27 = new WeakRef({}),
     value28 = new WeakRef({ count: 19 }),
     value29 = BigInt("8374654835683476853476"),
-    value30 = 8374654835683476853476n;
+    value30 = 8374654835683476853476n,
+    value31 = new Promise(function(resolve) {
+      resolve("success");
+    }),
+    value32 = new FormData(),
+    value33 = new Blob(),
+    value34 = new File(["Hello"], "hello.txt", { type: "text/plain" }),
+    value35 = new Error("Something went wrong"),
+    value36 = new CustomEvent("my-event", { detail: { some: "data" } }),
+    value37 = localStorage,
+    value38 = sessionStorage,
+    value39 = new WebSocket("ws://localhost:3000"),
+    value40 = new ArrayBuffer(16),
+    value41 = new DataView(value40),
+    value42 = new Uint8Array(1024),
+    value43 = new Int8Array(1024),
+    value44 = new Uint8ClampedArray(1024),
+    value45 = new Int16Array(1024),
+    value46 = new Uint16Array(1024),
+    value47 = new Int32Array(1024),
+    value48 = new Uint32Array(1024),
+    value49 = new Float32Array(1024),
+    value50 = new Float64Array(1024),
+    value51 = new BigInt64Array(1024),
+    value52 = new BigUint64Array(1024),
+    value53 = new XMLHttpRequest(),
+    value54 = new Headers(),
+    value55 = new Request("https://example.com", { method: "GET", headers: value54 }),
+    value56 = new Response("body", { status: 200, statusText: "OK", headers: value54 }),
+    value57 = async () => "",
+    value58 = new AggregateError([new Error("some error")], "Hello")
+  ;
 
-  // "arguments" is array-like object, it does not have an accurate type description in JS
-  function testUnknown() {
+  /**
+   * @description "arguments" is array-like object,
+   * it does not have an accurate type description in JS
+   * Earlier versions of node would return arguments with the type Unknown,
+   * and subsequent new versions of node would identify arguments as its own special Arguments type.
+   */
+  function testArguments() {
     // eslint-disable-next-line prefer-rest-params
-    expect(whatsType(arguments) === "Unknown").toBeTruthy();
+    expect(whatsType(arguments) === "Arguments").toBeTruthy();
   }
-  testUnknown();
+  testArguments();
 
   expect(whatsType(value0) === "Number").toBeTruthy();
   expect(whatsType(value1) === "Number").toBeTruthy();
@@ -73,6 +109,36 @@ test("utils", () => {
   expect(whatsType(value28) === "WeakRef").toBeTruthy();
   expect(whatsType(value29) === "BigInt").toBeTruthy();
   expect(whatsType(value30) === "BigInt").toBeTruthy();
+
+  expect(whatsType(value31) === "Promise").toBeTruthy();
+  expect(whatsType(value32) === "FormData").toBeTruthy();
+  expect(whatsType(value33) === "Blob").toBeTruthy();
+  expect(whatsType(value34) === "File").toBeTruthy();
+  expect(whatsType(value35) === "Error").toBeTruthy();
+  expect(whatsType(value36) === "CustomEvent").toBeTruthy();
+  expect(whatsType(value37) === "Storage").toBeTruthy();
+  expect(whatsType(value38) === "Storage").toBeTruthy();
+  expect(whatsType(value39) === "WebSocket").toBeTruthy();
+  expect(whatsType(value40) === "ArrayBuffer").toBeTruthy();
+  expect(whatsType(value41) === "DataView").toBeTruthy();
+  expect(whatsType(value42) === "Uint8Array").toBeTruthy();
+  expect(whatsType(value43) === "Int8Array").toBeTruthy();
+  expect(whatsType(value44) === "Uint8ClampedArray").toBeTruthy();
+  expect(whatsType(value45) === "Int16Array").toBeTruthy();
+  expect(whatsType(value46) === "Uint16Array").toBeTruthy();
+  expect(whatsType(value47) === "Int32Array").toBeTruthy();
+  expect(whatsType(value48) === "Uint32Array").toBeTruthy();
+  expect(whatsType(value49) === "Float32Array").toBeTruthy();
+  expect(whatsType(value50) === "Float64Array").toBeTruthy();
+  expect(whatsType(value51) === "BigInt64Array").toBeTruthy();
+  expect(whatsType(value52) === "BigUint64Array").toBeTruthy();
+  expect(whatsType(value53) === "XMLHttpRequest").toBeTruthy();
+  expect(whatsType(value54) === "Headers").toBeTruthy();
+  expect(whatsType(value55) === "Request").toBeTruthy();
+  expect(whatsType(value56) === "Response").toBeTruthy();
+  expect(whatsType(value57) === "AsyncFunction").toBeTruthy();
+  expect(whatsType(value58) === "Error").toBeTruthy();
+
   // 🌟 The test execution here is slightly different from the test execution result of the browser,
   // and it should be related to the small changes in the global object of vitest's test environment.
   // console.log(typeof window, window.__proto__, Window.prototype, whatsType(window), whatsType(global));

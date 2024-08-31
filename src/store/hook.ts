@@ -1,8 +1,8 @@
-import type { ConciseStore, InitialState } from "./types";
+import type { ConciseStore, ConciseStoreCore, InitialState, InnerStoreOptions, Store } from "./types";
 import type { PrimitiveState } from "../types";
 import { useMemo } from "react";
 import { __USE_STORE_KEY__ } from "./static";
-import { storeErrorProcessing } from "../errors";
+import { storeErrorProcessing } from "./errors";
 import { createStore } from "./index";
 
 /**
@@ -11,7 +11,7 @@ import { createStore } from "./index";
  * @param store
  * @return store
  */
-export const useStore = <S extends PrimitiveState>(store: S): S => {
+export const useStore = <S extends PrimitiveState>(store: Store<S> | ConciseStoreCore<S>): S => {
   storeErrorProcessing(store, "useStore");
   return store[__USE_STORE_KEY__ as keyof S];
 };
@@ -35,9 +35,12 @@ export const useStore = <S extends PrimitiveState>(store: S): S => {
  */
 export const useConciseState = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
-): ConciseStore<S> =>
-    useMemo(() => createStore<S>(initialState, {
-      __useConciseStateMode__: true,
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }), [])[__USE_STORE_KEY__ as keyof S]
-;
+): ConciseStore<S> => {
+  return useMemo(() => {
+    return createStore<S>(
+      initialState,
+      { __useConciseState__: true } as InnerStoreOptions,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])[__USE_STORE_KEY__ as keyof S];
+};

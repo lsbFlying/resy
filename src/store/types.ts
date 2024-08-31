@@ -1,10 +1,11 @@
 import type { Callback, ValueOf, PrimitiveState, MapType } from "../types";
 import type { Subscribe, ListenerType } from "../subscribe/types";
 import type {
-  ClassConnectStoreType, ClassUnmountProcessingType, ClassStateRefSetType,
-  ClassInitialStateRetrieveType, ClassThisPointerStoresType,
+  ClassConnectStoreType, ClassUnmountProcessingType, ClassInitialStateRetrieveType,
 } from "../classConnect/types";
-import { __REGENERATIVE_SYSTEM_KEY__, __USE_STORE_KEY__ } from "./static";
+import {
+  __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__,
+} from "./static";
 
 /**
  * @description The second parameter configuration item of createStore
@@ -14,15 +15,25 @@ export interface StoreOptions {
    * @description Whether to reset and restore the data to its initial state
    * when all modules used by the current page are unmount.
    * In the case of global data such as login information or themes,
-   * it would be set to false, so that the resulting loginStore or themeStore can take effect globally across the system.
+   * it would be set to false,
+   * so that the resulting loginStore or themeStore can take effect globally across the system.
    * @default true
    */
   readonly unmountRestore?: boolean;
   /**
-   * Configuration for useConciseState hooks (internal, not recommended externally)
+   * @description The abstract name or namespace of the store,
+   * when it is difficult to distinguish the states of the same key by mixing stores in a complex module,
+   * which helps identify specific stores and facilitates finding component elements during debugging.
+   */
+  readonly namespace?: string;
+}
+
+export interface InnerStoreOptions extends StoreOptions {
+  /**
+   * @description Configuration for useConciseState hooks (Internal use, do not use externally)
    * @default undefined
    */
-  readonly __useConciseStateMode__?: boolean;
+  readonly __useConciseState__?: boolean;
 }
 
 /**
@@ -50,17 +61,20 @@ export type StoreCoreUtils<S extends PrimitiveState> = Readonly<
   & SyncUpdate<S>
   & Restore<S>
   & Subscribe<S>
+>;
+
+export type StoreHookUtils<S extends PrimitiveState> = Readonly<
   & UseStore<S>
   & UseSubscription<S>
 >;
 
 /** Tool method type of store */
-export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & Readonly<SetOptions>;
+export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & StoreHookUtils<S> & Readonly<SetOptions>;
 
 /** The type of store returned by createStore */
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
 
-export type ConciseStoreCore<S extends PrimitiveState> = S & StoreCoreUtils<S>;
+export type ConciseStoreCore<S extends PrimitiveState> = S & StoreCoreUtils<S> & StoreHookUtils<S>;
 
 export interface ConciseStoreHeart<S extends PrimitiveState> {
   readonly store: ConciseStoreCore<S>;
@@ -81,26 +95,12 @@ export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S>
   & {
   [__REGENERATIVE_SYSTEM_KEY__]: symbol;
   [__USE_STORE_KEY__]: object;
+  [__STORE_NAMESPACE__]?: string;
   readonly store: Store<S>;
 };
 
 // Type of externalMap
 export type ExternalMapType<S extends PrimitiveState> = MapType<ExternalMapValue<S>>;
-
-/**
- * This object type of class
- * @description This here refers to the subclass object that inherits ComponentWithStore or PureComponentWithStore.
- */
-export type ClassThisPointerType<S extends PrimitiveState> = PrimitiveState
-  & Readonly<{ setState(state: State<S>): void }>
-  & ClassConnectStoreType
-  & ClassThisPointerStoresType
-  & ClassStateRefSetType<S>
-  & {
-  updater: {
-    isMounted(classItem: any): boolean;
-  };
-};
 
 /** Update the data type of the parameter */
 export type State<S extends PrimitiveState> = Partial<S> | S | null;

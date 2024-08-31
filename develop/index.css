@@ -1,0 +1,17 @@
+.center {
+    text-align: center;
+    margin-top: 20px;
+    border: 1px solid #26d78a;
+    padding: 12px;
+}
+.names {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    width: 200px;
+    margin: auto;
+}
+.danger {
+    background-color: #f48f36;
+}

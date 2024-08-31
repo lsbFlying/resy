@@ -87,6 +87,7 @@ test("delete update", async () => {
     getByText("no-user");
     getByText("no-heights");
     getByText("no-studentNames");
+    getByText("no-info");
     getByText("no-testFun");
     getByText("no-proxyLogin");
     expect(counter === 2).toBeTruthy();

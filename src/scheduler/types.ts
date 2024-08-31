@@ -24,7 +24,7 @@ export type SchedulerType<S extends PrimitiveState> = {
   // Get the current round of update tasks and data
   getSchedulerQueue(): {
     taskDataMap: MapType<S>;
-    taskQueueSet: Set<Callback>;
+    taskQueueMap: Map<keyof S, Callback>;
     callbackStackSet: Set<StateCallbackItem<S>>;
   };
   // Flag to delay the execution of the return registration function in useEffect

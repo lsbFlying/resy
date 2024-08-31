@@ -2,14 +2,7 @@
   "compilerOptions": {
     "jsx": "react",
     "target": "ESNext",
-    "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ES5",
-      "ES6",
-      "ES7",
-      "ESNext"
-    ],
+    "lib": ["DOM", "ESNext"],
     "module": "ESNext",
     "moduleResolution": "node",
     "outDir": "./dist",
@@ -35,5 +28,5 @@
     "noImplicitReturns": false,
     "noFallthroughCasesInSwitch": true
   },
-  "exclude": ["node_modules", "dist", "coverage"]
+  "exclude": ["node_modules", "dist", "coverage", "examples"]
 }

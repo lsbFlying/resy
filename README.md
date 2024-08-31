@@ -1,7 +1,5 @@
 <div align="center">
-<img src="./resy-logo.svg" alt="resy">
-<h3>react state manager</h3>
-<h4>Support React Native、Mini Apps</h4>
+<img src="./resy.svg" alt="resy">
 
 [![GitHub license](https://img.shields.io/github/license/lsbFlying/resy?style=flat-square)](https://github.com/lsbFlying/resy/blob/master/LICENSE)
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/lsbFlying/resy/test.yml?branch=master&color=blue&style=flat-square)](https://github.com/lsbFlying/resy/actions/workflows/test.yml)
@@ -12,10 +10,14 @@
 
 </div>
 
+### Introduce
+- 😊 React State Manager.
+
 ### Features
 - 😎 Easy!!!
 - 😎 Support for class and hook
 - 😎 Better performance optimization
+- 😎 Support React-Native、Mini-Apps.
 
 ### Install
 ```sh

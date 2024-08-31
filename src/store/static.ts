@@ -3,3 +3,6 @@ export const __REGENERATIVE_SYSTEM_KEY__ = Symbol("regenerativeSystemKey");
 
 // The key of useStore
 export const __USE_STORE_KEY__ = Symbol("useStoreKey");
+
+// The key of store namespace
+export const __STORE_NAMESPACE__ = Symbol("storeNamespace");

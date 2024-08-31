@@ -1,27 +1,9 @@
-import type { PrimitiveState, MapType } from "../types";
-import type { SchedulerType } from "../scheduler/types";
+import type { PrimitiveState } from "../types";
 import type { ListenerType, SubscriptionRefType } from "./types";
 import type { Store } from "../store/types";
-import { effectStateInStateKeys } from "../store/utils";
+import { effectStateInListenerKeys } from "../store/utils";
 import { useEffect, useRef } from "react";
-
-// Pre-update processing
-// records the prevBatchState beforehand for later comparison when data changes trigger subscribers
-export const willUpdatingProcessing = <S extends PrimitiveState>(
-  listenerSet: Set<ListenerType<S>>,
-  schedulerProcessor: MapType<SchedulerType<S>>,
-  prevBatchState: MapType<S>,
-  stateMap: MapType<S>,
-) => {
-  if (listenerSet.size > 0 && !schedulerProcessor.get("willUpdating")) {
-    schedulerProcessor.set("willUpdating", true);
-    // Clear first to prevent store from having delete operations that cause prevBatchState to retain deleted data
-    prevBatchState.clear();
-    stateMap.forEach((value, key) => {
-      prevBatchState.set(key, value);
-    });
-  }
-};
+import { storeErrorProcessing, subscribeErrorProcessing } from "../store/errors";
 
 /**
  * @description Hook of subscribe
@@ -34,6 +16,9 @@ export const useSubscription = <S extends PrimitiveState>(
   listener: ListenerType<S>,
   stateKeys?: (keyof S)[],
 ) => {
+  storeErrorProcessing(store, "useSubscription");
+  subscribeErrorProcessing(listener, stateKeys);
+
   const ref = useRef<SubscriptionRefType<S> | null>(null);
 
   /**
@@ -47,21 +32,21 @@ export const useSubscription = <S extends PrimitiveState>(
     stateKeys,
   };
 
-  useEffect(() =>
+  useEffect(() => {
     // Monitor the overall data changes of the store
-    store.subscribe(data => {
+    return store.subscribe(data => {
       /**
        * @description First determine whether there is a change in execution,
        * and if so, delay the execution in order to get the latest listening subscription function
        * and the array of listening data attributes given by useMemo.
        */
-      if (effectStateInStateKeys(data.effectState, ref.current!.stateKeys)) {
+      if (effectStateInListenerKeys(data.effectState, ref.current!.stateKeys)) {
         // Delay execution in order to get the new listener function after re-rendering
-        Promise.resolve(data).then(rd => {
-          ref.current!.listener(rd);
+        Promise.resolve(data).then(res => {
+          ref.current!.listener(res);
         });
       }
-    })
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  , []);
+  }, []);
 };

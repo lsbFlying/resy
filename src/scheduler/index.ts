@@ -1,7 +1,7 @@
 import type { MapType, PrimitiveState, Callback, ValueOf } from "../types";
 import type { SchedulerType } from "./types";
 import type { StateCallbackItem, State, StateCallback } from "../store/types";
-import { stateCallbackErrorProcessing } from "../errors";
+import { stateCallbackErrorProcessing } from "../store/errors";
 import { mapToObject } from "../store/utils";
 
 /**
@@ -20,7 +20,7 @@ export const scheduler = <S extends PrimitiveState>() => {
   // task data of updated
   const taskDataMap: MapType<S> = new Map();
   // task queue of updated
-  const taskQueueSet: Set<Callback> = new Set();
+  const taskQueueMap: Map<keyof S, Callback> = new Map();
   // Callback function stack
   const callbackStackSet = new Set<StateCallbackItem<S>>();
 
@@ -39,7 +39,7 @@ export const scheduler = <S extends PrimitiveState>() => {
       task: Callback,
     ) => {
       taskDataMap.set(key, value);
-      taskQueueSet.add(task);
+      taskQueueMap.set(key, task);
     },
   );
 
@@ -62,7 +62,7 @@ export const scheduler = <S extends PrimitiveState>() => {
     "flushTask",
     () => {
       taskDataMap.clear();
-      taskQueueSet.clear();
+      taskQueueMap.clear();
     },
   );
 
@@ -70,7 +70,7 @@ export const scheduler = <S extends PrimitiveState>() => {
     "getSchedulerQueue",
     () => ({
       taskDataMap,
-      taskQueueSet,
+      taskQueueMap,
       callbackStackSet,
     }),
   );

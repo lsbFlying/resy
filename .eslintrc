@@ -1,4 +1,7 @@
 {
+  "globals": {
+    "globalThis": "readonly"
+  },
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": "latest",
@@ -67,7 +70,7 @@
     "max-len": ["error", 130],
     "no-console": "off",
     "spaced-comment": "error",
-    "arrow-body-style": ["error", "as-needed"],
+    "arrow-body-style": ["off"],
     "array-callback-return": ["error", { "allowImplicit": true, "checkForEach": true }],
     "no-unused-expressions": [
       "error",

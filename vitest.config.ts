@@ -4,10 +4,10 @@ export default defineConfig({
   test: {
     globals: true,
     setupFiles: "setupTests.ts",
+    environment: "jsdom",
     coverage: {
+      include: ["src/*"],
       exclude: [
-        "create.entry.file.js",
-        "index.js",
         "src/types.ts",
         "src/classConnect/types.ts",
         "src/platforms/*.ts",
@@ -15,6 +15,7 @@ export default defineConfig({
         "src/scheduler/types.ts",
         "src/store/types.ts",
         "src/subscribe/types.ts",
+        "src/signal/types.ts",
       ],
     },
     // reporters: ["html"],

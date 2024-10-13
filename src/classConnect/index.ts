@@ -1,4 +1,4 @@
-import type { ConnectStoreType, ClassConnectStoreType, ClassStoreType } from "./types";
+import type { ClassConnectStoreType, ClassStoreType } from "./types";
 import type { ValueOf, PrimitiveState } from "../types";
 import type { ConciseStoreCore, Store } from "../store/types";
 import { Component, PureComponent } from "react";
@@ -10,7 +10,6 @@ import { connectStoreCore, constructorProcessing } from "./core";
 /**
  * @class ComponentWithStore
  * @classdesc The public base class can connect to the store
- * @implements ConnectStoreType
  */
 export class ComponentWithStore<
   P extends PrimitiveState = {},
@@ -38,13 +37,12 @@ export class ComponentWithStore<
 /**
  * @class PureComponentWithStore
  * @classdesc The public base class can connect to the store
- * @implements ConnectStoreType
  */
 export class PureComponentWithStore<
   P extends PrimitiveState = {},
   S extends PrimitiveState = {},
   SS = any,
-> extends PureComponent<P, S, SS> implements ConnectStoreType {
+> extends PureComponent<P, S, SS> {
   constructor(props: P) {
     super(props);
     constructorProcessing.apply(this as any);

@@ -348,10 +348,10 @@ class AppClass extends ComponentWithStore {
         <>
           <span>{userName}</span>
           <span>{theme}</span>
-          <button onClick={() => { this.userStore.userName = "LD" }}>
+          <button onClick={() => { userStore.userName = "LD" }}>
             nameChange
           </button>
-          <button onClick={() => { this.themeStore.setState({ theme: "light" }) }}>
+          <button onClick={() => { themeStore.setState({ theme: "light" }) }}>
             themeChange
           </button>
         </>

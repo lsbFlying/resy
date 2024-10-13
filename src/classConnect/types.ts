@@ -1,24 +1,9 @@
 import type { PrimitiveState } from "../types";
-import type { ConciseStoreCore, SetOptions, State, Store, StoreCoreUtils } from "../store/types";
+import type { SetOptions, State, Store, StoreCoreUtils } from "../store/types";
 import {
   __CLASS_INITIAL_STATE_RETRIEVE_KEY__, __CLASS_THIS_POINTER_STORES_KEY__,
   __CLASS_STATE_REF_SET_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__, __CLASS_CONNECT_STORE_KEY__,
 } from "./static";
-
-/**
- * @description This is an important method that is core to the functionality of this class.
- * Performs some action. This method should not be overridden in subclasses.
- * Even if you rewrite it, your rewriting method should be like this below:
- * connectStore<S extends PrimitiveState>(store: S): S & SetOptions & StoreCoreUtils<S> {
- *   ...
- *   return super.connectStore(store);
- * }
- * @interface connectStore
- * @param store
- */
-export type ConnectStoreType = Readonly<{
-  connectStore<S extends PrimitiveState>(store: Store<S> | ConciseStoreCore<S>): ClassStoreType<S>;
-}>;
 
 /** This is the data type returned by the class after connecting to the store */
 export type ClassStoreType<S extends PrimitiveState> = S & StoreCoreUtils<S> & Readonly<SetOptions>;

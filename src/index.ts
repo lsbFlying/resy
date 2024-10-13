@@ -11,6 +11,6 @@ export { useSubscription } from "./subscribe";
 export * from "./subscribe/types";
 
 export { ComponentWithStore, PureComponentWithStore } from "./classConnect";
-export type { ConnectStoreType, ClassStoreType } from "./classConnect/types";
+export type { ClassStoreType } from "./classConnect/types";
 
 export * from "./types";

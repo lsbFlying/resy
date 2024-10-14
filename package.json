@@ -39,7 +39,7 @@
     "test": "vitest run --coverage",
     "test:dev": "rm -rf coverage && vitest --ui --coverage",
     "build": "rm -rf dist && rollup -c --configPlugin @rollup/plugin-typescript",
-    "prepublishOnly": "rm -rf dist coverage && npm test && npm run build"
+    "prepublishOnly": "rm -rf dist coverage && pnpm test && pnpm run build"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"

@@ -244,7 +244,7 @@ export interface UseSubscriptionType<S extends PrimitiveState> {
 /** Type of key disabled in the initialization parameters */
 export type InitialStateForbiddenKeys = keyof StoreUtils<PrimitiveState> | "store";
 
-/** The type of the this context in function properties (actions) within initialState. */
+/** The type of this context in function properties (actions) within initialState. */
 export type StateThis<S extends PrimitiveState> = {
   [K in keyof S]: K extends InitialStateForbiddenKeys ? never : S[K];
 } & Store<S>;

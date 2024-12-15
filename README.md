@@ -111,6 +111,70 @@ resy requires the version of React v >= 16.8
 
 <details>
 <summary>
+defineStore
+</summary>
+
+##### general use of defineStore
+```tsx
+const useUserStore = defineStore({
+  userId: 666,
+  username: "wenmu",
+  updateUserInfo() {
+    this.username = "Shanbao Liu";
+  },
+});
+const useThemeStore = defineStore({
+  themeStyle: "dark",
+  changeTheme() {
+    this.themeStyle = "light";
+  },
+});
+
+function App() {
+  const { username, updateUserInfo } = useUserStore();
+  const { themeStyle, changeTheme } = useThemeStore();
+
+  return (
+    <>
+      <p onClick={updateUserInfo}>name:{username}</p>
+      <p onClick={changeTheme}>theme:{themeStyle}</p>
+    </>
+  );
+}
+```
+
+##### Being able to deconstruct the store and all the tools and methods available for createStore
+```tsx
+const useStore = defineStore({
+  count: 0,
+  increase() {
+    this.count++;
+  },
+});
+
+function App() {
+  const {
+    count, increase, store, useSubscription,
+  } = useStore();
+
+  useSubscription(({ effectState }) => {
+    console.log(effectState);
+  }, ["count"]);
+
+  return (
+    <>
+      <p onClick={increase}>count:{count}</p>
+      <button onClick={() => store.count++}>
+        updateCount
+      </button>
+    </>
+  );
+}
+```
+</details>
+
+<details>
+<summary>
 createStore
 </summary>
 
@@ -813,6 +877,7 @@ class AppClass extends ComponentWithStore {
 | useSubscription | Hook of subscribe                                            |
 | restore         | Restore data of store, with re-render effect                 |
 | setOptions      | Set the options parameter of createStore                     |
+| getOptions      | Get the options parameter of createStore                     |
 
 ### Detailed introduction of api
 
@@ -1183,6 +1248,34 @@ function App() {
         // Use less scenes, use it with caution
         // You can change the unmountRestore parameter setting of createStore
         store.setOptions({ unmountRestore: false });
+      }}
+    >
+      btn
+    </button>
+  );
+}
+```
+</details>
+
+<details>
+<summary>getOptions</summary>
+
+```tsx
+function App() {
+  return (
+    <button
+      onClick={() => {
+        /**
+         * @description When executed in conjunction with "setOptions",
+         * it allows users to make different coding decisions based on various configurations,
+         * while being aware of the current settings.
+         * 🌟 Different from the considerations for the parameter types of "setOptions",
+         * "getOptions" returns a configuration object for all settings.
+         * This is because these read-only settings do not affect code security,
+         * and the parameters for "setOptions" are only aimed at the "unmountRestore" configuration item.
+         * Providing all configuration items may also be for the convenience of subsequent internal coding considerations.
+         */
+        const currentOptions = store.getOptions();
       }}
     >
       btn

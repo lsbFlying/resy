@@ -1,5 +1,5 @@
-import type { Callback, ValueOf, PrimitiveState, MapType } from "../types";
-import type { Subscribe, ListenerType } from "../subscribe/types";
+import type { Callback, ValueOf, PrimitiveState, MapType, AnyFn } from "../types";
+import type { ListenerType, SubscribeType } from "../subscribe/types";
 import type {
   ClassConnectStoreType, ClassUnmountProcessingType, ClassInitialStateRetrieveType,
 } from "../classConnect/types";
@@ -24,8 +24,17 @@ export interface StoreOptions {
    * @description The abstract name or namespace of the store,
    * when it is difficult to distinguish the states of the same key by mixing stores in a complex module,
    * which helps identify specific stores and facilitates finding component elements during debugging.
+   * @default undefined
    */
   readonly namespace?: string;
+  /**
+   * @description For the configuration options of defineStore,
+   * the function properties of defineStore can possess the capability to update and render state data.
+   * This configuration is not commonly used;
+   * it aims to maintain a certain level of openness and flexibility in its application.
+   * @default undefined
+   */
+  readonly enableMarcoActionStateful?: boolean;
 }
 
 export interface InnerStoreOptions extends StoreOptions {
@@ -34,6 +43,17 @@ export interface InnerStoreOptions extends StoreOptions {
    * @default undefined
    */
   readonly __useConciseState__?: boolean;
+  /**
+   * @description This feature is designed to be used with the defineStore function.
+   * It enables and optimizes various usage scenarios for stores defined using the defineStore macro.
+   * @default undefined
+   */
+  readonly __enableMacros__?: boolean;
+  /**
+   * @description Call name of function, used for internal processing of error message prompts.
+   * @default "createStore"
+   */
+  readonly __functionName__?: string;
 }
 
 /**
@@ -41,47 +61,45 @@ export interface InnerStoreOptions extends StoreOptions {
  */
 export type StoreMapValueType<S extends PrimitiveState> = {
   // The current source data state change event subscription callback, which is useSyncExternalStore's subscribe
-  subscribeOriginState: (onOriginStateChange: Callback) => Callback;
+  subscribe: (onStoreChange: Callback) => Callback;
   // Get the current source data (individual data attribute status)
-  getOriginState: () => ValueOf<S>;
+  getSnapshot: () => ValueOf<S>;
   /**
    * @description Using the current source data,
-   * namely the useSnapshot from useSyncExternalStore,
    * can be simply understood as having the effect of useState,
    * possessing the ability to drive page updates and rendering.
    */
-  useOriginState: () => ValueOf<S>;
+  useSyncExternalStore: () => ValueOf<S>;
   // An updater for updating source data
   updater: Callback;
 };
 
 /** Some of the core tool method types of store */
 export type StoreCoreUtils<S extends PrimitiveState> = Readonly<
-  & SetState<S>
-  & SyncUpdate<S>
-  & Restore<S>
-  & Subscribe<S>
+  & SetStateType<S>
+  & SyncUpdateType<S>
+  & RestoreType<S>
+  & SubscribeType<S>
 >;
 
 export type StoreHookUtils<S extends PrimitiveState> = Readonly<
-  & UseStore<S>
-  & UseSubscription<S>
+  & UseStoreType<S>
+  & UseSubscriptionType<S>
 >;
 
 /** Tool method type of store */
-export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & StoreHookUtils<S> & Readonly<SetOptions>;
+export type StoreUtils<S extends PrimitiveState> =
+  StoreCoreUtils<S>
+  & StoreHookUtils<S>
+  & Readonly<SetOptionsType>
+  & Readonly<GetOptionsType>;
 
 /** The type of store returned by createStore */
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
 
-export type ConciseStoreCore<S extends PrimitiveState> = S & StoreCoreUtils<S> & StoreHookUtils<S>;
-
-export interface ConciseStoreHeart<S extends PrimitiveState> {
-  readonly store: ConciseStoreCore<S>;
+export interface StoreType<S extends PrimitiveState> {
+  readonly store: Store<S>;
 }
-
-/** Return type of useConciseState */
-export type ConciseStore<S extends PrimitiveState> = S & StoreCoreUtils<S> & ConciseStoreHeart<S>;
 
 export type StoreMapValue<S extends PrimitiveState> = MapType<StoreMapValueType<S>>;
 // Type of storeMap
@@ -117,7 +135,7 @@ export type StateFnType<S extends PrimitiveState> = (prevState: Readonly<S>) => 
 export type SetStateAction<S extends PrimitiveState> = State<S> | StateFnType<S>;
 
 /** Type of setState */
-export interface SetState<S extends PrimitiveState> {
+export type SetStateType<S extends PrimitiveState> = {
   /**
    * @param state
    * @param callback
@@ -126,7 +144,7 @@ export interface SetState<S extends PrimitiveState> {
     state: SetStateAction<S>,
     callback?: StateCallback<S>,
   ): void;
-}
+};
 
 /**
  * Type of callback functions for setState, syncUpdate, and restore
@@ -141,7 +159,7 @@ export type StateCallbackItem<S extends PrimitiveState> = {
 };
 
 /** Type of syncUpdate */
-export interface SyncUpdate<S extends PrimitiveState> {
+export type SyncUpdateType<S extends PrimitiveState> = {
   /**
    * @param state
    * @param callback
@@ -150,10 +168,10 @@ export interface SyncUpdate<S extends PrimitiveState> {
     state: SetStateAction<S>,
     callback?: StateCallback<S>,
   ): void;
-}
+};
 
 /** Type of restore */
-export interface Restore<S extends PrimitiveState> {
+export type RestoreType<S extends PrimitiveState> = {
   /**
    * @param callback
    * @description The reason for not naming it reset is due to
@@ -163,7 +181,7 @@ export interface Restore<S extends PrimitiveState> {
    * Hence, the choice of the name restore instead of reset.
    */
   restore(callback?: StateCallback<S>): void;
-}
+};
 
 /**
  * Type of setOptions
@@ -177,30 +195,57 @@ export interface Restore<S extends PrimitiveState> {
  * the configuration of StoreOptions itself should meet and satisfy the vast majority of usage scenarios,
  * so the occurrences where setOptions is needed are still relatively rare.
  */
-export interface SetOptions {
+export type SetOptionsType = {
   setOptions(options: Readonly<{ unmountRestore: boolean }>): void;
-}
-
-/** store.useStore() */
-export interface UseStore<S extends PrimitiveState> {
-  useStore(): Store<S>;
-}
+};
 
 /**
- * store.UseSubscription()
+ * @description When executed in conjunction with "setOptions",
+ * it allows users to make different coding decisions based on various configurations,
+ * while being aware of the current settings.
+ * 🌟 Different from the considerations for the parameter types of "setOptions",
+ * "getOptions" returns a configuration object for all settings.
+ * This is because these read-only settings do not affect code security,
+ * and the parameters for "setOptions" are only aimed at the "unmountRestore" configuration item.
+ * Providing all configuration items may also be for the convenience of subsequent internal coding considerations.
+ */
+export type GetOptionsType = {
+  getOptions(): InnerStoreOptions;
+};
+
+/** type of useStore */
+export type UseStoreType<S extends PrimitiveState> = {
+  useStore(): ClassicStore<S>;
+};
+
+/**
+ * @description The store returned by `createStore`,
+ * which then calls the result returned by `useStore`,
+ * is referred to as the classical type of store.
+ */
+export type ClassicStore<S extends PrimitiveState> = Omit<Store<S>, "useStore">;
+
+/** A preprocessed store that is ready for immediate rendering  */
+export type MacroStore<S extends PrimitiveState> = ClassicStore<S> & StoreType<S>;
+
+/** The function type returned by definiteStore */
+export type UseMacroStore<S extends PrimitiveState> = () => MacroStore<S>;
+
+/**
+ * type of useSubscription
  * @description It`s advantage is that you only need to consider the data you want to subscribe to,
  * rather than the psychological burden to consider whether the data reference inside the function can get the latest value.
  * UseSubscription will reduce your mental burden and allow you to use it normally.
  */
-export interface UseSubscription<S extends PrimitiveState> {
+export interface UseSubscriptionType<S extends PrimitiveState> {
   useSubscription(listener: ListenerType<S>, stateKeys?: (keyof S)[]): void;
 }
 
 /** Type of key disabled in the initialization parameters */
 export type InitialStateForbiddenKeys = keyof StoreUtils<PrimitiveState> | "store";
 
-/** thisType type used to initialize store when initialState is a function */
-export type InitialStore<S extends PrimitiveState> = {
+/** The type of the this context in function properties (actions) within initialState. */
+export type StateThis<S extends PrimitiveState> = {
   [K in keyof S]: K extends InitialStateForbiddenKeys ? never : S[K];
 } & Store<S>;
 
@@ -228,7 +273,7 @@ export type StateWithThisType<S extends PrimitiveState> = S extends PrimateForbi
     [K in keyof S]: K extends InitialStateForbiddenKeys
       ? never
       : S[K];
-  } & ThisType<InitialStore<S>>;
+  } & ThisType<StateThis<S>>;
 
 /** Type of initialize data */
 export type InitialState<S extends PrimitiveState> = (() => StateWithThisType<S>) | StateWithThisType<S>;
@@ -237,3 +282,10 @@ export type InitialState<S extends PrimitiveState> = (() => StateWithThisType<S>
 export type StateRefCounterMapType = MapType<{
   counter: number;
 }>;
+
+export type AnyBoundFn = AnyFn & {
+  /**
+   * @description The flag attribute bound to the internal processing function attribute.
+   */
+  __bound__?: boolean;
+};

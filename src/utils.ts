@@ -1,7 +1,4 @@
-import type {
-  NativeDataType,
-  // PrimitiveValueType,
-} from "./types";
+import type { NativeDataType } from "./types";
 
 export const hasOwnProperty = Object.prototype.hasOwnProperty;
 
@@ -11,16 +8,16 @@ export const typeString = Object.prototype.toString;
 export const whatsType = (value: unknown): NativeDataType => {
   const type = typeString.call(value);
   switch (type) {
+    case "[object Array]":
+      return "Array";
+    case "[object Object]":
+      return "Object";
     case "[object String]":
       return "String";
     case "[object Number]":
       return "Number";
     case "[object Boolean]":
       return "Boolean";
-    case "[object Object]":
-      return "Object";
-    case "[object Array]":
-      return "Array";
     case "[object Set]":
       return "Set";
     case "[object Map]":
@@ -51,7 +48,11 @@ export const whatsType = (value: unknown): NativeDataType => {
     case "[object AsyncFunction]":
       return "AsyncFunction";
     case "[object Array Iterator]":
-      return "Array Iterator";
+      return "ArrayIterator";
+    case "[object Set Iterator]":
+      return "SetIterator";
+    case "[object Map Iterator]":
+      return "MapIterator";
     case "[object FormData]":
       return "FormData";
     case "[object Blob]":
@@ -115,16 +116,3 @@ export const whatsType = (value: unknown): NativeDataType => {
       return type?.match(/\[object\s+(.*?)]/)?.[1] as NativeDataType;
   }
 };
-
-// const primitiveMap = new Map<PrimitiveValueType, PrimitiveValueType>(Object.entries({
-//   Number: "Number",
-//   String: "String",
-//   Boolean: "Boolean",
-//   Undefined: "Undefined",
-//   Null: "Null",
-//   Symbol: "Symbol",
-// }) as any);
-
-// export const isPrimitive = (value: unknown): boolean => {
-//   return primitiveMap.has(whatsType(value) as PrimitiveValueType);
-// };

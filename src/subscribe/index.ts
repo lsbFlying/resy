@@ -2,8 +2,10 @@ import type { PrimitiveState } from "../types";
 import type { ListenerType, SubscriptionRefType } from "./types";
 import type { Store } from "../store/types";
 import { effectStateInListenerKeys } from "../store/utils";
-import { useEffect, useRef } from "react";
+import { useDebugValue, useEffect, useRef } from "react";
 import { storeErrorProcessing, subscribeErrorProcessing } from "../store/errors";
+import { __DEV__ } from "../static";
+import { __STORE_NAMESPACE__ } from "../store/static";
 
 /**
  * @description Hook of subscribe
@@ -31,6 +33,20 @@ export const useSubscription = <S extends PrimitiveState>(
     listener,
     stateKeys,
   };
+
+  if (__DEV__) {
+    const store_namespace = store[__STORE_NAMESPACE__ as keyof S]
+      ? {
+        namespace: store[__STORE_NAMESPACE__ as keyof S],
+      }
+      : null;
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useDebugValue({
+      listener,
+      stateKeys,
+      ...store_namespace,
+    });
+  }
 
   useEffect(() => {
     // Monitor the overall data changes of the store

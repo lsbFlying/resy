@@ -20,22 +20,13 @@ export const storeErrorProcessing = (
 // Error processing of data update parameters type
 export const stateErrorProcessing = (params: {
   state: unknown;
-  fnName?: "setState、syncUpdate" | "createStore" | "useConciseState";
+  fnName?: "setState、syncUpdate" | "createStore" | "useConciseState" | "defineStore";
   options?: InnerStoreOptions;
 }) => {
   const { state, fnName, options } = params;
   const stateType = whatsType(state);
   if (__DEV__ && stateType !== "Object") {
-    const ucs = options?.__useConciseState__;
-
-    let fnNameTemp = fnName;
-
-    if (!fnNameTemp && ucs !== true) {
-      fnNameTemp = "createStore";
-    }
-    if (!fnNameTemp && ucs === true) {
-      fnNameTemp = "useConciseState";
-    }
+    const fnNameTemp = fnName ?? options?.__functionName__;
 
     throw new Error(
       `resy's ${fnNameTemp}(...): takes an object of state variables to update or`
@@ -60,6 +51,9 @@ export const optionsErrorProcessing = (
   const urType = whatsType(options?.unmountRestore);
   const ucsType = whatsType(options?.__useConciseState__);
   const nsType = whatsType(options?.namespace);
+  const emType = whatsType(options?.__enableMacros__);
+  const emasType = whatsType(options?.enableMarcoActionStateful);
+
   if (
     __DEV__ && (
       (
@@ -69,6 +63,8 @@ export const optionsErrorProcessing = (
           (urType !== "Boolean" && urType !== "Undefined")
           || (ucsType !== "Boolean" && ucsType !== "Undefined")
           || (nsType !== "String" && nsType !== "Undefined")
+          || (emType !== "Boolean" && emType !== "Undefined")
+          || (emasType !== "Boolean" && emasType !== "Undefined")
         )
       )
     )

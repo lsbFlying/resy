@@ -1,4 +1,4 @@
-import type { ConciseStore, ConciseStoreCore, InitialState, InnerStoreOptions, Store } from "./types";
+import type { InitialState, InnerStoreOptions, Store, MacroStore, ClassicStore } from "./types";
 import type { PrimitiveState } from "../types";
 import { useMemo } from "react";
 import { __USE_STORE_KEY__ } from "./static";
@@ -11,7 +11,9 @@ import { createStore } from "./index";
  * @param store
  * @return store
  */
-export const useStore = <S extends PrimitiveState>(store: Store<S> | ConciseStoreCore<S>): S => {
+export const useStore = <S extends PrimitiveState>(
+  store: Store<S>,
+): ClassicStore<S> => {
   storeErrorProcessing(store, "useStore");
   return store[__USE_STORE_KEY__ as keyof S];
 };
@@ -31,15 +33,18 @@ export const useStore = <S extends PrimitiveState>(store: Store<S> | ConciseStor
  * the latest data values of various items can be accessed,
  * compensating for the shortfall in useState where the latest values of attribute data cannot be retrieved.
  * @param initialState
- * @return ConciseStore<S>
+ * @return MacroStore<S>
  */
 export const useConciseState = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
-): ConciseStore<S> => {
+): MacroStore<S> => {
   return useMemo(() => {
     return createStore<S>(
       initialState,
-      { __useConciseState__: true } as InnerStoreOptions,
+      {
+        __useConciseState__: true,
+        __functionName__: useConciseState.name,
+      } as InnerStoreOptions,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])[__USE_STORE_KEY__ as keyof S];

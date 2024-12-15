@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { createStore, useStore } from "../../src";
 
-/** Scenario testing of setOptions */
+/** Scenario testing of setOptions、getOptions */
 test("setOptions", async () => {
   type Store = {
     count: number;
@@ -21,6 +21,9 @@ test("setOptions", async () => {
         <p>counter:{count}</p>
         <button onClick={() => {
           store.count++;
+          const currentOptions = store.getOptions();
+          console.log(currentOptions);
+          expect(currentOptions.unmountRestore === true).toBeTruthy();
           store.setOptions({
             unmountRestore: false,
           });

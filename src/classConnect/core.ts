@@ -1,6 +1,6 @@
 import type { ClassInstanceTypeOfConnectStore, ClassStoreType } from "./types";
 import type { PrimitiveState, AnyFn } from "../types";
-import type { ConciseStoreCore, Store } from "../store/types";
+import type { Store } from "../store/types";
 import {
   __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_CONNECT_STORE_KEY__,
   __CLASS_INITIAL_STATE_RETRIEVE_KEY__, __CLASS_STATE_REF_SET_KEY__,
@@ -55,7 +55,7 @@ export function constructorProcessing<S extends PrimitiveState>(this: ClassInsta
 
 export function connectStoreCore<S extends PrimitiveState>(
   this: ClassInstanceTypeOfConnectStore<S>,
-  store: Store<S> | ConciseStoreCore<S>,
+  store: Store<S>,
 ): ClassStoreType<S> {
   storeErrorProcessing(store, "connectStore");
   store[__CLASS_INITIAL_STATE_RETRIEVE_KEY__ as keyof S]();

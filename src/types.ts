@@ -13,8 +13,9 @@ export type PrimitiveValueType = "Number" | "String" | "Boolean" | "Undefined" |
 export type ComplexValueType =
   | "Object" | "Function" | "Array" | "Date" | "RegExp"
   | "Map" | "Set" | "WeakMap" | "WeakSet"
+  | "ArrayIterator" | "SetIterator" | "MapIterator"
   | "WeakRef" | "BigInt" | "Arguments"
-  | "Promise" | "AsyncFunction" | "Array Iterator" | "FormData" | "Blob" | "File" | "Error"
+  | "Promise" | "AsyncFunction" | "FormData" | "Blob" | "File" | "Error"
   | "CustomEvent" | "Storage"
   | "WebSocket" | "ArrayBuffer" | "DataView"
   | "Uint8Array" | "Int8Array" | "Uint8ClampedArray" | "Int16Array" | "Uint16Array" | "Int32Array"

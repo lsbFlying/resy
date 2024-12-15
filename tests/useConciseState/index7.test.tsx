@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
-import { ConciseStoreHeart, useConciseState, useStore } from "../../src";
+import { StoreType, useConciseState, useStore } from "../../src";
 
 /** Advantages of useConciseState */
 test("useConciseState-store", async () => {
@@ -10,7 +10,7 @@ test("useConciseState-store", async () => {
     text: string;
   };
 
-  function ChildOne(props: ConciseStoreHeart<State>) {
+  function ChildOne(props: StoreType<State>) {
     const { store } = props;
     const { count, text } = useStore(store);
 
@@ -32,7 +32,7 @@ test("useConciseState-store", async () => {
     );
   }
 
-  function ChildTwo(props: ConciseStoreHeart<State>) {
+  function ChildTwo(props: StoreType<State>) {
     const { store } = props;
     const [data, setData] = useState({ count: 0, text: "hello" });
 

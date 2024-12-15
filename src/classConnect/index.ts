@@ -1,6 +1,6 @@
 import type { ClassConnectStoreType, ClassStoreType } from "./types";
 import type { ValueOf, PrimitiveState } from "../types";
-import type { ConciseStoreCore, Store } from "../store/types";
+import type { Store } from "../store/types";
 import { Component, PureComponent } from "react";
 import {
   __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_CONNECT_STORE_KEY__, __CLASS_STATE_REF_SET_KEY__,
@@ -29,7 +29,7 @@ export class ComponentWithStore<
 
   [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
 
-  connectStore<S extends PrimitiveState>(store: Store<S> | ConciseStoreCore<S>): ClassStoreType<S> {
+  connectStore<S extends PrimitiveState>(store: Store<S>): ClassStoreType<S> {
     return connectStoreCore.apply(this as any, [store]) as ClassStoreType<S>;
   }
 }
@@ -56,7 +56,7 @@ export class PureComponentWithStore<
 
   [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
 
-  connectStore<S extends PrimitiveState>(store: Store<S> | ConciseStoreCore<S>): ClassStoreType<S> {
+  connectStore<S extends PrimitiveState>(store: Store<S>): ClassStoreType<S> {
     return connectStoreCore.apply(this as any, [store]) as ClassStoreType<S>;
   }
 }

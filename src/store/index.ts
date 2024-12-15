@@ -8,7 +8,7 @@
 import type {
   ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions, Store,
   StateCallback, StoreMapValueType, State, InitialState, StateRefCounterMapType,
-  StateWithThisType, InnerStoreOptions,
+  StateWithThisType, InnerStoreOptions, AnyBoundFn,
 } from "./types";
 import type { InitialFnCanExecMapType } from "../restore/types";
 import type { Unsubscribe, ListenerType } from "../subscribe/types";
@@ -55,6 +55,7 @@ export const createStore = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
   options?: StoreOptions,
 ): Store<S> => {
+  /** ============================== For core constant ready start ============================== */
   // Retrieve the reducerState
   const reducerState = initialState === undefined
     ? ({} as StateWithThisType<S>)
@@ -63,15 +64,14 @@ export const createStore = <S extends PrimitiveState>(
       : initialState;
 
   optionsErrorProcessing(options);
-  const optionsTemp = options
-    ? {
-      __useConciseState__: (options as InnerStoreOptions).__useConciseState__ ?? undefined,
-      unmountRestore: options.unmountRestore ?? true,
-      namespace: options.namespace ?? undefined,
-    }
-    : {
-      unmountRestore: true,
-    };
+  const optionsTemp = {
+    __useConciseState__: (options as InnerStoreOptions)?.__useConciseState__ ?? undefined,
+    unmountRestore: options?.unmountRestore ?? true,
+    namespace: options?.namespace ?? undefined,
+    __enableMacros__: (options as InnerStoreOptions)?.__enableMacros__ ?? undefined,
+    enableMarcoActionStateful: options?.enableMarcoActionStateful ?? undefined,
+    __functionName__: (options as InnerStoreOptions)?.__functionName__ ?? createStore.name,
+  };
 
   stateErrorProcessing({ state: reducerState, options: optionsTemp });
 
@@ -100,6 +100,18 @@ export const createStore = <S extends PrimitiveState>(
   // The storage stack of this proxy object for the class component
   const classThisPointerSet = new Set<ClassInstanceTypeOfConnectStore<S>>();
 
+  /**
+   * @description Map for additional related internal objects of store
+   * For example, some related functions or identifiers,
+   * such as setState, subscribe and internal identity __REGENERATIVE_SYSTEM_KEY__
+   */
+  const externalMap: ExternalMapType<S> = new Map();
+  /** ============================== For core constant ready end ============================== */
+
+  // for development tools
+  externalMap.set(__STORE_NAMESPACE__, optionsTemp.namespace);
+
+  /** ============================== For core utils use start ============================== */
   const setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
     willUpdatingProcessing(listenerSet, schedulerProcessor, prevBatchState, stateMap);
 
@@ -202,12 +214,13 @@ export const createStore = <S extends PrimitiveState>(
     return () => listenerSet.delete(listenerWrap as ListenerType<S>);
   };
 
-  // Change options configuration
-  const setOptions = (options: { unmountRestore: boolean }) => {
-    setOptionsErrorProcessing(options);
-    optionsTemp.unmountRestore = options.unmountRestore;
-  };
+  externalMap.set("setState", setState);
+  externalMap.set("syncUpdate", syncUpdate);
+  externalMap.set("restore", restore);
+  externalMap.set("subscribe", subscribe);
+  /** ============================== For core utils use end ============================== */
 
+  /** ============================== For core render use start ============================== */
   // Data updates for a single attribute
   const singleUpdate = (key: keyof S, value: ValueOf<S>, isDelete?: boolean): boolean => {
     if (!Object.is(value, stateMap.get(key))) {
@@ -222,13 +235,6 @@ export const createStore = <S extends PrimitiveState>(
     return true;
   };
 
-  /**
-   * @description Map for additional related internal objects of store
-   * For example, some related functions or identifiers,
-   * such as setState, subscribe and internal identity __REGENERATIVE_SYSTEM_KEY__
-   */
-  const externalMap: ExternalMapType<S> = new Map();
-
   // Updated handler configuration for proxy
   const proxySetHandler = {
     set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singleUpdate(key, value),
@@ -236,30 +242,41 @@ export const createStore = <S extends PrimitiveState>(
     deleteProperty: (_: S, key: keyof S) => singleUpdate(key, undefined as ValueOf<S>, true),
   } as any as ProxyHandler<StoreMap<S>>;
 
+  const macroFnProcessing = (key: keyof S, value: AnyBoundFn) => {
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    const boundFn = ((...args: any[]) => (value as AnyFn).apply(store, args)) as AnyBoundFn;
+    boundFn.__bound__ = true;
+    stateMap.set(key, boundFn as ValueOf<S>);
+    return boundFn as ValueOf<S>;
+  };
+
   // A proxy object with the capabilities of updating and data tracking.
-  const store = new Proxy(storeMap, {
+  const store = new Proxy(stateMap, {
     get: (_: StoreMap<S>, key: keyof S, receiver: any) => {
       protoPointStoreErrorProcessing(receiver, store);
 
       const value = stateMap.get(key);
 
-      return externalMap.get(key as keyof ExternalMapValue<S>) || (
-        typeof value !== "function"
-          ? value
-          : (...args: any[]) => (value as AnyFn).apply(store, args)
-      );
+      if (typeof value === "function" && !(value as AnyBoundFn).__bound__) {
+        return macroFnProcessing(key, value);
+      }
+
+      return externalMap.get(key as keyof ExternalMapValue<S>) || value;
     },
     ...proxySetHandler,
-  } as any as ProxyHandler<StoreMap<S>>) as any as Store<S>;
+  } as ProxyHandler<MapType<S>>) as any as Store<S>;
 
   // Proxy of driver update re-render for useStore
-  const engineStore = new Proxy(storeMap, {
+  const engineStore = new Proxy(stateMap, {
     get: (_: StoreMap<S>, key: keyof S) => {
+      // Get the latest value
       const value = stateMap.get(key);
 
-      if (__DEV__ && !externalMap.has(key as keyof ExternalMapValue<S>)) {
+      const notExternal = !externalMap.has(key as keyof ExternalMapValue<S>);
+
+      if (notExternal && typeof value !== "function") {
         // eslint-disable-next-line react-hooks/rules-of-hooks
-        useDebugValue({
+        __DEV__ && useDebugValue({
           key,
           value,
           ...(
@@ -268,43 +285,81 @@ export const createStore = <S extends PrimitiveState>(
               : null
           ),
         });
-      }
 
-      if (typeof value === "function") {
-        // Invoke a function data hook to grant the ability to update and render function data.
-        const stateFnValue = connectHook(
+        return connectHook(
           key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap,
           storeMap, schedulerProcessor, initialFnCanExecMap,
           classThisPointerSet, initialState,
         );
-        return (...args: any[]) => (stateFnValue as AnyFn).apply(store, args);
       }
-      return externalMap.get(key as keyof ExternalMapValue<S>) || connectHook(
-        key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap,
-        storeMap, schedulerProcessor, initialFnCanExecMap,
-        classThisPointerSet, initialState,
-      );
+
+      if (notExternal && typeof value === "function") {
+        // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
+        if (!(value as AnyBoundFn).__bound__) {
+          macroFnProcessing(key, value);
+        }
+
+        const fnStateful = !optionsTemp.__enableMacros__ || optionsTemp.enableMarcoActionStateful;
+
+        const newValue = stateMap.get(key);
+
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        fnStateful && __DEV__ && useDebugValue({
+          key,
+          value: newValue,
+          ...(
+            optionsTemp.namespace
+              ? { namespace: optionsTemp.namespace }
+              : null
+          ),
+        });
+
+        /**
+         * @description Enable function properties to have the ability to update rendering.
+         * Placing both the __bound__ and the stateMap's set operation before the connectHook
+         * can preemptively avoid the tearing synchronization handling inside useSyncExternalStore,
+         * resulting in twice the redundant rendering execution.
+         */
+        fnStateful && connectHook(
+          key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap,
+          storeMap, schedulerProcessor, initialFnCanExecMap,
+          classThisPointerSet, initialState,
+        );
+
+        return newValue;
+      }
+
+      return externalMap.get(key as keyof ExternalMapValue<S>);
     },
     ...proxySetHandler,
-  } as any as ProxyHandler<StoreMap<S>>);
+  } as ProxyHandler<MapType<S>>);
 
-  externalMap.set("setState", setState);
-  externalMap.set("syncUpdate", syncUpdate);
-  externalMap.set("restore", restore);
-  externalMap.set("subscribe", subscribe);
-
-  if (optionsTemp.__useConciseState__) {
-    // Enable useConciseState to have data tracking capabilities through the store
+  // Enable useConciseState and defineStore to have data tracking capabilities through the store
+  if (optionsTemp.__useConciseState__ || optionsTemp.__enableMacros__) {
     externalMap.set("store", store);
-  } else {
-    /**
-     * @description useConciseState should not possess the capability
-     * of the setOptions since local state control would become chaotic if there is local caching.
-     * Caching is more meaningful in the context of the entire store.
-     */
-    externalMap.set("setOptions", setOptions);
   }
+  /**
+   * @description Here, __USE_STORE_KEY__ is not placed under the branch where optionsTemp.__mode__ === "state",
+   * because computed needs the rendering capability of engineStore.
+   */
+  externalMap.set(__USE_STORE_KEY__, engineStore);
+  externalMap.set(__REGENERATIVE_SYSTEM_KEY__, __REGENERATIVE_SYSTEM_KEY__);
+  /** ============================== For core render use end ============================== */
 
+  /** ============================== For operate options use start ============================== */
+  // Change options configuration
+  const setOptions = (options: { unmountRestore: boolean }) => {
+    setOptionsErrorProcessing(options);
+    optionsTemp.unmountRestore = options.unmountRestore;
+  };
+
+  const getOptions = () => Object.assign({}, optionsTemp);
+
+  externalMap.set("setOptions", setOptions);
+  externalMap.set("getOptions", getOptions);
+  /** ============================== For operate options use end ============================== */
+
+  /** ============================== For hook components use start ============================== */
   /**
    * It is convenient for store.useStore() to call directly
    * 🌟 The reason why it is not changed to store.useStore
@@ -313,14 +368,30 @@ export const createStore = <S extends PrimitiveState>(
   const useStore = () => engineStore;
 
   const useSubscription = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
+    if (__DEV__) {
+      const store_namespace = optionsTemp.namespace
+        ? { namespace: optionsTemp.namespace }
+        : null;
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      useDebugValue({
+        listener,
+        stateKeys,
+        ...store_namespace,
+      });
+    }
     useSubscriptionCore(store, listener, stateKeys);
   };
 
+  externalMap.set("useStore", useStore);
+  externalMap.set("useSubscription", useSubscription);
+  /** ============================== For hook components use end ============================== */
+
+  /** ============================== For class components use start ============================== */
   // Connecting this pointer of the class component (therefore, this cannot be an arrow function)
   function classConnectStore(this: ClassInstanceTypeOfConnectStore<S>) {
     classThisPointerSet.add(this);
     // Data agents for use by class components
-    const classEngineStore = new Proxy(storeMap, {
+    const classEngineStore = new Proxy(stateMap, {
       get: (_: StoreMap<S>, key: keyof S) => {
         // Compatible with scenarios where both hook components and class components are used together.
         if (key === "useStore") return () => classEngineStore;
@@ -337,7 +408,7 @@ export const createStore = <S extends PrimitiveState>(
         );
       },
       ...proxySetHandler,
-    } as any as ProxyHandler<StoreMap<S>>);
+    } as ProxyHandler<MapType<S>>);
     return classEngineStore;
   }
 
@@ -356,15 +427,6 @@ export const createStore = <S extends PrimitiveState>(
     initialStateRetrieve(reducerState, stateMap, initialFnCanExecMap, initialState);
   };
 
-  externalMap.set("useStore", useStore);
-  externalMap.set("useSubscription", useSubscription);
-
-  /**
-   * @description Here, __USE_STORE_KEY__ is not placed under the branch where optionsTemp.__mode__ === "state",
-   * because computed needs the rendering capability of engineStore.
-   */
-  externalMap.set(__USE_STORE_KEY__, engineStore);
-  externalMap.set(__REGENERATIVE_SYSTEM_KEY__, __REGENERATIVE_SYSTEM_KEY__);
   /**
    * @description The reason why the three operation functions for class components
    * — connect, classUnmountProcessing, and classInitialStateRetrieve
@@ -375,8 +437,7 @@ export const createStore = <S extends PrimitiveState>(
   externalMap.set(__CLASS_CONNECT_STORE_KEY__, classConnectStore);
   externalMap.set(__CLASS_UNMOUNT_PROCESSING_KEY__, classUnmountProcessing);
   externalMap.set(__CLASS_INITIAL_STATE_RETRIEVE_KEY__, classInitialStateRetrieve);
-
-  externalMap.set(__STORE_NAMESPACE__, optionsTemp.namespace);
+  /** ============================== For class components use end ============================== */
 
   return store;
 };

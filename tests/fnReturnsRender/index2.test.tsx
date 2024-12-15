@@ -1,7 +1,7 @@
 import React from "react";
 import { test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
-import { ConciseStoreHeart, useConciseState } from "../../src";
+import { StoreType, useConciseState } from "../../src";
 
 /** Function returns rendering */
 test("fnReturnsRender-II", async () => {
@@ -14,7 +14,7 @@ test("fnReturnsRender-II", async () => {
     fullName(): string;
   };
 
-  const Count = (props: ConciseStoreHeart<Store>) => {
+  const Count = (props: StoreType<Store>) => {
     const { store } = props;
     const { doubleCount } = store.useStore();
 
@@ -28,7 +28,7 @@ test("fnReturnsRender-II", async () => {
     );
   };
 
-  const Text = (props: ConciseStoreHeart<Store>) => {
+  const Text = (props: StoreType<Store>) => {
     const { store } = props;
     const { getTextPro } = store;
 
@@ -42,7 +42,7 @@ test("fnReturnsRender-II", async () => {
     );
   };
 
-  const Name = (props: ConciseStoreHeart<Store>) => {
+  const Name = (props: StoreType<Store>) => {
     const { store } = props;
     const { firstName, fullName } = store.useStore();
 

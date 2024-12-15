@@ -63,7 +63,10 @@ test("utils", () => {
     value55 = new Request("https://example.com", { method: "GET", headers: value54 }),
     value56 = new Response("body", { status: 200, statusText: "OK", headers: value54 }),
     value57 = async () => "",
-    value58 = new AggregateError([new Error("some error")], "Hello")
+    value58 = new AggregateError([new Error("some error")], "Hello"),
+    value59 = [].values(),
+    value60 = (new Set()).values(),
+    value61 = (new Map()).values()
   ;
 
   /**
@@ -138,6 +141,9 @@ test("utils", () => {
   expect(whatsType(value56) === "Response").toBeTruthy();
   expect(whatsType(value57) === "AsyncFunction").toBeTruthy();
   expect(whatsType(value58) === "Error").toBeTruthy();
+  expect(whatsType(value59) === "ArrayIterator").toBeTruthy();
+  expect(whatsType(value60) === "SetIterator").toBeTruthy();
+  expect(whatsType(value61) === "MapIterator").toBeTruthy();
 
   // 🌟 The test execution here is slightly different from the test execution result of the browser,
   // and it should be related to the small changes in the global object of vitest's test environment.

@@ -1,25 +1,25 @@
 import React from "react";
-import { createStore } from "../src";
+import { defineStore } from "../src";
 
-const store = createStore({
+interface Model {
+  count: number;
+  increase(): void;
+}
+
+const useStore = defineStore<Model>({
   count: 0,
-  text: "hello",
+  increase() {
+    this.count++;
+  },
 });
 
 const App = () => {
-  const { count, text } = store.useStore();
+  const { count, increase } = useStore();
 
   return (
     <>
       <p>count:{count}</p>
-      <p>text:{text}</p>
-      <button
-        onClick={() => {
-          store.count++;
-        }}
-      >
-        change1
-      </button>
+      <button onClick={increase}>increase</button>
     </>
   );
 };

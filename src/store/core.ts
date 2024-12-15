@@ -42,15 +42,15 @@ export const connectStore = <S extends PrimitiveState>(
   // The Set memory of the update function of a single attribute
   const singleStoreChangeSet = new Set<Callback>();
 
-  storeMapValue.set("subscribeOriginState", (onOriginStateChange: Callback) => {
+  storeMapValue.set("subscribe", (onStoreChange: Callback) => {
     // If a component references the data, the update function will be added to singleStoreChangeSet
-    singleStoreChangeSet.add(onOriginStateChange);
+    singleStoreChangeSet.add(onStoreChange);
 
     // Increment the reference count by 1 if the component is referenced
     storeStateRefCounterMap.set("counter", storeStateRefCounterMap.get("counter")! + 1);
 
     return () => {
-      singleStoreChangeSet.delete(onOriginStateChange);
+      singleStoreChangeSet.delete(onStoreChange);
       storeStateRefCounterMap.set("counter", storeStateRefCounterMap.get("counter")! - 1);
 
       deferRestoreProcessing(
@@ -66,12 +66,12 @@ export const connectStore = <S extends PrimitiveState>(
     };
   });
 
-  storeMapValue.set("getOriginState", () => stateMap.get(key));
+  storeMapValue.set("getSnapshot", () => stateMap.get(key));
 
-  storeMapValue.set("useOriginState", () => useSyncExternalStore(
-    (storeMap.get(key) as StoreMapValue<S>).get("subscribeOriginState") as StoreMapValueType<S>["subscribeOriginState"],
-    (storeMap.get(key) as StoreMapValue<S>).get("getOriginState") as StoreMapValueType<S>["getOriginState"],
-    (storeMap.get(key) as StoreMapValue<S>).get("getOriginState") as StoreMapValueType<S>["getOriginState"],
+  storeMapValue.set("useSyncExternalStore", () => useSyncExternalStore(
+    (storeMap.get(key) as StoreMapValue<S>).get("subscribe") as StoreMapValueType<S>["subscribe"],
+    (storeMap.get(key) as StoreMapValue<S>).get("getSnapshot") as StoreMapValueType<S>["getSnapshot"],
+    (storeMap.get(key) as StoreMapValue<S>).get("getSnapshot") as StoreMapValueType<S>["getSnapshot"],
   ));
 
   storeMapValue.set("updater", () => {
@@ -108,7 +108,7 @@ export const connectHook = <S extends PrimitiveState>(
       key, options, reducerState, stateMap, storeStateRefCounterMap,
       storeMap, schedulerProcessor, initialFnCanExecMap,
       classThisPointerSet, initialState,
-    ).get(key)!.get("useOriginState") as StoreMapValueType<S>["useOriginState"]
+    ).get(key)!.get("useSyncExternalStore") as StoreMapValueType<S>["useSyncExternalStore"]
   )();
 };
 

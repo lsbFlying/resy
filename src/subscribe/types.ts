@@ -20,7 +20,7 @@ export type ListenerParams<S extends PrimitiveState> = {
 export type ListenerType<S extends PrimitiveState> = (data: ListenerParams<S>) => void;
 
 /** Type of subscribe */
-export interface Subscribe<S extends PrimitiveState> {
+export type SubscribeType<S extends PrimitiveState> = {
   /**
    * @param listener
    * @param stateKeys Array of monitored data attributes
@@ -30,7 +30,7 @@ export interface Subscribe<S extends PrimitiveState> {
     listener: ListenerType<S>,
     stateKeys?: (keyof S)[],
   ): Unsubscribe;
-}
+};
 
 // Internal ref type of useSubscription
 export type SubscriptionRefType<S extends PrimitiveState> = {

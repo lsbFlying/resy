@@ -1,12 +1,16 @@
 import type { PrimitiveState } from "../types";
-import type { SetOptions, State, Store, StoreCoreUtils } from "../store/types";
+import type { GetOptionsType, SetOptionsType, State, Store, StoreCoreUtils } from "../store/types";
 import {
   __CLASS_INITIAL_STATE_RETRIEVE_KEY__, __CLASS_THIS_POINTER_STORES_KEY__,
   __CLASS_STATE_REF_SET_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__, __CLASS_CONNECT_STORE_KEY__,
 } from "./static";
 
 /** This is the data type returned by the class after connecting to the store */
-export type ClassStoreType<S extends PrimitiveState> = S & StoreCoreUtils<S> & Readonly<SetOptions>;
+export type ClassStoreType<S extends PrimitiveState> =
+  S
+  & StoreCoreUtils<S>
+  & Readonly<SetOptionsType>
+  & Readonly<GetOptionsType>;
 
 // This is the connection type used by the base classes ComponentWithStore and PureComponentWithStore in the class component
 export type ClassConnectStoreType = {

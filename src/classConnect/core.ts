@@ -22,7 +22,8 @@ export function constructorProcessing<S extends PrimitiveState>(this: ClassInsta
    * while writing a public 'componentWillUnmount' instance method in the class does not achieve this effect.
    */
   this.componentWillUnmount = () => {
-    instanceUnmount?.();
+    // The original 'this' pointing cannot be missing
+    instanceUnmount?.apply(this);
     /**
      * @description The strict mode of class components does not provide accurate predictability
      * and safety guarantees for the execution of component lifecycles.

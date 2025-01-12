@@ -17,3 +17,5 @@ export type {
 export * from "./subscribe/types";
 
 export type { ClassStoreType } from "./classConnect/types";
+
+export * from "./types";

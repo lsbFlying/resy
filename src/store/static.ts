@@ -6,3 +6,6 @@ export const __USE_STORE_KEY__ = Symbol("useStoreKey");
 
 // The key of store namespace
 export const __STORE_NAMESPACE__ = Symbol("storeNamespace");
+
+// The property path and path level concatenation string of `mutateKeyChains`.
+export const __MUTATE_KEY_CHAINS__ = "$RESY$";

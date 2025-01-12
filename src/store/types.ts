@@ -28,6 +28,11 @@ export interface StoreOptions {
    */
   readonly namespace?: string;
   /**
+   * @description 不可
+   * @default undefined
+   */
+  readonly immutable?: boolean;
+  /**
    * @description For the configuration options of defineStore,
    * the function properties of defineStore can possess the capability to update and render state data.
    * This configuration is not commonly used;
@@ -288,4 +293,9 @@ export type AnyBoundFn = AnyFn & {
    * @description The flag attribute bound to the internal processing function attribute.
    */
   __bound__?: boolean;
+};
+
+export type MutateReducerPreviousType<S extends PrimitiveState> = {
+  parent: Record<string | symbol, any> | MapType<S>;
+  accumulator: Record<string | symbol, any>;
 };

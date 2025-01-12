@@ -1,7 +1,7 @@
-import type { PrimitiveState, ValueOf, MapType, Callback } from "../types";
+import type { PrimitiveState, ValueOf, MapType, Callback, AnyFn } from "../types";
 import type {
   StoreMapValue, StoreMapValueType, StoreMap, InitialState,
-  StateRefCounterMapType, State, StoreOptions,
+  StateRefCounterMapType, State, StoreOptions, AnyBoundFn, Store,
 } from "./types";
 import type { SchedulerType } from "../scheduler/types";
 import type { ListenerParams, ListenerType } from "../subscribe/types";
@@ -23,7 +23,7 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * @description By connecting the core mapping variable storeMap within the store,
  * a series of operations such as tagging, subscribing, updating, tracking, and rendering are completed.
  */
-export const connectStore = <S extends PrimitiveState>(
+export const hookConnectStore = <S extends PrimitiveState>(
   key: keyof S,
   options: StoreOptions,
   reducerState: S,
@@ -104,7 +104,7 @@ export const connectHook = <S extends PrimitiveState>(
   // Perform refresh recovery logic if initialState is a function
   initialStateRetrieve(reducerState, stateMap, initialFnCanExecMap, initialState);
   return (
-    connectStore(
+    hookConnectStore(
       key, options, reducerState, stateMap, storeStateRefCounterMap,
       storeMap, schedulerProcessor, initialFnCanExecMap,
       classThisPointerSet, initialState,
@@ -191,7 +191,7 @@ export const pushTask = <S extends PrimitiveState>(
        */
       // Status updates for hook components
       (
-        connectStore(
+        hookConnectStore(
           key, options, reducerState, stateMap, storeStateRefCounterMap,
           storeMap, schedulerProcessor, initialFnCanExecMap,
           classThisPointerSet, initialState,
@@ -284,4 +284,57 @@ export const finallyBatchProcessing = <S extends PrimitiveState>(
       });
     }));
   }
+};
+
+/**
+ * @description Determine whether the current change data is within the monitoring range of stateKeys
+ * @return boolean
+ */
+export const effectStateInListenerKeys = <S extends PrimitiveState>(
+  effectState: Readonly<Partial<S>>,
+  stateKeys?: (keyof S)[],
+) => {
+  let effectExecFlag = false;
+  const listenerKeysExist = stateKeys && stateKeys?.length > 0;
+  /**
+   * @description In fact, when the final subscription is triggered,
+   * each of these outer layer listenerWraps subscribed is activated.
+   * It's just that here, the execution of the inner listener is contingent upon a data change check,
+   * which then determines whether the listener in subscribe should be executed.
+   */
+  if (
+    (
+      listenerKeysExist
+      && Object.keys(effectState).some(key => stateKeys.includes(key))
+    ) || !listenerKeysExist
+  ) {
+    effectExecFlag = true;
+  }
+  return effectExecFlag;
+};
+
+/**
+ * @description Handling the binding of the `this` pointer to the function,
+ * while keeping the function's reference unchanged.
+ */
+export const boundFnProcessing = <S extends PrimitiveState>(
+  key: keyof S,
+  value: AnyBoundFn,
+  target: object,
+  stateMap: MapType<S>,
+  store: Store<S>,
+) => {
+  const stateSource = target === stateMap;
+  const boundFn = ((...args: any[]) => (value as AnyFn).apply(
+    // Maintaining the source orientation of the `this` pointer.
+    stateSource ? store : target,
+    args,
+  )) as AnyBoundFn;
+  boundFn.__bound__ = true;
+  if (stateSource) {
+    stateMap.set(key, boundFn as ValueOf<S>);
+  } else {
+    (target as S)[key] = boundFn as ValueOf<S>;
+  }
+  return boundFn as ValueOf<S>;
 };

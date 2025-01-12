@@ -8,7 +8,7 @@
 import type {
   ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions, Store,
   StateCallback, StoreMapValueType, State, InitialState, StateRefCounterMapType,
-  StateWithThisType, InnerStoreOptions, AnyBoundFn,
+  StateWithThisType, InnerStoreOptions, AnyBoundFn, MutateReducerPreviousType,
 } from "./types";
 import type { InitialFnCanExecMapType } from "../restore/types";
 import type { Unsubscribe, ListenerType } from "../subscribe/types";
@@ -21,7 +21,7 @@ import {
   __CLASS_INITIAL_STATE_RETRIEVE_KEY__,
 } from "../classConnect/static";
 import {
-  __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__,
+  __MUTATE_KEY_CHAINS__, __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__,
 } from "./static";
 import { hasOwnProperty } from "../utils";
 import {
@@ -29,10 +29,10 @@ import {
   protoPointStoreErrorProcessing, setOptionsErrorProcessing,
 } from "./errors";
 import {
-  pushTask, connectHook, finallyBatchProcessing,
-  connectStore, classUpdater, connectClass,
+  pushTask, connectHook, finallyBatchProcessing, hookConnectStore, classUpdater,
+  connectClass, effectStateInListenerKeys, boundFnProcessing,
 } from "./core";
-import { mapToObject, objectToMap, effectStateInListenerKeys } from "./utils";
+import { mapToObject, objectToMap, proxyable, isPrimitive, createNewValue } from "./utils";
 import {
   mergeStateKeys, retrieveReducerState, deferRestoreProcessing, initialStateRetrieve,
 } from "../restore";
@@ -65,11 +65,12 @@ export const createStore = <S extends PrimitiveState>(
 
   optionsErrorProcessing(options);
   const optionsTemp = {
-    __useConciseState__: (options as InnerStoreOptions)?.__useConciseState__ ?? undefined,
     unmountRestore: options?.unmountRestore ?? true,
     namespace: options?.namespace ?? undefined,
-    __enableMacros__: (options as InnerStoreOptions)?.__enableMacros__ ?? undefined,
+    immutable: options?.immutable ?? undefined,
     enableMarcoActionStateful: options?.enableMarcoActionStateful ?? undefined,
+    __useConciseState__: (options as InnerStoreOptions)?.__useConciseState__ ?? undefined,
+    __enableMacros__: (options as InnerStoreOptions)?.__enableMacros__ ?? undefined,
     __functionName__: (options as InnerStoreOptions)?.__functionName__ ?? createStore.name,
   };
 
@@ -96,6 +97,11 @@ export const createStore = <S extends PrimitiveState>(
 
   // The core map of store
   const storeMap: StoreMap<S> = new Map();
+
+  // Set of Chained Update Property Paths
+  const mutateKeyChains = new Set<string>();
+
+  const storeProxyWeakMap = new WeakMap<object, Store<S>>();
 
   // The storage stack of this proxy object for the class component
   const classThisPointerSet = new Set<ClassInstanceTypeOfConnectStore<S>>();
@@ -163,7 +169,7 @@ export const createStore = <S extends PrimitiveState>(
           const value = (stateTemp as Partial<S> | S)[key];
           classUpdater(key, value, classThisPointerSet);
           (
-            connectStore(
+            hookConnectStore(
               key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap,
               storeMap, schedulerProcessor, initialFnCanExecMap,
               classThisPointerSet, initialState,
@@ -222,49 +228,131 @@ export const createStore = <S extends PrimitiveState>(
 
   /** ============================== For core render use start ============================== */
   // Data updates for a single attribute
-  const singleUpdate = (key: keyof S, value: ValueOf<S>, isDelete?: boolean): boolean => {
-    if (!Object.is(value, stateMap.get(key))) {
-      willUpdatingProcessing(listenerSet, schedulerProcessor, prevBatchState, stateMap);
-      pushTask(
-        key, value, stateMap, schedulerProcessor, optionsTemp, reducerState,
-        storeStateRefCounterMap, storeMap, initialFnCanExecMap,
-        classThisPointerSet, initialState, isDelete,
-      );
-      finallyBatchProcessing(schedulerProcessor, prevBatchState, stateMap, listenerSet);
+  const singleUpdate = (key: keyof S, value: ValueOf<S>, isDelete = false, pathLevel = 1): boolean => {
+    mutateKeyChains.add(`${pathLevel}${__MUTATE_KEY_CHAINS__}${key.toString()}`);
+
+    if (mutateKeyChains.size > 1) {
+      // Note that the truncation position of `reduceKeys` is to exclude the first-level property.
+      const reduceKeys = Array.from(mutateKeyChains)
+        .map(item => item.split(__MUTATE_KEY_CHAINS__)[1])
+        .slice(1);
+
+      // Use variables to identify whether data has truly changed and avoid meaningless updates.
+      let changed = false;
+
+      const oneLevelKey = mutateKeyChains.values().next().value.split(__MUTATE_KEY_CHAINS__)[1];
+
+      reduceKeys.reduce((previous: MutateReducerPreviousType<S>, currentKey, index, array) => {
+        const { parent, accumulator } = previous;
+        const accIsPrimitive = isPrimitive(accumulator);
+        const accumulatorValue = accumulator[currentKey];
+
+        /**
+         * @description To prevent direct manipulation of first-level properties or original meta-programming operations,
+         * such as performing some transformations on 'count', 'cur' would then be 'Symbol.toPrimitive'.
+         * So it is necessary to determine whether it is the primitive value here.
+         */
+        if (index === array.length - 1 && !accIsPrimitive && accumulatorValue !== value) {
+          changed = true;
+          // TODO Here, simple pure object and array types are temporarily supported
+          accumulator[currentKey] = value;
+          /**
+           * @description Update the parent level property object as well,
+           * thereby establishing a normal update process and maintaining data immutability.
+           */
+          const parentValue = createNewValue(accumulator);
+          /**
+           * @description The level of `stateMap` will undergo update handling in subsequent changed logic;
+           * here, only data chains above the second-level node hierarchy are processed.
+           */
+          if (parent !== stateMap) {
+            (parent as Record<string | symbol, any>)[array[index - 1]] = parentValue;
+          }
+          return {
+            parent: parentValue,
+            // TODO Here, simple pure object and array types are temporarily supported
+            accumulator: accIsPrimitive ? accumulator : parentValue[currentKey],
+          };
+        }
+        return {
+          parent: accumulator,
+          // TODO Here, simple pure object and array types are temporarily supported
+          accumulator: accIsPrimitive ? accumulator : accumulatorValue,
+        };
+      }, { parent: stateMap, accumulator: stateMap.get(oneLevelKey)! });
+
+      // Clear mutateKeyChains to prepare the path for the next round of chain updates.
+      mutateKeyChains.clear();
+
+      return changed
+        ? singleUpdate(oneLevelKey, createNewValue(stateMap.get(oneLevelKey)) as ValueOf<S>, isDelete)
+        : true;
+    } else {
+      /**
+       * @description To prevent the mixture of chain updates and simple first-level property updates,
+       * not clearing `keyChains` here for first-level property updates
+       * can affect the conditional branch judgments of subsequent chain updates.
+       */
+      mutateKeyChains.clear();
+      if (!Object.is(value, stateMap.get(key))) {
+        willUpdatingProcessing(listenerSet, schedulerProcessor, prevBatchState, stateMap);
+        pushTask(
+          key, value, stateMap, schedulerProcessor, optionsTemp, reducerState,
+          storeStateRefCounterMap, storeMap, initialFnCanExecMap,
+          classThisPointerSet, initialState, isDelete,
+        );
+        finallyBatchProcessing(schedulerProcessor, prevBatchState, stateMap, listenerSet);
+      }
+      return true;
     }
-    return true;
   };
 
-  // Updated handler configuration for proxy
-  const proxySetHandler = {
-    set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singleUpdate(key, value),
-    // Delete will also play an updating role
-    deleteProperty: (_: S, key: keyof S) => singleUpdate(key, undefined as ValueOf<S>, true),
-  } as any as ProxyHandler<StoreMap<S>>;
+  const createProxy = (target: object, pathLevel = 1) => {
+    const spw = storeProxyWeakMap.get(target);
+    if (spw) return spw;
 
-  const macroFnProcessing = (key: keyof S, value: AnyBoundFn) => {
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    const boundFn = ((...args: any[]) => (value as AnyFn).apply(store, args)) as AnyBoundFn;
-    boundFn.__bound__ = true;
-    stateMap.set(key, boundFn as ValueOf<S>);
-    return boundFn as ValueOf<S>;
+    const stateSource = target === stateMap;
+
+    const sp = new Proxy(target, {
+      get: (_: S, key: keyof S, receiver: any) => {
+        protoPointStoreErrorProcessing(receiver, sp);
+
+        const value = stateSource
+          ? stateMap.get(key)
+          : (target as S)[key];
+
+        if (optionsTemp.immutable && proxyable(value)) {
+          // Using `toString` on the key is to prevent issues with some Symbol properties.
+          mutateKeyChains.add(`${pathLevel}${__MUTATE_KEY_CHAINS__}${key.toString()}`);
+          return createProxy(value as object, pathLevel + 1);
+        }
+
+        if (typeof value === "function" && !(value as AnyBoundFn).__bound__) {
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
+          return boundFnProcessing(key, value, target, stateMap, store);
+        }
+
+        return externalMap.get(key as keyof ExternalMapValue<S>) || value;
+      },
+      set: (_: S, key: keyof S, value: ValueOf<S>) => singleUpdate(key, value, false, pathLevel),
+      // Delete will also play an updating role
+      deleteProperty: (_: S, key: keyof S) => singleUpdate(key, undefined as ValueOf<S>, true, pathLevel),
+      /** TODO 这里的apply是针对Map、Set类型链式更新而写的，待开发，或者宏观的说针对属性上挂载有函数执行的突变更新待开发 */
+      // apply(fn: any, thisArg: any, argArray: any[]) {
+      //   // TODO 需要在mutateKeyChains清空吗？
+      //   // mutateKeyChains.clear();
+      //   // TODO 执行函数
+      //   Reflect.apply(fn, thisArg ?? sp, argArray);
+      // },
+    } as ProxyHandler<S>) as Store<S>;
+
+    storeProxyWeakMap.set(target, sp);
+
+    return sp;
   };
 
   // A proxy object with the capabilities of updating and data tracking.
-  const store = new Proxy(stateMap, {
-    get: (_: StoreMap<S>, key: keyof S, receiver: any) => {
-      protoPointStoreErrorProcessing(receiver, store);
-
-      const value = stateMap.get(key);
-
-      if (typeof value === "function" && !(value as AnyBoundFn).__bound__) {
-        return macroFnProcessing(key, value);
-      }
-
-      return externalMap.get(key as keyof ExternalMapValue<S>) || value;
-    },
-    ...proxySetHandler,
-  } as ProxyHandler<MapType<S>>) as any as Store<S>;
+  const store = createProxy(stateMap);
 
   // Proxy of driver update re-render for useStore
   const engineStore = new Proxy(stateMap, {
@@ -296,7 +384,7 @@ export const createStore = <S extends PrimitiveState>(
       if (notExternal && typeof value === "function") {
         // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
         if (!(value as AnyBoundFn).__bound__) {
-          macroFnProcessing(key, value);
+          boundFnProcessing(key, value, stateMap, stateMap, store);
         }
 
         const fnStateful = !optionsTemp.__enableMacros__ || optionsTemp.enableMarcoActionStateful;
@@ -331,7 +419,6 @@ export const createStore = <S extends PrimitiveState>(
 
       return externalMap.get(key as keyof ExternalMapValue<S>);
     },
-    ...proxySetHandler,
   } as ProxyHandler<MapType<S>>);
 
   // Enable useConciseState and defineStore to have data tracking capabilities through the store
@@ -407,7 +494,6 @@ export const createStore = <S extends PrimitiveState>(
             ).apply(classEngineStore, args)
         );
       },
-      ...proxySetHandler,
     } as ProxyHandler<MapType<S>>);
     return classEngineStore;
   }

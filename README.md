@@ -94,7 +94,7 @@ class AppClass extends ComponentWithStore {
 
 </details>
 
-[![Edit on CodeSandbox](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/p/sandbox/resy-igo13u?file=%2Fsrc%2FApp.js)
+[![Edit on CodeSandbox](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/p/sandbox/serene-swanson-mvslhq?file=%2Fsrc%2FApp.js%3A7%2C18)
 
 ## Basic API
 resy requires the version of React v >= 16.8

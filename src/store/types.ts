@@ -2,10 +2,8 @@ import type { Callback, ValueOf, PrimitiveState, MapType, AnyFn } from "../types
 import type { ListenerType, SubscribeType } from "../subscribe/types";
 import type {
   ClassConnectStoreType, ClassUnmountProcessingType, ClassInitialStateRetrieveType,
-} from "../classConnect/types";
-import {
-  __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__,
-} from "./static";
+} from "../class-connect/types";
+import { __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__ } from "./static";
 
 /**
  * @description The second parameter configuration item of createStore
@@ -27,6 +25,11 @@ export interface StoreOptions {
    * @default undefined
    */
   readonly namespace?: string;
+  /**
+   * @description 不可
+   * @default undefined
+   */
+  readonly immutable?: boolean;
   /**
    * @description For the configuration options of defineStore,
    * the function properties of defineStore can possess the capability to update and render state data.
@@ -289,3 +292,85 @@ export type AnyBoundFn = AnyFn & {
    */
   __bound__?: boolean;
 };
+
+export type MutateReducePreviousType<S extends PrimitiveState> = {
+  parent: Record<string | symbol, any> | MapType<S>;
+  accumulator: Record<string | symbol, any>;
+};
+
+export type ArrayPrototypeProxyableType<T = any> = Pick<
+  Array<T>,
+  | "forEach"
+  | "map"
+  | "filter"
+  | "every"
+  | "some"
+  | "push"
+  | "pop"
+  | "fill"
+  | "reverse"
+  | "shift"
+  | "unshift"
+  | "sort"
+  | "splice"
+>;
+export type ArrayPrototypeProxyableKeyType = keyof ArrayPrototypeProxyableType;
+export type ArrayPrototypeProxyableValueType = ValueOf<ArrayPrototypeProxyableType>;
+
+export type ArrayPrototypeProxyableCallbackType<T = any> = (value: T, index: number, array: T[]) => (void | T);
+
+export type ArrayPrototypeProxyableLoopFactoryType<S extends PrimitiveState = any> = (
+  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: any,
+  thisArg: any,
+  parentTarget: any[],
+  createProxy: (
+    target: object,
+    parentTarget?: any,
+    firstLevelKey?: any,
+    keyChains?: string,
+  ) => Store<any>,
+  firstLevelKey?: any,
+  keyChains?: string,
+) => ArrayPrototypeProxyableLoopFactoryValueType;
+
+export type ArrayPrototypeProxyableLoopFactoryValueType = <T>(callback: ArrayPrototypeProxyableCallbackType) => (void | T[]);
+
+export type ArrayPrototypeProxyableChangeOriginalArrayFactoryType<S extends PrimitiveState = any> = (
+  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: any,
+  thisArg: any,
+  parentTarget: any[],
+) => ArrayPrototypeProxyableChangeOriginalArrayFactoryNormalValueType;
+
+export type ArrayPrototypeProxyableChangeOriginalArrayFactoryNormalValueType = <T>(...items: T[]) => any;
+
+export type ArrayPrototypeProxyableChangeOriginalArraySortFactoryType<S extends PrimitiveState = any> = (
+  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: any,
+  thisArg: any,
+  parentTarget: any[],
+  createProxy: (
+    target: object,
+    parentTarget?: any,
+    firstLevelKey?: any,
+    keyChains?: string,
+  ) => Store<any>,
+  firstLevelKey?: any,
+  keyChains?: string,
+) => ArrayPrototypeProxyableChangeOriginalArrayFactorySortValueType;
+
+export type ArrayPrototypeProxyableChangeOriginalArrayFactorySortValueType = <T>(compareFn?: (a: T, b: T) => number) => T[];
+
+export type ArrayPrototypeProxyableChangeOriginalArraySpliceFactoryType<S extends PrimitiveState = any> = (
+  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: any,
+  thisArg: any,
+  parentTarget: any[],
+) => ArrayPrototypeProxyableChangeOriginalArrayFactorySpliceValueType;
+
+export type ArrayPrototypeProxyableChangeOriginalArrayFactorySpliceValueType = <T>(
+  start: number,
+  deleteCount: number,
+  ...items: T[]
+) => T[];

@@ -4,7 +4,7 @@ export * from "./store/macro";
 
 export * from "./subscribe";
 
-export * from "./classConnect";
+export * from "./class-connect";
 
 export type {
   StoreOptions, InnerStoreOptions, StoreCoreUtils, StoreHookUtils, StoreUtils,
@@ -16,6 +16,6 @@ export type {
 
 export * from "./subscribe/types";
 
-export type { ClassStoreType } from "./classConnect/types";
+export type { ClassStoreType } from "./class-connect/types";
 
 export * from "./types";

@@ -2,7 +2,7 @@ import type { PrimitiveState, MapType, Callback } from "../types";
 import type { InitialFnCanExecMapType } from "./types";
 import type { InitialState, StateRefCounterMapType, StoreOptions } from "../store/types";
 import type { SchedulerType } from "../scheduler/types";
-import type { ClassInstanceTypeOfConnectStore } from "../classConnect/types";
+import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import { hasOwnProperty } from "../utils";
 import { clearObject } from "./utils";
 

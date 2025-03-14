@@ -1,7 +1,7 @@
 import type { PrimitiveState } from "../types";
 import type { ListenerType, SubscriptionRefType } from "./types";
 import type { Store } from "../store/types";
-import { effectStateInListenerKeys } from "../store/utils";
+import { effectStateInListenerKeys } from "../store/core";
 import { useDebugValue, useEffect, useRef } from "react";
 import { storeErrorProcessing, subscribeErrorProcessing } from "../store/errors";
 import { __DEV__ } from "../static";

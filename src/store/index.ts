@@ -8,19 +8,20 @@
 import type {
   ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions, Store,
   StateCallback, StoreMapValueType, State, InitialState, StateRefCounterMapType,
-  StateWithThisType, InnerStoreOptions, AnyBoundFn,
+  StateWithThisType, InnerStoreOptions, AnyBoundFn, ArrayPrototypeProxyableValueType,
 } from "./types";
 import type { InitialFnCanExecMapType } from "../restore/types";
 import type { Unsubscribe, ListenerType } from "../subscribe/types";
 import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
-import type { ClassInstanceTypeOfConnectStore } from "../classConnect/types";
+import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import type { SchedulerType } from "../scheduler/types";
 import { scheduler } from "../scheduler";
 import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__,
   __CLASS_INITIAL_STATE_RETRIEVE_KEY__,
-} from "../classConnect/static";
+} from "../class-connect/static";
 import {
+  __KEY_CHAINS_CONCAT_SYMBOL__,
   __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__,
 } from "./static";
 import { hasOwnProperty } from "../utils";
@@ -29,10 +30,13 @@ import {
   protoPointStoreErrorProcessing, setOptionsErrorProcessing,
 } from "./errors";
 import {
-  pushTask, connectHook, finallyBatchProcessing,
-  connectStore, classUpdater, connectClass,
+  pushTask, connectHook, finallyBatchProcessing, hookConnectStore, classUpdater,
+  connectClass, effectStateInListenerKeys, boundFnProcessing,
 } from "./core";
-import { mapToObject, objectToMap, effectStateInListenerKeys } from "./utils";
+import { __ARRAY_PROTOTYPE_PROXYABLE_TARGET_MAP__ } from "./array";
+import {
+  mapToObject, objectToMap, proxyable, createNewRefValue, isArrayPrototypeProxyable,
+} from "./utils";
 import {
   mergeStateKeys, retrieveReducerState, deferRestoreProcessing, initialStateRetrieve,
 } from "../restore";
@@ -65,13 +69,16 @@ export const createStore = <S extends PrimitiveState>(
 
   optionsErrorProcessing(options);
   const optionsTemp = {
-    __useConciseState__: (options as InnerStoreOptions)?.__useConciseState__ ?? undefined,
     unmountRestore: options?.unmountRestore ?? true,
     namespace: options?.namespace ?? undefined,
-    __enableMacros__: (options as InnerStoreOptions)?.__enableMacros__ ?? undefined,
+    immutable: options?.immutable ?? undefined,
     enableMarcoActionStateful: options?.enableMarcoActionStateful ?? undefined,
+    __useConciseState__: (options as InnerStoreOptions)?.__useConciseState__ ?? undefined,
+    __enableMacros__: (options as InnerStoreOptions)?.__enableMacros__ ?? undefined,
     __functionName__: (options as InnerStoreOptions)?.__functionName__ ?? createStore.name,
   };
+
+  const { immutable } = optionsTemp;
 
   stateErrorProcessing({ state: reducerState, options: optionsTemp });
 
@@ -96,6 +103,8 @@ export const createStore = <S extends PrimitiveState>(
 
   // The core map of store
   const storeMap: StoreMap<S> = new Map();
+
+  const storeProxyWeakMap = new WeakMap<object, Store<S>>();
 
   // The storage stack of this proxy object for the class component
   const classThisPointerSet = new Set<ClassInstanceTypeOfConnectStore<S>>();
@@ -163,7 +172,7 @@ export const createStore = <S extends PrimitiveState>(
           const value = (stateTemp as Partial<S> | S)[key];
           classUpdater(key, value, classThisPointerSet);
           (
-            connectStore(
+            hookConnectStore(
               key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap,
               storeMap, schedulerProcessor, initialFnCanExecMap,
               classThisPointerSet, initialState,
@@ -222,49 +231,140 @@ export const createStore = <S extends PrimitiveState>(
 
   /** ============================== For core render use start ============================== */
   // Data updates for a single attribute
-  const singleUpdate = (key: keyof S, value: ValueOf<S>, isDelete?: boolean): boolean => {
-    if (!Object.is(value, stateMap.get(key))) {
-      willUpdatingProcessing(listenerSet, schedulerProcessor, prevBatchState, stateMap);
-      pushTask(
-        key, value, stateMap, schedulerProcessor, optionsTemp, reducerState,
-        storeStateRefCounterMap, storeMap, initialFnCanExecMap,
-        classThisPointerSet, initialState, isDelete,
-      );
-      finallyBatchProcessing(schedulerProcessor, prevBatchState, stateMap, listenerSet);
+  const singleUpdate = (
+    key: keyof S,
+    value: ValueOf<S>,
+    isDelete = false,
+    target: any = stateMap,
+    firstLevelKey?: keyof S | null,
+    keyChains?: string,
+    applyOriginFunction?: ArrayPrototypeProxyableValueType,
+  ): boolean => {
+    if (target !== stateMap) {
+      const prevValue = target[key];
+
+      const changed = !Object.is(prevValue, value);
+      if (changed) {
+        const firstLevelRootValue = stateMap.get(firstLevelKey!);
+        const noHeadKeyChains = keyChains!.split(__KEY_CHAINS_CONCAT_SYMBOL__);
+        noHeadKeyChains.shift();
+        noHeadKeyChains.reduce((
+          previousValue,
+          itemKey,
+          currentIndex,
+          array,
+        ) => {
+          currentIndex !== array.length - 1
+            ? ((previousValue as any)[itemKey] = createNewRefValue((previousValue as S)[itemKey]))
+            : ((previousValue as S)[key] = value);
+          return (previousValue as S)[itemKey];
+        }, firstLevelRootValue);
+
+        // todo 父元素对象一旦更新，立即销毁之前的代理对象，否则会使得数组原型链代理函数中拿不到最新的父元素对象parentTarget
+        //  这里是为了弥补loop循环遍历的时候通过item进行异变更新的场景，而进行的感知补充性销毁，
+        //  因为这里的applyOriginFunction只有在item会有代理的场景才会传入
+        applyOriginFunction && storeProxyWeakMap.delete(applyOriginFunction);
+      }
+
+      return changed
+        ? singleUpdate(
+          firstLevelKey!,
+          createNewRefValue(stateMap.get(firstLevelKey!)) as ValueOf<S>,
+          isDelete,
+          stateMap,
+        )
+        : true;
+    } else {
+      if (!Object.is(value, stateMap.get(key))) {
+        willUpdatingProcessing(listenerSet, schedulerProcessor, prevBatchState, stateMap);
+        pushTask(
+          key, value, stateMap, schedulerProcessor, optionsTemp, reducerState,
+          storeStateRefCounterMap, storeMap, initialFnCanExecMap,
+          classThisPointerSet, initialState, isDelete,
+        );
+        finallyBatchProcessing(schedulerProcessor, prevBatchState, stateMap, listenerSet);
+      }
+      return true;
     }
-    return true;
   };
 
-  // Updated handler configuration for proxy
-  const proxySetHandler = {
-    set: (_: StoreMap<S>, key: keyof S, value: ValueOf<S>) => singleUpdate(key, value),
-    // Delete will also play an updating role
-    deleteProperty: (_: S, key: keyof S) => singleUpdate(key, undefined as ValueOf<S>, true),
-  } as any as ProxyHandler<StoreMap<S>>;
+  const createProxy = (
+    target: object,
+    parentTarget: any = stateMap,
+    firstLevelKey?: keyof S,
+    keyChains?: string,
+    applyOriginFunction?: ArrayPrototypeProxyableValueType,
+  ) => {
+    const spw = storeProxyWeakMap.get(target);
+    if (spw) return spw;
 
-  const macroFnProcessing = (key: keyof S, value: AnyBoundFn) => {
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    const boundFn = ((...args: any[]) => (value as AnyFn).apply(store, args)) as AnyBoundFn;
-    boundFn.__bound__ = true;
-    stateMap.set(key, boundFn as ValueOf<S>);
-    return boundFn as ValueOf<S>;
+    const isStateMap = target === stateMap;
+
+    const sp = new Proxy(target, {
+      get: (_: S, key: keyof S, receiver: any) => {
+        protoPointStoreErrorProcessing(receiver, sp);
+
+        const externalValue = externalMap.get(key as keyof ExternalMapValue<S>);
+        if (externalValue) return externalValue;
+
+        const value = isStateMap
+          ? stateMap.get(key)
+          : (target as S)[key];
+
+        const IPPA = isArrayPrototypeProxyable(value);
+        // todo 代理数组原型链上面的函数
+        if (immutable && (proxyable(value) || IPPA)) {
+          return createProxy(
+            value as object,
+            target,
+            firstLevelKey ?? key,
+            keyChains
+              ? IPPA
+                ? keyChains
+                : `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${key?.toString()}`
+              : key?.toString(),
+          );
+        }
+
+        if (typeof value === "function" && !(value as AnyBoundFn).__bound__) {
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
+          return boundFnProcessing(key, value, target, stateMap, store);
+        }
+
+        return value;
+      },
+      set: (_: S, key: keyof S, value: ValueOf<S>) => singleUpdate(
+        key, value, false, target, firstLevelKey,
+        `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${key?.toString()}`, applyOriginFunction,
+      ),
+      // Delete will also play an updating role
+      deleteProperty: (_: S, key: keyof S) => singleUpdate(
+        key, undefined as ValueOf<S>, true, target, firstLevelKey,
+        `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${key?.toString()}`, applyOriginFunction,
+      ),
+      /**
+       * TODO 这里的apply是针对Array、Map、Set类型的原型链函数的代理执行而写的
+       *  先实现Array类型的，Map、Set后续再推进
+       */
+      apply(applyOriginFunction: any, thisArg: any, argArray: any[]) {
+        return Reflect.apply(
+          __ARRAY_PROTOTYPE_PROXYABLE_TARGET_MAP__.get(applyOriginFunction.name)!(
+            storeProxyWeakMap, applyOriginFunction, thisArg,
+            parentTarget, createProxy, firstLevelKey, keyChains,
+          ),
+          thisArg ?? sp,
+          argArray,
+        );
+      },
+    } as ProxyHandler<S>) as Store<S>;
+
+    storeProxyWeakMap.set(target, sp);
+
+    return sp;
   };
 
   // A proxy object with the capabilities of updating and data tracking.
-  const store = new Proxy(stateMap, {
-    get: (_: StoreMap<S>, key: keyof S, receiver: any) => {
-      protoPointStoreErrorProcessing(receiver, store);
-
-      const value = stateMap.get(key);
-
-      if (typeof value === "function" && !(value as AnyBoundFn).__bound__) {
-        return macroFnProcessing(key, value);
-      }
-
-      return externalMap.get(key as keyof ExternalMapValue<S>) || value;
-    },
-    ...proxySetHandler,
-  } as ProxyHandler<MapType<S>>) as any as Store<S>;
+  const store = createProxy(stateMap);
 
   // Proxy of driver update re-render for useStore
   const engineStore = new Proxy(stateMap, {
@@ -272,9 +372,9 @@ export const createStore = <S extends PrimitiveState>(
       // Get the latest value
       const value = stateMap.get(key);
 
-      const notExternal = !externalMap.has(key as keyof ExternalMapValue<S>);
+      const externalValue = externalMap.get(key as keyof ExternalMapValue<S>);
 
-      if (notExternal && typeof value !== "function") {
+      if (!externalValue && typeof value !== "function") {
         // eslint-disable-next-line react-hooks/rules-of-hooks
         __DEV__ && useDebugValue({
           key,
@@ -293,20 +393,20 @@ export const createStore = <S extends PrimitiveState>(
         );
       }
 
-      if (notExternal && typeof value === "function") {
+      if (!externalValue && typeof value === "function") {
         // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
         if (!(value as AnyBoundFn).__bound__) {
-          macroFnProcessing(key, value);
+          boundFnProcessing(key, value, stateMap, stateMap, store);
         }
 
         const fnStateful = !optionsTemp.__enableMacros__ || optionsTemp.enableMarcoActionStateful;
 
-        const newValue = stateMap.get(key);
+        const boundFnValue = stateMap.get(key);
 
         // eslint-disable-next-line react-hooks/rules-of-hooks
         fnStateful && __DEV__ && useDebugValue({
           key,
-          value: newValue,
+          value: boundFnValue,
           ...(
             optionsTemp.namespace
               ? { namespace: optionsTemp.namespace }
@@ -326,12 +426,11 @@ export const createStore = <S extends PrimitiveState>(
           classThisPointerSet, initialState,
         );
 
-        return newValue;
+        return boundFnValue;
       }
 
-      return externalMap.get(key as keyof ExternalMapValue<S>);
+      return externalValue;
     },
-    ...proxySetHandler,
   } as ProxyHandler<MapType<S>>);
 
   // Enable useConciseState and defineStore to have data tracking capabilities through the store
@@ -407,7 +506,6 @@ export const createStore = <S extends PrimitiveState>(
             ).apply(classEngineStore, args)
         );
       },
-      ...proxySetHandler,
     } as ProxyHandler<MapType<S>>);
     return classEngineStore;
   }

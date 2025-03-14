@@ -1,4 +1,6 @@
 import type { PrimitiveState, MapType } from "../types";
+import type { ArrayPrototypeProxyableValueType } from "./types";
+import { whatsType, typeString } from "../utils";
 
 /** Track the shallow-cloned state map */
 export const shallowCloneMap = <K, V>(map: Map<K, V>) => {
@@ -29,29 +31,58 @@ export const objectToMap = <S extends PrimitiveState>(object: S) => {
   );
 };
 
+// TODO 针对Map、Set类型待开发，目前先支持纯对象以及数组类型
+// Currently handling two simple types of chainable updates: objects and arrays
+const proxyableSet = new Set(["Object", "Array"]);
+
+export const proxyable = (value: unknown): boolean => {
+  return proxyableSet.has(whatsType(value));
+};
+
+// todo 数组原型链可以被代理执行的函数
+const arrayPrototypeProxyableSet = new Set<ArrayPrototypeProxyableValueType>()
+  .add(Array.prototype.forEach)
+  .add(Array.prototype.map)
+  .add(Array.prototype.filter)
+  .add(Array.prototype.every)
+  .add(Array.prototype.some)
+  .add(Array.prototype.push)
+  .add(Array.prototype.pop)
+  .add(Array.prototype.fill)
+  .add(Array.prototype.reverse)
+  .add(Array.prototype.shift)
+  .add(Array.prototype.unshift)
+  .add(Array.prototype.sort)
+  .add(Array.prototype.splice);
+
+export const isArrayPrototypeProxyable = (value: any): boolean => {
+  return arrayPrototypeProxyableSet.has(value);
+};
+
+const primitiveSet = new Set(["Number", "String", "Boolean", "Undefined", "Null", "Symbol"]);
+
+export const isPrimitive = (value: unknown): boolean => {
+  return primitiveSet.has(whatsType(value));
+};
+
 /**
- * @description Determine whether the current change data is within the monitoring range of stateKeys
- * @return boolean
+ * @description Create a new reference type data value with the same content based on the given reference type data.
+ * Here, a few of the more common and widely used data types within the ComplexValueType are handled.
  */
-export const effectStateInListenerKeys = <S extends PrimitiveState>(
-  effectState: Readonly<Partial<S>>,
-  stateKeys?: (keyof S)[],
-) => {
-  let effectExecFlag = false;
-  const listenerKeysExist = stateKeys && stateKeys?.length > 0;
-  /**
-   * @description In fact, when the final subscription is triggered,
-   * each of these outer layer listenerWraps subscribed is activated.
-   * It's just that here, the execution of the inner listener is contingent upon a data change check,
-   * which then determines whether the listener in subscribe should be executed.
-   */
-  if (
-    (
-      listenerKeysExist
-      && Object.keys(effectState).some(key => stateKeys.includes(key))
-    ) || !listenerKeysExist
-  ) {
-    effectExecFlag = true;
+export const createNewRefValue = <T>(value: T): T => {
+  const type = typeString.call(value);
+  switch (type) {
+    case "[object Object]":
+      // Using `new Object(value)`, its reference will not change.
+      return Object.assign({}, value);
+    case "[object Array]":
+      return (value as unknown[]).slice() as T;
+    /** TODO 后续的类型待开发 */
+    case "[object Set]":
+      return new Set(value as Iterable<unknown>) as T;
+    case "[object Map]":
+      return new Map(value as Iterable<readonly [unknown, unknown]>) as T;
+    default:
+      return value;
   }
-  return effectExecFlag;
 };

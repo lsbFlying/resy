@@ -26,7 +26,7 @@ export interface StoreOptions {
    */
   readonly namespace?: string;
   /**
-   * @description 不可
+   * @description Create the next immutable state tree by simply modifying the current tree
    * @default undefined
    */
   readonly immutable?: boolean;

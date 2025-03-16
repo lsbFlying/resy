@@ -304,7 +304,7 @@ export type CreateProxyType<S extends PrimitiveState> = (
   applyOriginFunction?: ArrayPrototypeProxyableValueType,
 ) => Store<S>;
 
-export type ArrayPrototypeProxyableType<T = any> = Pick<
+export type ArrayPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   Array<T>,
   | "forEach"
   | "map"
@@ -327,9 +327,9 @@ export type ArrayPrototypeProxyableCallbackType<T = any> = (value: T, index: num
 
 export type ArrayPrototypeProxyableLoopFactoryType = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
-  applyOriginFunction: any,
-  thisArg: any,
-  parentTarget: any[],
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  thisArg: S[],
+  parentTarget: S[],
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
   keyChains?: string,
@@ -339,18 +339,18 @@ export type ArrayPrototypeProxyableLoopFactoryValueType = <T>(callback: ArrayPro
 
 export type ArrayPrototypeProxyableMutableArrayFactoryType = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
-  applyOriginFunction: any,
-  thisArg: any,
-  parentTarget: any[],
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  thisArg: S[],
+  parentTarget: S[],
 ) => ArrayPrototypeProxyableMutableArrayFactoryNormalValueType;
 
 export type ArrayPrototypeProxyableMutableArrayFactoryNormalValueType = <T>(...items: T[]) => any;
 
 export type ArrayPrototypeProxyableMutableArraySortFactoryType = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
-  applyOriginFunction: any,
-  thisArg: any,
-  parentTarget: any[],
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  thisArg: S[],
+  parentTarget: S[],
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
   keyChains?: string,
@@ -360,9 +360,9 @@ export type ArrayPrototypeProxyableMutableArrayFactorySortValueType = <T>(compar
 
 export type ArrayPrototypeProxyableMutableArraySpliceFactoryType = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
-  applyOriginFunction: any,
-  thisArg: any,
-  parentTarget: any[],
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  thisArg: S[],
+  parentTarget: S[],
 ) => ArrayPrototypeProxyableMutableArrayFactorySpliceValueType;
 
 export type ArrayPrototypeProxyableMutableArrayFactorySpliceValueType = <T>(

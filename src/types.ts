@@ -24,5 +24,3 @@ export type ComplexValueType =
   | "Window" | "Global";
 
 export type NativeDataType = PrimitiveValueType | ComplexValueType;
-
-export type Key = string | number | symbol;

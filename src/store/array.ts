@@ -1,9 +1,10 @@
-import type { Key, PrimitiveState } from "../types";
-import type {
+import type { PrimitiveState } from "../types";
+import {
   Store, ArrayPrototypeProxyableKeyType, ArrayPrototypeProxyableCallbackType,
-  ArrayPrototypeProxyableLoopFactoryType, ArrayPrototypeProxyableChangeOriginalArrayFactoryType,
-  ArrayPrototypeProxyableChangeOriginalArraySortFactoryType, ArrayPrototypeProxyableLoopFactoryValueType,
-  ArrayPrototypeProxyableValueType, ArrayPrototypeProxyableChangeOriginalArraySpliceFactoryType,
+  ArrayPrototypeProxyableLoopFactoryType, ArrayPrototypeProxyableMutableArrayFactoryType,
+  ArrayPrototypeProxyableMutableArraySortFactoryType,
+  ArrayPrototypeProxyableLoopFactoryValueType, ArrayPrototypeProxyableValueType,
+  ArrayPrototypeProxyableMutableArraySpliceFactoryType, CreateProxyType, ProxyableType,
 } from "./types";
 import { proxyable } from "./utils";
 import { __KEY_CHAINS_CONCAT_SYMBOL__ } from "./static";
@@ -14,13 +15,7 @@ const applyTargetLoopFactory = <S extends PrimitiveState>(
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
   parentTarget: any[],
-  createProxy: (
-    target: object,
-    parentTarget?: any,
-    firstLevelKey?: Key,
-    keyChains?: string,
-    applyOriginFunction?: ArrayPrototypeProxyableValueType,
-  ) => Store<any>,
+  createProxy: CreateProxyType<S>,
   firstLevelKey?: any,
   keyChains?: string,
 ) => {
@@ -211,13 +206,7 @@ const applyTargetSortFactory = <S extends PrimitiveState>(
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
   parentTarget: any[],
-  createProxy: (
-    target: object,
-    parentTarget?: any,
-    firstLevelKey?: Key,
-    keyChains?: string,
-    applyOriginFunction?: ArrayPrototypeProxyableValueType,
-  ) => Store<any>,
+  createProxy: CreateProxyType<S>,
   firstLevelKey?: any,
   keyChains?: string,
 ) => {
@@ -229,21 +218,21 @@ const applyTargetSortFactory = <S extends PrimitiveState>(
       let bTemp = b;
       if (proxyable(aTemp)) {
         aTemp = createProxy(
-          a as object,
+          a as ProxyableType<S>,
           parentTarget,
           firstLevelKey,
           `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${parentTarget.indexOf(a)}`,
           applyOriginFunction,
-        );
+        ) as T;
       }
       if (proxyable(bTemp)) {
         bTemp = createProxy(
-          b as object,
+          b as ProxyableType<S>,
           parentTarget,
           firstLevelKey,
           `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${parentTarget.indexOf(b)}`,
           applyOriginFunction,
-        );
+        ) as T;
       }
 
       const compareResultValue = compareFn
@@ -295,9 +284,9 @@ const applyTargetSpliceFactory = <S extends PrimitiveState>(
 export const __ARRAY_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   ArrayPrototypeProxyableKeyType,
   | ArrayPrototypeProxyableLoopFactoryType
-  | ArrayPrototypeProxyableChangeOriginalArrayFactoryType
-  | ArrayPrototypeProxyableChangeOriginalArraySortFactoryType
-  | ArrayPrototypeProxyableChangeOriginalArraySpliceFactoryType
+  | ArrayPrototypeProxyableMutableArrayFactoryType
+  | ArrayPrototypeProxyableMutableArraySortFactoryType
+  | ArrayPrototypeProxyableMutableArraySpliceFactoryType
 >()
   .set("forEach", applyTargetLoopFactory)
   .set("map", applyTargetLoopFactory)

@@ -10,6 +10,11 @@ import eslintConfigPrettier from "eslint-config-prettier";
 
 export default [
   eslintJs.configs.recommended,
+  eslintTs.configs.recommended,
+  eslintReact.configs.recommended,
+  eslintReactHooks.configs.recommended,
+  eslintImport.configs.recommended,
+  eslintConfigPrettier,
   {
     languageOptions: {
       globals: {
@@ -27,7 +32,7 @@ export default [
         sourceType: "module",
         tsconfigRootDir: "./",
         project: "[tsconfig.json]",
-        createDefaultProgram: true // https://github.com/typescript-eslint/typescript-eslint/issues/967
+        createDefaultProgram: true
       },
     },
     plugins: {
@@ -38,11 +43,11 @@ export default [
       "prettier": eslintConfigPrettier,
     },
     rules: {
-      ...eslintTs.configs.recommended.rules,
-      ...eslintReact.configs.recommended.rules,
-      ...eslintReactHooks.configs.recommended.rules,
-      ...eslintImport.configs.recommended.rules,
-      ...eslintConfigPrettier.rules,
+      // ...eslintTs.configs.recommended.rules,
+      // ...eslintReact.configs.recommended.rules,
+      // ...eslintReactHooks.configs.recommended.rules,
+      // ...eslintImport.configs.recommended.rules,
+      // ...eslintConfigPrettier.rules,
       "@typescript-eslint/no-unused-vars": "error",
       "react-hooks/rules-of-hooks": "error", // 检查 Hook 的规则
       "react-hooks/exhaustive-deps": "warn", // 检查 effect 的依赖

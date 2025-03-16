@@ -1,20 +1,15 @@
 // @ts-ignore
 import eslintImport from "eslint-plugin-import";
-// @ts-ignore
-import tsParser from "@typescript-eslint/parser";
-import eslintJs from "@eslint/js";
-import eslintTs from "@typescript-eslint/eslint-plugin";
+import eslint from "@eslint/js";
 import eslintReact from "eslint-plugin-react";
 import eslintReactHooks from "eslint-plugin-react-hooks";
-import eslintConfigPrettier from "eslint-config-prettier";
+import tsEslint from "typescript-eslint";
 
-export default [
-  eslintJs.configs.recommended,
-  eslintTs.configs.recommended,
-  eslintReact.configs.recommended,
-  eslintReactHooks.configs.recommended,
-  eslintImport.configs.recommended,
-  eslintConfigPrettier,
+export default tsEslint.config(
+  eslint.configs.recommended,
+
+  tsEslint.configs.recommended,
+
   {
     languageOptions: {
       globals: {
@@ -26,7 +21,6 @@ export default [
         module: "readonly",
         process: "readonly",
       },
-      parser: tsParser,
       parserOptions: {
         ecmaVersion: "latest",
         sourceType: "module",
@@ -39,15 +33,8 @@ export default [
       import: eslintImport,
       react: eslintReact,
       "react-hooks": eslintReactHooks,
-      "@typescript-eslint": eslintTs,
-      "prettier": eslintConfigPrettier,
     },
     rules: {
-      // ...eslintTs.configs.recommended.rules,
-      // ...eslintReact.configs.recommended.rules,
-      // ...eslintReactHooks.configs.recommended.rules,
-      // ...eslintImport.configs.recommended.rules,
-      // ...eslintConfigPrettier.rules,
       "@typescript-eslint/no-unused-vars": "error",
       "react-hooks/rules-of-hooks": "error", // 检查 Hook 的规则
       "react-hooks/exhaustive-deps": "warn", // 检查 effect 的依赖
@@ -185,4 +172,4 @@ export default [
       }
     }
   }
-];
+);

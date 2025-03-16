@@ -9,7 +9,7 @@ import {
 import { proxyable } from "./utils";
 import { __KEY_CHAINS_CONCAT_SYMBOL__ } from "./static";
 
-/** ============ Proxy factory for array prototype chain agentable functions start ============ */
+/** ============ Proxy factory for array prototype chain proxyable functions start ============ */
 const applyTargetLoopFactory = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
@@ -301,4 +301,4 @@ export const __ARRAY_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   .set("unshift", applyTargetUnshiftFactory)
   .set("sort", applyTargetSortFactory)
   .set("splice", applyTargetSpliceFactory);
-/** ============ Proxy factory for array prototype chain agentable functions end ============ */
+/** ============ Proxy factory for array prototype chain proxyable functions end ============ */

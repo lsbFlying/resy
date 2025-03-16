@@ -289,6 +289,7 @@ export const createStore = <S extends PrimitiveState>(
   };
 
   const createProxy = (
+    // todo waiting target type become ProxyableType<S>(includes Map and Set type)
     target: object,
     parentTarget: any = stateMap,
     firstLevelKey?: keyof S,

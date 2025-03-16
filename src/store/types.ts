@@ -294,7 +294,7 @@ export type AnyBoundFn = AnyFn & {
 };
 
 // todo 目前暂时支持对象、数组
-export type ProxyableType<S extends PrimitiveState> = S | Array<S>;
+export type ProxyableType<S extends PrimitiveState> = S | S[];
 
 export type CreateProxyType<S extends PrimitiveState> = (
   target: ProxyableType<S>,

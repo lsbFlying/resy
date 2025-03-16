@@ -1,9 +1,9 @@
 // @ts-ignore
 import eslintImport from "eslint-plugin-import";
 import eslint from "@eslint/js";
+import tsEslint from "typescript-eslint";
 import eslintReact from "eslint-plugin-react";
 import eslintReactHooks from "eslint-plugin-react-hooks";
-import tsEslint from "typescript-eslint";
 
 export default tsEslint.config(
   eslint.configs.recommended,

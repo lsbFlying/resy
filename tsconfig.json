@@ -28,5 +28,5 @@
     "noImplicitReturns": false,
     "noFallthroughCasesInSwitch": true
   },
-  "exclude": ["node_modules", "dist", "coverage", "examples"]
+  "exclude": ["node_modules", "dist", "coverage", "develop"]
 }

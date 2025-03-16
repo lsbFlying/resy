@@ -247,8 +247,10 @@ export const createStore = <S extends PrimitiveState>(
       const changed = !Object.is(prevValue, value);
       if (changed) {
         const firstLevelRootValue = stateMap.get(firstLevelKey!);
+
         const noHeadKeyChains = keyChains!.split(__KEY_CHAINS_CONCAT_SYMBOL__);
         noHeadKeyChains.shift();
+
         noHeadKeyChains.reduce((
           previousValue,
           itemKey,

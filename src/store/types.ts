@@ -257,7 +257,7 @@ export type PrimateForbiddenType =
   | number
   | string
   | null
-  | Symbol
+  | symbol
   | boolean
   | Set<any>
   | Map<any, any>
@@ -266,7 +266,7 @@ export type PrimateForbiddenType =
   | WeakMap<any, any>
   | WeakRef<any>
   | RegExp
-  | BigInt
+  | bigint
   | Date;
 
 /** Parameter types with this type pointing to identification */

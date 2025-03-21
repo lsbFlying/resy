@@ -13,6 +13,7 @@ export default tsEslint.config(
   {
     languageOptions: {
       globals: {
+        console: "readonly",
         globalThis: "readonly",
         window: "readonly",
         document: "readonly",
@@ -152,6 +153,8 @@ export default tsEslint.config(
       "template-tag-spacing": ["error", "never"],
       "rest-spread-spacing": ["error", "never"],
       "template-curly-spacing": "error",
+      "@typescript-eslint/no-unused-expressions": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
     },
     settings: {
       react: {

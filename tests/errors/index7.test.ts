@@ -34,7 +34,7 @@ test("syncUpdate-error-scene", async () => {
   // @ts-ignore
   expect(() => store.syncUpdate([])).toThrowError();
   // @ts-ignore
-  // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
+  // eslint-disable-next-line no-empty-function
   expect(() => store.syncUpdate(() => {})).toThrowError();
   // @ts-ignore
   expect(() => store.syncUpdate(new WeakRef({}))).toThrowError();

@@ -14,7 +14,7 @@ test("useStore-error-scene", async () => {
   // @ts-ignore
   expect(() => useStore({})).toThrowError();
   // @ts-ignore
-  // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
+  // eslint-disable-next-line no-empty-function
   expect(() => useStore(() => {})).toThrowError();
   // @ts-ignore
   expect(() => useStore([])).toThrowError();

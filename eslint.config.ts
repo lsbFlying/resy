@@ -4,6 +4,7 @@ import eslint from "@eslint/js";
 import tsEslint from "typescript-eslint";
 import eslintReact from "eslint-plugin-react";
 import eslintReactHooks from "eslint-plugin-react-hooks";
+import globals from "globals";
 
 export default tsEslint.config(
   eslint.configs.recommended,
@@ -13,14 +14,9 @@ export default tsEslint.config(
   {
     languageOptions: {
       globals: {
-        console: "readonly",
         globalThis: "readonly",
-        window: "readonly",
-        document: "readonly",
-        navigator: "readonly",
-        require: "readonly",
-        module: "readonly",
-        process: "readonly",
+        ...globals.browser,
+        ...globals.node,
       },
       parserOptions: {
         ecmaVersion: "latest",

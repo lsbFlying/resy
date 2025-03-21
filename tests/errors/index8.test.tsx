@@ -29,7 +29,7 @@ test("classConnect-I", async () => {
       // @ts-ignore
       expect(() => this.connectStore({})).toThrowError();
       // @ts-ignore
-      // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
+      // eslint-disable-next-line no-empty-function
       expect(() => this.connectStore(() => {})).toThrowError();
       // @ts-ignore
       expect(() => this.connectStore([])).toThrowError();
@@ -89,7 +89,7 @@ test("classConnect-I", async () => {
       // @ts-ignore
       expect(() => this.connectStore({})).toThrowError();
       // @ts-ignore
-      // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
+      // eslint-disable-next-line no-empty-function
       expect(() => this.connectStore(() => {})).toThrowError();
       // @ts-ignore
       expect(() => this.connectStore([])).toThrowError();

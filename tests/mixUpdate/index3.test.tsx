@@ -58,7 +58,7 @@ test("mixUpdateAndSubscribe", async () => {
        * with the batch scheduling mechanism of resy itself.
        */
       return store.subscribe(() => {
-        // Test if the subscribe has the function of batch triggering
+        // Test if subscribe has the function of batch triggering
         subscribeCounter++;
         // console.log("subscribe");
       });

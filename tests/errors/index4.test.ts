@@ -34,7 +34,7 @@ test("setState-error-scene", async () => {
   // @ts-ignore
   expect(() => store.setState([])).toThrowError();
   // @ts-ignore
-  // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
+  // eslint-disable-next-line no-empty-function
   expect(() => store.setState(() => {})).toThrowError();
   // @ts-ignore
   expect(() => store.setState(new WeakRef({}))).toThrowError();

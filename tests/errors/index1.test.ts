@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { createStore } from "../../src";
-import type { InnerStoreOptions } from "../../src/store/types";
+import type { InnerStoreOptions } from "../../src";
 
 test("createStore-error-scene", async () => {
   // @ts-ignore

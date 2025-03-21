@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { createStore } from "../../src";
-import type { InnerStoreOptions } from "../../src/store/types";
+import type { InnerStoreOptions } from "../../src";
 
 /** The use mode of useConciseState */
 test("mockUseConciseState", async () => {

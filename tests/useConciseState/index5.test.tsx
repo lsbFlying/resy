@@ -16,6 +16,7 @@ test("useConciseState-V", async () => {
           text: "hello world",
         });
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, ["count"]), []);
 
     return (

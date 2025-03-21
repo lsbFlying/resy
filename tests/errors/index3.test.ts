@@ -15,7 +15,7 @@ test("setOptions-error-scene", async () => {
   // @ts-ignore
   expect(() => setOptions("999")).toThrowError();
   // @ts-ignore
-  // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
+  // eslint-disable-next-line no-empty-function
   expect(() => setOptions(() => {})).toThrowError();
   // @ts-ignore
   expect(() => setOptions([])).toThrowError();
@@ -63,7 +63,7 @@ test("setOptions-error-scene", async () => {
   // @ts-ignore
   expect(() => setOptions({ unmountRestore: "999" })).toThrowError();
   // @ts-ignore
-  // eslint-disable-next-line no-empty-function,@typescript-eslint/no-empty-function
+  // eslint-disable-next-line no-empty-function
   expect(() => setOptions({ unmountRestore: () => {} })).toThrowError();
   // @ts-ignore
   expect(() => setOptions({ unmountRestore: [] })).toThrowError();

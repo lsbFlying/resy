@@ -10,6 +10,15 @@
   "main": "index.js",
   "module": "dist/resy.esm.js",
   "types": "dist/resy.d.ts",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "test": "vitest run --coverage",
+    "test:dev": "rm -rf coverage && vitest --ui --coverage",
+    "build": "rm -rf dist && rollup -c --configPlugin @rollup/plugin-typescript",
+    "prepublishOnly": "rm -rf dist coverage && pnpm test && pnpm run build",
+    "docs": "cd docs && npm start"
+  },
   "files": [
     "index.js",
     "index.mjs",
@@ -33,14 +42,6 @@
         "default": "./index.js"
       }
     }
-  },
-  "scripts": {
-    "start": "vite",
-    "dev": "vite",
-    "test": "vitest run --coverage",
-    "test:dev": "rm -rf coverage && vitest --ui --coverage",
-    "build": "rm -rf dist && rollup -c --configPlugin @rollup/plugin-typescript",
-    "prepublishOnly": "rm -rf dist coverage && pnpm test && pnpm run build"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"

@@ -1,0 +1,36 @@
+{
+  "name": "docs_of_resy",
+  "version": "0.0.1",
+  "author": "liushanbao <1262300490@qq.com>",
+  "description": "Development documentation for the state management engine 'Resy'",
+  "type": "module",
+  "scripts": {
+    "start": "vitepress dev",
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.3"
+  },
+  "license": "MIT",
+  "keywords": [
+    "resy",
+    "react",
+    "state",
+    "easy",
+    "react-state-easy",
+    "signal",
+    "useSignal",
+    "createSignal",
+    "signal-react",
+    "react-signal",
+    "reactive",
+    "reactive-state",
+    "redux",
+    "store",
+    "proxy",
+    "manager",
+    "management"
+  ]
+}

@@ -6,3 +6,6 @@ package-lock.json
 yarn-lock.json
 yarn-error.log
 .idea
+
+docs/.vitepress/cache
+docs/.vitepress/dist

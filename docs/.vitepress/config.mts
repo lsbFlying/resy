@@ -1,21 +1,20 @@
-import { defineConfig } from 'vitepress'
+import { defineConfig } from "vitepress";
 
-// https://vitepress.dev/reference/site-config
 export default defineConfig({
-  title: "Resy",
+  title: "𝓡esy",
   description: "Development documentation for the state management engine 'Resy'",
   head: [
     [
-      'link',
+      "link",
       {
-        rel: 'icon',
-        type: 'image/svg+xml',
+        rel: "icon",
+        type: "image/svg+xml",
         href: "/logo.svg"
       },
     ],
   ],
   themeConfig: {
-    logo: '/logo.svg',
+    logo: "/logo.svg",
     search: {
       provider: "local",
       // provider: 'algolia',
@@ -69,35 +68,35 @@ export default defineConfig({
       // },
     },
     nav: [
-      { text: 'Home', link: '/' },
-      { text: 'Examples', link: '/markdown-examples' }
+      { text: "Home", link: "/" },
+      { text: "Examples", link: "/markdown-examples" }
     ],
     sidebar: [
       {
-        text: 'Examples',
+        text: "Examples",
         collapsed: false,
         items: [
-          { text: 'Markdown Examples', link: '/markdown-examples' },
-          { text: 'Runtime API Examples', link: '/api-examples' }
+          { text: "Markdown Examples", link: "/markdown-examples" },
+          { text: "Runtime API Examples", link: "/api-examples" }
         ]
       },
     ],
     socialLinks: [
       {
-        icon: 'github',
-        link: 'https://github.com/lsbFlying/resy',
+        icon: "github",
+        link: "https://github.com/lsbFlying/resy",
       }
     ],
     docFooter: {
-      prev: '上一页',
-      next: '下一页'
+      prev: "上一页",
+      next: "下一页"
     },
     outline: {
-      label: '页面导航'
+      label: "页面导航"
     },
     footer: {
-      message: '基于 MIT 许可发布',
+      message: "基于 MIT 许可发布",
       copyright: `版权所有 © 2022-${new Date().getFullYear()} 刘善保`
     },
   }
-})
+});

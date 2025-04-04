@@ -176,6 +176,11 @@ export const createStore = <S extends PrimitiveState>(
 
   // Reset recovery initialization state data
   const restore = (callback?: StateCallback<S>) => {
+    // 如果store未初始化，先初始化store
+    if (!storeStateRefCounterMap.get("counter")) {
+      storeStateRefCounterMap.set("counter", 1);
+    }
+
     willUpdatingProcessing(listenerSet, schedulerProcessor, prevBatchState, stateMap);
 
     retrieveReducerState(reducerState, initialState);
@@ -189,6 +194,18 @@ export const createStore = <S extends PrimitiveState>(
           key, originValue, stateMap, schedulerProcessor, optionsTemp,
           reducerState, storeStateRefCounterMap, storeMap, initialFnCanExecMap,
           classThisPointerSet, initialState, !hasOwnProperty.call(reducerState, key),
+        );
+      }
+    });
+
+    // 处理不在初始状态中但在当前状态中的键（需要删除的键）
+    Array.from(stateMap.keys()).forEach(key => {
+      if (!hasOwnProperty.call(reducerState, key)) {
+        state![key] = undefined as any;
+        pushTask(
+          key, undefined as ValueOf<S>, stateMap, schedulerProcessor, optionsTemp,
+          reducerState, storeStateRefCounterMap, storeMap, initialFnCanExecMap,
+          classThisPointerSet, initialState, true,
         );
       }
     });

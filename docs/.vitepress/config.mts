@@ -1,4 +1,5 @@
 import { defineConfig } from "vitepress";
+import pkg from "../../package.json";
 
 export default defineConfig({
   title: "𝓡esy",
@@ -68,16 +69,37 @@ export default defineConfig({
       // },
     },
     nav: [
-      { text: "Home", link: "/" },
-      { text: "Examples", link: "/markdown-examples" }
+      { text: "指南", link: "/pages/quick-start.md" },
+      {
+        text: pkg.version,
+        items: [
+          {
+            text: "更新日志",
+            link: "https://github.sheincorp.cn/lsbFlying/resy/blob/master/CHANGELOG.md",
+          },
+        ]
+      },
     ],
     sidebar: [
       {
-        text: "Examples",
+        text: "开始",
         collapsed: false,
         items: [
-          { text: "Markdown Examples", link: "/markdown-examples" },
-          { text: "Runtime API Examples", link: "/api-examples" }
+          { text: "简介", link: "/pages/introduce.md" },
+          { text: "设计与概念", link: "/pages/design-concept.md" },
+          { text: "快速上手", link: "/pages/quick-start.md" },
+        ]
+      },
+      {
+        text: "关于store",
+        collapsed: false,
+        items: [
+          { text: "生成store", link: "/pages/generate-store.md" },
+          { text: "defineStore", link: "/pages/defineStore.md" },
+          { text: "createStore", link: "/pages/createStore.md" },
+          { text: "模块化", link: "/pages/modularity.md" },
+          { text: "对比总结", link: "/pages/compare-summary.md" },
+          { text: "特点与细节", link: "/pages/feature-detail.md" },
         ]
       },
     ],

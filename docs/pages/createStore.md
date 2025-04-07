@@ -7,25 +7,65 @@
 
 **示例：**
 ```tsx
-store.count++; // 无需 wrapper, 灵活更新状态
+import React from "react";
+import { createStore } from "resy";
+
+const store = createStore({
+  count: 0,
+});
+
+function App() {
+  const { count } = store.useStore();
+  return (
+    <div>
+      <div>counter: {count}</div>
+      <button
+        // 无需 wrapper, 灵活更新状态
+        onClick={() => store.count++}
+      >
+        增加
+      </button>
+    </div>
+  );
+}
 ```
+**注：当然你也可以通过 `Actions` 封装操作**
 
 ## 实时读取最新状态
 `createStore` 创建的 `store` 状态对象在更新状态后可以 `立即提供最新的状态值`，不需要通过额外的回调或监听机制来获取下一个 `nextState` 或 `latestState`。
 **示例：**
 ```tsx
-const store = createStore({ count: 0 });
+import React from "react";
+import { createStore } from "resy";
 
-store.count++; // 更新状态
-console.log(store.count); // 始终可以得到最新的值（输出: 1）
+const store = createStore({
+  count: 0,
+});
 
-store.count = store.count + 10; // 再次更新
-console.log(store.count); // 输出: 11
+function App() {
+  const { count } = store.useStore();
+  return (
+    <div>
+      <div>counter: {count}</div>
+      <button
+        onClick={() => {
+          store.count++; // 更新状态
+          console.log(store.count); // 始终可以得到最新的值（输出: 1）
+          
+          store.count = store.count + 10; // 再次更新
+          console.log(store.count); // 输出: 11
+        }}
+      >
+        增加
+      </button>
+    </div>
+  );
+}
 ```
 
-## 显式的状态对象，有利于动态多实例化管理
+## 动态多实例化
 - `createStore` 方法返回的是显式的 `store` 对象，非常适合动态生成多个状态容器或具备独立生存周期的场景（例如动态集合、用户状态管理等）。
-- 适合架构多实例需求复杂的大型应用（如需要单独跟踪数十个动态实例时）。
+- 适合架构多实例需求复杂的大型应用（如需要单独跟踪数十个动态实例时）。显式的状态对象，有利于动态多实例化管理。
 
 **简单示例：动态为用户创建状态实例**
 

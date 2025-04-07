@@ -9,7 +9,7 @@
 ## 强封闭模块化
 
 ### 定义
-模块内部的状态和逻辑被严格封闭，外部无法直接操作其内部状态，只能通过预定义的接口（如 Actions 或 useStore()）来更新和访问。模块本身完全隐藏了具体的数据操作细节。
+模块内部的状态和逻辑被严格封闭，外部无法直接操作其内部状态，只能通过预定义的接口（如 `Actions` 或 `useStore()`）来更新和访问。模块本身完全隐藏了具体的数据操作细节。
 
 ### 特点
 - 模块的内部状态和逻辑不可直接访问或修改，操作必须经过预定义的规范接口。
@@ -24,17 +24,32 @@
 在强封闭设计中，模块不允许直接操作状态，只能通过定义的 `increase()` 方法修改 `count` 值：
 
 ```tsx
+import React from "react";
+import { defineStore } from "resy";
+
 const useStore = defineStore({
-  count: 0,
-  increase() {
-    this.count++;  // 状态更新逻辑集中于方法定义中
-  },
+   count: 0,
+   increase() {
+      this.count++;  // 状态更新逻辑集中于方法定义中
+   },
 });
 
-// 使用时只能通过 `increase()` 接口更新状态
-const { count, increase } = useStore();
-increase(); // 封装性操作
-console.log(count); // 访问count值
+function App() {
+  // 使用时通过 `increase()` 接口更新状态
+  const { count, increase } = useStore();
+  console.log(count); // 访问count值
+  return (
+    <div>
+      <div>count: {count}</div>
+      <button
+        // 封装性操作
+        onClick={increase}
+      >
+        increase
+      </button>
+    </div>
+  );
+}
 ```
 
 ## 弱封闭模块化
@@ -55,6 +70,9 @@ console.log(count); // 访问count值
 在弱封闭设计中，可以直接对 `store.count` 进行更新，而不仅仅依赖 `increase()` 方法：
 
 ```tsx
+import React from "react";
+import { createStore } from "resy";
+
 const store = createStore({
   count: 0,
   increase() {
@@ -62,51 +80,73 @@ const store = createStore({
   },
 });
 
-// 使用时既可以通过接口，也可以直接修改状态
-const { count, increase } = store.useStore();
-
-// 封装性操作
-increase();
-// 或者
-store.increase();
-
-store.count++;  // 自由修改状态（弱封闭）
-console.log(count); // 访问count值
+function App() {
+  // 使用时既可以通过接口，也可以直接修改状态
+  const { count, increase } = store.useStore();
+  console.log(count); // 访问count值
+  return (
+    <div>
+      <div>count: {count}</div>
+      <button
+        // 封装性操作
+        // onClick={increase}
+        // 自由修改状态（弱封闭）
+        onClick={() => store.count++}
+      >
+        increase
+      </button>
+    </div>
+  );
+}
 ```
 
 ### 示例：defineStore 的弱封闭模块化
-在 `defineStore` 的弱封闭设计中，也可以通过解构出store对象然后再对 `store.count` 进行更新，而不仅仅依赖 `increase()` 方法：
+在 `defineStore` 的弱封闭设计中，也可以通过解构出 `store` 对象进行更新，而不仅仅依赖 `increase()` 方法：
 
 ```tsx
+import React from "react";
+import { defineStore } from "resy";
+
 const useStore = defineStore({
-  count: 0,
-  increase() {
-    this.count++;  // 提供方法更新状态
-  },
+   count: 0,
+   increase() {
+      this.count++;  // 状态更新逻辑集中于方法定义中
+   },
 });
 
-// 解构出store对象
-const { count, increase, store } = useStore();
-
-// 封装性操作
-increase();
-
-store.count++;  // 自由修改状态（弱封闭）
-console.log(count); // 访问count值
+function App() {
+  // 组件内解构 store
+  const { count, increase, store } = useStore();
+  console.log(count); // 访问count值
+  return (
+    <div>
+      <div>count: {count}</div>
+      <button
+        // 封装性操作
+        // onClick={increase}
+        // 自由修改状态（弱封闭）
+        onClick={() => store.count++}
+      >
+        increase
+      </button>
+    </div>
+  );
+}
 ```
-- **我们可以明显看出 `defineStore` 的弱封闭模块化设计是相对安全的，因为解构store对象的步骤仍然是在组件之内， 一定程度上使得状态的可追溯性得以缓解。**
-- **但同时 `defineStore` 也提供了类似 `createStore` 那样的灵活性，属于较为均衡的使用设计模式。**
+
+**defineStore 弱封闭模块化的相对性：**
+- 我们可以明显看出 `defineStore` 的弱封闭模块化设计是相对安全的，因为解构store对象的步骤仍然是在组件之内， 一定程度上使得状态的可追溯性得以缓解。
+- 而 `createStore` 创建的 `store` 甚至可以在任何地方进行更新，缺乏一定程度上的状态可追踪性的安全问题。
+- 但同时 `defineStore` 也提供了类似 `createStore` 那样的灵活性，属于较为均衡的使用设计模式。
 
 ## 核心区别对比
 
-| **维度**                   | **强封闭模块化**                         | **弱封闭模块化**                           |
-|--------------------------|--------------------------------|-----------------------------------|
-| **状态修改权限**               | 状态只能通过预定义的接口操作              | 状态既可以通过接口操作，也可以直接修改内部状态变量 |
-| **封装性**                  | 封装程度高，数据完全隐藏于模块内部，外部无法直接访问 | 封装程度较弱，状态和逻辑对外透明，允许直接操作 |
-| **操作自由度**                | 操作受限制（仅能通过接口逻辑），自由度低        | 操作较自由，可以直接访问或修改状态变量        |
-| **适用场景**                 | 大型、复杂应用或需要严格控制状态更新的场景       | 小型、简单应用或调试开发中需要灵活操作的场景   |
-
----
+| **维度**                 | **强封闭模块化**                 | **弱封闭模块化**                |
+|------------------------|----------------------------|---------------------------|
+| **状态修改**               | 状态只能通过预定义的接口操作             | 状态既可以通过接口操作，也可以直接修改内部状态变量 |
+| **封装性**                | 封装程度高，数据完全隐藏于模块内部，外部无法直接访问 | 封装程度较弱，状态和逻辑对外透明，允许直接操作   |
+| **操作自由度**              | 操作受限制（仅能通过接口逻辑），自由度低       | 操作较自由，可以直接访问或修改状态变量       |
+| **适用场景**               | 大型、复杂应用或需要严格控制状态更新的场景      | 小型、简单应用或调试开发中需要灵活操作的场景    |
 
 ## 实际应用建议
 

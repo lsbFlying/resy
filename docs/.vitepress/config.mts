@@ -4,6 +4,12 @@ import pkg from "../../package.json";
 export default defineConfig({
   title: "𝓡esy",
   description: "Development documentation for the state management engine 'Resy'",
+  markdown: {
+    image: {
+      // 默认禁用；设置为 true 可为所有图片启用懒加载。
+      lazyLoading: true
+    }
+  },
   head: [
     [
       "link",
@@ -86,20 +92,28 @@ export default defineConfig({
         collapsed: false,
         items: [
           { text: "简介", link: "/pages/introduce.md" },
-          { text: "设计与概念", link: "/pages/design-concept.md" },
           { text: "快速上手", link: "/pages/quick-start.md" },
         ]
       },
       {
-        text: "关于store",
+        text: "store",
         collapsed: false,
         items: [
           { text: "生成store", link: "/pages/generate-store.md" },
           { text: "defineStore", link: "/pages/defineStore.md" },
           { text: "createStore", link: "/pages/createStore.md" },
+          { text: "使用细节", link: "/pages/using-detail.md" },
+        ]
+      },
+      {
+        text: "设计",
+        collapsed: false,
+        items: [
+          { text: "类型设计", link: "/pages/type-design.md" },
+          { text: "层次设计", link: "/pages/level-design.md" },
           { text: "模块化", link: "/pages/modularity.md" },
+          { text: "设计与概念", link: "/pages/design-concept.md" },
           { text: "对比总结", link: "/pages/compare-summary.md" },
-          { text: "特点与细节", link: "/pages/feature-detail.md" },
         ]
       },
     ],

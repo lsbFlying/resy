@@ -9,3 +9,6 @@ export const __STORE_NAMESPACE__ = Symbol("storeNamespace");
 
 // Splicing string of update path for mutation update
 export const __KEY_CHAINS_CONCAT_SYMBOL__ = "_$RESY$_";
+
+// prefix for getters or computed
+export const __GETTERS_PREFIX__ = "$";

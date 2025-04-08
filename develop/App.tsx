@@ -1,37 +1,50 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { defineStore } from "../src";
 
-type Model = {
-  count: number;
-  increase?(): void;
-  createIncrease(): void;
-};
-
-const useStore = defineStore<Model>({
+const useStore = defineStore({
   count: 0,
-  createIncrease() {
-    this.increase = () => {
-      this.count++;
+  text: "hello",
+  doubleCount() {
+    console.log("doubleCount");
+    return this.count * 2;
+  },
+  $doubleCount() {
+    console.log("$doubleCount");
+    return this.count * 2;
+  },
+  useTest() {
+    useEffect(() => {
+      console.log("useTest");
+    }, []);
+    if (this.count === 1) {
+      console.log("useTest-2");
     }
   },
-}, {
-  enableMarcoActionStateful: true,
+  increase() {
+    const $dc = this.$doubleCount();
+    console.log("$dc:", $dc);
+    this.count++;
+  },
+  updateText() {
+    this.text = `world_${Math.floor(Math.random() * 10000)}`;
+  },
 });
 
 function App() {
-  const { count, createIncrease, increase } = useStore();
+  const { count, text, doubleCount, $doubleCount, useTest, increase, updateText } = useStore();
+  useTest();
   console.log("renderApp");
   return (
     <div>
       <div>count: {count}</div>
-      <button
-        // 更新 increase 的时候也会产生 re-render App 组件的效果
-        onClick={createIncrease}
-      >
-        create-increase-action
-      </button>
+      <div>doubleCount: {doubleCount()}</div>
+      <div>$doubleCount: {$doubleCount()}</div>
+      <div>text: {text}</div>
       <button onClick={increase}>
         increase
+      </button>
+      <button onClick={updateText}>
+        updateText
       </button>
     </div>
   );

@@ -21,8 +21,8 @@ import {
   __CLASS_INITIAL_STATE_RETRIEVE_KEY__,
 } from "../class-connect/static";
 import {
-  __KEY_CHAINS_CONCAT_SYMBOL__,
-  __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__,
+  __KEY_CHAINS_CONCAT_SYMBOL__, __REGENERATIVE_SYSTEM_KEY__,
+  __STORE_NAMESPACE__, __USE_STORE_KEY__, __GETTERS_PREFIX__,
 } from "./static";
 import { hasOwnProperty } from "../utils";
 import {
@@ -43,7 +43,7 @@ import {
 import { useSubscription as useSubscriptionCore } from "../subscribe";
 import { willUpdatingProcessing } from "../subscribe/utils";
 import { __DEV__, batchUpdate } from "../static";
-import { useDebugValue } from "react";
+import { useDebugValue, useEffect, useState } from "react";
 
 /**
  * createStore
@@ -100,6 +100,8 @@ export const createStore = <S extends PrimitiveState>(
 
   // Subscription listener stack
   const listenerSet = new Set<ListenerType<S>>();
+  // Dependency Collection for getters or computed
+  const stateKeysSet = new Set<keyof S>();
 
   // The core map of store
   const storeMap: StoreMap<S> = new Map();
@@ -315,6 +317,8 @@ export const createStore = <S extends PrimitiveState>(
           ? stateMap.get(key)
           : (target as S)[key];
 
+        isStateMap && stateKeysSet.add(key);
+
         const IPPA = isArrayPrototypeProxyable(value);
         // todo 代理数组原型链上面的函数
         if (immutable && (proxyable(value) || IPPA)) {
@@ -331,7 +335,6 @@ export const createStore = <S extends PrimitiveState>(
         }
 
         if (typeof value === "function" && !(value as AnyBoundFn).__bound__) {
-          // eslint-disable-next-line @typescript-eslint/no-use-before-define
           return boundFnProcessing(key, value, target, stateMap, store);
         }
 
@@ -399,9 +402,7 @@ export const createStore = <S extends PrimitiveState>(
 
       if (!externalValue && typeof value === "function") {
         // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
-        if (!(value as AnyBoundFn).__bound__) {
-          boundFnProcessing(key, value, stateMap, stateMap, store);
-        }
+        !(value as AnyBoundFn).__bound__ && boundFnProcessing(key, value, stateMap, stateMap, store);
 
         const fnStateful = !optionsTemp.__enableMacros__ || optionsTemp.enableMarcoActionStateful;
 
@@ -429,8 +430,50 @@ export const createStore = <S extends PrimitiveState>(
           storeMap, schedulerProcessor, initialFnCanExecMap,
           classThisPointerSet, initialState,
         );
+        
+        return !key.toString().startsWith(__GETTERS_PREFIX__)
+          ? boundFnValue
+          : () => {
+            const [{ result, stateKeys }, update] = useState(() => {
+              // Clear the previous dirty dependencies before collecting them
+              stateKeysSet.clear();
+              const res = (boundFnValue as AnyFn)();
+              return {
+                result: res,
+                stateKeys: Array.from(stateKeysSet) as (keyof S)[],
+              };
+            });
 
-        return boundFnValue;
+            useEffect(() => subscribe(() => {
+              /**
+               * Perform dependency collection and processing again to
+               * prevent dependency changes caused by conditional logic
+               * start
+               */
+              stateKeysSet.clear();
+
+              const res = (boundFnValue as AnyFn)();
+
+              const newDeps = Array.from(stateKeysSet);
+
+              (stateKeys.toString() !== newDeps.toString()) && update(prevState => ({
+                ...prevState,
+                stateKeys: newDeps,
+              }));
+              /**
+               * Perform dependency collection and processing again to
+               * prevent dependency changes caused by conditional logic
+               * end
+               */
+
+              update(prevState => ({
+                ...prevState,
+                result: res,
+              }));
+            }, stateKeys), [stateKeys]);
+
+            return result;
+          };
       }
 
       return externalValue;

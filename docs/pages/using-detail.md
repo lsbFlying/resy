@@ -10,7 +10,32 @@
 ## `initialState` - 对象类型
 
 **示例：**
+```tsx
+import React from "react";
+import { defineStore } from "resy";
 
+type Model = {
+  count: number;
+  text: string;
+};
+
+const useStore = defineStore<Model>({
+  count: 0,
+  text: "hello",
+});
+
+function App() {
+  const { count, text } = useStore();
+  return (
+    <div>
+      <div>count: {count}</div>
+      <div>text: {text}</div>
+    </div>
+  );
+}
+```
+
+**非必填：**
 ```tsx
 import React from "react";
 import { defineStore } from "resy";
@@ -36,7 +61,7 @@ function App() {
 
 ## `initialState` - 函数类型
 支持函数形式返回对象：动态状态初始化
-- `initialState` 支持传入一个函数（返回对象），以便动态生成状态。这种设计对**动态属性的场景（如与时间相关的状态）或路由切换需要重新初始化的状态**非常有用。
+- `initialState` 支持传入一个函数（返回对象），以便动态生成状态。这种设计对**动态属性的场景（如与时间相关的状态）或路由切换需要特殊逻辑执行来得到一份新的初始化状态**非常有用。
 - 开发者可以通过这种方式确保每次实例化时状态属性会更新，解决状态与外部运行时环境（如时间、路由）的同步问题。
 
 **示例：动态状态初始化**

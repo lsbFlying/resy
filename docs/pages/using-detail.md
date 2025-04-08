@@ -1,4 +1,4 @@
-# 使用细节
+# API 参数
 `defineStore` 与 `createStore` API的参数和配置完全一致。所以下面的举例两者完全一致，统一适用。
 他们均有两个核心参数 `initialState` 与 `options`，下面我们以 `defineStore` 为例进行详细介绍：
 

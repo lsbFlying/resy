@@ -99,10 +99,10 @@ export default defineConfig({
         text: "store",
         collapsed: false,
         items: [
-          { text: "生成store", link: "/pages/generate-store.md" },
+          { text: "生成 store", link: "/pages/generate-store.md" },
           { text: "defineStore", link: "/pages/defineStore.md" },
           { text: "createStore", link: "/pages/createStore.md" },
-          { text: "使用细节", link: "/pages/using-detail.md" },
+          { text: "API 参数", link: "/pages/using-detail.md" },
         ]
       },
       {

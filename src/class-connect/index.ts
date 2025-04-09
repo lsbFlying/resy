@@ -3,7 +3,7 @@ import type { ValueOf, PrimitiveState } from "../types";
 import type { Store } from "../store/types";
 import { Component, PureComponent } from "react";
 import {
-  __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_CONNECT_STORE_KEY__, __CLASS_STATE_REF_SET_KEY__,
+  __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_CONNECT_STORE_KEY__, __CLASS_STATE_REF_SET_KEY__, __CLASS_IS_MOUNTED_KEY__,
 } from "./static";
 import { connectStoreCore, constructorProcessing } from "./core";
 
@@ -22,6 +22,8 @@ export class ComponentWithStore<
   }
 
   static displayName: undefined | string = undefined;
+
+  [__CLASS_IS_MOUNTED_KEY__] = false;
 
   [__CLASS_STATE_REF_SET_KEY__] = new Set<keyof S>();
 
@@ -49,6 +51,8 @@ export class PureComponentWithStore<
   }
 
   static displayName: undefined | string = undefined;
+
+  [__CLASS_IS_MOUNTED_KEY__] = false;
 
   [__CLASS_STATE_REF_SET_KEY__] = new Set<keyof S>();
 

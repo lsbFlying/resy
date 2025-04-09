@@ -4,11 +4,24 @@ import type { Store } from "../store/types";
 import {
   __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_CONNECT_STORE_KEY__,
   __CLASS_INITIAL_STATE_RETRIEVE_KEY__, __CLASS_STATE_REF_SET_KEY__,
-  __CLASS_UNMOUNT_PROCESSING_KEY__,
+  __CLASS_UNMOUNT_PROCESSING_KEY__, __CLASS_IS_MOUNTED_KEY__,
 } from "./static";
 import { storeErrorProcessing } from "../store/errors";
 
 export function constructorProcessing<S extends PrimitiveState>(this: ClassInstanceTypeOfConnectStore<S>) {
+  const instanceMounted = this.componentDidMount;
+
+  this.componentDidMount = () => {
+    instanceMounted?.apply(this);
+    /**
+     * @description Previously,
+     * the `isMounted` method from the `updater` object of React's class instances was used to determine component state.
+     * However, React removed this method in later versions,
+     * and now a new custom approach is used for update detection.
+     */
+    this[__CLASS_IS_MOUNTED_KEY__] = true;
+  };
+
   /**
    * @description First, extract the componentWillUnmount method from the child class instance,
    * then reassign a new componentWillUnmount method logic to the instance.
@@ -16,12 +29,15 @@ export function constructorProcessing<S extends PrimitiveState>(this: ClassInsta
    * child class instance's componentWillUnmount can be executed within the new logic.
    */
   const instanceUnmount = this.componentWillUnmount;
+
   /**
    * @description Mounting a method on the component instance allows the subclass
    * to access componentWillUnmount again when it runs for this purpose in strict mode,
    * while writing a public 'componentWillUnmount' instance method in the class does not achieve this effect.
    */
   this.componentWillUnmount = () => {
+    this[__CLASS_IS_MOUNTED_KEY__] = false;
+
     // The original 'this' pointing cannot be missing
     instanceUnmount?.apply(this);
     /**
@@ -35,7 +51,7 @@ export function constructorProcessing<S extends PrimitiveState>(this: ClassInsta
      * to determine if it's a real unmount or a fake unmount caused by strict mode.
      */
     Promise.resolve().then(() => {
-      if (!this.updater.isMounted(this)) {
+      if (!this[__CLASS_IS_MOUNTED_KEY__]) {
         // Clear the data references used by the class component in rendering
         this[__CLASS_STATE_REF_SET_KEY__].clear();
         // References to these data are recorded and added through “connectClass”

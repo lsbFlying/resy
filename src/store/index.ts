@@ -335,6 +335,7 @@ export const createStore = <S extends PrimitiveState>(
         }
 
         if (typeof value === "function" && !(value as AnyBoundFn).__bound__) {
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
           return boundFnProcessing(key, value, target, stateMap, store);
         }
 
@@ -430,7 +431,7 @@ export const createStore = <S extends PrimitiveState>(
           storeMap, schedulerProcessor, initialFnCanExecMap,
           classThisPointerSet, initialState,
         );
-        
+
         return !key.toString().startsWith(__GETTERS_PREFIX__)
           ? boundFnValue
           : () => {

@@ -12,3 +12,6 @@ export const __CLASS_UNMOUNT_PROCESSING_KEY__ = Symbol("classUnmountProcessingKe
 
 // The key is for initialStateRetrieve of class component
 export const __CLASS_INITIAL_STATE_RETRIEVE_KEY__ = Symbol("classInitialStateRetrieveKey");
+
+// Identification key for whether the class component has been mounted
+export const __CLASS_IS_MOUNTED_KEY__ = Symbol("classIsMountedKey");

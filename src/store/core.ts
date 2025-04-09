@@ -10,7 +10,7 @@ import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 import { initialStateRetrieve, deferRestoreProcessing } from "../restore";
 import { batchUpdate } from "../static";
-import { __CLASS_STATE_REF_SET_KEY__ } from "../class-connect/static";
+import { __CLASS_IS_MOUNTED_KEY__, __CLASS_STATE_REF_SET_KEY__ } from "../class-connect/static";
 import { shallowCloneMap, mapToObject } from "./utils";
 
 /**
@@ -139,7 +139,7 @@ export const classUpdater = <S extends PrimitiveState>(
      * If it is in "React.StrictMode" mode,
      * React will discard the first generated instance and the instance will not be mounted.
      */
-    if (classThisPointerItem.updater.isMounted(classThisPointerItem)) {
+    if (classThisPointerItem[__CLASS_IS_MOUNTED_KEY__]) {
       /**
        * @description Determine whether the currently updated data property
        * is used in the class component, and if not, do not update it.

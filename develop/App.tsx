@@ -50,4 +50,30 @@ function App() {
   );
 }
 
+// import React from "react";
+// import { ComponentWithStore, createStore } from "../src";
+//
+// const store = createStore({
+//   count: 0,
+// });
+//
+// class App extends ComponentWithStore {
+//   store = this.connectStore(store);
+//   render() {
+//     const { count } = this.store;
+//     return (
+//       <div>
+//         <p>{count}</p>
+//         <button
+//           onClick={() => {
+//             store.count++;
+//           }}
+//         >
+//           increase
+//         </button>
+//       </div>
+//     );
+//   }
+// }
+
 export default App;

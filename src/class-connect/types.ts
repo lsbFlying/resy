@@ -2,7 +2,8 @@ import type { PrimitiveState } from "../types";
 import type { GetOptionsType, SetOptionsType, State, Store, StoreCoreUtils } from "../store/types";
 import {
   __CLASS_INITIAL_STATE_RETRIEVE_KEY__, __CLASS_THIS_POINTER_STORES_KEY__,
-  __CLASS_STATE_REF_SET_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__, __CLASS_CONNECT_STORE_KEY__,
+  __CLASS_STATE_REF_SET_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__,
+  __CLASS_CONNECT_STORE_KEY__, __CLASS_IS_MOUNTED_KEY__,
 } from "./static";
 
 /** This is the data type returned by the class after connecting to the store */
@@ -37,6 +38,10 @@ export type ClassInitialStateRetrieveType = {
   [__CLASS_INITIAL_STATE_RETRIEVE_KEY__](): void;
 };
 
+export type ClassIsMountedType = {
+  [__CLASS_IS_MOUNTED_KEY__]: boolean;
+};
+
 /** This class type of connect store */
 export type ClassInstanceTypeOfConnectStore<S extends PrimitiveState> =
   PrimitiveState &
@@ -44,8 +49,4 @@ export type ClassInstanceTypeOfConnectStore<S extends PrimitiveState> =
   ClassConnectStoreType &
   ClassThisPointerStoresType &
   ClassStateRefSetType<S> &
-  {
-    updater: {
-      isMounted(classComponentInstance: any): boolean;
-    };
-  };
+  ClassIsMountedType;

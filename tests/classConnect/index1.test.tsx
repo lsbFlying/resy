@@ -32,27 +32,17 @@ test("classConnect-I", async () => {
           <p>{testStr}</p>
           <button onClick={() => {
             store.count++;
-            /**
-             * @description You can also use `this` to access the store,
-             * which in essence is equivalent to operating directly through the store.
-             * Generally, we would not perform such redundant operations.
-             */
-            // this.store.count++;
           }}>add</button>
           <button onClick={() => {
-            this.store.count++;
+            store.count++;
           }}>add2</button>
           <input
             placeholder="请输入"
             value={text}
             onChange={event => {
-              this.store.syncUpdate({
+              store.syncUpdate({
                 text: event.target.value,
               });
-              // or
-              // store.syncUpdate({
-              //   text: event.target.value,
-              // });
             }}
           />
           <button onClick={() => {

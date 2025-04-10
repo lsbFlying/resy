@@ -1,11 +1,12 @@
 import type { PrimitiveState } from "../types";
-import {
-  Store, ArrayPrototypeProxyableKeyType, ArrayPrototypeProxyableCallbackType,
+import type {
+  ArrayPrototypeProxyableKeyType, ArrayPrototypeProxyableCallbackType,
   ArrayPrototypeProxyableLoopFactoryType, ArrayPrototypeProxyableMutableArrayFactoryType,
   ArrayPrototypeProxyableMutableArraySortFactoryType,
   ArrayPrototypeProxyableLoopFactoryValueType, ArrayPrototypeProxyableValueType,
   ArrayPrototypeProxyableMutableArraySpliceFactoryType, CreateProxyType, ProxyableType,
 } from "./types";
+import type { Store } from "../store/types";
 import { proxyable } from "./utils";
 import { __KEY_CHAINS_CONCAT_SYMBOL__ } from "./static";
 
@@ -16,26 +17,27 @@ const applyTargetLoopFactory = <S extends PrimitiveState>(
   _thisArg: any[],
   parentTarget: any[],
   createProxy: CreateProxyType<S>,
-  firstLevelKey?: any,
+  firstLevelKey?: keyof S,
   keyChains?: string,
 ) => {
   const applyTargetName = applyOriginFunction.name as ArrayPrototypeProxyableKeyType;
   return (callback: ArrayPrototypeProxyableCallbackType) => {
-    // todo 因为这里用到了parentTarget，所以后续需要销毁清楚，以便于后续能拿到最新的parentTarget
     const res = (
       parentTarget[applyTargetName] as ArrayPrototypeProxyableLoopFactoryValueType
     )((item: any, index: number, array: any[]) => {
-      let itemTemp = item;
-      if (proxyable(item)) {
-        itemTemp = createProxy(
-          item,
-          parentTarget,
-          firstLevelKey,
-          `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${index}`,
-          applyOriginFunction,
-        );
-      }
-      return callback(itemTemp, index, array);
+      return callback(
+        proxyable(item)
+          ? createProxy(
+            item,
+            parentTarget,
+            firstLevelKey,
+            `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${index}`,
+            applyOriginFunction,
+          )
+          : item,
+        index,
+        array,
+      );
     });
 
     return res as any;
@@ -50,11 +52,15 @@ const applyTargetPushFactory = <S extends PrimitiveState>(
 ) => {
   return (...items: any[]) => {
     const resultLength = parentTarget.length + items.length;
-    // todo 额外进行一个空添加，便与通过length进行更新数据
+    // Perform an additional empty insertion to facilitate updating data via the `length`.
     parentTarget.push(...items, null);
     thisArg.length = resultLength;
 
-    // todo 父元素对象一旦更新，立即销毁之前的代理对象，否则会拿不到最新的父元素对象
+    /**
+     * @description Once the parent element object is updated,
+     * immediately destroy the previous proxy object,
+     * otherwise the latest parent element object will not be obtained.
+     */
     storeProxyWeakMap.delete(applyOriginFunction);
 
     return resultLength;
@@ -76,10 +82,6 @@ const applyTargetPopFactory = <S extends PrimitiveState>(
 
     thisArg.length = lastIndex;
 
-    // todo 这里也要销毁之前的代理对象，因为此时这里pop一定会更新数组，
-    //  此时parentTarget已经发生变化了，所有必须销毁，
-    //  否则结合其他原型链代理方法时会造成其他原型链代理方法中拿不到最新的parentTarget
-    //  也就是一旦发生数组更新，就必须销毁之前的代理对象
     storeProxyWeakMap.delete(applyOriginFunction);
 
     return lastItem;
@@ -97,8 +99,8 @@ const applyTargetFillFactory = <S extends PrimitiveState>(
 
     const startTemp = start ?? 0;
     const endTemp = end ?? length;
-    const startIndex = startTemp < 0 ? (startTemp + length) : startTemp;
-    const endIndex = endTemp < 0 ? (endTemp + length) : endTemp;
+    const startIndex = startTemp < 0 ? Math.max(startTemp + length, 0) : Math.min(startTemp, length);
+    const endIndex = endTemp < 0 ? Math.max(endTemp + length, 0) : Math.min(endTemp, length);
 
     let changed = false;
 
@@ -113,7 +115,6 @@ const applyTargetFillFactory = <S extends PrimitiveState>(
       parentTarget.fill(value, start, end);
       parentTarget.push(null);
 
-      // todo 相比于通过遍历进行索引更新，这种方式更简单高效
       thisArg.length = length;
 
       storeProxyWeakMap.delete(applyOriginFunction);
@@ -149,7 +150,6 @@ const applyTargetReverseFactory = <S extends PrimitiveState>(
 
       thisArg.length = parentTarget.length - 1;
 
-      // todo 父元素对象一旦更新，立即销毁之前的代理对象，否则会拿不到最新的父元素对象
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
@@ -166,15 +166,13 @@ const applyTargetShiftFactory = <S extends PrimitiveState>(
   return () => {
     const length = parentTarget.length;
     if (length === 0) return undefined;
-    // todo 因为下面的shift以及push方法都需要用到parentTarget，所以后续需要销毁清楚，以便于后续能拿到最新的parentTarget
-    // todo 这里不使用thisArg（数组代理）调用shift方法，否则会进入无限循环
+    // Do not use thisArg (array proxy) to call the shift method here, otherwise it will enter an infinite loop
     const firstElement = parentTarget.shift();
     // In order to update through the length property,
     // the original first element is added to the end of the array
     parentTarget.push(firstElement);
     thisArg.length = length - 1;
 
-    // todo 父元素对象一旦更新，立即销毁之前的代理对象，否则会拿不到最新的父元素对象
     storeProxyWeakMap.delete(applyOriginFunction);
 
     return firstElement;
@@ -190,11 +188,10 @@ const applyTargetUnshiftFactory = <S extends PrimitiveState>(
   return (...items: any[]) => {
     const resultLength = parentTarget.length + items.length;
     parentTarget.unshift(...items);
-    // todo 额外进行一个空添加，便与通过length进行更新数据
+
     parentTarget.push(null);
     thisArg.length = resultLength;
 
-    // todo 父元素对象一旦更新，立即销毁之前的代理对象，否则会拿不到最新的父元素对象
     storeProxyWeakMap.delete(applyOriginFunction);
 
     return resultLength;
@@ -207,36 +204,34 @@ const applyTargetSortFactory = <S extends PrimitiveState>(
   thisArg: any[],
   parentTarget: any[],
   createProxy: CreateProxyType<S>,
-  firstLevelKey?: any,
+  firstLevelKey?: keyof S,
   keyChains?: string,
 ) => {
   return <T>(compareFn?: (a: T, b: T) => number) => {
     let changed = false;
 
     const sortResult = parentTarget.sort((a: T, b: T) => {
-      let aTemp = a;
-      let bTemp = b;
-      if (proxyable(aTemp)) {
-        aTemp = createProxy(
-          a as ProxyableType<S>,
-          parentTarget,
-          firstLevelKey,
-          `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${parentTarget.indexOf(a)}`,
-          applyOriginFunction,
-        ) as T;
-      }
-      if (proxyable(bTemp)) {
-        bTemp = createProxy(
-          b as ProxyableType<S>,
-          parentTarget,
-          firstLevelKey,
-          `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${parentTarget.indexOf(b)}`,
-          applyOriginFunction,
-        ) as T;
-      }
-
       const compareResultValue = compareFn
-        ? compareFn(aTemp, bTemp)
+        ? compareFn(
+          proxyable(a)
+            ? createProxy(
+              a as ProxyableType<S>,
+              parentTarget,
+              firstLevelKey,
+              `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${parentTarget.indexOf(a)}`,
+              applyOriginFunction,
+            ) as T
+            : a,
+          proxyable(b)
+            ? createProxy(
+              b as ProxyableType<S>,
+              parentTarget,
+              firstLevelKey,
+              `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${parentTarget.indexOf(b)}`,
+              applyOriginFunction,
+            ) as T
+            : b,
+        )
         : (a as any).toString().localeCompare((b as any).toString());
 
       if (compareResultValue !== 0) {
@@ -249,8 +244,6 @@ const applyTargetSortFactory = <S extends PrimitiveState>(
       parentTarget.push(null);
       thisArg.length = parentTarget.length - 1;
 
-      // todo 因为用到了parentTarget，所以这里需要销毁清楚，以便于后续能拿到最新的parentTarget
-      // todo 父元素对象一旦更新，立即销毁之前的代理对象，否则会拿不到最新的父元素对象
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
@@ -269,11 +262,9 @@ const applyTargetSpliceFactory = <S extends PrimitiveState>(
     // TODO 这里的deleteResult判断逻辑不对，deleteResult为空并不能代表没改变愿数组
     // error ❌： 只要返回的删除元素数组存在不为空，则一定变更了原数组内容
     if (deleteResult.length > 0) {
-      // todo 额外进行一个空添加，便与通过length进行更新数据
       parentTarget.push(null);
       thisArg.length = parentTarget.length - 1;
 
-      // todo 父元素对象一旦更新，立即销毁之前的代理对象，否则会拿不到最新的父元素对象
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 

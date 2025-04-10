@@ -96,13 +96,22 @@ export default defineConfig({
         ]
       },
       {
-        text: "store",
+        text: "核心",
         collapsed: false,
         items: [
           { text: "生成 store", link: "/pages/generate-store.md" },
           { text: "defineStore", link: "/pages/defineStore.md" },
           { text: "createStore", link: "/pages/createStore.md" },
           { text: "API 参数", link: "/pages/using-detail.md" },
+        ]
+      },
+      {
+        text: "高阶",
+        collapsed: false,
+        items: [
+          { text: "更新", link: "/pages/update.md" },
+          { text: "订阅", link: "/pages/subscribe.md" },
+          { text: "派生状态", link: "/pages/derived.md" },
         ]
       },
       {

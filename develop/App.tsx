@@ -1,79 +1,84 @@
-import React, { useEffect } from "react";
+import React, {
+  useEffect,
+} from "react";
 import { defineStore } from "../src";
 
 const useStore = defineStore({
-  count: 0,
-  text: "hello",
-  doubleCount() {
-    console.log("doubleCount");
-    return this.count * 2;
+  info: {
+    personInfo: {
+      ageInfo: {
+        age: 12,
+        level: "teen",
+      },
+      nameInfo: {
+        name: "Liu-Shan-Bao",
+      },
+      bodyInfo: {
+        heightInfo: {
+          height: 170,
+          reach: 170,
+        },
+        weightInfo: {
+          weight: 64,
+          level: "bantamweight",
+        },
+      },
+    },
+    nationality: "China",
   },
-  $doubleCount() {
-    console.log("$doubleCount");
-    return this.count * 2;
+  updateInfo() {
+    // this.info.nationality = `China-${Math.floor(Math.random() * 10000)}`;
+    this.info.personInfo.bodyInfo.heightInfo.reach = Math.floor(Math.random() * 1000);
   },
-  useTest() {
-    useEffect(() => {
-      console.log("useTest");
-    }, []);
-    if (this.count === 1) {
-      console.log("useTest-2");
-    }
-  },
-  increase() {
-    const $dc = this.$doubleCount();
-    console.log("$dc:", $dc);
-    this.count++;
-  },
-  updateText() {
-    this.text = `world_${Math.floor(Math.random() * 10000)}`;
-  },
+}, {
+  immutable: true,
 });
 
-function App() {
-  const { count, text, doubleCount, $doubleCount, useTest, increase, updateText } = useStore();
-  useTest();
-  console.log("renderApp");
-  return (
-    <div>
-      <div>count: {count}</div>
-      <div>doubleCount: {doubleCount()}</div>
-      <div>$doubleCount: {$doubleCount()}</div>
-      <div>text: {text}</div>
-      <button onClick={increase}>
-        increase
-      </button>
-      <button onClick={updateText}>
-        updateText
-      </button>
-    </div>
-  );
-}
+const App = () => {
+  const { info, updateInfo } = useStore();
+  const { nationality, personInfo } = info;
+  const { ageInfo, nameInfo, bodyInfo } = personInfo;
+  const { age, level: ageLevel } = ageInfo;
+  const { name } = nameInfo;
+  const { heightInfo, weightInfo } = bodyInfo;
+  const { height, reach } = heightInfo;
+  const { weight, level: weightLevel } = weightInfo;
 
-// import React from "react";
-// import { ComponentWithStore, createStore } from "../src";
-//
-// const store = createStore({
-//   count: 0,
-// });
-//
-// class App extends ComponentWithStore {
-//   store = this.connectStore(store);
-//   render() {
-//     const { count } = this.store;
-//     return (
-//       <div>
-//         <p>{count}</p>
-//         <button
-//           onClick={() => {
-//             store.count++;
-//           }}
-//         >
-//           increase
-//         </button>
-//       </div>
-//     );
-//   }
-// }
+  useEffect(() => {
+    console.log("info");
+  }, [info]);
+  useEffect(() => {
+    console.log("personInfo");
+  }, [personInfo]);
+  useEffect(() => {
+    console.log("ageInfo");
+  }, [ageInfo]);
+  useEffect(() => {
+    console.log("nameInfo");
+  }, [nameInfo]);
+  useEffect(() => {
+    console.log("bodyInfo");
+  }, [bodyInfo]);
+  useEffect(() => {
+    console.log("heightInfo");
+  }, [heightInfo]);
+  useEffect(() => {
+    console.log("weightInfo");
+  }, [weightInfo]);
+
+  return (
+    <>
+      <p>nationality:{nationality}</p>
+      <p>age:{age}</p>
+      <p>age-level:{ageLevel}</p>
+      <p>name:{name}</p>
+      <p>height:{height}</p>
+      <p>reach:{reach}</p>
+      <p>weight:{weight}</p>
+      <p>weight-level:{weightLevel}</p>
+      <button onClick={updateInfo}>updateInfo</button>
+    </>
+  );
+};
 
 export default App;

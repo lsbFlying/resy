@@ -8,13 +8,16 @@
 import type {
   ExternalMapType, ExternalMapValue, StateFnType, StoreMap, StoreOptions, Store,
   StateCallback, StoreMapValueType, State, InitialState, StateRefCounterMapType,
-  StateWithThisType, InnerStoreOptions, AnyBoundFn, ArrayPrototypeProxyableValueType,
+  StateWithThisType, InnerStoreOptions, AnyBoundFn,
 } from "./types";
 import type { InitialFnCanExecMapType } from "../restore/types";
 import type { Unsubscribe, ListenerType } from "../subscribe/types";
 import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import type { SchedulerType } from "../scheduler/types";
+import type { ArrayPrototypeProxyableValueType } from "../immutable/types";
+import { __ARRAY_PROTOTYPE_PROXYABLE_TARGET_MAP__ } from "../immutable";
+import { proxyable, createNewRefValue, isArrayPrototypeProxyable } from "../immutable/utils";
 import { scheduler } from "../scheduler";
 import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__,
@@ -33,10 +36,7 @@ import {
   pushTask, connectHook, finallyBatchProcessing, hookConnectStore, classUpdater,
   connectClass, effectStateInListenerKeys, boundFnProcessing,
 } from "./core";
-import { __ARRAY_PROTOTYPE_PROXYABLE_TARGET_MAP__ } from "./array";
-import {
-  mapToObject, objectToMap, proxyable, createNewRefValue, isArrayPrototypeProxyable,
-} from "./utils";
+import { mapToObject, objectToMap } from "./utils";
 import {
   mergeStateKeys, retrieveReducerState, deferRestoreProcessing, initialStateRetrieve,
 } from "../restore";
@@ -237,43 +237,73 @@ export const createStore = <S extends PrimitiveState>(
     key: keyof S,
     value: ValueOf<S>,
     isDelete = false,
-    // todo waiting target type become ProxyableType<S>(includes Map and Set type)
-    target: any = stateMap,
-    firstLevelKey?: keyof S | null,
+    target: object | S = stateMap,
+    firstLevelKey?: keyof S,
     keyChains?: string,
     applyOriginFunction?: ArrayPrototypeProxyableValueType,
   ): boolean => {
     if (target !== stateMap) {
-      const prevValue = target[key];
+      // During each update, the target here is the latest target object obtained by the previous agent,
+      // so the PrevValue here is also the latest data before the update.
+      const prevValue = (target as S)[key];
 
+      // Directly compare the PrevValue with the current value to be updated
+      // to see if the data needs to be updated and processed.
       const changed = !Object.is(prevValue, value);
       if (changed) {
-        const firstLevelRootValue = stateMap.get(firstLevelKey!);
+        const firstLevelValue = stateMap.get(firstLevelKey!);
 
-        const noHeadKeyChains = keyChains!.split(__KEY_CHAINS_CONCAT_SYMBOL__);
-        noHeadKeyChains.shift();
+        // No first level attribute chain array
+        const noneFirstLevelKeyChains = keyChains!.split(__KEY_CHAINS_CONCAT_SYMBOL__);
+        noneFirstLevelKeyChains.shift();
 
-        noHeadKeyChains.reduce((
+        noneFirstLevelKeyChains.reduce((
           previousValue,
           itemKey,
           currentIndex,
           array,
         ) => {
           currentIndex !== array.length - 1
+            /**
+             * @description Update the attribute chain except for the attribute objects of each layer before the last level,
+             * This is very important. If the update here is ignored,
+             * it will result in the attribute chain's layer by layer properties not being treated as immutable,
+             * which will create a dependency invariant bug on the hook's dependency array.
+             */
             ? ((previousValue as any)[itemKey] = createNewRefValue((previousValue as S)[itemKey]))
+            // Update the attributes of the last level in the attribute chain
             : ((previousValue as S)[key] = value);
           return (previousValue as S)[itemKey];
-        }, firstLevelRootValue);
+        }, firstLevelValue);
 
-        // todo 父元素对象一旦更新，立即销毁之前的代理对象，否则会使得数组原型链代理函数中拿不到最新的父元素对象parentTarget
-        //  这里是为了弥补loop循环遍历的时候通过item进行异变更新的场景，而进行的感知补充性销毁，
-        //  因为这里的applyOriginFunction只有在item会有代理的场景才会传入
+        /**
+         * @description This refers to the scenario where a function property has already been proxied using `apply`,
+         * and the array element parameters within the callback function
+         * of the proxied function property undergo another round of proxying.
+         * In this scenario, the `applyOriginFunction` parameter appears,
+         * which refers to the function property from the previous layer of proxy.
+         *
+         * Since the `applyTargetLoopFactory` internally involves secondary proxying of array elements,
+         * but the proxied array elements may not necessarily be updated,
+         * the removal operation is not handled immediately within `applyTargetLoopFactory`.
+         * Instead, it is executed here within the logic branch that performs actual updates.
+         */
         applyOriginFunction && storeProxyWeakMap.delete(applyOriginFunction);
       }
 
       return changed
         ? singleUpdate(
           firstLevelKey!,
+          /**
+           * @description When performing updates on the first-level attributes here,
+           * a reference update is required. Without a reference update,
+           * the incremental processing of `noneFirstLevelKeyChains` and `firstLevelValue` in the preceding `reduce` function
+           * will result in no actual change to the references.
+           * Consequently, when reaching the "else" branch
+           * and executing the logic of `if (!Object.is(value, stateMap.get(key)))`,
+           * it will show that the previous and current values are equal,
+           * ultimately leading to the update being skipped.
+           */
           createNewRefValue(stateMap.get(firstLevelKey!)) as ValueOf<S>,
           isDelete,
           stateMap,
@@ -294,7 +324,6 @@ export const createStore = <S extends PrimitiveState>(
   };
 
   const createProxy = (
-    // todo waiting target type become ProxyableType<S>(includes Map and Set type)
     target: object,
     parentTarget: any = stateMap,
     firstLevelKey?: keyof S,
@@ -319,15 +348,15 @@ export const createStore = <S extends PrimitiveState>(
 
         isStateMap && stateKeysSet.add(key);
 
-        const IPPA = isArrayPrototypeProxyable(value);
+        const IAPP = isArrayPrototypeProxyable(value);
         // todo 代理数组原型链上面的函数
-        if (immutable && (proxyable(value) || IPPA)) {
+        if (immutable && (proxyable(value) || IAPP)) {
           return createProxy(
             value as object,
             target,
             firstLevelKey ?? key,
             keyChains
-              ? IPPA
+              ? IAPP
                 ? keyChains
                 : `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${key?.toString()}`
               : key?.toString(),
@@ -434,6 +463,7 @@ export const createStore = <S extends PrimitiveState>(
 
         return !key.toString().startsWith(__GETTERS_PREFIX__)
           ? boundFnValue
+          // TODO waiting upgrade optimize
           : () => {
             const [{ result, stateKeys }, update] = useState(() => {
               // Clear the previous dirty dependencies before collecting them

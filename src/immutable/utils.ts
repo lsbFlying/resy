@@ -1,0 +1,59 @@
+import type { ArrayPrototypeProxyableValueType } from "./types";
+import { whatsType, typeString } from "../utils";
+
+// TODO 针对Map、Set类型待开发，目前先支持纯对象以及数组类型
+// Currently handling two simple types of chainable updates: objects and arrays
+const proxyableSet = new Set(["Object", "Array"]);
+
+export const proxyable = (value: unknown): boolean => {
+  return proxyableSet.has(whatsType(value));
+};
+
+// todo 数组原型链可以被代理执行的函数
+const arrayPrototypeProxyableSet = new Set<ArrayPrototypeProxyableValueType>()
+  .add(Array.prototype.forEach)
+  .add(Array.prototype.map)
+  .add(Array.prototype.filter)
+  .add(Array.prototype.every)
+  .add(Array.prototype.some)
+  .add(Array.prototype.push)
+  .add(Array.prototype.pop)
+  .add(Array.prototype.fill)
+  .add(Array.prototype.reverse)
+  .add(Array.prototype.shift)
+  .add(Array.prototype.unshift)
+  .add(Array.prototype.sort)
+  .add(Array.prototype.splice);
+
+export const isArrayPrototypeProxyable = (value: any): boolean => {
+  return arrayPrototypeProxyableSet.has(value);
+};
+
+const primitiveSet = new Set(["Number", "String", "Boolean", "Undefined", "Null", "Symbol"]);
+
+// TODO waiting removed
+export const isPrimitive = (value: unknown): boolean => {
+  return primitiveSet.has(whatsType(value));
+};
+
+/**
+ * @description Create a new reference type data value with the same content based on the given reference type data.
+ * Here, a few of the more common and widely used data types within the ComplexValueType are handled.
+ */
+export const createNewRefValue = <T>(value: T): T => {
+  const type = typeString.call(value);
+  switch (type) {
+    case "[object Object]":
+      // Using `new Object(value)`, its reference will not change.
+      return Object.assign({}, value);
+    case "[object Array]":
+      return (value as unknown[]).slice() as T;
+    /** TODO 后续的类型待开发 */
+    case "[object Set]":
+      return new Set(value as Iterable<unknown>) as T;
+    case "[object Map]":
+      return new Map(value as Iterable<readonly [unknown, unknown]>) as T;
+    default:
+      return value;
+  }
+};

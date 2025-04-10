@@ -1,4 +1,4 @@
-# defineStore
+# defineStore <Badge type="tip" text="^11.1.0" />
 `defineStore` 是建立在 `createStore` 的底层调用之上的处理方法，返回的是一个简化使用的 **宏处理 hook 函数**。
 
 ## 简单的 Hooks 风格

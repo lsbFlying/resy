@@ -12,22 +12,24 @@ export const whatsType = (value: unknown): NativeDataType => {
       return "Array";
     case "[object Object]":
       return "Object";
+    case "[object Map]":
+      return "Map";
+    case "[object Set]":
+      return "Set";
+
     case "[object String]":
       return "String";
     case "[object Number]":
       return "Number";
     case "[object Boolean]":
       return "Boolean";
-    case "[object Set]":
-      return "Set";
-    case "[object Map]":
-      return "Map";
     case "[object Function]":
       return "Function";
     case "[object Date]":
       return "Date";
     case "[object Symbol]":
       return "Symbol";
+
     case "[object WeakSet]":
       return "WeakSet";
     case "[object WeakMap]":

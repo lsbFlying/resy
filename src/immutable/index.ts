@@ -1,10 +1,18 @@
-import type { PrimitiveState } from "../types";
-import type {
-  ArrayPrototypeProxyableKeyType, ArrayPrototypeProxyableCallbackType,
-  ArrayPrototypeProxyableLoopFactoryType, ArrayPrototypeProxyableMutableArrayFactoryType,
+import type { MapType, PrimitiveState, ValueOf } from "../types";
+import {
+  ProxyableType,
+  CreateProxyType,
+  ArrayPrototypeProxyableKeyType,
+  ArrayPrototypeProxyableValueType,
+  ArrayPrototypeProxyableCallbackType,
+  ArrayPrototypeProxyableLoopFactoryType,
+  ArrayPrototypeProxyableLoopFactoryValueType,
+  ArrayPrototypeProxyableMutableArrayFactoryType,
   ArrayPrototypeProxyableMutableArraySortFactoryType,
-  ArrayPrototypeProxyableLoopFactoryValueType, ArrayPrototypeProxyableValueType,
-  ArrayPrototypeProxyableMutableArraySpliceFactoryType, CreateProxyType, ProxyableType,
+  ArrayPrototypeProxyableMutableArraySpliceFactoryType,
+  ArrayPrototypeProxyableMutableArrayCopyWithinFactoryType,
+  MapPrototypeProxyableKeyType,
+  MapPrototypeProxyableGetFactoryType, MapPrototypeProxyableValueType,
 } from "./types";
 import type { Store } from "../store/types";
 import { proxyable } from "./utils";
@@ -22,7 +30,7 @@ const applyTargetLoopFactory = <S extends PrimitiveState>(
 ) => {
   const applyTargetName = applyOriginFunction.name as ArrayPrototypeProxyableKeyType;
   return (callback: ArrayPrototypeProxyableCallbackType) => {
-    const res = (
+    return (
       parentTarget[applyTargetName] as ArrayPrototypeProxyableLoopFactoryValueType
     )((item: any, index: number, array: any[]) => {
       return callback(
@@ -38,9 +46,7 @@ const applyTargetLoopFactory = <S extends PrimitiveState>(
         index,
         array,
       );
-    });
-
-    return res as any;
+    }) as any;
   };
 };
 
@@ -104,8 +110,8 @@ const applyTargetFillFactory = <S extends PrimitiveState>(
 
     let changed = false;
 
-    for (let i = startIndex; i < endIndex; i++) {
-      if (!Object.is(thisArg[i], value)) {
+    for (let left = startIndex, right = endIndex; left <= right; left++, right--) {
+      if (!Object.is(thisArg[left], value) || !Object.is(thisArg[right], value)) {
         changed = true;
         break;
       }
@@ -120,6 +126,16 @@ const applyTargetFillFactory = <S extends PrimitiveState>(
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
+    /**
+     * @description The returned array here is identical to the final updated array content,
+     * only differing in reference.
+     * You don't need to worry about external actions on the returned result affecting the rendering outcome.
+     * If external operations such as mutating data properties occur, the rendering will also update accordingly.
+     * This is because even though `resy` doesn't utilize asynchronous updates directly,
+     * the underlying mechanism of "use-sync-external-store" still relies on `useEffect` for asynchronous update sensing.
+     * As a result, the rendering content will eventually remain synchronized.
+     * This aligns well with immutability and the consistency of rendering.
+     */
     return parentTarget;
   };
 };
@@ -131,17 +147,14 @@ const applyTargetReverseFactory = <S extends PrimitiveState>(
   parentTarget: any[],
 ) => {
   return () => {
-    let start = 0;
-    let end = parentTarget.length - 1;
+    const endIndex = parentTarget.length - 1;
     let changed = false;
 
-    while (start < end) {
-      if (!Object.is(parentTarget[start], parentTarget[end])) {
+    for (let left = 0, right = endIndex; left < right; left++, right--) {
+      if (!Object.is(parentTarget[left], parentTarget[right])) {
         changed = true;
         break;
       }
-      start++;
-      end--;
     }
 
     if (changed) {
@@ -210,7 +223,7 @@ const applyTargetSortFactory = <S extends PrimitiveState>(
   return <T>(compareFn?: (a: T, b: T) => number) => {
     let changed = false;
 
-    const sortResult = parentTarget.sort((a: T, b: T) => {
+    parentTarget.sort((a: T, b: T) => {
       const compareResultValue = compareFn
         ? compareFn(
           proxyable(a)
@@ -247,7 +260,7 @@ const applyTargetSortFactory = <S extends PrimitiveState>(
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
-    return sortResult;
+    return parentTarget;
   };
 };
 
@@ -259,9 +272,8 @@ const applyTargetSpliceFactory = <S extends PrimitiveState>(
 ) => {
   return <T>(start: number, deleteCount: number, ...items: T[]) => {
     const deleteResult = parentTarget.splice(start, deleteCount, ...items);
-    // TODO 这里的deleteResult判断逻辑不对，deleteResult为空并不能代表没改变愿数组
-    // error ❌： 只要返回的删除元素数组存在不为空，则一定变更了原数组内容
-    if (deleteResult.length > 0) {
+
+    if (deleteResult.length > 0 || items.length > 0) {
       parentTarget.push(null);
       thisArg.length = parentTarget.length - 1;
 
@@ -272,18 +284,116 @@ const applyTargetSpliceFactory = <S extends PrimitiveState>(
   };
 };
 
-export const __ARRAY_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
-  ArrayPrototypeProxyableKeyType,
+const applyTargetCopyWithinFactory = <S extends PrimitiveState>(
+  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  thisArg: any[],
+  parentTarget: any[],
+) => {
+  return <T>(target: number, start: number, end?: number): T[] => {
+    const initLength = parentTarget.length;
+
+    const normalizedTarget = target < 0
+      ? Math.max(initLength + target, 0)
+      : Math.min(target, initLength);
+
+    const normalizedStart = start < 0
+      ? Math.max(initLength + start, 0)
+      : Math.min(start, initLength);
+
+    const endTemp = end ?? initLength;
+    const normalizedEnd = endTemp < 0
+      ? Math.max(initLength + endTemp, 0)
+      : Math.min(endTemp, initLength);
+
+    const copyLength = Math.max(normalizedEnd - normalizedStart, 0);
+
+    // The actual replication length may not be as long as originally planned due to insufficient target space,
+    const actualCopyLength = Math.min(copyLength, initLength - normalizedTarget);
+    // The actual replication length is not as long as originally planned,
+    // so its replication boundary will correspondingly decrease,
+    // so here we perform a boundary optimization to reduce the count of subsequent loops.
+    const endSourceIdx = normalizedStart + actualCopyLength;
+
+    const changedPrevCondition = copyLength > 0 && normalizedTarget < initLength;
+
+    let copyAndTargetIsEqual = true;
+    if (changedPrevCondition) {
+      for (
+        let sourceIdx = normalizedStart, targetIdx = normalizedTarget;
+        sourceIdx < endSourceIdx && targetIdx < initLength;
+        sourceIdx++, targetIdx++
+      ) {
+        // Compare whether the copied element is the same as the target index element.
+        // If they are the same, it is not considered a change.
+        if (!Object.is(parentTarget[sourceIdx], parentTarget[targetIdx])) {
+          copyAndTargetIsEqual = false;
+          break;
+        }
+      }
+    }
+
+    // The number of copied elements is greater than 0 and the target position is valid.
+    if (changedPrevCondition && !copyAndTargetIsEqual) {
+      parentTarget.copyWithin(target, start, end);
+
+      parentTarget.push(null);
+      thisArg.length = parentTarget.length - 1;
+
+      storeProxyWeakMap.delete(applyOriginFunction);
+    }
+
+    return parentTarget;
+  };
+};
+/** ============ Proxy factory for array prototype chain proxyable functions end ============ */
+
+/** ============ Proxy factory for map prototype chain proxyable functions start ============ */
+const applyTargetGetFactory = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: MapPrototypeProxyableValueType,
+  _thisArg: MapType<S>,
+  parentTarget: MapType<S>,
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: string,
+) => {
+  return (key: keyof S): ValueOf<S> | undefined => {
+    const value = parentTarget.get(key);
+    return proxyable(value)
+      ? createProxy(
+        value as ProxyableType<S>,
+        parentTarget,
+        firstLevelKey,
+        // TODO Map的key可能不是一个string，这里可能需要考虑限制Map的key只能是string，待解决
+        `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${key.toString()}`,
+        applyOriginFunction,
+      ) as ValueOf<S>
+      : value;
+  };
+};
+/** ============ Proxy factory for map prototype chain proxyable functions end ============ */
+
+export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
+  | ArrayPrototypeProxyableKeyType
+  | MapPrototypeProxyableKeyType,
   | ArrayPrototypeProxyableLoopFactoryType
   | ArrayPrototypeProxyableMutableArrayFactoryType
   | ArrayPrototypeProxyableMutableArraySortFactoryType
   | ArrayPrototypeProxyableMutableArraySpliceFactoryType
+  | ArrayPrototypeProxyableMutableArrayCopyWithinFactoryType
+  | MapPrototypeProxyableGetFactoryType
 >()
   .set("forEach", applyTargetLoopFactory)
   .set("map", applyTargetLoopFactory)
   .set("filter", applyTargetLoopFactory)
+  .set("find", applyTargetLoopFactory)
+  .set("findIndex", applyTargetLoopFactory)
+  .set("findLast", applyTargetLoopFactory)
+  .set("findLastIndex", applyTargetLoopFactory)
   .set("every", applyTargetLoopFactory)
   .set("some", applyTargetLoopFactory)
+  .set("flatMap", applyTargetLoopFactory)
   .set("push", applyTargetPushFactory)
   .set("pop", applyTargetPopFactory)
   .set("fill", applyTargetFillFactory)
@@ -291,5 +401,6 @@ export const __ARRAY_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   .set("shift", applyTargetShiftFactory)
   .set("unshift", applyTargetUnshiftFactory)
   .set("sort", applyTargetSortFactory)
-  .set("splice", applyTargetSpliceFactory);
-/** ============ Proxy factory for array prototype chain proxyable functions end ============ */
+  .set("splice", applyTargetSpliceFactory)
+  .set("copyWithin", applyTargetCopyWithinFactory)
+  .set("get", applyTargetGetFactory);

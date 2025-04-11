@@ -1,8 +1,7 @@
-import type { PrimitiveState, ValueOf } from "../types";
+import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type { Store } from "../store/types";
 
-// todo 目前暂时支持对象、数组
-export type ProxyableType<S extends PrimitiveState> = S | S[];
+export type ProxyableType<S extends PrimitiveState> = S | S[] | MapType<S>;
 
 export type CreateProxyType<S extends PrimitiveState> = (
   target: ProxyableType<S>,
@@ -17,8 +16,13 @@ export type ArrayPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   | "forEach"
   | "map"
   | "filter"
+  | "find"
+  | "findIndex"
+  | "findLast"
+  | "findLastIndex"
   | "every"
   | "some"
+  | "flatMap"
   | "push"
   | "pop"
   | "fill"
@@ -27,6 +31,7 @@ export type ArrayPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   | "unshift"
   | "sort"
   | "splice"
+  | "copyWithin"
 >;
 export type ArrayPrototypeProxyableKeyType = keyof ArrayPrototypeProxyableType;
 export type ArrayPrototypeProxyableValueType = ValueOf<ArrayPrototypeProxyableType>;
@@ -78,3 +83,35 @@ export type ArrayPrototypeProxyableMutableArrayFactorySpliceValueType = <T>(
   deleteCount: number,
   ...items: T[]
 ) => T[];
+
+export type ArrayPrototypeProxyableMutableArrayCopyWithinFactoryType = <S extends PrimitiveState>(
+  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  thisArg: S[],
+  parentTarget: S[],
+) => ArrayPrototypeProxyableMutableArrayFactoryCopyWithinValueType;
+
+export type ArrayPrototypeProxyableMutableArrayFactoryCopyWithinValueType = <T>(
+  target: number,
+  start: number,
+  end?: number,
+) => T[];
+
+export type MapPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
+  Map<keyof T, ValueOf<T>>,
+  | "get"
+>;
+export type MapPrototypeProxyableKeyType = keyof MapPrototypeProxyableType;
+export type MapPrototypeProxyableValueType = ValueOf<MapPrototypeProxyableType>;
+
+export type MapPrototypeProxyableGetFactoryType = <S extends PrimitiveState>(
+  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: MapPrototypeProxyableValueType,
+  thisArg: MapType<S>,
+  parentTarget: MapType<S>,
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: string,
+) => MapPrototypeProxyableGetFactoryValueType<S>;
+
+export type MapPrototypeProxyableGetFactoryValueType<S extends PrimitiveState> = (key: keyof S) => ValueOf<S> | undefined;

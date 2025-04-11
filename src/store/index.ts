@@ -16,8 +16,8 @@ import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import type { SchedulerType } from "../scheduler/types";
 import type { ArrayPrototypeProxyableValueType } from "../immutable/types";
-import { __ARRAY_PROTOTYPE_PROXYABLE_TARGET_MAP__ } from "../immutable";
-import { proxyable, createNewRefValue, isArrayPrototypeProxyable } from "../immutable/utils";
+import { __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ } from "../immutable";
+import { proxyable, createNewRefValue, isArrayMapSetPrototypeProxyable } from "../immutable/utils";
 import { scheduler } from "../scheduler";
 import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__,
@@ -27,7 +27,7 @@ import {
   __KEY_CHAINS_CONCAT_SYMBOL__, __REGENERATIVE_SYSTEM_KEY__,
   __STORE_NAMESPACE__, __USE_STORE_KEY__, __GETTERS_PREFIX__,
 } from "./static";
-import { hasOwnProperty } from "../utils";
+import { hasOwnProperty, whatsType } from "../utils";
 import {
   stateErrorProcessing, optionsErrorProcessing, subscribeErrorProcessing,
   protoPointStoreErrorProcessing, setOptionsErrorProcessing,
@@ -250,9 +250,15 @@ export const createStore = <S extends PrimitiveState>(
       // Directly compare the PrevValue with the current value to be updated
       // to see if the data needs to be updated and processed.
       const changed = !Object.is(prevValue, value);
-      if (changed) {
-        const firstLevelValue = stateMap.get(firstLevelKey!);
 
+      const firstLevelValue = stateMap.get(firstLevelKey!);
+      const firstLevelValueType = whatsType(firstLevelValue);
+      const firstLevelValueIsMap = firstLevelValueType === "Map";
+      const initialValue = firstLevelValueIsMap
+        ? mapToObject(firstLevelValue as MapType<S>)
+        : firstLevelValue;
+
+      if (changed) {
         // No first level attribute chain array
         const noneFirstLevelKeyChains = keyChains!.split(__KEY_CHAINS_CONCAT_SYMBOL__);
         noneFirstLevelKeyChains.shift();
@@ -274,7 +280,7 @@ export const createStore = <S extends PrimitiveState>(
             // Update the attributes of the last level in the attribute chain
             : ((previousValue as S)[key] = value);
           return (previousValue as S)[itemKey];
-        }, firstLevelValue);
+        }, initialValue);
 
         /**
          * @description This refers to the scenario where a function property has already been proxied using `apply`,
@@ -304,7 +310,11 @@ export const createStore = <S extends PrimitiveState>(
            * it will show that the previous and current values are equal,
            * ultimately leading to the update being skipped.
            */
-          createNewRefValue(stateMap.get(firstLevelKey!)) as ValueOf<S>,
+          createNewRefValue(
+            firstLevelValueIsMap
+              ? objectToMap(initialValue as S)
+              : firstLevelValue
+          ) as ValueOf<S>,
           isDelete,
           stateMap,
         )
@@ -348,8 +358,8 @@ export const createStore = <S extends PrimitiveState>(
 
         isStateMap && stateKeysSet.add(key);
 
-        const IAPP = isArrayPrototypeProxyable(value);
-        // todo 代理数组原型链上面的函数
+        // Proxy array prototype chain with proxyable functions
+        const IAPP = isArrayMapSetPrototypeProxyable(value);
         if (immutable && (proxyable(value) || IAPP)) {
           return createProxy(
             value as object,
@@ -380,16 +390,15 @@ export const createStore = <S extends PrimitiveState>(
         `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${key?.toString()}`, applyOriginFunction,
       ),
       /**
-       * TODO 这里的apply是针对Array、Map、Set类型的原型链函数的代理执行而写的
-       *  先实现Array类型的，Map、Set后续再推进
+       * TODO 这里的apply是针对Array、Map、Set类型的可代理的原型链函数而写的
        */
       apply(applyOriginFunction: any, thisArg: any, argArray: any[]) {
         return Reflect.apply(
-          __ARRAY_PROTOTYPE_PROXYABLE_TARGET_MAP__.get(applyOriginFunction.name)!(
+          __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__.get(applyOriginFunction.name)!(
             storeProxyWeakMap, applyOriginFunction, thisArg,
             parentTarget, createProxy, firstLevelKey, keyChains,
           ),
-          thisArg ?? sp,
+          thisArg,
           argArray,
         );
       },

@@ -1,21 +1,24 @@
 import type { ArrayPrototypeProxyableValueType } from "./types";
 import { whatsType, typeString } from "../utils";
 
-// TODO 针对Map、Set类型待开发，目前先支持纯对象以及数组类型
-// Currently handling two simple types of chainable updates: objects and arrays
-const proxyableSet = new Set(["Object", "Array"]);
+const proxyableSet = new Set(["Object", "Array", "Map"]);
 
 export const proxyable = (value: unknown): boolean => {
   return proxyableSet.has(whatsType(value));
 };
 
-// todo 数组原型链可以被代理执行的函数
-const arrayPrototypeProxyableSet = new Set<ArrayPrototypeProxyableValueType>()
+// todo 数组、Map、Set原型链可以被代理执行的函数
+const arrayMapSetPrototypeProxyableSet = new Set<ArrayPrototypeProxyableValueType>()
   .add(Array.prototype.forEach)
   .add(Array.prototype.map)
   .add(Array.prototype.filter)
+  .add(Array.prototype.find)
+  .add(Array.prototype.findIndex)
+  .add(Array.prototype.findLast)
+  .add(Array.prototype.findLastIndex)
   .add(Array.prototype.every)
   .add(Array.prototype.some)
+  .add(Array.prototype.flatMap)
   .add(Array.prototype.push)
   .add(Array.prototype.pop)
   .add(Array.prototype.fill)
@@ -23,17 +26,12 @@ const arrayPrototypeProxyableSet = new Set<ArrayPrototypeProxyableValueType>()
   .add(Array.prototype.shift)
   .add(Array.prototype.unshift)
   .add(Array.prototype.sort)
-  .add(Array.prototype.splice);
+  .add(Array.prototype.splice)
+  .add(Array.prototype.copyWithin)
+  .add(Map.prototype.get);
 
-export const isArrayPrototypeProxyable = (value: any): boolean => {
-  return arrayPrototypeProxyableSet.has(value);
-};
-
-const primitiveSet = new Set(["Number", "String", "Boolean", "Undefined", "Null", "Symbol"]);
-
-// TODO waiting removed
-export const isPrimitive = (value: unknown): boolean => {
-  return primitiveSet.has(whatsType(value));
+export const isArrayMapSetPrototypeProxyable = (value: any): boolean => {
+  return arrayMapSetPrototypeProxyableSet.has(value);
 };
 
 /**
@@ -42,17 +40,18 @@ export const isPrimitive = (value: unknown): boolean => {
  */
 export const createNewRefValue = <T>(value: T): T => {
   const type = typeString.call(value);
+  console.log("type:", type);
   switch (type) {
     case "[object Object]":
       // Using `new Object(value)`, its reference will not change.
       return Object.assign({}, value);
     case "[object Array]":
       return (value as unknown[]).slice() as T;
-    /** TODO 后续的类型待开发 */
-    case "[object Set]":
-      return new Set(value as Iterable<unknown>) as T;
     case "[object Map]":
       return new Map(value as Iterable<readonly [unknown, unknown]>) as T;
+    // TODO waiting develop
+    // case "[object Set]":
+    //   return new Set(value as Iterable<unknown>) as T;
     default:
       return value;
   }

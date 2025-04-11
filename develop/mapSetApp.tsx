@@ -1,0 +1,87 @@
+import React, {
+  useEffect,
+} from "react";
+import { defineStore, MapType } from "../src";
+
+const infoObj = {
+  personInfo: {
+    ageInfo: {
+      age: 12,
+      level: "teen",
+    },
+    nameInfo: {
+      name: "Liu-Shan-Bao",
+    },
+    bodyInfo: {
+      heightInfo: {
+        height: 170,
+        reach: 170,
+      },
+      weightInfo: {
+        weight: 64,
+        level: "bantamweight",
+      },
+    },
+  },
+  nationality: "China",
+};
+
+const useStore = defineStore({
+  infoMap: new Map(Object.entries(infoObj)) as MapType<typeof infoObj>,
+  updateInfoMap() {
+    // @ts-ignore
+    this.infoMap.get("personInfo")!.bodyInfo.heightInfo.reach = Math.floor(Math.random() * 1000);
+  },
+}, {
+  immutable: true,
+});
+
+const App = () => {
+  const { infoMap, updateInfoMap } = useStore();
+  const nationality = infoMap.get("nationality") as string;
+  const personInfo = infoMap.get("personInfo");
+  const { ageInfo, nameInfo, bodyInfo } = personInfo as any;
+  const { age, level: ageLevel } = ageInfo;
+  const { name } = nameInfo;
+  const { heightInfo, weightInfo } = bodyInfo;
+  const { height, reach } = heightInfo;
+  const { weight, level: weightLevel } = weightInfo;
+
+  useEffect(() => {
+    console.log("infoMap");
+  }, [infoMap]);
+  useEffect(() => {
+    console.log("personInfo");
+  }, [personInfo]);
+  useEffect(() => {
+    console.log("ageInfo");
+  }, [ageInfo]);
+  useEffect(() => {
+    console.log("nameInfo");
+  }, [nameInfo]);
+  useEffect(() => {
+    console.log("bodyInfo");
+  }, [bodyInfo]);
+  useEffect(() => {
+    console.log("heightInfo");
+  }, [heightInfo]);
+  useEffect(() => {
+    console.log("weightInfo");
+  }, [weightInfo]);
+
+  return (
+    <>
+      <p>nationality:{nationality}</p>
+      <p>age:{age}</p>
+      <p>age-level:{ageLevel}</p>
+      <p>name:{name}</p>
+      <p>height:{height}</p>
+      <p>reach:{reach}</p>
+      <p>weight:{weight}</p>
+      <p>weight-level:{weightLevel}</p>
+      <button onClick={updateInfoMap}>updateInfoMap</button>
+    </>
+  );
+};
+
+export default App;

@@ -128,14 +128,7 @@ const applyTargetFillFactory = <S extends PrimitiveState>(
     }
 
     /**
-     * @description The returned array here is identical to the final updated array content,
-     * only differing in reference.
-     * You don't need to worry about external actions on the returned result affecting the rendering outcome.
-     * If external operations such as mutating data properties occur, the rendering will also update accordingly.
-     * This is because even though `resy` doesn't utilize asynchronous updates directly,
-     * the underlying mechanism of "use-sync-external-store" still relies on `useEffect` for asynchronous update sensing.
-     * As a result, the rendering content will eventually remain synchronized.
-     * This aligns well with immutability and the consistency of rendering.
+     * @description TODO 这里仍然需要返回一个不可变性的数组代理，以保持不可变性的设计原则，待修改
      */
     return parentTarget;
   };
@@ -167,6 +160,7 @@ const applyTargetReverseFactory = <S extends PrimitiveState>(
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
+    // TODO 这里仍然需要返回一个不可变性的数组代理，以保持不可变性的设计原则，待修改
     return parentTarget;
   };
 };
@@ -261,6 +255,7 @@ const applyTargetSortFactory = <S extends PrimitiveState>(
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
+    // TODO 这里仍然需要返回一个不可变性的数组代理，以保持不可变性的设计原则，待修改
     return parentTarget;
   };
 };
@@ -344,6 +339,7 @@ const applyTargetCopyWithinFactory = <S extends PrimitiveState>(
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
+    // TODO 这里仍然需要返回一个不可变性的数组代理，以保持不可变性的设计原则，待修改
     return parentTarget;
   };
 };

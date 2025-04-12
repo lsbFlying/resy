@@ -368,8 +368,8 @@ export const createStore = <S extends PrimitiveState>(
             keyChains
               ? IAPP
                 ? keyChains
-                : `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${key?.toString()}`
-              : key?.toString(),
+                : `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${key.toString()}`
+              : key.toString(),
           );
         }
 

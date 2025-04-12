@@ -15,7 +15,7 @@ import type { Unsubscribe, ListenerType } from "../subscribe/types";
 import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import type { SchedulerType } from "../scheduler/types";
-import type { ArrayPrototypeProxyableValueType } from "../immutable/types";
+import type { ArrayPrototypeProxyableValueType, KeyChainsSourceItemType } from "../immutable/types";
 import { __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ } from "../immutable";
 import { proxyable, createNewRefValue, isArrayMapSetPrototypeProxyable } from "../immutable/utils";
 import { scheduler } from "../scheduler";
@@ -24,8 +24,7 @@ import {
   __CLASS_INITIAL_STATE_RETRIEVE_KEY__,
 } from "../class-connect/static";
 import {
-  __KEY_CHAINS_CONCAT_SYMBOL__, __REGENERATIVE_SYSTEM_KEY__,
-  __STORE_NAMESPACE__, __USE_STORE_KEY__, __GETTERS_PREFIX__,
+  __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__, __GETTERS_PREFIX__,
 } from "./static";
 import { hasOwnProperty, whatsType } from "../utils";
 import {
@@ -239,7 +238,7 @@ export const createStore = <S extends PrimitiveState>(
     isDelete = false,
     target: object | S = stateMap,
     firstLevelKey?: keyof S,
-    keyChains?: string,
+    keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ArrayPrototypeProxyableValueType,
   ): boolean => {
     if (target !== stateMap) {
@@ -260,7 +259,10 @@ export const createStore = <S extends PrimitiveState>(
 
       if (changed) {
         // No first level attribute chain array
-        const noneFirstLevelKeyChains = keyChains!.split(__KEY_CHAINS_CONCAT_SYMBOL__);
+        const noneFirstLevelKeyChains: (keyof S)[] = [];
+        for (const item of keyChains!) {
+          noneFirstLevelKeyChains.push(item.key);
+        }
         noneFirstLevelKeyChains.shift();
 
         noneFirstLevelKeyChains.reduce((
@@ -333,11 +335,17 @@ export const createStore = <S extends PrimitiveState>(
     }
   };
 
+  /**
+   * @description The data stored in the attribute chain is a complex type,
+   * so it needs to be referenced to ensure uniqueness.
+   */
+  const keyChainsSource = new Set<KeyChainsSourceItemType<S>>();
+
   const createProxy = (
     target: object,
     parentTarget: any = stateMap,
     firstLevelKey?: keyof S,
-    keyChains?: string,
+    keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ArrayPrototypeProxyableValueType,
   ) => {
     const spw = storeProxyWeakMap.get(target);
@@ -361,15 +369,23 @@ export const createStore = <S extends PrimitiveState>(
         // Proxy array prototype chain with proxyable functions
         const IAPP = isArrayMapSetPrototypeProxyable(value);
         if (immutable && (proxyable(value) || IAPP)) {
+          // The existence of keyChains can determine whether the current attribute chain is originated from the root node
+          if (!keyChains) {
+            // Clear before each round of visits
+            keyChainsSource.clear();
+            keyChainsSource.add({ key });
+          }
           return createProxy(
             value as object,
             target,
             firstLevelKey ?? key,
-            keyChains
-              ? IAPP
-                ? keyChains
-                : `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${key.toString()}`
-              : key.toString(),
+            (
+              keyChains
+                ? IAPP
+                  ? keyChainsSource
+                  : keyChainsSource.add({ key })
+                : keyChainsSource
+            ) as Set<KeyChainsSourceItemType<S>>,
           );
         }
 
@@ -382,12 +398,12 @@ export const createStore = <S extends PrimitiveState>(
       },
       set: (_: S, key: keyof S, value: ValueOf<S>) => singleUpdate(
         key, value, false, target, firstLevelKey,
-        `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${key?.toString()}`, applyOriginFunction,
+        keyChains?.add({ key }), applyOriginFunction,
       ),
       // Delete will also play an updating role
       deleteProperty: (_: S, key: keyof S) => singleUpdate(
         key, undefined as ValueOf<S>, true, target, firstLevelKey,
-        `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${key?.toString()}`, applyOriginFunction,
+        keyChains?.add({ key }), applyOriginFunction,
       ),
       /**
        * TODO 这里的apply是针对Array、Map、Set类型的可代理的原型链函数而写的

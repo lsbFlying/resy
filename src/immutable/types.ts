@@ -3,11 +3,17 @@ import type { Store } from "../store/types";
 
 export type ProxyableType<S extends PrimitiveState> = S | S[] | MapType<S>;
 
+// The collection of attribute chains set as object types is
+// to prevent different levels of attributes from having the same attribute name.
+export type KeyChainsSourceItemType<S extends PrimitiveState> = {
+  key: keyof S;
+};
+
 export type CreateProxyType<S extends PrimitiveState> = (
   target: ProxyableType<S>,
   parentTarget?: ProxyableType<S>,
   firstLevelKey?: keyof S,
-  keyChains?: string,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
   applyOriginFunction?: ArrayPrototypeProxyableValueType,
 ) => Store<S>;
 
@@ -45,7 +51,7 @@ export type ArrayPrototypeProxyableLoopFactoryType = <S extends PrimitiveState>(
   parentTarget: S[],
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
-  keyChains?: string,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => ArrayPrototypeProxyableLoopFactoryValueType;
 
 export type ArrayPrototypeProxyableLoopFactoryValueType = <T>(callback: ArrayPrototypeProxyableCallbackType) => (void | T[]);
@@ -66,7 +72,7 @@ export type ArrayPrototypeProxyableMutableArraySortFactoryType = <S extends Prim
   parentTarget: S[],
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
-  keyChains?: string,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => ArrayPrototypeProxyableMutableArrayFactorySortValueType;
 
 export type ArrayPrototypeProxyableMutableArrayFactorySortValueType = <T>(compareFn?: (a: T, b: T) => number) => T[];
@@ -111,7 +117,7 @@ export type MapPrototypeProxyableGetFactoryType = <S extends PrimitiveState>(
   parentTarget: MapType<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
-  keyChains?: string,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => MapPrototypeProxyableGetFactoryValueType<S>;
 
 export type MapPrototypeProxyableGetFactoryValueType<S extends PrimitiveState> = (key: keyof S) => ValueOf<S> | undefined;

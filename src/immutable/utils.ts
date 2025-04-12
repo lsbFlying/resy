@@ -40,7 +40,6 @@ export const isArrayMapSetPrototypeProxyable = (value: any): boolean => {
  */
 export const createNewRefValue = <T>(value: T): T => {
   const type = typeString.call(value);
-  console.log("type:", type);
   switch (type) {
     case "[object Object]":
       // Using `new Object(value)`, its reference will not change.

@@ -1,7 +1,7 @@
 import React, {
   useEffect,
 } from "react";
-import { defineStore, MapType } from "../src";
+import { defineStore } from "../src";
 
 const infoObj = {
   personInfo: {
@@ -26,11 +26,34 @@ const infoObj = {
   nationality: "China",
 };
 
+// 定义 personInfo 的类型
+type PersonInfo = {
+  ageInfo: {
+    age: number;
+    level: string;
+  };
+  nameInfo: {
+    name: string;
+  };
+  bodyInfo: {
+    heightInfo: {
+      height: number;
+      reach: number;
+    };
+    weightInfo: {
+      weight: number;
+      level: string;
+    };
+  };
+};
+
+type Nationality = string;
+
 const useStore = defineStore({
-  infoMap: new Map(Object.entries(infoObj)) as MapType<typeof infoObj>,
+  infoMap: new Map<"personInfo" | "nationality", PersonInfo | Nationality>(Object.entries(infoObj) as any),
   updateInfoMap() {
-    // @ts-ignore
-    this.infoMap.get("personInfo")!.bodyInfo.heightInfo.reach = Math.floor(Math.random() * 1000);
+    console.log((this.infoMap.get("personInfo") as PersonInfo)?.bodyInfo.weightInfo.weight);
+    (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.reach = Math.floor(Math.random() * 1000);
   },
 }, {
   immutable: true,

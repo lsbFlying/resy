@@ -12,11 +12,12 @@ import {
   ArrayPrototypeProxyableMutableArraySpliceFactoryType,
   ArrayPrototypeProxyableMutableArrayCopyWithinFactoryType,
   MapPrototypeProxyableKeyType,
-  MapPrototypeProxyableGetFactoryType, MapPrototypeProxyableValueType,
+  MapPrototypeProxyableGetFactoryType,
+  MapPrototypeProxyableValueType,
+  KeyChainsSourceItemType,
 } from "./types";
 import type { Store } from "../store/types";
 import { proxyable } from "./utils";
-import { __KEY_CHAINS_CONCAT_SYMBOL__ } from "./static";
 
 /** ============ Proxy factory for array prototype chain proxyable functions start ============ */
 const applyTargetLoopFactory = <S extends PrimitiveState>(
@@ -26,7 +27,7 @@ const applyTargetLoopFactory = <S extends PrimitiveState>(
   parentTarget: any[],
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
-  keyChains?: string,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => {
   const applyTargetName = applyOriginFunction.name as ArrayPrototypeProxyableKeyType;
   return (callback: ArrayPrototypeProxyableCallbackType) => {
@@ -39,7 +40,7 @@ const applyTargetLoopFactory = <S extends PrimitiveState>(
             item,
             parentTarget,
             firstLevelKey,
-            `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${index}`,
+            keyChains?.add({ key: index }),
             applyOriginFunction,
           )
           : item,
@@ -218,7 +219,7 @@ const applyTargetSortFactory = <S extends PrimitiveState>(
   parentTarget: any[],
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
-  keyChains?: string,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => {
   return <T>(compareFn?: (a: T, b: T) => number) => {
     let changed = false;
@@ -231,7 +232,7 @@ const applyTargetSortFactory = <S extends PrimitiveState>(
               a as ProxyableType<S>,
               parentTarget,
               firstLevelKey,
-              `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${parentTarget.indexOf(a)}`,
+              keyChains?.add({ key: parentTarget.indexOf(a) }),
               applyOriginFunction,
             ) as T
             : a,
@@ -240,7 +241,7 @@ const applyTargetSortFactory = <S extends PrimitiveState>(
               b as ProxyableType<S>,
               parentTarget,
               firstLevelKey,
-              `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${parentTarget.indexOf(b)}`,
+              keyChains?.add({ key: parentTarget.indexOf(b) }),
               applyOriginFunction,
             ) as T
             : b,
@@ -356,7 +357,7 @@ const applyTargetGetFactory = <S extends PrimitiveState>(
   parentTarget: MapType<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
-  keyChains?: string,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => {
   return (key: keyof S): ValueOf<S> | undefined => {
     const value = parentTarget.get(key);
@@ -365,8 +366,7 @@ const applyTargetGetFactory = <S extends PrimitiveState>(
         value as ProxyableType<S>,
         parentTarget,
         firstLevelKey,
-        // TODO Map的key可能不是一个string，这里可能需要考虑限制Map的key只能是string，待解决
-        `${keyChains}${__KEY_CHAINS_CONCAT_SYMBOL__}${key.toString()}`,
+        keyChains?.add({ key }),
         applyOriginFunction,
       ) as ValueOf<S>
       : value;

@@ -111,6 +111,12 @@ export const createStore = <S extends PrimitiveState>(
   const classThisPointerSet = new Set<ClassInstanceTypeOfConnectStore<S>>();
 
   /**
+   * @description The data stored in the attribute chain is a complex type,
+   * so it needs to be referenced to ensure uniqueness.
+   */
+  const keyChainsSource = new Set<KeyChainsSourceItemType<S>>();
+
+  /**
    * @description Map for additional related internal objects of store
    * For example, some related functions or identifiers,
    * such as setState, subscribe and internal identity __REGENERATIVE_SYSTEM_KEY__
@@ -334,12 +340,6 @@ export const createStore = <S extends PrimitiveState>(
       return true;
     }
   };
-
-  /**
-   * @description The data stored in the attribute chain is a complex type,
-   * so it needs to be referenced to ensure uniqueness.
-   */
-  const keyChainsSource = new Set<KeyChainsSourceItemType<S>>();
 
   const createProxy = (
     target: object,

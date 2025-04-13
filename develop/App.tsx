@@ -28,6 +28,9 @@ const useStore = defineStore({
   },
   updateInfo() {
     // this.info.nationality = `China-${Math.floor(Math.random() * 10000)}`;
+    // const hi = this.info.personInfo.bodyInfo.heightInfo;
+    // hi.height = Math.floor(Math.random() * 1000);
+    // hi.reach = Math.floor(Math.random() * 1000);
     this.info.personInfo.bodyInfo.heightInfo.reach = Math.floor(Math.random() * 1000);
   },
 }, {

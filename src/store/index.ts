@@ -111,12 +111,6 @@ export const createStore = <S extends PrimitiveState>(
   const classThisPointerSet = new Set<ClassInstanceTypeOfConnectStore<S>>();
 
   /**
-   * @description The data stored in the attribute chain is a complex type,
-   * so it needs to be referenced to ensure uniqueness.
-   */
-  const keyChainsSource = new Set<KeyChainsSourceItemType<S>>();
-
-  /**
    * @description Map for additional related internal objects of store
    * For example, some related functions or identifiers,
    * such as setState, subscribe and internal identity __REGENERATIVE_SYSTEM_KEY__
@@ -370,12 +364,6 @@ export const createStore = <S extends PrimitiveState>(
         // Proxy array prototype chain with proxyable functions
         const IAPP = isArrayMapSetPrototypeProxyable(value);
         if (immutable && (proxyable(value) || IAPP)) {
-          // The existence of keyChains can determine whether the current attribute chain is originated from the root node
-          if (!keyChains) {
-            // Clear before each round of visits
-            keyChainsSource.clear();
-            keyChainsSource.add({ key });
-          }
           return createProxy(
             value as object,
             target,
@@ -383,9 +371,9 @@ export const createStore = <S extends PrimitiveState>(
             (
               keyChains
                 ? IAPP
-                  ? keyChainsSource
-                  : keyChainsSource.add({ key })
-                : keyChainsSource
+                  ? new Set(keyChains)
+                  : new Set(keyChains).add({ key })
+                : new Set().add({ key })
             ) as Set<KeyChainsSourceItemType<S>>,
           );
         }
@@ -399,12 +387,12 @@ export const createStore = <S extends PrimitiveState>(
       },
       set: (_: S, key: keyof S, value: ValueOf<S>) => singleUpdate(
         key, value, false, target, firstLevelKey,
-        keyChains?.add({ key }), applyOriginFunction,
+        new Set(keyChains).add({ key }), applyOriginFunction,
       ),
       // Delete will also play an updating role
       deleteProperty: (_: S, key: keyof S) => singleUpdate(
         key, undefined as ValueOf<S>, true, target, firstLevelKey,
-        keyChains?.add({ key }), applyOriginFunction,
+        new Set(keyChains).add({ key }), applyOriginFunction,
       ),
       /**
        * TODO 这里的apply是针对Array、Map、Set类型的可代理的原型链函数而写的
@@ -489,7 +477,7 @@ export const createStore = <S extends PrimitiveState>(
 
         return !key.toString().startsWith(__GETTERS_PREFIX__)
           ? boundFnValue
-          // TODO waiting upgrade optimize
+          // TODO waiting upgrade optimize (暂时应该没有属性依赖记录收集销毁的逻辑问题)
           : () => {
             const [{ result, stateKeys }, update] = useState(() => {
               // Clear the previous dirty dependencies before collecting them

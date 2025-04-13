@@ -1,7 +1,7 @@
 import React from "react";
 import { defineStore } from "../src";
 
-// let test: any;
+let test: any;
 
 const useStore = defineStore({
   list: [
@@ -27,15 +27,16 @@ const useStore = defineStore({
   updateList3() {
     // this.list.pop();
     const item = { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) };
-    const temp = this.list;
-    temp.fill(item);
-    // todo 这样会导致属性链出现问题
-    temp[0].name = "asdasdas";
-    // test = this.list.fill(item);
+    // const temp = this.list;
+    // temp.fill(item);
+    // // temp[1].name = `${Math.floor(Math.random() * 1000)}`;
+    // // todo 这样会导致属性链出现问题
+    // temp[0].name = "asdasdas";
+    test = this.list.fill(item);
     // this.list[0].name = "asdasdas";
-    // test[0].name = "asdasdas";
-    // test.push(item);
-    // console.log("test:", test);
+    test[0].name = "asdasdas";
+    test.push(item);
+    console.log("test:", test);
   },
 }, {
   immutable: true,

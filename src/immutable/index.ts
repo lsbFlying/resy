@@ -40,7 +40,7 @@ const applyTargetLoopFactory = <S extends PrimitiveState>(
             item,
             parentTarget,
             firstLevelKey,
-            keyChains?.add({ key: index }),
+            new Set(keyChains).add({ key: index }),
             applyOriginFunction,
           )
           : item,
@@ -127,10 +127,8 @@ const applyTargetFillFactory = <S extends PrimitiveState>(
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
-    /**
-     * @description TODO 这里仍然需要返回一个不可变性的数组代理，以保持不可变性的设计原则，待修改
-     */
-    // return parentTarget;
+    // We still need to return an immutable array proxy here
+    // to maintain the design principle of immutability.
     return thisArg;
   };
 };
@@ -161,8 +159,7 @@ const applyTargetReverseFactory = <S extends PrimitiveState>(
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
-    // TODO 这里仍然需要返回一个不可变性的数组代理，以保持不可变性的设计原则，待修改
-    return parentTarget;
+    return thisArg;
   };
 };
 
@@ -227,7 +224,7 @@ const applyTargetSortFactory = <S extends PrimitiveState>(
               a as ProxyableType<S>,
               parentTarget,
               firstLevelKey,
-              keyChains?.add({ key: parentTarget.indexOf(a) }),
+              new Set(keyChains).add({ key: parentTarget.indexOf(a) }),
               applyOriginFunction,
             ) as T
             : a,
@@ -236,7 +233,7 @@ const applyTargetSortFactory = <S extends PrimitiveState>(
               b as ProxyableType<S>,
               parentTarget,
               firstLevelKey,
-              keyChains?.add({ key: parentTarget.indexOf(b) }),
+              new Set(keyChains).add({ key: parentTarget.indexOf(b) }),
               applyOriginFunction,
             ) as T
             : b,
@@ -256,8 +253,7 @@ const applyTargetSortFactory = <S extends PrimitiveState>(
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
-    // TODO 这里仍然需要返回一个不可变性的数组代理，以保持不可变性的设计原则，待修改
-    return parentTarget;
+    return thisArg;
   };
 };
 
@@ -340,8 +336,7 @@ const applyTargetCopyWithinFactory = <S extends PrimitiveState>(
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
-    // TODO 这里仍然需要返回一个不可变性的数组代理，以保持不可变性的设计原则，待修改
-    return parentTarget;
+    return thisArg;
   };
 };
 /** ============ Proxy factory for array prototype chain proxyable functions end ============ */
@@ -363,7 +358,7 @@ const applyTargetGetFactory = <S extends PrimitiveState>(
         value as ProxyableType<S>,
         parentTarget,
         firstLevelKey,
-        keyChains?.add({ key }),
+        new Set(keyChains).add({ key }),
         applyOriginFunction,
       ) as ValueOf<S>
       : value;

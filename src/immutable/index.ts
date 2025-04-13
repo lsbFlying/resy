@@ -85,7 +85,7 @@ const applyTargetPopFactory = <S extends PrimitiveState>(
     if (length === 0) return undefined;
 
     const lastIndex = length - 1;
-    const lastItem = thisArg[lastIndex];
+    const lastItem = parentTarget[lastIndex];
 
     thisArg.length = lastIndex;
 
@@ -112,7 +112,7 @@ const applyTargetFillFactory = <S extends PrimitiveState>(
     let changed = false;
 
     for (let left = startIndex, right = endIndex; left <= right; left++, right--) {
-      if (!Object.is(thisArg[left], value) || !Object.is(thisArg[right], value)) {
+      if (!Object.is(parentTarget[left], value) || !Object.is(parentTarget[right], value)) {
         changed = true;
         break;
       }

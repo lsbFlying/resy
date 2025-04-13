@@ -130,7 +130,8 @@ const applyTargetFillFactory = <S extends PrimitiveState>(
     /**
      * @description TODO 这里仍然需要返回一个不可变性的数组代理，以保持不可变性的设计原则，待修改
      */
-    return parentTarget;
+    // return parentTarget;
+    return thisArg;
   };
 };
 

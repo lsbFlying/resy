@@ -91,6 +91,17 @@ const applyTargetPopFactory = <S extends PrimitiveState>(
 
     storeProxyWeakMap.delete(applyOriginFunction);
 
+    /**
+     * @description When using `pop`, the removed element is the last one,
+     * and the removed last element no longer affects rendering.
+     * Even if the "removed last element" is pushed back later,
+     * a new round of proxy processing will still handle it.
+     * Hence, there is no need to perform proxy processing here.
+     * Even if proxy processing were attempted,
+     * it would be impossible to trace the key in the property chain of the new proxy layer,
+     * as it has already been removed from the "rendered state array data"
+     * and its corresponding index in the property chain's key cannot be found for completion.
+     */
     return lastItem;
   };
 };

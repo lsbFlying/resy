@@ -103,6 +103,7 @@ const applyTargetPopFactory = <S extends PrimitiveState>(
      * as it has already been removed from the "rendered state array data"
      * and its corresponding index in the property chain's key cannot be found for completion.
      */
+    // todo waiting modified for "Design principle of immutability"
     return lastItem;
   };
 };
@@ -141,6 +142,7 @@ const applyTargetFillFactory = <S extends PrimitiveState>(
 
     // We still need to return an immutable array proxy here
     // to maintain the design principle of immutability.
+    // todo waiting modified for "Design principle of immutability"
     return thisArg;
   };
 };
@@ -171,6 +173,7 @@ const applyTargetReverseFactory = <S extends PrimitiveState>(
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
+    // todo waiting modified for "Design principle of immutability"
     return thisArg;
   };
 };
@@ -194,6 +197,7 @@ const applyTargetShiftFactory = <S extends PrimitiveState>(
     storeProxyWeakMap.delete(applyOriginFunction);
 
     // This is consistent with the return comment of the `applyTargetPopFactory` function.
+    // todo waiting modified for "Design principle of immutability"
     return firstElement;
   };
 };
@@ -266,6 +270,7 @@ const applyTargetSortFactory = <S extends PrimitiveState>(
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
+    // todo waiting modified for "Design principle of immutability"
     return thisArg;
   };
 };
@@ -287,6 +292,7 @@ const applyTargetSpliceFactory = <S extends PrimitiveState>(
     }
 
     // This is consistent with the return comment of the `applyTargetPopFactory` function.
+    // todo waiting modified for "Design principle of immutability"
     return deleteResult;
   };
 };
@@ -350,6 +356,7 @@ const applyTargetCopyWithinFactory = <S extends PrimitiveState>(
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
+    // todo waiting modified for "Design principle of immutability"
     return thisArg;
   };
 };
@@ -364,7 +371,9 @@ const applyTargetAtFactory = <S extends PrimitiveState>(
   keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => {
   return <T>(index: number): T | undefined => {
+    // todo index的变化处理场景待修改
     const item = parentTarget.at(index);
+    // todo waiting modified for "Design principle of immutability"
     return proxyable(item)
       ? createProxy(
         item,

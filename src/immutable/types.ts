@@ -41,6 +41,7 @@ export type ArrayPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   | "splice"
   | "toSpliced"
   | "copyWithin"
+  | "at"
 >;
 export type ArrayPrototypeProxyableKeyType = keyof ArrayPrototypeProxyableType;
 export type ArrayPrototypeProxyableValueType = ValueOf<ArrayPrototypeProxyableType>;
@@ -59,16 +60,16 @@ export type ArrayPrototypeProxyableLoopFactoryType = <S extends PrimitiveState>(
 
 export type ArrayPrototypeProxyableLoopFactoryValueType = <T>(callback: ArrayPrototypeProxyableCallbackType) => (void | T[]);
 
-export type ArrayPrototypeProxyableMutableArrayFactoryType = <S extends PrimitiveState>(
+export type ArrayPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: S[],
   parentTarget: S[],
-) => ArrayPrototypeProxyableMutableArrayFactoryNormalValueType;
+) => ArrayPrototypeProxyableFactoryValueType;
 
-export type ArrayPrototypeProxyableMutableArrayFactoryNormalValueType = <T>(...items: T[]) => any;
+export type ArrayPrototypeProxyableFactoryValueType = <T>(...items: T[]) => any;
 
-export type ArrayPrototypeProxyableMutableArraySortFactoryType = <S extends PrimitiveState>(
+export type ArrayPrototypeProxyableSortFactoryType = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: S[],
@@ -76,35 +77,47 @@ export type ArrayPrototypeProxyableMutableArraySortFactoryType = <S extends Prim
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
-) => ArrayPrototypeProxyableMutableArrayFactorySortValueType;
+) => ArrayPrototypeProxyableFactorySortValueType;
 
-export type ArrayPrototypeProxyableMutableArrayFactorySortValueType = <T>(compareFn?: (a: T, b: T) => number) => T[];
+export type ArrayPrototypeProxyableFactorySortValueType = <T>(compareFn?: (a: T, b: T) => number) => T[];
 
-export type ArrayPrototypeProxyableMutableArraySpliceFactoryType = <S extends PrimitiveState>(
+export type ArrayPrototypeProxyableSpliceFactoryType = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: S[],
   parentTarget: S[],
-) => ArrayPrototypeProxyableMutableArrayFactorySpliceValueType;
+) => ArrayPrototypeProxyableFactorySpliceValueType;
 
-export type ArrayPrototypeProxyableMutableArrayFactorySpliceValueType = <T>(
+export type ArrayPrototypeProxyableFactorySpliceValueType = <T>(
   start: number,
   deleteCount: number,
   ...items: T[]
 ) => T[];
 
-export type ArrayPrototypeProxyableMutableArrayCopyWithinFactoryType = <S extends PrimitiveState>(
+export type ArrayPrototypeProxyableCopyWithinFactoryType = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: S[],
   parentTarget: S[],
-) => ArrayPrototypeProxyableMutableArrayFactoryCopyWithinValueType;
+) => ArrayPrototypeProxyableFactoryCopyWithinValueType;
 
-export type ArrayPrototypeProxyableMutableArrayFactoryCopyWithinValueType = <T>(
+export type ArrayPrototypeProxyableFactoryCopyWithinValueType = <T>(
   target: number,
   start: number,
   end?: number,
 ) => T[];
+
+export type ArrayPrototypeProxyableAtFactoryType = <S extends PrimitiveState>(
+  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  thisArg: S[],
+  parentTarget: S[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+) => ArrayPrototypeProxyableAtFactoryValueType;
+
+export type ArrayPrototypeProxyableAtFactoryValueType = <T>(index: number) => (T | undefined);
 
 export type MapPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   Map<keyof T, ValueOf<T>>,

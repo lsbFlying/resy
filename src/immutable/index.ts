@@ -7,10 +7,11 @@ import {
   ArrayPrototypeProxyableCallbackType,
   ArrayPrototypeProxyableLoopFactoryType,
   ArrayPrototypeProxyableLoopFactoryValueType,
-  ArrayPrototypeProxyableMutableArrayFactoryType,
-  ArrayPrototypeProxyableMutableArraySortFactoryType,
-  ArrayPrototypeProxyableMutableArraySpliceFactoryType,
-  ArrayPrototypeProxyableMutableArrayCopyWithinFactoryType,
+  ArrayPrototypeProxyableFactoryType,
+  ArrayPrototypeProxyableSortFactoryType,
+  ArrayPrototypeProxyableSpliceFactoryType,
+  ArrayPrototypeProxyableCopyWithinFactoryType,
+  ArrayPrototypeProxyableAtFactoryType,
   MapPrototypeProxyableKeyType,
   MapPrototypeProxyableGetFactoryType,
   MapPrototypeProxyableValueType,
@@ -352,6 +353,29 @@ const applyTargetCopyWithinFactory = <S extends PrimitiveState>(
     return thisArg;
   };
 };
+
+const applyTargetAtFactory = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  _thisArg: any[],
+  parentTarget: any[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+) => {
+  return <T>(index: number): T | undefined => {
+    const item = parentTarget.at(index);
+    return proxyable(item)
+      ? createProxy(
+        item,
+        parentTarget,
+        firstLevelKey,
+        new Set(keyChains).add({ key: index }),
+        applyOriginFunction,
+      ) as T
+      : item;
+  };
+};
 /** ============ Proxy factory for array prototype chain proxyable functions end ============ */
 
 /** ============ Proxy factory for map prototype chain proxyable functions start ============ */
@@ -383,10 +407,11 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   | ArrayPrototypeProxyableKeyType
   | MapPrototypeProxyableKeyType,
   | ArrayPrototypeProxyableLoopFactoryType
-  | ArrayPrototypeProxyableMutableArrayFactoryType
-  | ArrayPrototypeProxyableMutableArraySortFactoryType
-  | ArrayPrototypeProxyableMutableArraySpliceFactoryType
-  | ArrayPrototypeProxyableMutableArrayCopyWithinFactoryType
+  | ArrayPrototypeProxyableFactoryType
+  | ArrayPrototypeProxyableSortFactoryType
+  | ArrayPrototypeProxyableSpliceFactoryType
+  | ArrayPrototypeProxyableCopyWithinFactoryType
+  | ArrayPrototypeProxyableAtFactoryType
   | MapPrototypeProxyableGetFactoryType
 >()
   .set("forEach", applyTargetLoopFactory)
@@ -411,4 +436,5 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   .set("splice", applyTargetSpliceFactory)
   .set("toSpliced", applyTargetSpliceFactory)
   .set("copyWithin", applyTargetCopyWithinFactory)
+  .set("at", applyTargetAtFactory)
   .set("get", applyTargetGetFactory);

@@ -28,6 +28,7 @@ const arrayMapSetPrototypeProxyableSet = new Set<ArrayPrototypeProxyableValueTyp
   .add(Array.prototype.sort)
   .add(Array.prototype.splice)
   .add(Array.prototype.copyWithin)
+  .add(Array.prototype.at)
   .add(Map.prototype.get);
 
 export const isArrayMapSetPrototypeProxyable = (value: any): boolean => {

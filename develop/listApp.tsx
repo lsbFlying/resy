@@ -13,13 +13,16 @@ const useStore = defineStore({
     { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
   ],
   updateList() {
-    this.list[2].name = `${Math.floor(Math.random() * 1000)}`;
+    // this.list[2].name = `${Math.floor(Math.random() * 1000)}`;
     // this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });
     // this.list.forEach((item, index, array) => {
     //   if (index === array.length - 1) {
     //     item.name = `${Math.floor(Math.random() * 1000)}`;
     //   }
     // });
+    const lastItem = this.list.at(0)!;
+    console.log(lastItem);
+    lastItem.name = "hello";
   },
   updateList2() {
     this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });

@@ -33,10 +33,13 @@ export type ArrayPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   | "pop"
   | "fill"
   | "reverse"
+  | "toReversed"
   | "shift"
   | "unshift"
   | "sort"
+  | "toSorted"
   | "splice"
+  | "toSpliced"
   | "copyWithin"
 >;
 export type ArrayPrototypeProxyableKeyType = keyof ArrayPrototypeProxyableType;

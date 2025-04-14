@@ -403,9 +403,12 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   .set("pop", applyTargetPopFactory)
   .set("fill", applyTargetFillFactory)
   .set("reverse", applyTargetReverseFactory)
+  .set("toReversed", applyTargetReverseFactory)
   .set("shift", applyTargetShiftFactory)
   .set("unshift", applyTargetUnshiftFactory)
   .set("sort", applyTargetSortFactory)
+  .set("toSorted", applyTargetSortFactory)
   .set("splice", applyTargetSpliceFactory)
+  .set("toSpliced", applyTargetSpliceFactory)
   .set("copyWithin", applyTargetCopyWithinFactory)
   .set("get", applyTargetGetFactory);

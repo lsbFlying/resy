@@ -285,6 +285,7 @@ const applyTargetSpliceFactory = <S extends PrimitiveState>(
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
+    // This is consistent with the return comment of the `applyTargetPopFactory` function.
     return deleteResult;
   };
 };

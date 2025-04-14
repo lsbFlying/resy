@@ -323,7 +323,7 @@ const applyTargetCopyWithinFactory = <S extends PrimitiveState>(
 
     const changedPrevCondition = copyLength > 0 && normalizedTarget < initLength;
 
-    let copyAndTargetIsEqual = true;
+    let copyAndTargetIsEqual = changedPrevCondition;
     if (changedPrevCondition) {
       for (
         let sourceIdx = normalizedStart, targetIdx = normalizedTarget;

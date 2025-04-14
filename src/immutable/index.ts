@@ -175,6 +175,19 @@ const applyTargetReverseFactory = <S extends PrimitiveState>(
   };
 };
 
+const applyTargetToReversedFactory = <S extends PrimitiveState>(
+  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  thisArg: any[],
+  parentTarget: any[],
+) => {
+  return () => {
+    parentTarget.toReversed();
+    storeProxyWeakMap.delete(applyOriginFunction);
+    return thisArg;
+  };
+};
+
 const applyTargetShiftFactory = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
@@ -428,13 +441,12 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   .set("pop", applyTargetPopFactory)
   .set("fill", applyTargetFillFactory)
   .set("reverse", applyTargetReverseFactory)
-  .set("toReversed", applyTargetReverseFactory)
+  .set("toReversed", applyTargetToReversedFactory)
   .set("shift", applyTargetShiftFactory)
   .set("unshift", applyTargetUnshiftFactory)
   .set("sort", applyTargetSortFactory)
   .set("toSorted", applyTargetSortFactory)
   .set("splice", applyTargetSpliceFactory)
-  .set("toSpliced", applyTargetSpliceFactory)
   .set("copyWithin", applyTargetCopyWithinFactory)
   .set("at", applyTargetAtFactory)
   .set("get", applyTargetGetFactory);

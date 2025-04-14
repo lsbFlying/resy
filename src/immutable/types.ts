@@ -39,7 +39,6 @@ export type ArrayPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   | "sort"
   | "toSorted"
   | "splice"
-  | "toSpliced"
   | "copyWithin"
   | "at"
 >;

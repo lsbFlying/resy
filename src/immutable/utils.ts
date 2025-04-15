@@ -4,7 +4,7 @@ import type {
   ArrayPrototypeProxyableValueType, CreateProxyType, KeyChainsSourceItemType,
 } from "./types";
 
-const proxyableSet = new Set(["Object", "Array", "Map"]);
+const proxyableSet = new Set(["Object", "Array", "Map", "ArrayIterator"]);
 
 export const proxyable = (value: unknown): boolean => {
   return proxyableSet.has(whatsType(value));
@@ -32,6 +32,7 @@ const arrayMapSetPrototypeProxyableSet = new Set<ArrayPrototypeProxyableValueTyp
   .add(Array.prototype.splice)
   .add(Array.prototype.copyWithin)
   .add(Array.prototype.at)
+  .add(Array.prototype.values)
   .add(Map.prototype.get);
 
 export const isArrayMapSetPrototypeProxyable = (value: any): boolean => {
@@ -60,29 +61,38 @@ export const createNewRefValue = <T>(value: T): T => {
   }
 };
 
+/**
+ * @description Custom Iteration Handling for Iterable Data Types.
+ */
 export const iteratorProcessing = <S extends PrimitiveState>(
-  target: any[],
+  target: ArrayLike<S>,
   parentTarget: any[],
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
+  applyOriginFunction?: ArrayPrototypeProxyableValueType,
 ) => {
-  // TODO 暂时先考虑简单的数组类型（以便于满足数组的"..."扩展运算符），可能还涉及Iterator类型，waiting develop ...
-  if (whatsType(target) === "Array") {
+  const type = whatsType(target);
+  // TODO 目前先支持数组、数组迭代器类型
+  if (type === "Array" || type === "ArrayIterator") {
+    const iterators = type === "ArrayIterator"
+      ? (target as any as ArrayIterator<S>).toArray()
+      : target;
     // @ts-ignore
     target[Symbol.iterator] = () => {
       let index = -1;
       return {
         next() {
           index++;
-          return index < (target as any[])?.length
+          return index < iterators?.length
             ? {
               done: false,
               value: createProxy(
-                (target as any[])?.[index],
+                iterators?.[index],
                 parentTarget,
                 firstLevelKey,
                 new Set(keyChains).add({ key: index }),
+                applyOriginFunction,
               ),
             }
             : { done: true };

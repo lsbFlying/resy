@@ -1,5 +1,5 @@
 import type { MapType, PrimitiveState, ValueOf } from "../types";
-import {
+import type {
   ProxyableType,
   CreateProxyType,
   ArrayPrototypeProxyableKeyType,
@@ -16,9 +16,10 @@ import {
   MapPrototypeProxyableGetFactoryType,
   MapPrototypeProxyableValueType,
   KeyChainsSourceItemType,
+  ArrayPrototypeProxyableValuesFactoryType,
 } from "./types";
 import type { Store } from "../store/types";
-import { proxyable } from "./utils";
+import { iteratorProcessing, proxyable } from "./utils";
 
 /** ============ Proxy factory for array prototype chain proxyable functions start ============ */
 const applyTargetLoopFactory = <S extends PrimitiveState>(
@@ -388,6 +389,25 @@ const applyTargetAtFactory = <S extends PrimitiveState>(
       : item;
   };
 };
+
+const applyTargetValuesFactory = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  _thisArg: any[],
+  parentTarget: any[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+) => {
+  return () => {
+    const iterators = parentTarget.values();
+    iteratorProcessing(
+      iterators as any, parentTarget, createProxy,
+      firstLevelKey, keyChains, applyOriginFunction,
+    );
+    return iterators;
+  };
+};
 /** ============ Proxy factory for array prototype chain proxyable functions end ============ */
 
 /** ============ Proxy factory for map prototype chain proxyable functions start ============ */
@@ -424,6 +444,7 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   | ArrayPrototypeProxyableSpliceFactoryType
   | ArrayPrototypeProxyableCopyWithinFactoryType
   | ArrayPrototypeProxyableAtFactoryType
+  | ArrayPrototypeProxyableValuesFactoryType
   | MapPrototypeProxyableGetFactoryType
 >()
   .set("forEach", applyTargetLoopFactory)
@@ -446,4 +467,5 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   .set("splice", applyTargetSpliceFactory)
   .set("copyWithin", applyTargetCopyWithinFactory)
   .set("at", applyTargetAtFactory)
+  .set("values", applyTargetValuesFactory)
   .set("get", applyTargetGetFactory);

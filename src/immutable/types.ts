@@ -39,6 +39,7 @@ export type ArrayPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   | "splice"
   | "copyWithin"
   | "at"
+  | "values"
 >;
 export type ArrayPrototypeProxyableKeyType = keyof ArrayPrototypeProxyableType;
 export type ArrayPrototypeProxyableValueType = ValueOf<ArrayPrototypeProxyableType>;
@@ -115,6 +116,18 @@ export type ArrayPrototypeProxyableAtFactoryType = <S extends PrimitiveState>(
 ) => ArrayPrototypeProxyableAtFactoryValueType;
 
 export type ArrayPrototypeProxyableAtFactoryValueType = <T>(index: number) => (T | undefined);
+
+export type ArrayPrototypeProxyableValuesFactoryType = <S extends PrimitiveState>(
+  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  thisArg: S[],
+  parentTarget: S[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+) => ArrayPrototypeProxyableValuesFactoryValueType;
+
+export type ArrayPrototypeProxyableValuesFactoryValueType = <T>() => ArrayIterator<T>;
 
 export type MapPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   Map<keyof T, ValueOf<T>>,

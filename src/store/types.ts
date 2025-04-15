@@ -27,7 +27,7 @@ export interface StoreOptions {
   readonly namespace?: string;
   /**
    * @description Create the next immutable state tree by simply modifying the current tree
-   * @default undefined TODO 待此功能完全开发好之后会逐步以版本稳定升级进行设置为默认true
+   * @default undefined
    */
   readonly immutable?: boolean;
   /**

@@ -1,5 +1,8 @@
-import type { ArrayPrototypeProxyableValueType } from "./types";
 import { whatsType, typeString } from "../utils";
+import type { PrimitiveState } from "../types";
+import type {
+  ArrayPrototypeProxyableValueType, CreateProxyType, KeyChainsSourceItemType,
+} from "./types";
 
 const proxyableSet = new Set(["Object", "Array", "Map"]);
 
@@ -54,5 +57,37 @@ export const createNewRefValue = <T>(value: T): T => {
     //   return new Set(value as Iterable<unknown>) as T;
     default:
       return value;
+  }
+};
+
+export const iteratorProcessing = <S extends PrimitiveState>(
+  target: any[],
+  parentTarget: any[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+) => {
+  // TODO 暂时先考虑简单的数组类型（以便于满足数组的"..."扩展运算符），可能还涉及Iterator类型，waiting develop ...
+  if (whatsType(target) === "Array") {
+    // @ts-ignore
+    target[Symbol.iterator] = () => {
+      let index = -1;
+      return {
+        next() {
+          index++;
+          return index < (target as any[])?.length
+            ? {
+              done: false,
+              value: createProxy(
+                (target as any[])?.[index],
+                parentTarget,
+                firstLevelKey,
+                new Set(keyChains).add({ key: index }),
+              ),
+            }
+            : { done: true };
+        }
+      };
+    };
   }
 };

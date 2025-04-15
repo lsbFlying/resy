@@ -20,9 +20,18 @@ const useStore = defineStore({
     //     item.name = `${Math.floor(Math.random() * 1000)}`;
     //   }
     // });
-    const lastItem = this.list.at(0)!;
-    console.log(lastItem);
-    lastItem.name = "hello";
+    // const lastItem = this.list.at(0)!;
+    // console.log(lastItem);
+    // lastItem.name = "hello";
+    const listTemp = [...this.list.values()];
+    console.log(listTemp);
+    listTemp[0].name = "asdasdasdasd";
+
+    // const listTemp2 = [...this.list];
+    // console.log(listTemp2);
+    // listTemp2[0].age = 999;
+    // const newList = this.list.reverse();
+    // console.log(newList, listTemp);
   },
   updateList2() {
     this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });

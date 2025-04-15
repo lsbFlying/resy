@@ -17,7 +17,9 @@ import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import type { SchedulerType } from "../scheduler/types";
 import type { ArrayPrototypeProxyableValueType, KeyChainsSourceItemType } from "../immutable/types";
 import { __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ } from "../immutable";
-import { proxyable, createNewRefValue, isArrayMapSetPrototypeProxyable } from "../immutable/utils";
+import {
+  proxyable, createNewRefValue, isArrayMapSetPrototypeProxyable, iteratorProcessing,
+} from "../immutable/utils";
 import { scheduler } from "../scheduler";
 import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__,
@@ -347,6 +349,8 @@ export const createStore = <S extends PrimitiveState>(
     if (spw) return spw;
 
     const isStateMap = target === stateMap;
+
+    iteratorProcessing(target as any[], parentTarget, createProxy, firstLevelKey, keyChains);
 
     const sp = new Proxy(target, {
       get: (_: S, key: keyof S, receiver: any) => {

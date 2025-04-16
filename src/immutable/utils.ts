@@ -26,9 +26,11 @@ const arrayMapSetPrototypeProxyableSet = new Set<ArrayPrototypeProxyableValueTyp
   .add(Array.prototype.pop)
   .add(Array.prototype.fill)
   .add(Array.prototype.reverse)
+  .add(Array.prototype.toReversed)
   .add(Array.prototype.shift)
   .add(Array.prototype.unshift)
   .add(Array.prototype.sort)
+  .add(Array.prototype.toSorted)
   .add(Array.prototype.splice)
   .add(Array.prototype.copyWithin)
   .add(Array.prototype.at)
@@ -71,6 +73,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
   firstLevelKey?: keyof S,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
   applyOriginFunction?: ArrayPrototypeProxyableValueType,
+  toReversedFlag?: boolean,
 ) => {
   const type = whatsType(target);
   // TODO 目前先支持数组、数组迭代器类型
@@ -80,11 +83,13 @@ export const iteratorProcessing = <S extends PrimitiveState>(
       : target;
     // @ts-ignore
     target[Symbol.iterator] = () => {
-      let index = -1;
+      // Index and conditional processing for toReversed method
+      let index = !toReversedFlag ? -1 : iterators?.length;
       return {
         next() {
-          index++;
-          return index < iterators?.length
+          !toReversedFlag ? index++ : index--;
+          const condition = !toReversedFlag ? index < iterators?.length : index >= 0;
+          return condition
             ? {
               done: false,
               value: createProxy(

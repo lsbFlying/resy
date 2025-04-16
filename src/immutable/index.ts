@@ -176,6 +176,25 @@ const applyTargetReverseFactory = <S extends PrimitiveState>(
   };
 };
 
+const applyTargetToReversedFactory = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  _thisArg: any[],
+  parentTarget: any[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+) => {
+  return () => {
+    const iterators = parentTarget.toReversed();
+    iteratorProcessing(
+      iterators as any, parentTarget, createProxy, firstLevelKey,
+      keyChains, applyOriginFunction, true,
+    );
+    return [...iterators];
+  };
+};
+
 const applyTargetShiftFactory = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
@@ -268,6 +287,60 @@ const applyTargetSortFactory = <S extends PrimitiveState>(
     }
 
     return thisArg;
+  };
+};
+
+const applyTargetToSortedFactory = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  _thisArg: any[],
+  parentTarget: any[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+) => {
+  return <T>(compareFn?: (a: T, b: T) => number) => {
+    const iterators = parentTarget.toSorted((a: T, b: T) => {
+      return compareFn
+        ? compareFn(
+          proxyable(a)
+            ? createProxy(
+              a as ProxyableType<S>,
+              parentTarget,
+              firstLevelKey,
+              new Set(keyChains).add({ key: parentTarget.indexOf(a) }),
+              applyOriginFunction,
+            ) as T
+            : a,
+          proxyable(b)
+            ? createProxy(
+                b as ProxyableType<S>,
+                parentTarget,
+                firstLevelKey,
+                new Set(keyChains).add({ key: parentTarget.indexOf(b) }),
+                applyOriginFunction,
+            ) as T
+            : b,
+        )
+        : (a as any).toString().localeCompare((b as any).toString());
+    });
+
+    /**
+     * @description The processing of the `iteratorProcessing` method, combined with the `[...iterators]` return,
+     * enables subsequent write operations on array elements to have proxy interception.
+     * Additionally, during the execution of the `toSorted` method,
+     * array elements are already handled with proxy interception,
+     * and each array element proxy is bound to the element reference itself.
+     * In other words, when the `[...iterators]` operation executes the `createProxy` proxy operation again,
+     * it merely returns the proxy results from the previous `toSorted` method.
+     * Refer to the code snippet:
+     * `const spw = storeProxyWeakMap.get(target); if (spw) return spw;`.
+     */
+    iteratorProcessing(
+      iterators as any, parentTarget, createProxy,
+      firstLevelKey, keyChains, applyOriginFunction,
+    );
+    return [...iterators];
   };
 };
 
@@ -461,9 +534,11 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   .set("pop", applyTargetPopFactory)
   .set("fill", applyTargetFillFactory)
   .set("reverse", applyTargetReverseFactory)
+  .set("toReversed", applyTargetToReversedFactory)
   .set("shift", applyTargetShiftFactory)
   .set("unshift", applyTargetUnshiftFactory)
   .set("sort", applyTargetSortFactory)
+  .set("toSorted", applyTargetToSortedFactory)
   .set("splice", applyTargetSpliceFactory)
   .set("copyWithin", applyTargetCopyWithinFactory)
   .set("at", applyTargetAtFactory)

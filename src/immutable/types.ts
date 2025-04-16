@@ -29,6 +29,7 @@ export type ArrayPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   | "every"
   | "some"
   | "flatMap"
+  | "flat"
   | "push"
   | "pop"
   | "fill"
@@ -153,6 +154,18 @@ export type ArrayPrototypeProxyableEntriesFactoryType = <S extends PrimitiveStat
 ) => ArrayPrototypeProxyableEntriesFactoryValueType;
 
 export type ArrayPrototypeProxyableEntriesFactoryValueType = <T>() => ArrayIterator<[number, T]>;
+
+export type ArrayPrototypeProxyableFlatFactoryType = <S extends PrimitiveState>(
+  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  thisArg: S[],
+  parentTarget: S[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+) => ArrayPrototypeProxyableFlatFactoryValueType;
+
+export type ArrayPrototypeProxyableFlatFactoryValueType = <A, D extends number = 1>(this: A, depth?: D) => FlatArray<A, D>[];
 
 export type MapPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   Map<keyof T, ValueOf<T>>,

@@ -22,6 +22,7 @@ const arrayMapSetPrototypeProxyableSet = new Set<ArrayPrototypeProxyableValueTyp
   .add(Array.prototype.every)
   .add(Array.prototype.some)
   .add(Array.prototype.flatMap)
+  .add(Array.prototype.flat)
   .add(Array.prototype.push)
   .add(Array.prototype.pop)
   .add(Array.prototype.fill)

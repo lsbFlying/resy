@@ -5,12 +5,12 @@ let test: any;
 
 const useStore = defineStore({
   list: [
-    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
-    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
-    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
-    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
-    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
-    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    [{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }],
+    [{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }],
+    [{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }],
+    [{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }],
+    [{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }],
+    [{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }],
   ],
   updateList() {
     // this.list[2].name = `${Math.floor(Math.random() * 1000)}`;
@@ -23,9 +23,21 @@ const useStore = defineStore({
     // const lastItem = this.list.at(0)!;
     // console.log(lastItem);
     // lastItem.name = "hello";
-    const listTemp = [...this.list.values()];
+    // const listTemp = this.list.concat([
+    //   { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    //   { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    // ]);
+    // console.log(listTemp);
+    // listTemp.forEach((item, index) => {
+    //   console.log(item, index);
+    // });
+    const listTemp = this.list.flat();
     console.log(listTemp);
-    listTemp[0].name = "asdasdasdasd";
+    listTemp.forEach((item, index) => {
+      console.log(item, index);
+    });
+    // console.log(listTemp.toArray());
+    // listTemp[0][1].name = "asdasdasdasd";
 
     // const listTemp2 = [...this.list];
     // console.log(listTemp2);
@@ -64,7 +76,8 @@ const App = () => {
       <button onClick={updateList3}>updateList3</button>
       <div>
         {
-          list.map((item, index) => {
+          list.map((itemOrigin, index) => {
+            const item = itemOrigin[0];
             return (
               <div key={`${item.name}${item.age}${index}`}>name:{item.name}; age:{item.age}</div>
             );

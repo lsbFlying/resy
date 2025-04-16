@@ -19,6 +19,7 @@ import type {
   ArrayPrototypeProxyableValuesFactoryType,
   ArrayPrototypeProxyableConcatFactoryType,
   ArrayPrototypeProxyableEntriesFactoryType,
+  ArrayPrototypeProxyableFlatFactoryType,
 } from "./types";
 import type { Store } from "../store/types";
 import { iteratorProcessing, proxyable } from "./utils";
@@ -52,6 +53,26 @@ const applyTargetLoopFactory = <S extends PrimitiveState>(
         thisArg,
       );
     }) as any;
+  };
+};
+
+const applyTargetFlatFactory = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  _thisArg: any[],
+  parentTarget: any[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+) => {
+  return function <A, D extends number = 1>(this: A, depth?: D) {
+    // TODO flat 有点难处理
+    const iterators = parentTarget.flat(depth);
+    iteratorProcessing(
+      iterators as any, parentTarget, createProxy, firstLevelKey,
+      keyChains, applyOriginFunction, undefined, true,
+    );
+    return iterators as FlatArray<A, D>[];
   };
 };
 
@@ -553,6 +574,7 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   | MapPrototypeProxyableGetFactoryType
   | ArrayPrototypeProxyableConcatFactoryType
   | ArrayPrototypeProxyableEntriesFactoryType
+  | ArrayPrototypeProxyableFlatFactoryType
 >()
   .set("forEach", applyTargetLoopFactory)
   .set("map", applyTargetLoopFactory)
@@ -564,6 +586,7 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   .set("every", applyTargetLoopFactory)
   .set("some", applyTargetLoopFactory)
   .set("flatMap", applyTargetLoopFactory)
+  .set("flat", applyTargetFlatFactory)
   .set("push", applyTargetPushFactory)
   .set("pop", applyTargetPopFactory)
   .set("fill", applyTargetFillFactory)

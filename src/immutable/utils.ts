@@ -35,6 +35,8 @@ const arrayMapSetPrototypeProxyableSet = new Set<ArrayPrototypeProxyableValueTyp
   .add(Array.prototype.copyWithin)
   .add(Array.prototype.at)
   .add(Array.prototype.values)
+  .add(Array.prototype.concat)
+  .add(Array.prototype.entries)
   .add(Map.prototype.get);
 
 export const isArrayMapSetPrototypeProxyable = (value: any): boolean => {
@@ -74,6 +76,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
   keyChains?: Set<KeyChainsSourceItemType<S>>,
   applyOriginFunction?: ArrayPrototypeProxyableValueType,
   toReversedFlag?: boolean,
+  entriesFlag?: boolean,
 ) => {
   const type = whatsType(target);
   // TODO 目前先支持数组、数组迭代器类型
@@ -81,24 +84,39 @@ export const iteratorProcessing = <S extends PrimitiveState>(
     const iterators = type === "ArrayIterator"
       ? (target as any as ArrayIterator<S>).toArray()
       : target;
+
     // @ts-ignore
     target[Symbol.iterator] = () => {
       // Index and conditional processing for toReversed method
       let index = !toReversedFlag ? -1 : iterators?.length;
+
       return {
         next() {
           !toReversedFlag ? index++ : index--;
+
           const condition = !toReversedFlag ? index < iterators?.length : index >= 0;
+
           return condition
             ? {
               done: false,
-              value: createProxy(
-                iterators?.[index],
-                parentTarget,
-                firstLevelKey,
-                new Set(keyChains).add({ key: index }),
-                applyOriginFunction,
-              ),
+              value: entriesFlag
+                ? [
+                  iterators?.[index][0],
+                  createProxy(
+                    iterators?.[index][1],
+                    parentTarget,
+                    firstLevelKey,
+                    new Set(keyChains).add({ key: index }),
+                    applyOriginFunction,
+                  ),
+                ]
+                : createProxy(
+                  iterators?.[index],
+                  parentTarget,
+                  firstLevelKey,
+                  new Set(keyChains).add({ key: index }),
+                  applyOriginFunction,
+                ),
             }
             : { done: true };
         }

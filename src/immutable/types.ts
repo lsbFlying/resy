@@ -42,6 +42,8 @@ export type ArrayPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   | "copyWithin"
   | "at"
   | "values"
+  | "concat"
+  | "entries"
 >;
 export type ArrayPrototypeProxyableKeyType = keyof ArrayPrototypeProxyableType;
 export type ArrayPrototypeProxyableValueType = ValueOf<ArrayPrototypeProxyableType>;
@@ -130,6 +132,27 @@ export type ArrayPrototypeProxyableValuesFactoryType = <S extends PrimitiveState
 ) => ArrayPrototypeProxyableValuesFactoryValueType;
 
 export type ArrayPrototypeProxyableValuesFactoryValueType = <T>() => ArrayIterator<T>;
+
+export type ArrayPrototypeProxyableConcatFactoryType = <S extends PrimitiveState>(
+  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  thisArg: S[],
+  parentTarget: S[],
+) => ArrayPrototypeProxyableConcatFactoryValueType;
+
+export type ArrayPrototypeProxyableConcatFactoryValueType = <T>(...items: (T | ConcatArray<T>)[]) => T[];
+
+export type ArrayPrototypeProxyableEntriesFactoryType = <S extends PrimitiveState>(
+  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  thisArg: S[],
+  parentTarget: S[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+) => ArrayPrototypeProxyableEntriesFactoryValueType;
+
+export type ArrayPrototypeProxyableEntriesFactoryValueType = <T>() => ArrayIterator<[number, T]>;
 
 export type MapPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   Map<keyof T, ValueOf<T>>,

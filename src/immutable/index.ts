@@ -17,6 +17,8 @@ import type {
   MapPrototypeProxyableValueType,
   KeyChainsSourceItemType,
   ArrayPrototypeProxyableValuesFactoryType,
+  ArrayPrototypeProxyableConcatFactoryType,
+  ArrayPrototypeProxyableEntriesFactoryType,
 } from "./types";
 import type { Store } from "../store/types";
 import { iteratorProcessing, proxyable } from "./utils";
@@ -481,6 +483,36 @@ const applyTargetValuesFactory = <S extends PrimitiveState>(
     return iterators;
   };
 };
+
+const applyTargetConcatFactory = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _applyOriginFunction: ArrayPrototypeProxyableValueType,
+  _thisArg: any[],
+  parentTarget: any[],
+) => {
+  return <T>(...items: (T | ConcatArray<T>)[]): T[] => {
+    return [...parentTarget].concat(...items);
+  };
+};
+
+const applyTargetEntriesFactory = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  _thisArg: any[],
+  parentTarget: any[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+) => {
+  return () => {
+    const iterators = parentTarget.entries();
+    iteratorProcessing(
+      iterators as any, parentTarget, createProxy, firstLevelKey,
+      keyChains, applyOriginFunction, undefined, true,
+    );
+    return iterators;
+  };
+};
 /** ============ Proxy factory for array prototype chain proxyable functions end ============ */
 
 /** ============ Proxy factory for map prototype chain proxyable functions start ============ */
@@ -519,6 +551,8 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   | ArrayPrototypeProxyableAtFactoryType
   | ArrayPrototypeProxyableValuesFactoryType
   | MapPrototypeProxyableGetFactoryType
+  | ArrayPrototypeProxyableConcatFactoryType
+  | ArrayPrototypeProxyableEntriesFactoryType
 >()
   .set("forEach", applyTargetLoopFactory)
   .set("map", applyTargetLoopFactory)
@@ -543,4 +577,6 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   .set("copyWithin", applyTargetCopyWithinFactory)
   .set("at", applyTargetAtFactory)
   .set("values", applyTargetValuesFactory)
+  .set("concat", applyTargetConcatFactory)
+  .set("entries", applyTargetEntriesFactory)
   .set("get", applyTargetGetFactory);

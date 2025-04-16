@@ -25,7 +25,7 @@ import { iteratorProcessing, proxyable } from "./utils";
 const applyTargetLoopFactory = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
-  _thisArg: any[],
+  thisArg: any[],
   parentTarget: any[],
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
@@ -35,7 +35,7 @@ const applyTargetLoopFactory = <S extends PrimitiveState>(
   return (callback: ArrayPrototypeProxyableCallbackType) => {
     return (
       parentTarget[applyTargetName] as ArrayPrototypeProxyableLoopFactoryValueType
-    )((item: any, index: number, array: any[]) => {
+    )((item: any, index: number) => {
       return callback(
         proxyable(item)
           ? createProxy(
@@ -47,7 +47,7 @@ const applyTargetLoopFactory = <S extends PrimitiveState>(
           )
           : item,
         index,
-        array,
+        thisArg,
       );
     }) as any;
   };

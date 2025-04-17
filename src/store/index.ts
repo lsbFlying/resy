@@ -253,8 +253,7 @@ export const createStore = <S extends PrimitiveState>(
       const changed = !Object.is(prevValue, value);
 
       const firstLevelValue = stateMap.get(firstLevelKey!);
-      const firstLevelValueType = whatsType(firstLevelValue);
-      const firstLevelValueIsMap = firstLevelValueType === "Map";
+      const firstLevelValueIsMap = whatsType(firstLevelValue) === "Map";
       const initialValue = firstLevelValueIsMap
         ? mapToObject(firstLevelValue as MapType<S>)
         : firstLevelValue;
@@ -314,10 +313,10 @@ export const createStore = <S extends PrimitiveState>(
            * it will show that the previous and current values are equal,
            * ultimately leading to the update being skipped.
            */
-          createNewRefValue(
+          (
             firstLevelValueIsMap
               ? objectToMap(initialValue as S)
-              : firstLevelValue
+              : createNewRefValue(firstLevelValue)
           ) as ValueOf<S>,
           isDelete,
           stateMap,

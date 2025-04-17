@@ -13,10 +13,10 @@ const useStore = defineStore({
     { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
   ],
   updateList() {
-    const newList = this.list.values();
+    const newList = [...this.list.values()];
     console.log(newList);
-    newList.next().value!.name = "hello";
-    // newList[1].name = "hello";
+    // newList.next().value!.name = "hello";
+    newList[1].name = "hello";
   },
   updateList2() {
     // this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });

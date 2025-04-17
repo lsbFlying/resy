@@ -45,6 +45,7 @@ import { useSubscription as useSubscriptionCore } from "../subscribe";
 import { willUpdatingProcessing } from "../subscribe/utils";
 import { __DEV__, batchUpdate } from "../static";
 import { useDebugValue, useEffect, useState } from "react";
+import { __GRANDPARENT_KEY__ } from "../immutable/static";
 
 /**
  * createStore
@@ -388,7 +389,7 @@ export const createStore = <S extends PrimitiveState>(
           return boundFnProcessing(key, value, target, stateMap, store);
         }
 
-        return value;
+        return key === __GRANDPARENT_KEY__ ? parentTarget : value;
       },
       set: (_: S, key: keyof S, value: ValueOf<S>) => singleUpdate(
         key, value, false, target, firstLevelKey,
@@ -405,8 +406,8 @@ export const createStore = <S extends PrimitiveState>(
       apply(applyOriginFunction: any, thisArg: any, argArray: any[]) {
         return Reflect.apply(
           __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__.get(applyOriginFunction.name)!(
-            storeProxyWeakMap, applyOriginFunction, thisArg,
-            parentTarget, createProxy, firstLevelKey, keyChains,
+            storeProxyWeakMap, applyOriginFunction, thisArg, parentTarget,
+            createProxy, firstLevelKey, keyChains, singleUpdate,
           ),
           thisArg,
           argArray,

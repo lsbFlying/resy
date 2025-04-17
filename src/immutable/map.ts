@@ -1,12 +1,16 @@
+/**
+ * @description prototype method proxies for map.
+ */
+
 import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type {
-  ProxyableType, CreateProxyType,
-  MapPrototypeProxyableValueType, KeyChainsSourceItemType,
+  ProxyableType, CreateProxyType, MapPrototypeProxyableValueType,
+  KeyChainsSourceItemType, ArrayPrototypeProxyableValueType,
 } from "./types";
 import type { Store } from "../store/types";
 import { proxyable } from "./utils";
+import { __GRANDPARENT_KEY__ } from "./static";
 
-/** ============ Proxy factory for map prototype chain proxyable functions start ============ */
 export const applyGetFactory = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
@@ -29,4 +33,41 @@ export const applyGetFactory = <S extends PrimitiveState>(
       : value;
   };
 };
-/** ============ Proxy factory for map prototype chain proxyable functions end ============ */
+
+export const applyClearFactory = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: MapPrototypeProxyableValueType,
+  thisArg: MapType<S>,
+  _parentTarget: MapType<S>,
+  _createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+  singleUpdate?: (
+    key: keyof S,
+    value: ValueOf<S>,
+    isDelete: boolean,
+    target?: object | S,
+    firstLevelKey?: keyof S,
+    keyChains?: Set<KeyChainsSourceItemType<S>>,
+    applyOriginFunction?: ArrayPrototypeProxyableValueType,
+  ) => boolean,
+) => {
+  return () => {
+    const curKey = Array.from(keyChains!).at(-1)?.key;
+    singleUpdate?.(
+      curKey!,
+      new Map() as ValueOf<S>,
+      false,
+      /**
+       * @description Here, the goal is actually to locate the parent node data of the map,
+       * which refers to the grandparent node data in the `keyChains` hierarchy
+       * of the proxy target object of the current `clear` prototype function.
+       */
+      // @ts-ignore
+      thisArg[__GRANDPARENT_KEY__],
+      firstLevelKey,
+      keyChains,
+      applyOriginFunction,
+    );
+  };
+};

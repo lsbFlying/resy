@@ -110,11 +110,12 @@ export type ArrayPrototypeProxyableFactoryType = <S extends PrimitiveState>(
 export type MapPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   Map<keyof T, ValueOf<T>>,
   | "get"
+  | "clear"
 >;
 export type MapPrototypeProxyableKeyType = keyof MapPrototypeProxyableType;
 export type MapPrototypeProxyableValueType = ValueOf<MapPrototypeProxyableType>;
 
-export type MapPrototypeProxyableGetFactoryType = <S extends PrimitiveState>(
+export type MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapType<S>,
@@ -122,6 +123,19 @@ export type MapPrototypeProxyableGetFactoryType = <S extends PrimitiveState>(
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
-) => MapPrototypeProxyableGetFactoryValueType<S>;
+  singleUpdate?: (
+    key: keyof S,
+    value: ValueOf<S>,
+    isDelete: boolean,
+    target: object | S,
+    firstLevelKey?: keyof S,
+    keyChains?: Set<KeyChainsSourceItemType<S>>,
+    applyOriginFunction?: ArrayPrototypeProxyableValueType,
+  ) => boolean,
+) => (
+  | MapPrototypeProxyableGetFactoryValueType<S>
+  | MapPrototypeProxyableClearFactoryValueType
+);
 
 export type MapPrototypeProxyableGetFactoryValueType<S extends PrimitiveState> = (key: keyof S) => ValueOf<S> | undefined;
+export type MapPrototypeProxyableClearFactoryValueType = () => void;

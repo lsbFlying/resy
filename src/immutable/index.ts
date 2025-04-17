@@ -1,10 +1,7 @@
 import type {
-  ArrayPrototypeProxyableKeyType,
-  MapPrototypeProxyableKeyType,
-  MapPrototypeProxyableGetFactoryType,
-  ArrayPrototypeProxyableFactoryType,
+  ArrayPrototypeProxyableKeyType, MapPrototypeProxyableKeyType,
+  ArrayPrototypeProxyableFactoryType, MapPrototypeProxyableFactoryType,
 } from "./types";
-import { applyGetFactory } from "./map";
 import {
   applyLoopFactory, applyPushFactory, applyPopFactory,
   applyFillFactory, applyReverseFactory, applyShiftFactory,
@@ -16,12 +13,13 @@ import {
   applyAtFactory, applyValuesFactory, applyConcatFactory,
   applyEntriesFactory, applySliceFactory, applyWithFactory,
 } from "./immutable-array";
+import { applyGetFactory, applyClearFactory } from "./map";
 
 export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   | ArrayPrototypeProxyableKeyType
   | MapPrototypeProxyableKeyType,
   | ArrayPrototypeProxyableFactoryType
-  | MapPrototypeProxyableGetFactoryType
+  | MapPrototypeProxyableFactoryType
 >()
   .set("forEach", applyLoopFactory)
   .set("map", applyLoopFactory)
@@ -53,4 +51,5 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   .set("reduceRight", applyReduceFactory)
   .set("slice", applySliceFactory)
   .set("with", applyWithFactory)
-  .set("get", applyGetFactory);
+  .set("get", applyGetFactory)
+  .set("clear", applyClearFactory);

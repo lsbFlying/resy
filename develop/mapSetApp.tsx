@@ -13,10 +13,10 @@ const infoObj = {
       name: "Liu-Shan-Bao",
     },
     bodyInfo: {
-      heightInfo: {
+      heightInfo: new Map(Object.entries({
         height: 170,
         reach: 170,
-      },
+      })),
       weightInfo: {
         weight: 64,
         level: "bantamweight",
@@ -36,10 +36,7 @@ type PersonInfo = {
     name: string;
   };
   bodyInfo: {
-    heightInfo: {
-      height: number;
-      reach: number;
-    };
+    heightInfo: Map<"height" | "reach", number>;
     weightInfo: {
       weight: number;
       level: string;
@@ -52,8 +49,10 @@ type Nationality = string;
 const useStore = defineStore({
   infoMap: new Map<"personInfo" | "nationality", PersonInfo | Nationality>(Object.entries(infoObj) as any),
   updateInfoMap() {
-    console.log((this.infoMap.get("personInfo") as PersonInfo)?.bodyInfo.weightInfo.weight);
-    (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.reach = Math.floor(Math.random() * 1000);
+    // console.log((this.infoMap.get("personInfo") as PersonInfo)?.bodyInfo.weightInfo.weight);
+    // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.reach = Math.floor(Math.random() * 1000);
+    // this.infoMap.clear();
+    (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.clear();
   },
 }, {
   immutable: true,
@@ -63,12 +62,14 @@ const App = () => {
   const { infoMap, updateInfoMap } = useStore();
   const nationality = infoMap.get("nationality") as string;
   const personInfo = infoMap.get("personInfo");
-  const { ageInfo, nameInfo, bodyInfo } = personInfo as any;
-  const { age, level: ageLevel } = ageInfo;
-  const { name } = nameInfo;
-  const { heightInfo, weightInfo } = bodyInfo;
-  const { height, reach } = heightInfo;
-  const { weight, level: weightLevel } = weightInfo;
+  const { ageInfo, nameInfo, bodyInfo } = personInfo as PersonInfo ?? {};
+  const { age, level: ageLevel } = ageInfo ?? {};
+  const { name } = nameInfo ?? {};
+  const { heightInfo, weightInfo } = bodyInfo ?? {};
+  // const { height, reach } = heightInfo ?? {};
+  const height = heightInfo?.get("height");
+  const reach = heightInfo?.get("reach");
+  const { weight, level: weightLevel } = weightInfo ?? {};
 
   useEffect(() => {
     console.log("infoMap");

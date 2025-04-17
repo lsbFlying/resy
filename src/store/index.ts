@@ -354,23 +354,6 @@ export const createStore = <S extends PrimitiveState>(
       firstLevelKey, keyChains, applyOriginFunction,
     );
 
-    const applyHandler: { apply?: ProxyHandler<S>["apply"] } = {};
-    if (typeof target === "function") {
-      /**
-       * TODO 这里的apply是针对Array、Map、Set类型的可代理的原型链函数而写的
-       */
-      applyHandler.apply = (applyOriginFunction: any, thisArg: any, argArray: any[]) => {
-        return Reflect.apply(
-          __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__.get(applyOriginFunction.name)!(
-            storeProxyWeakMap, applyOriginFunction, thisArg,
-            parentTarget, createProxy, firstLevelKey, keyChains,
-          ),
-          thisArg,
-          argArray,
-        );
-      };
-    }
-
     const sp = new Proxy(target, {
       get: (_: S, key: keyof S, receiver: any) => {
         protoPointStoreErrorProcessing(receiver, sp);
@@ -417,7 +400,19 @@ export const createStore = <S extends PrimitiveState>(
         key, undefined as ValueOf<S>, true, target, firstLevelKey,
         new Set(keyChains).add({ key }), applyOriginFunction,
       ),
-      ...applyHandler,
+      /**
+       * TODO 这里的apply是针对Array、Map、Set类型的可代理的原型链函数而写的
+       */
+      apply(applyOriginFunction: any, thisArg: any, argArray: any[]) {
+        return Reflect.apply(
+          __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__.get(applyOriginFunction.name)!(
+            storeProxyWeakMap, applyOriginFunction, thisArg,
+            parentTarget, createProxy, firstLevelKey, keyChains,
+          ),
+          thisArg,
+          argArray,
+        );
+      },
     } as ProxyHandler<S>) as Store<S>;
 
     storeProxyWeakMap.set(target, sp);

@@ -368,19 +368,19 @@ export const createStore = <S extends PrimitiveState>(
         isStateMap && stateKeysSet.add(key);
 
         // Proxy array prototype chain with proxyable functions
-        const IAPP = isArrayMapSetPrototypeProxyable(value);
-        if (immutable && (proxyable(value) || IAPP)) {
+        const IAMSPP = isArrayMapSetPrototypeProxyable(value);
+        if (immutable && (proxyable(value) || IAMSPP)) {
           return createProxy(
             value as object,
             target,
             firstLevelKey ?? key,
             (
               keyChains
-                ? IAPP
+                ? IAMSPP
                   ? new Set(keyChains)
                   : new Set(keyChains).add({ key })
                 // TODO map has get problem
-                // ? IAPP
+                // ? IAMSPP
                 //   ? keyChains
                 //   : keyChains.add({ key })
                 : new Set().add({ key })

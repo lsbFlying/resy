@@ -23,7 +23,7 @@ const useStore = defineStore({
     // // newList.next().value!.name = "hello";
     // newList[1].name = "hello";
     // todo 函数代理结合链式更新有问题
-    this.list.find(item => !!item.list)!.list![0].name = "hello ok";
+    this.list.at(0)!.list!.at(0)!.name = "hello ok";
     console.log(this.list);
   },
   updateList2() {

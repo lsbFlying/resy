@@ -30,6 +30,13 @@ export const whatsType = (value: unknown): NativeDataType => {
     case "[object Symbol]":
       return "Symbol";
 
+    case "[object Array Iterator]":
+      return "ArrayIterator";
+    case "[object Set Iterator]":
+      return "SetIterator";
+    case "[object Map Iterator]":
+      return "MapIterator";
+
     case "[object WeakSet]":
       return "WeakSet";
     case "[object WeakMap]":
@@ -49,12 +56,6 @@ export const whatsType = (value: unknown): NativeDataType => {
       return "Promise";
     case "[object AsyncFunction]":
       return "AsyncFunction";
-    case "[object Array Iterator]":
-      return "ArrayIterator";
-    case "[object Set Iterator]":
-      return "SetIterator";
-    case "[object Map Iterator]":
-      return "MapIterator";
     case "[object FormData]":
       return "FormData";
     case "[object Blob]":

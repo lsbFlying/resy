@@ -128,5 +128,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
         }
       };
     };
+    // @ts-ignore
+    type === "ArrayIterator" && (target.next = target[Symbol.iterator]().next);
   }
 };

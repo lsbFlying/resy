@@ -5,17 +5,18 @@ import { defineStore } from "../src";
 
 const useStore = defineStore({
   list: [
-    [[{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }]],
-    [[{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }]],
-    [[{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }]],
-    [[{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }]],
-    [[{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }]],
-    [[{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }]],
+    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
   ],
   updateList() {
-    const newList = this.list.flat();
+    const newList = this.list.values();
     console.log(newList);
-    newList[1][0].name = "hello";
+    newList.next().value!.name = "hello";
+    // newList[1].name = "hello";
   },
   updateList2() {
     // this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });
@@ -48,8 +49,7 @@ const App = () => {
       <button onClick={updateList3}>updateList3</button>
       <div>
         {
-          list.map((itemOrigin, index) => {
-            const item = itemOrigin[0][0];
+          list.map((item, index) => {
             return (
               <div key={`${item.name}${item.age}${index}`}>name:{item.name}; age:{item.age}</div>
             );

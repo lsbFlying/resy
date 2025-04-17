@@ -51,21 +51,28 @@ const applyTargetLoopFactory = <S extends PrimitiveState>(
 
 const applyTargetFlatFactory = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Store<S>>,
-  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  _applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
   parentTarget: any[],
-  createProxy: CreateProxyType<S>,
-  firstLevelKey?: keyof S,
-  keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => {
   return function <A, D extends number = 1>(this: A, depth?: D) {
-    // TODO flat 有点难处理
-    const iterators = parentTarget.flat(depth);
-    iteratorProcessing(
-      iterators as any, parentTarget, createProxy, firstLevelKey,
-      keyChains, applyOriginFunction, undefined, true,
-    );
-    return iterators as FlatArray<A, D>[];
+    const depthTemp = depth ?? 1;
+    const result = [] as FlatArray<A, D>[];
+
+    // Recursive simulation flat method
+    const flatten = (array: any[], currentDepth: number) => {
+      for (const item of array) {
+        if (Array.isArray(item) && currentDepth < depthTemp) {
+          flatten(item, currentDepth + 1); // 递归处理
+        } else {
+          result.push(item);
+        }
+      }
+    };
+
+    flatten(parentTarget, 0);
+
+    return result;
   };
 };
 

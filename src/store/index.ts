@@ -379,6 +379,10 @@ export const createStore = <S extends PrimitiveState>(
                 ? IAPP
                   ? new Set(keyChains)
                   : new Set(keyChains).add({ key })
+                // TODO map has get problem
+                // ? IAPP
+                //   ? keyChains
+                //   : keyChains.add({ key })
                 : new Set().add({ key })
             ) as Set<KeyChainsSourceItemType<S>>,
           );
@@ -404,6 +408,7 @@ export const createStore = <S extends PrimitiveState>(
        * TODO 这里的apply是针对Array、Map、Set类型的可代理的原型链函数而写的
        */
       apply(applyOriginFunction: any, thisArg: any, argArray: any[]) {
+        // TODO 这里父节点parentTarget可能不对，可能在哪一环节捕捉缺失
         return Reflect.apply(
           __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__.get(applyOriginFunction.name)!(
             storeProxyWeakMap, applyOriginFunction, thisArg, parentTarget,

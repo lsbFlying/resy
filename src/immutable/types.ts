@@ -1,5 +1,6 @@
 import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type { Store } from "../store/types";
+import { __GRANDPARENT_KEY__ } from "./static";
 
 export type ProxyableType<S extends PrimitiveState> = S | S[] | MapType<S>;
 
@@ -107,6 +108,10 @@ export type ArrayPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   | ArrayPrototypeProxyableReduceInitFactoryValueType
 );
 
+export type MapWithGrandparentKeyType<S extends PrimitiveState> = MapType<S> & {
+  [__GRANDPARENT_KEY__]: MapWithGrandparentKeyType<S>;
+};
+
 export type MapPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   Map<keyof T, ValueOf<T>>,
   | "get"
@@ -119,7 +124,7 @@ export type MapPrototypeProxyableValueType = ValueOf<MapPrototypeProxyableType>;
 export type MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
-  thisArg: MapType<S>,
+  thisArg: MapWithGrandparentKeyType<S>,
   parentTarget: MapType<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,

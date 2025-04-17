@@ -15,7 +15,9 @@ const infoObj = {
     bodyInfo: {
       heightInfo: new Map(Object.entries({
         height: 170,
-        reach: 170,
+        reach: {
+          value: 170
+        },
       })),
       weightInfo: {
         weight: 64,
@@ -36,7 +38,7 @@ type PersonInfo = {
     name: string;
   };
   bodyInfo: {
-    heightInfo: Map<"height" | "reach", number>;
+    heightInfo: Map<"height" | "reach", number | { value: number }>;
     weightInfo: {
       weight: number;
       level: string;
@@ -54,7 +56,19 @@ const useStore = defineStore({
     // this.infoMap.clear();
     // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.clear();
     // this.infoMap.delete("nationality");
-    (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.delete("reach");
+    // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.delete("reach");
+    console.log((
+      (
+        this.infoMap.get("personInfo") as PersonInfo
+      )!.bodyInfo.heightInfo as Map<"height" | "reach", number>
+    ).get("reach"));
+    // (
+    //   (
+    //     (
+    //       this.infoMap.get("personInfo") as PersonInfo
+    //     )!.bodyInfo.heightInfo as Map<"height" | "reach", number>
+    //   ).get("reach") as { value: number } | undefined
+    // )!.value = Math.floor(Math.random() * 1000);
   },
 }, {
   immutable: true,
@@ -69,8 +83,8 @@ const App = () => {
   const { name } = nameInfo ?? {};
   const { heightInfo, weightInfo } = bodyInfo ?? {};
   // const { height, reach } = heightInfo ?? {};
-  const height = heightInfo?.get("height");
-  const reach = heightInfo?.get("reach");
+  const height = heightInfo?.get("height") as number;
+  const reach = heightInfo?.get("reach") as { value: number };
   const { weight, level: weightLevel } = weightInfo ?? {};
 
   useEffect(() => {
@@ -102,7 +116,7 @@ const App = () => {
       <p>age-level:{ageLevel}</p>
       <p>name:{name}</p>
       <p>height:{height}</p>
-      <p>reach:{reach}</p>
+      <p>reach:{reach.value}</p>
       <p>weight:{weight}</p>
       <p>weight-level:{weightLevel}</p>
       <button onClick={updateInfoMap}>updateInfoMap</button>

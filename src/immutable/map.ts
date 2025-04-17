@@ -5,7 +5,7 @@
 import type { MapType, PrimitiveState, ValueOf } from "../types";
 import {
   ProxyableType, CreateProxyType, MapPrototypeProxyableValueType,
-  KeyChainsSourceItemType, ArrayPrototypeProxyableValueType, MapPrototypeProxyableFactoryType,
+  KeyChainsSourceItemType, ArrayPrototypeProxyableValueType, MapPrototypeProxyableFactoryType, MapWithGrandparentKeyType,
 } from "./types";
 import type { Store } from "../store/types";
 import { proxyable } from "./utils";
@@ -14,7 +14,7 @@ import { __GRANDPARENT_KEY__ } from "./static";
 export const applyGetFactory = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
-  _thisArg: MapType<S>,
+  _thisArg: MapWithGrandparentKeyType<S>,
   parentTarget: MapType<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
@@ -25,9 +25,12 @@ export const applyGetFactory = <S extends PrimitiveState>(
     return proxyable(value)
       ? createProxy(
         value as ProxyableType<S>,
+        // TODO 这里父节点可能不对
         parentTarget,
         firstLevelKey,
         new Set(keyChains).add({ key }),
+        // TODO map has get problem
+        // keyChains?.add({ key }),
         applyOriginFunction,
       ) as ValueOf<S>
       : value;
@@ -37,7 +40,7 @@ export const applyGetFactory = <S extends PrimitiveState>(
 export const applyClearFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
-  thisArg: MapType<S>,
+  thisArg: MapWithGrandparentKeyType<S>,
   _parentTarget: MapType<S>,
   _createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
@@ -63,7 +66,6 @@ export const applyClearFactory: MapPrototypeProxyableFactoryType = <S extends Pr
        * which refers to the grandparent node data in the `keyChains` hierarchy
        * of the proxy target object of the current `clear` prototype function.
        */
-      // @ts-ignore
       thisArg[__GRANDPARENT_KEY__],
       firstLevelKey,
       keyChains,
@@ -75,7 +77,7 @@ export const applyClearFactory: MapPrototypeProxyableFactoryType = <S extends Pr
 export const applyDeleteFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
-  thisArg: MapType<S>,
+  thisArg: MapWithGrandparentKeyType<S>,
   parentTarget: MapType<S>,
   _createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
@@ -97,7 +99,6 @@ export const applyDeleteFactory: MapPrototypeProxyableFactoryType = <S extends P
       curKey!,
       new Map(parentTarget) as ValueOf<S>,
       false,
-      // @ts-ignore
       thisArg[__GRANDPARENT_KEY__],
       firstLevelKey,
       keyChains,

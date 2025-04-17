@@ -344,6 +344,7 @@ export const createStore = <S extends PrimitiveState>(
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ArrayPrototypeProxyableValueType,
   ) => {
+    // TODO 这里的spw优化代理有问题，相同的方法但是可能是不同的层级，导致后续层级同一个方法可能就直接被返回了
     const spw = storeProxyWeakMap.get(target);
     if (spw) return spw;
 

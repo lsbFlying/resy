@@ -24,7 +24,7 @@ const useStore = defineStore({
     // newList[1].name = "hello";
     // todo 函数代理结合链式更新有问题
     this.list.at(0)!.list!.at(0)!.name = "hello ok";
-    console.log(this.list);
+    // console.log(this.list);
   },
   updateList2() {
     // this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });

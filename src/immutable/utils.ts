@@ -4,7 +4,7 @@ import type {
   ArrayPrototypeProxyableValueType, CreateProxyType, KeyChainsSourceItemType,
 } from "./types";
 
-const proxyableSet = new Set(["Object", "Array", "Map", "ArrayIterator"]);
+const proxyableSet = new Set(["Object", "Array", "Map"]);
 
 export const proxyable = (value: unknown): boolean => {
   return proxyableSet.has(whatsType(value));

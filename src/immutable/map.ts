@@ -3,9 +3,9 @@
  */
 
 import type { MapType, PrimitiveState, ValueOf } from "../types";
-import type {
+import {
   ProxyableType, CreateProxyType, MapPrototypeProxyableValueType,
-  KeyChainsSourceItemType, ArrayPrototypeProxyableValueType,
+  KeyChainsSourceItemType, ArrayPrototypeProxyableValueType, MapPrototypeProxyableFactoryType,
 } from "./types";
 import type { Store } from "../store/types";
 import { proxyable } from "./utils";
@@ -34,7 +34,7 @@ export const applyGetFactory = <S extends PrimitiveState>(
   };
 };
 
-export const applyClearFactory = <S extends PrimitiveState>(
+export const applyClearFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapType<S>,
@@ -46,7 +46,7 @@ export const applyClearFactory = <S extends PrimitiveState>(
     key: keyof S,
     value: ValueOf<S>,
     isDelete: boolean,
-    target?: object | S,
+    target: object | S,
     firstLevelKey?: keyof S,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ArrayPrototypeProxyableValueType,
@@ -63,6 +63,40 @@ export const applyClearFactory = <S extends PrimitiveState>(
        * which refers to the grandparent node data in the `keyChains` hierarchy
        * of the proxy target object of the current `clear` prototype function.
        */
+      // @ts-ignore
+      thisArg[__GRANDPARENT_KEY__],
+      firstLevelKey,
+      keyChains,
+      applyOriginFunction,
+    );
+  };
+};
+
+export const applyDeleteFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: MapPrototypeProxyableValueType,
+  thisArg: MapType<S>,
+  parentTarget: MapType<S>,
+  _createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+  singleUpdate?: (
+    key: keyof S,
+    value: ValueOf<S>,
+    isDelete: boolean,
+    target: object | S,
+    firstLevelKey?: keyof S,
+    keyChains?: Set<KeyChainsSourceItemType<S>>,
+    applyOriginFunction?: ArrayPrototypeProxyableValueType,
+  ) => boolean,
+) => {
+  return (key: keyof S) => {
+    const curKey = Array.from(keyChains!).at(-1)?.key;
+    parentTarget.delete(key);
+    return singleUpdate!(
+      curKey!,
+      new Map(parentTarget) as ValueOf<S>,
+      false,
       // @ts-ignore
       thisArg[__GRANDPARENT_KEY__],
       firstLevelKey,

@@ -52,7 +52,9 @@ const useStore = defineStore({
     // console.log((this.infoMap.get("personInfo") as PersonInfo)?.bodyInfo.weightInfo.weight);
     // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.reach = Math.floor(Math.random() * 1000);
     // this.infoMap.clear();
-    (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.clear();
+    // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.clear();
+    // this.infoMap.delete("nationality");
+    (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.delete("reach");
   },
 }, {
   immutable: true,

@@ -71,7 +71,7 @@ export const createNewRefValue = <T>(value: T): T => {
 };
 
 /**
- * @description Custom Iteration Handling for Iterable Data Types.
+ * @description Custom iteration processing for iterable data types.
  */
 export const iteratorProcessing = <S extends PrimitiveState>(
   target: ArrayLike<S>,
@@ -90,6 +90,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
       ? (target as any as ArrayIterator<S>).toArray()
       : target;
 
+    // Does not affect the primitive iterators on the prototype chain (prototype [Symbol. iterator])
     // @ts-ignore
     target[Symbol.iterator] = () => {
       // Index and conditional processing for toReversed method

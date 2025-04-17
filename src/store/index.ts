@@ -349,7 +349,7 @@ export const createStore = <S extends PrimitiveState>(
 
     const isStateMap = target === stateMap;
 
-    iteratorProcessing(
+    !isStateMap && iteratorProcessing(
       target as any[], parentTarget, createProxy,
       firstLevelKey, keyChains, applyOriginFunction,
     );

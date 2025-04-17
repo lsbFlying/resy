@@ -5,45 +5,17 @@ let test: any;
 
 const useStore = defineStore({
   list: [
-    [{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }],
-    [{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }],
-    [{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }],
-    [{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }],
-    [{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }],
-    [{ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) }],
+    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
   ],
   updateList() {
-    // this.list[2].name = `${Math.floor(Math.random() * 1000)}`;
-    // this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });
-    // this.list.forEach((item, index, array) => {
-    //   if (index === array.length - 1) {
-    //     item.name = `${Math.floor(Math.random() * 1000)}`;
-    //   }
-    // });
-    // const lastItem = this.list.at(0)!;
-    // console.log(lastItem);
-    // lastItem.name = "hello";
-    // const listTemp = this.list.concat([
-    //   { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
-    //   { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
-    // ]);
-    // console.log(listTemp);
-    // listTemp.forEach((item, index) => {
-    //   console.log(item, index);
-    // });
-    const listTemp = this.list.flat();
-    console.log(listTemp);
-    listTemp.forEach((item, index) => {
-      console.log(item, index);
-    });
-    // console.log(listTemp.toArray());
-    // listTemp[0][1].name = "asdasdasdasd";
-
-    // const listTemp2 = [...this.list];
-    // console.log(listTemp2);
-    // listTemp2[0].age = 999;
-    // const newList = this.list.reverse();
-    // console.log(newList, listTemp);
+    const newList = this.list.with(2, { name: "Heelo", age: 1 });
+    console.log(newList);
+    newList[0].name = "hello";
   },
   updateList2() {
     this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });
@@ -76,8 +48,7 @@ const App = () => {
       <button onClick={updateList3}>updateList3</button>
       <div>
         {
-          list.map((itemOrigin, index) => {
-            const item = itemOrigin[0];
+          list.map((item, index) => {
             return (
               <div key={`${item.name}${item.age}${index}`}>name:{item.name}; age:{item.age}</div>
             );

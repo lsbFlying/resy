@@ -265,7 +265,6 @@ export const createStore = <S extends PrimitiveState>(
         for (const item of keyChains!) {
           noneFirstLevelKeyChains.push(item.key);
         }
-        console.log("noneFirstLevelKeyChains:", noneFirstLevelKeyChains);
         noneFirstLevelKeyChains.shift();
 
         noneFirstLevelKeyChains.reduce((

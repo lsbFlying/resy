@@ -5,21 +5,14 @@ import type {
   ArrayPrototypeProxyableKeyType,
   ArrayPrototypeProxyableValueType,
   ArrayPrototypeProxyableCallbackType,
-  ArrayPrototypeProxyableLoopFactoryType,
   ArrayPrototypeProxyableLoopFactoryValueType,
-  ArrayPrototypeProxyableFactoryType,
-  ArrayPrototypeProxyableSortFactoryType,
-  ArrayPrototypeProxyableSpliceFactoryType,
-  ArrayPrototypeProxyableCopyWithinFactoryType,
-  ArrayPrototypeProxyableAtFactoryType,
   MapPrototypeProxyableKeyType,
   MapPrototypeProxyableGetFactoryType,
   MapPrototypeProxyableValueType,
   KeyChainsSourceItemType,
-  ArrayPrototypeProxyableValuesFactoryType,
-  ArrayPrototypeProxyableConcatFactoryType,
-  ArrayPrototypeProxyableEntriesFactoryType,
-  ArrayPrototypeProxyableFlatFactoryType,
+  ArrayPrototypeProxyableFactoryType,
+  ArrayPrototypeProxyableReduceFactoryValueType,
+  ArrayPrototypeProxyableReduceInitFactoryValueType,
 } from "./types";
 import type { Store } from "../store/types";
 import { iteratorProcessing, proxyable } from "./utils";
@@ -525,13 +518,89 @@ const applyTargetEntriesFactory = <S extends PrimitiveState>(
   firstLevelKey?: keyof S,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => {
-  return () => {
+  return <T>() => {
     const iterators = parentTarget.entries();
     iteratorProcessing(
       iterators as any, parentTarget, createProxy, firstLevelKey,
       keyChains, applyOriginFunction, undefined, true,
     );
-    return iterators;
+    return iterators as ArrayIterator<[number, T]>;
+  };
+};
+
+const applyTargetReduceFactory = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
+  thisArg: any[],
+  parentTarget: any[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+) => {
+  const applyTargetName = applyOriginFunction.name as ArrayPrototypeProxyableKeyType;
+  return <T>(callback: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T, initialValue: T) => {
+    const initialValueIsEmpty = initialValue === undefined || initialValue === null;
+    return (
+      initialValueIsEmpty
+        ? (
+          parentTarget[applyTargetName] as ArrayPrototypeProxyableReduceFactoryValueType
+        )((previousValue: T, currentValue: T, currentIndex: number) => {
+          return callback(
+            previousValue,
+            proxyable(currentValue)
+              ? createProxy(
+                currentValue as ProxyableType<S>,
+                parentTarget,
+                firstLevelKey,
+                new Set(keyChains).add({ key: currentIndex }),
+                applyOriginFunction,
+              ) as T
+              : currentValue,
+            currentIndex,
+            thisArg,
+          );
+        })
+        : (
+          parentTarget[applyTargetName] as ArrayPrototypeProxyableReduceInitFactoryValueType
+        )((previousValue: T, currentValue: T, currentIndex: number) => {
+          return callback(
+            previousValue,
+            proxyable(currentValue)
+              ? createProxy(
+                currentValue as ProxyableType<S>,
+                parentTarget,
+                firstLevelKey,
+                new Set(keyChains).add({ key: currentIndex }),
+                applyOriginFunction,
+              ) as T
+              : currentValue,
+            currentIndex,
+            thisArg,
+          );
+        }, initialValue)
+    ) as T;
+  };
+};
+
+const applyTargetSliceFactory = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _applyOriginFunction: ArrayPrototypeProxyableValueType,
+  _thisArg: any[],
+  parentTarget: any[],
+) => {
+  return (start?: number, end?: number) => {
+    return [...parentTarget].slice(start, end);
+  };
+};
+
+const applyTargetWithFactory = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _applyOriginFunction: ArrayPrototypeProxyableValueType,
+  _thisArg: any[],
+  parentTarget: any[],
+) => {
+  return <T>(index: number, value: T) => {
+    return [...parentTarget].with(index, value);
   };
 };
 /** ============ Proxy factory for array prototype chain proxyable functions end ============ */
@@ -564,17 +633,8 @@ const applyTargetGetFactory = <S extends PrimitiveState>(
 export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   | ArrayPrototypeProxyableKeyType
   | MapPrototypeProxyableKeyType,
-  | ArrayPrototypeProxyableLoopFactoryType
   | ArrayPrototypeProxyableFactoryType
-  | ArrayPrototypeProxyableSortFactoryType
-  | ArrayPrototypeProxyableSpliceFactoryType
-  | ArrayPrototypeProxyableCopyWithinFactoryType
-  | ArrayPrototypeProxyableAtFactoryType
-  | ArrayPrototypeProxyableValuesFactoryType
   | MapPrototypeProxyableGetFactoryType
-  | ArrayPrototypeProxyableConcatFactoryType
-  | ArrayPrototypeProxyableEntriesFactoryType
-  | ArrayPrototypeProxyableFlatFactoryType
 >()
   .set("forEach", applyTargetLoopFactory)
   .set("map", applyTargetLoopFactory)
@@ -602,4 +662,8 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   .set("values", applyTargetValuesFactory)
   .set("concat", applyTargetConcatFactory)
   .set("entries", applyTargetEntriesFactory)
+  .set("reduce", applyTargetReduceFactory)
+  .set("reduceRight", applyTargetReduceFactory)
+  .set("slice", applyTargetSliceFactory)
+  .set("with", applyTargetWithFactory)
   .set("get", applyTargetGetFactory);

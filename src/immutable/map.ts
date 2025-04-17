@@ -7,7 +7,7 @@ import type { Store } from "../store/types";
 import { proxyable } from "./utils";
 
 /** ============ Proxy factory for map prototype chain proxyable functions start ============ */
-export const applyTargetGetFactory = <S extends PrimitiveState>(
+export const applyGetFactory = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   _thisArg: MapType<S>,

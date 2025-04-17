@@ -4,17 +4,17 @@ import type {
   MapPrototypeProxyableGetFactoryType,
   ArrayPrototypeProxyableFactoryType,
 } from "./types";
-import { applyTargetGetFactory } from "./map";
+import { applyGetFactory } from "./map";
 import {
-  applyTargetLoopFactory, applyTargetPushFactory, applyTargetPopFactory,
-  applyTargetFillFactory, applyTargetReverseFactory, applyTargetShiftFactory,
-  applyTargetUnshiftFactory, applyTargetSortFactory, applyTargetSpliceFactory,
-  applyTargetCopyWithinFactory, applyTargetReduceFactory,
+  applyLoopFactory, applyPushFactory, applyPopFactory,
+  applyFillFactory, applyReverseFactory, applyShiftFactory,
+  applyUnshiftFactory, applySortFactory, applySpliceFactory,
+  applyCopyWithinFactory, applyReduceFactory,
 } from "./mutate-array";
 import {
-  applyTargetFlatFactory, applyTargetToReversedFactory, applyTargetToSortedFactory,
-  applyTargetAtFactory, applyTargetValuesFactory, applyTargetConcatFactory,
-  applyTargetEntriesFactory, applyTargetSliceFactory, applyTargetWithFactory,
+  applyFlatFactory, applyToReversedFactory, applyToSortedFactory,
+  applyAtFactory, applyValuesFactory, applyConcatFactory,
+  applyEntriesFactory, applySliceFactory, applyWithFactory,
 } from "./immutable-array";
 
 export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
@@ -23,34 +23,34 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   | ArrayPrototypeProxyableFactoryType
   | MapPrototypeProxyableGetFactoryType
 >()
-  .set("forEach", applyTargetLoopFactory)
-  .set("map", applyTargetLoopFactory)
-  .set("filter", applyTargetLoopFactory)
-  .set("find", applyTargetLoopFactory)
-  .set("findIndex", applyTargetLoopFactory)
-  .set("findLast", applyTargetLoopFactory)
-  .set("findLastIndex", applyTargetLoopFactory)
-  .set("every", applyTargetLoopFactory)
-  .set("some", applyTargetLoopFactory)
-  .set("flatMap", applyTargetLoopFactory)
-  .set("flat", applyTargetFlatFactory)
-  .set("push", applyTargetPushFactory)
-  .set("pop", applyTargetPopFactory)
-  .set("fill", applyTargetFillFactory)
-  .set("reverse", applyTargetReverseFactory)
-  .set("toReversed", applyTargetToReversedFactory)
-  .set("shift", applyTargetShiftFactory)
-  .set("unshift", applyTargetUnshiftFactory)
-  .set("sort", applyTargetSortFactory)
-  .set("toSorted", applyTargetToSortedFactory)
-  .set("splice", applyTargetSpliceFactory)
-  .set("copyWithin", applyTargetCopyWithinFactory)
-  .set("at", applyTargetAtFactory)
-  .set("values", applyTargetValuesFactory)
-  .set("concat", applyTargetConcatFactory)
-  .set("entries", applyTargetEntriesFactory)
-  .set("reduce", applyTargetReduceFactory)
-  .set("reduceRight", applyTargetReduceFactory)
-  .set("slice", applyTargetSliceFactory)
-  .set("with", applyTargetWithFactory)
-  .set("get", applyTargetGetFactory);
+  .set("forEach", applyLoopFactory)
+  .set("map", applyLoopFactory)
+  .set("filter", applyLoopFactory)
+  .set("find", applyLoopFactory)
+  .set("findIndex", applyLoopFactory)
+  .set("findLast", applyLoopFactory)
+  .set("findLastIndex", applyLoopFactory)
+  .set("every", applyLoopFactory)
+  .set("some", applyLoopFactory)
+  .set("flatMap", applyLoopFactory)
+  .set("flat", applyFlatFactory)
+  .set("push", applyPushFactory)
+  .set("pop", applyPopFactory)
+  .set("fill", applyFillFactory)
+  .set("reverse", applyReverseFactory)
+  .set("toReversed", applyToReversedFactory)
+  .set("shift", applyShiftFactory)
+  .set("unshift", applyUnshiftFactory)
+  .set("sort", applySortFactory)
+  .set("toSorted", applyToSortedFactory)
+  .set("splice", applySpliceFactory)
+  .set("copyWithin", applyCopyWithinFactory)
+  .set("at", applyAtFactory)
+  .set("values", applyValuesFactory)
+  .set("concat", applyConcatFactory)
+  .set("entries", applyEntriesFactory)
+  .set("reduce", applyReduceFactory)
+  .set("reduceRight", applyReduceFactory)
+  .set("slice", applySliceFactory)
+  .set("with", applyWithFactory)
+  .set("get", applyGetFactory);

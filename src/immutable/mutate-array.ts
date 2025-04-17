@@ -17,7 +17,7 @@ import type {
 import type { Store } from "../store/types";
 import { proxyable } from "./utils";
 
-export const applyTargetLoopFactory = <S extends PrimitiveState>(
+export const applyLoopFactory = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
@@ -26,10 +26,10 @@ export const applyTargetLoopFactory = <S extends PrimitiveState>(
   firstLevelKey?: keyof S,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => {
-  const applyTargetName = applyOriginFunction.name as ArrayPrototypeProxyableKeyType;
+  const applyName = applyOriginFunction.name as ArrayPrototypeProxyableKeyType;
   return (callback: ArrayPrototypeProxyableCallbackType) => {
     return (
-      parentTarget[applyTargetName] as ArrayPrototypeProxyableLoopFactoryValueType
+      parentTarget[applyName] as ArrayPrototypeProxyableLoopFactoryValueType
     )((item: any, index: number) => {
       return callback(
         proxyable(item)
@@ -48,7 +48,7 @@ export const applyTargetLoopFactory = <S extends PrimitiveState>(
   };
 };
 
-export const applyTargetPushFactory = <S extends PrimitiveState>(
+export const applyPushFactory = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
@@ -71,7 +71,7 @@ export const applyTargetPushFactory = <S extends PrimitiveState>(
   };
 };
 
-export const applyTargetPopFactory = <S extends PrimitiveState>(
+export const applyPopFactory = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
@@ -103,7 +103,7 @@ export const applyTargetPopFactory = <S extends PrimitiveState>(
   };
 };
 
-export const applyTargetFillFactory = <S extends PrimitiveState>(
+export const applyFillFactory = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
@@ -141,7 +141,7 @@ export const applyTargetFillFactory = <S extends PrimitiveState>(
   };
 };
 
-export const applyTargetReverseFactory = <S extends PrimitiveState>(
+export const applyReverseFactory = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
@@ -171,7 +171,7 @@ export const applyTargetReverseFactory = <S extends PrimitiveState>(
   };
 };
 
-export const applyTargetShiftFactory = <S extends PrimitiveState>(
+export const applyShiftFactory = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
@@ -189,12 +189,12 @@ export const applyTargetShiftFactory = <S extends PrimitiveState>(
 
     storeProxyWeakMap.delete(applyOriginFunction);
 
-    // This is consistent with the return comment of the `applyTargetPopFactory` function.
+    // This is consistent with the return comment of the `applyPopFactory` function.
     return firstElement;
   };
 };
 
-export const applyTargetUnshiftFactory = <S extends PrimitiveState>(
+export const applyUnshiftFactory = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
@@ -213,7 +213,7 @@ export const applyTargetUnshiftFactory = <S extends PrimitiveState>(
   };
 };
 
-export const applyTargetSortFactory = <S extends PrimitiveState>(
+export const applySortFactory = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
@@ -266,7 +266,7 @@ export const applyTargetSortFactory = <S extends PrimitiveState>(
   };
 };
 
-export const applyTargetSpliceFactory = <S extends PrimitiveState>(
+export const applySpliceFactory = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
@@ -282,12 +282,12 @@ export const applyTargetSpliceFactory = <S extends PrimitiveState>(
       storeProxyWeakMap.delete(applyOriginFunction);
     }
 
-    // This is consistent with the return comment of the `applyTargetPopFactory` function.
+    // This is consistent with the return comment of the `applyPopFactory` function.
     return deleteResult;
   };
 };
 
-export const applyTargetCopyWithinFactory = <S extends PrimitiveState>(
+export const applyCopyWithinFactory = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
@@ -350,7 +350,7 @@ export const applyTargetCopyWithinFactory = <S extends PrimitiveState>(
   };
 };
 
-export const applyTargetReduceFactory = <S extends PrimitiveState>(
+export const applyReduceFactory = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Store<S>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
@@ -359,13 +359,13 @@ export const applyTargetReduceFactory = <S extends PrimitiveState>(
   firstLevelKey?: keyof S,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => {
-  const applyTargetName = applyOriginFunction.name as ArrayPrototypeProxyableKeyType;
+  const applyName = applyOriginFunction.name as ArrayPrototypeProxyableKeyType;
   return <T>(callback: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T, initialValue: T) => {
     const initialValueIsEmpty = initialValue === undefined || initialValue === null;
     return (
       initialValueIsEmpty
         ? (
-          parentTarget[applyTargetName] as ArrayPrototypeProxyableReduceFactoryValueType
+          parentTarget[applyName] as ArrayPrototypeProxyableReduceFactoryValueType
         )((previousValue: T, currentValue: T, currentIndex: number) => {
           return callback(
             previousValue,
@@ -383,7 +383,7 @@ export const applyTargetReduceFactory = <S extends PrimitiveState>(
           );
         })
         : (
-          parentTarget[applyTargetName] as ArrayPrototypeProxyableReduceInitFactoryValueType
+          parentTarget[applyName] as ArrayPrototypeProxyableReduceInitFactoryValueType
         )((previousValue: T, currentValue: T, currentIndex: number) => {
           return callback(
             previousValue,

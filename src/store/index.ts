@@ -293,9 +293,9 @@ export const createStore = <S extends PrimitiveState>(
          * In this scenario, the `applyOriginFunction` parameter appears,
          * which refers to the function property from the previous layer of proxy.
          *
-         * Since the `applyTargetLoopFactory` internally involves secondary proxying of array elements,
+         * Since the `applyLoopFactory` internally involves secondary proxying of array elements,
          * but the proxied array elements may not necessarily be updated,
-         * the removal operation is not handled immediately within `applyTargetLoopFactory`.
+         * the removal operation is not handled immediately within `applyLoopFactory`.
          * Instead, it is executed here within the logic branch that performs actual updates.
          */
         applyOriginFunction && storeProxyWeakMap.delete(applyOriginFunction);

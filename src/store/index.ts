@@ -393,7 +393,7 @@ export const createStore = <S extends PrimitiveState>(
           return boundFnProcessing(key, value, target, stateMap, store);
         }
 
-        return key === __GRANDPARENT_KEY__ ? parentTarget : value;
+        return key !== __GRANDPARENT_KEY__ ? value : parentTarget;
       },
       set: (_: S, key: keyof S, value: ValueOf<S>) => singleUpdate(
         key, value, false, target, firstLevelKey,

@@ -5,7 +5,12 @@ import { defineStore } from "../src";
 
 const useStore = defineStore({
   list: [
-    { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    {
+      name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100),
+      list: [
+        { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+      ],
+    },
     { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
     { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
     { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
@@ -13,10 +18,13 @@ const useStore = defineStore({
     { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
   ],
   updateList() {
-    const newList = [...this.list.values()];
-    console.log(newList);
-    // newList.next().value!.name = "hello";
-    newList[1].name = "hello";
+    // const newList = [...this.list.values()];
+    // console.log(newList);
+    // // newList.next().value!.name = "hello";
+    // newList[1].name = "hello";
+    // todo 函数代理结合链式更新有问题
+    this.list.find(item => !!item.list)!.list![0].name = "hello ok";
+    console.log(this.list);
   },
   updateList2() {
     // this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });
@@ -51,7 +59,12 @@ const App = () => {
         {
           list.map((item, index) => {
             return (
-              <div key={`${item.name}${item.age}${index}`}>name:{item.name}; age:{item.age}</div>
+              <div key={`${item.name}${item.age}${index}`}>
+                name:{item.name}; age:{item.age}
+                {index === 0 && (
+                  <div style={{ background: "red" }}>name:{item.list?.[0]?.name}; age:{item.list?.[0]?.age}</div>
+                )}
+              </div>
             );
           })
         }

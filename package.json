@@ -103,18 +103,14 @@
     "react",
     "state",
     "easy",
+    "react-state",
     "react-state-easy",
-    "signal",
-    "useSignal",
-    "createSignal",
-    "signal-react",
-    "react-signal",
     "reactive",
     "reactive-state",
+    "mobx",
     "redux",
     "store",
     "proxy",
-    "manager",
-    "management"
+    "manager"
   ]
 }

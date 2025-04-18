@@ -97,7 +97,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
   const AMS_IteratorFlag = type === "ArrayIterator" || type === "MapIterator";
 
   if (type === "Array" || AMS_IteratorFlag) {
-    const keys = parentTarget.keys().toArray();
+    const keys = type === "MapIterator" ? parentTarget.keys().toArray() : null;
     const iterators = AMS_IteratorFlag
       ? (target as any as ArrayMapSetIteratorType<S>).toArray()
       : target;
@@ -113,7 +113,16 @@ export const iteratorProcessing = <S extends PrimitiveState>(
 
           const condition = !toReversedFlag ? index < iterators.length : index >= 0;
 
-          const key = keys[index];
+          const key = entriesFlag
+            ? iterators[index][0]
+            /**
+             * @description In scenarios where the `map.values` method returns a `MapIterator`
+             * and cannot retrieve the associated keys,
+             * the `map.keys` method is used to obtain the corresponding keys for indexing.
+             */
+            : type === "MapIterator"
+              ? keys[index]
+              : index;
           const value = entriesFlag ? iterators[index][1] : iterators[index];
 
           return condition

@@ -82,9 +82,9 @@ const useStore = defineStore({
     // this.infoMap.forEach((value, key, map) => {
     //   console.log(value, key, map);
     // });
-    const values = this.infoMap.values();
+    const values = this.infoMap.entries();
     const a = values.next();
-    (a.value as any).bodyInfo.weightInfo.weight = 999;
+    (a.value as any[])[1].bodyInfo.weightInfo.weight = 999;
     // console.log(entries.next());
   },
 }, {

@@ -88,7 +88,7 @@ export const createNewRefValue = <T>(value: T): T => {
  * These methods are equipped with proxy handling.
  */
 export const iteratorProcessing = <S extends PrimitiveState>(
-  target: ArrayLikeIteratorsType<S>,
+  iterator: ArrayLikeIteratorsType<S>,
   parentTarget: ProxyableType<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
@@ -98,32 +98,32 @@ export const iteratorProcessing = <S extends PrimitiveState>(
   entriesFlag?: boolean,
 ) => {
   // If it has already been processed, return directly
-  if (target[__ITERATOR_META_PROCESSING_KEY__]) return;
+  if (iterator[__ITERATOR_META_PROCESSING_KEY__]) return;
 
-  const type = whatsType(target);
+  const type = whatsType(iterator);
 
   const AMS_IteratorFlag = type === "ArrayIterator" || type === "MapIterator";
 
   if (type === "Array" || AMS_IteratorFlag) {
     const keys = type === "MapIterator" ? parentTarget.keys().toArray() : null;
-    const iterators = AMS_IteratorFlag
-      ? (target as any as ArrayMapSetIteratorType<S>).toArray()
-      : target;
+    const iteratorArray = AMS_IteratorFlag
+      ? (iterator as any as ArrayMapSetIteratorType<S>).toArray()
+      : iterator;
 
     // Does not affect the primitive iterators on the prototype chain (prototype [Symbol. iterator])
-    target[Symbol.iterator] = () => {
+    iterator[Symbol.iterator] = () => {
       // Index and conditional processing for toReversed method
-      let index = !toReversedFlag ? -1 : iterators.length;
+      let index = !toReversedFlag ? -1 : iteratorArray.length;
 
       return {
         next() {
           !toReversedFlag ? index++ : index--;
 
-          const condition = !toReversedFlag ? index < iterators.length : index >= 0;
+          const condition = !toReversedFlag ? index < iteratorArray.length : index >= 0;
 
           if (condition) {
             const key = entriesFlag
-              ? iterators[index][0]
+              ? iteratorArray[index][0]
               /**
                * @description In scenarios where the `map.values` method returns a `MapIterator`
                * and cannot retrieve the associated keys,
@@ -132,7 +132,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
               : type === "MapIterator"
                 ? keys[index]
                 : index;
-            const value = entriesFlag ? iterators[index][1] : iterators[index];
+            const value = entriesFlag ? iteratorArray[index][1] : iteratorArray[index];
 
             return {
               done: false,
@@ -164,8 +164,8 @@ export const iteratorProcessing = <S extends PrimitiveState>(
         }
       };
     };
-    AMS_IteratorFlag && (target.next = target[Symbol.iterator]().next);
+    AMS_IteratorFlag && (iterator.next = iterator[Symbol.iterator]().next);
     // Mark processed
-    target[__ITERATOR_META_PROCESSING_KEY__] = true;
+    iterator[__ITERATOR_META_PROCESSING_KEY__] = true;
   }
 };

@@ -1,8 +1,8 @@
 import { whatsType, typeString } from "../utils";
 import type { PrimitiveState } from "../types";
 import type {
-  ApplyOriginFunctionType, ArrayLikeIteratorsType,
-  CreateProxyType, KeyChainsSourceItemType, ProxyableType,
+  ApplyOriginFunctionType, ArrayLikeIteratorsType, CreateProxyType,
+  KeyChainsSourceItemType, ProxyableType, ArrayMapSetIteratorType,
 } from "./types";
 
 const proxyableSet = new Set(["Object", "Array", "Map"]);
@@ -13,6 +13,7 @@ export const proxyable = (value: unknown): boolean => {
 
 // A collection of functions that can be executed by proxies for arrays, Maps, and Set prototype chains.
 const arrayMapSetPrototypeProxyableSet = new Set<ApplyOriginFunctionType>()
+  // array
   .add(Array.prototype.forEach)
   .add(Array.prototype.map)
   .add(Array.prototype.filter)
@@ -43,12 +44,14 @@ const arrayMapSetPrototypeProxyableSet = new Set<ApplyOriginFunctionType>()
   .add(Array.prototype.reduceRight)
   .add(Array.prototype.slice)
   .add(Array.prototype.with)
+  // map
   .add(Map.prototype.get)
   .add(Map.prototype.clear)
   .add(Map.prototype.delete)
   .add(Map.prototype.set)
   .add(Map.prototype.forEach)
-  .add(Map.prototype.values);
+  .add(Map.prototype.values)
+  .add(Map.prototype.entries);
 
 export const isArrayMapSetPrototypeProxyable = (value: any): boolean => {
   return arrayMapSetPrototypeProxyableSet.has(value);
@@ -91,9 +94,12 @@ export const iteratorProcessing = <S extends PrimitiveState>(
 ) => {
   const type = whatsType(target);
 
-  if (type === "Array" || type === "ArrayIterator") {
-    const iterators = type === "ArrayIterator"
-      ? (target as any as ArrayIterator<S>).toArray()
+  const AMS_IteratorFlag = type === "ArrayIterator" || type === "MapIterator";
+
+  if (type === "Array" || AMS_IteratorFlag) {
+    const keys = parentTarget.keys().toArray();
+    const iterators = AMS_IteratorFlag
+      ? (target as any as ArrayMapSetIteratorType<S>).toArray()
       : target;
 
     // Does not affect the primitive iterators on the prototype chain (prototype [Symbol. iterator])
@@ -107,73 +113,39 @@ export const iteratorProcessing = <S extends PrimitiveState>(
 
           const condition = !toReversedFlag ? index < iterators.length : index >= 0;
 
+          const key = keys[index];
+          const value = entriesFlag ? iterators[index][1] : iterators[index];
+
           return condition
             ? {
               done: false,
               value: entriesFlag
                 ? [
-                  iterators[index][0],
-                  createProxy(
-                    iterators[index][1],
+                  key,
+                  proxyable(value)
+                    ? createProxy(
+                      value,
+                      parentTarget,
+                      firstLevelKey,
+                      new Set(keyChains).add({ key }),
+                      applyOriginFunction,
+                    )
+                    : value,
+                ]
+                : proxyable(value)
+                  ? createProxy(
+                    value,
                     parentTarget,
                     firstLevelKey,
-                    new Set(keyChains).add({ key: index }),
+                    new Set(keyChains).add({ key }),
                     applyOriginFunction,
-                  ),
-                ]
-                : createProxy(
-                  iterators[index],
-                  parentTarget,
-                  firstLevelKey,
-                  new Set(keyChains).add({ key: index }),
-                  applyOriginFunction,
-                ),
+                  )
+                  : value,
             }
             : { done: true };
         }
       };
     };
-    type === "ArrayIterator" && (target.next = target[Symbol.iterator]().next);
-  }
-
-  if (type === "MapIterator") {
-    const keys = parentTarget.keys().toArray();
-    const iterators = (target as any as MapIterator<S>).toArray();
-
-    // Does not affect the primitive iterators on the prototype chain (prototype [Symbol. iterator])
-    target[Symbol.iterator] = () => {
-      let index = -1;
-
-      return {
-        next() {
-          index++;
-
-          return index < iterators.length
-            ? {
-              done: false,
-              value: entriesFlag
-                ? [
-                  keys[index][0],
-                  createProxy(
-                    iterators[index][1],
-                    parentTarget,
-                    firstLevelKey,
-                    new Set(keyChains).add({ key: keys[index] }),
-                    applyOriginFunction,
-                  ),
-                ]
-                : createProxy(
-                  iterators[index],
-                  parentTarget,
-                  firstLevelKey,
-                  new Set(keyChains).add({ key: keys[index] }),
-                  applyOriginFunction,
-                ),
-            }
-            : { done: true };
-        }
-      };
-    };
-    target.next = target[Symbol.iterator]().next;
+    AMS_IteratorFlag && (target.next = target[Symbol.iterator]().next);
   }
 };

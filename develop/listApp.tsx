@@ -18,9 +18,11 @@ const useStore = defineStore({
     { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
   ],
   updateList() {
-    const values = this.list.values();
-    const first = values.find((_, index) => index === 0);
-    first!.name = "hello world";
+    const newList = this.list.concat(
+      { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+      { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    );
+    newList[0].name = "123asd";
   },
   updateList2() {
     // this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });

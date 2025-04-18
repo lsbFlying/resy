@@ -356,6 +356,7 @@ export const createStore = <S extends PrimitiveState>(
 
     const isStateMap = target === stateMap;
 
+    // TODO 可以优化针对每一个immutable-array.ts里面的代理函数进行特殊节省执行
     !isStateMap && iteratorProcessing(
       target as ArrayLikeIteratorsType<S>, parentTarget, createProxy,
       firstLevelKey, keyChains, applyOriginFunction,

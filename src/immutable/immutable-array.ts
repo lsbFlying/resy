@@ -175,7 +175,7 @@ export const applyConcatFactory = <S extends PrimitiveState>(
   };
 };
 
-export const applyEntriesFactory = <S extends PrimitiveState>(
+export const applyArrayEntriesFactory = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],

@@ -193,3 +193,22 @@ export const applyMapValuesFactory: MapPrototypeProxyableFactoryType = <S extend
     return iterators;
   };
 };
+
+export const applyMapEntriesFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
+  applyOriginFunction: MapPrototypeProxyableValueType,
+  _thisArg: MapWithGrandparentKeyType<S>,
+  parentTarget: MapType<S>,
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+) => {
+  return () => {
+    const iterators = parentTarget.entries();
+    iteratorProcessing(
+      iterators as any as ArrayLikeIteratorsType<S>, parentTarget, createProxy,
+      firstLevelKey, keyChains, applyOriginFunction, undefined, true,
+    );
+    return iterators;
+  };
+};

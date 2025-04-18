@@ -11,11 +11,11 @@ import {
 import {
   applyFlatFactory, applyToReversedFactory, applyToSortedFactory,
   applyAtFactory, applyArrayValuesFactory, applyConcatFactory,
-  applyEntriesFactory, applySliceFactory, applyWithFactory,
+  applyArrayEntriesFactory, applySliceFactory, applyWithFactory,
 } from "./immutable-array";
 import {
-  applyGetFactory, applyClearFactory, applyDeleteFactory,
-  applySetFactory, applyForEachFactory, applyMapValuesFactory,
+  applyGetFactory, applyClearFactory, applyDeleteFactory, applySetFactory,
+  applyForEachFactory, applyMapValuesFactory, applyMapEntriesFactory,
 } from "./map";
 
 export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ = new Map<
@@ -49,7 +49,7 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ = new Map<
   .set(Array.prototype.at, applyAtFactory)
   .set(Array.prototype.values, applyArrayValuesFactory)
   .set(Array.prototype.concat, applyConcatFactory)
-  .set(Array.prototype.entries, applyEntriesFactory)
+  .set(Array.prototype.entries, applyArrayEntriesFactory)
   .set(Array.prototype.reduce, applyReduceFactory)
   .set(Array.prototype.reduceRight, applyReduceFactory)
   .set(Array.prototype.slice, applySliceFactory)
@@ -59,4 +59,5 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ = new Map<
   .set(Map.prototype.delete, applyDeleteFactory)
   .set(Map.prototype.set, applySetFactory)
   .set(Map.prototype.forEach, applyForEachFactory)
-  .set(Map.prototype.values, applyMapValuesFactory);
+  .set(Map.prototype.values, applyMapValuesFactory)
+  .set(Map.prototype.entries, applyMapEntriesFactory);

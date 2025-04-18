@@ -122,6 +122,7 @@ export type MapPrototypeProxyableType<T extends PrimitiveState = any> = Pick<
   | "set"
   | "forEach"
   | "values"
+  | "entries"
 >;
 // export type MapPrototypeProxyableKeyType = keyof MapPrototypeProxyableType;
 export type MapPrototypeProxyableValueType = ValueOf<MapPrototypeProxyableType>;
@@ -171,3 +172,5 @@ export type ArrayLikeIteratorsType<S extends PrimitiveState> = ArrayLike<S> & {
     done: boolean;
   },
 };
+
+export type ArrayMapSetIteratorType<S extends PrimitiveState> = ArrayIterator<S> | MapIterator<S> | SetIterator<S>;

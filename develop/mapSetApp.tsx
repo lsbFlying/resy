@@ -85,6 +85,7 @@ const useStore = defineStore({
     const values = this.infoMap.values();
     const a = values.next();
     (a.value as any).bodyInfo.weightInfo.weight = 999;
+    // console.log(entries.next());
   },
 }, {
   immutable: true,

@@ -15,7 +15,9 @@ import type { Unsubscribe, ListenerType } from "../subscribe/types";
 import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import type { SchedulerType } from "../scheduler/types";
-import type { ArrayPrototypeProxyableValueType, KeyChainsSourceItemType } from "../immutable/types";
+import type {
+  ApplyOriginFunctionType, ArrayLikeIteratorsType, KeyChainsSourceItemType,
+} from "../immutable/types";
 import { __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
 import {
   proxyable, createNewRefValue, isArrayMapSetPrototypeProxyable, iteratorProcessing,
@@ -242,7 +244,7 @@ export const createStore = <S extends PrimitiveState>(
     target: object | S = stateMap,
     firstLevelKey?: keyof S,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
-    applyOriginFunction?: ArrayPrototypeProxyableValueType,
+    applyOriginFunction?: ApplyOriginFunctionType,
   ): boolean => {
     if (target !== stateMap) {
       // During each update, the target here is the latest target object obtained by the previous agent,
@@ -346,7 +348,7 @@ export const createStore = <S extends PrimitiveState>(
     parentTarget: any = stateMap,
     firstLevelKey?: keyof S,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
-    applyOriginFunction?: ArrayPrototypeProxyableValueType,
+    applyOriginFunction?: ApplyOriginFunctionType,
   ) => {
     const spo = storeProxyWeakMap.get(target);
     const spw = spo?.get(keyChains);
@@ -355,7 +357,7 @@ export const createStore = <S extends PrimitiveState>(
     const isStateMap = target === stateMap;
 
     !isStateMap && iteratorProcessing(
-      target as any[], parentTarget, createProxy,
+      target as ArrayLikeIteratorsType<S>, parentTarget, createProxy,
       firstLevelKey, keyChains, applyOriginFunction,
     );
 
@@ -408,7 +410,6 @@ export const createStore = <S extends PrimitiveState>(
       // The `apply` here is written specifically for prototype chain functions
       // that are applicable to proxyable types such as `Array`, `Map`, and `Set`.
       apply(applyOriginFunction: any, thisArg: any, argArray: any[]) {
-        console.log(applyOriginFunction === Map.prototype.get);
         return Reflect.apply(
           __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
             storeProxyWeakMap, applyOriginFunction, thisArg, parentTarget,

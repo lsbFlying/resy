@@ -4,8 +4,8 @@
 
 import type { PrimitiveState } from "../types";
 import type {
-  ProxyableType, CreateProxyType,
-  ArrayPrototypeProxyableValueType, KeyChainsSourceItemType,
+  ProxyableType, CreateProxyType, ArrayPrototypeProxyableValueType,
+  KeyChainsSourceItemType, ArrayLikeIteratorsType,
 } from "./types";
 import type { Store } from "../store/types";
 import { iteratorProcessing, proxyable } from "./utils";
@@ -49,7 +49,7 @@ export const applyToReversedFactory = <S extends PrimitiveState>(
   return () => {
     const iterators = parentTarget.toReversed();
     iteratorProcessing(
-      iterators as any, parentTarget, createProxy, firstLevelKey,
+      iterators as any as ArrayLikeIteratorsType<S>, parentTarget, createProxy, firstLevelKey,
       keyChains, applyOriginFunction, true,
     );
     return [...iterators];
@@ -103,7 +103,7 @@ export const applyToSortedFactory = <S extends PrimitiveState>(
      * `const spo = storeProxyWeakMap.get(target); ...`.
      */
     iteratorProcessing(
-      iterators as any, parentTarget, createProxy,
+      iterators as any as ArrayLikeIteratorsType<S>, parentTarget, createProxy,
       firstLevelKey, keyChains, applyOriginFunction,
     );
     return [...iterators];
@@ -145,7 +145,7 @@ export const applyAtFactory = <S extends PrimitiveState>(
   };
 };
 
-export const applyValuesFactory = <S extends PrimitiveState>(
+export const applyArrayValuesFactory = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
@@ -157,7 +157,7 @@ export const applyValuesFactory = <S extends PrimitiveState>(
   return () => {
     const iterators = parentTarget.values();
     iteratorProcessing(
-      iterators as any, parentTarget, createProxy,
+      iterators as any as ArrayLikeIteratorsType<S>, parentTarget, createProxy,
       firstLevelKey, keyChains, applyOriginFunction,
     );
     return iterators;
@@ -187,7 +187,7 @@ export const applyEntriesFactory = <S extends PrimitiveState>(
   return <T>() => {
     const iterators = parentTarget.entries();
     iteratorProcessing(
-      iterators as any, parentTarget, createProxy, firstLevelKey,
+      iterators as any as ArrayLikeIteratorsType<S>, parentTarget, createProxy, firstLevelKey,
       keyChains, applyOriginFunction, undefined, true,
     );
     return iterators as ArrayIterator<[number, T]>;

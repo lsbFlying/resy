@@ -121,6 +121,7 @@ export type MapPrototypeProxyableType<T extends PrimitiveState = any> = Pick<
   | "delete"
   | "set"
   | "forEach"
+  | "values"
 >;
 // export type MapPrototypeProxyableKeyType = keyof MapPrototypeProxyableType;
 export type MapPrototypeProxyableValueType = ValueOf<MapPrototypeProxyableType>;
@@ -157,3 +158,16 @@ export type MapPrototypeProxyableSetFactoryValueType<S extends PrimitiveState> =
 export type MapPrototypeProxyableForEachFactoryValueType<S extends PrimitiveState> = (
   value: ValueOf<S>, key: keyof S, map: Map<keyof S, ValueOf<S>>
 ) => void;
+
+export type ArrayLikeIteratorsType<S extends PrimitiveState> = ArrayLike<S> & {
+  [Symbol.iterator]: () => {
+    next(): {
+      value?: ValueOf<S> | S[] | Store<S>;
+      done: boolean;
+    },
+  };
+  next(): {
+    value?: ValueOf<S> | S[] | Store<S>;
+    done: boolean;
+  },
+};

@@ -6,10 +6,10 @@ import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type {
   ProxyableType, CreateProxyType, MapPrototypeProxyableValueType,
   KeyChainsSourceItemType, MapPrototypeProxyableFactoryType,
-  MapWithGrandparentKeyType, ApplyOriginFunctionType,
+  MapWithGrandparentKeyType, ApplyOriginFunctionType, ArrayLikeIteratorsType,
 } from "./types";
 import type { Store } from "../store/types";
-import { proxyable } from "./utils";
+import { iteratorProcessing, proxyable } from "./utils";
 import { __GRANDPARENT_KEY__ } from "./static";
 
 export const applyGetFactory = <S extends PrimitiveState>(
@@ -172,5 +172,24 @@ export const applyForEachFactory: MapPrototypeProxyableFactoryType = <S extends 
         thisArg,
       );
     });
+  };
+};
+
+export const applyMapValuesFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
+  applyOriginFunction: MapPrototypeProxyableValueType,
+  _thisArg: MapWithGrandparentKeyType<S>,
+  parentTarget: MapType<S>,
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+) => {
+  return () => {
+    const iterators = parentTarget.values();
+    iteratorProcessing(
+      iterators as any as ArrayLikeIteratorsType<S>, parentTarget, createProxy,
+      firstLevelKey, keyChains, applyOriginFunction,
+    );
+    return iterators;
   };
 };

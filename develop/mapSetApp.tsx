@@ -79,9 +79,12 @@ const useStore = defineStore({
     //     this.infoMap.get("personInfo") as PersonInfo
     //   )!.bodyInfo.heightInfo as Map<"height" | "reach", number | { value: number }>
     // ).set("reach", { value: 987 });
-    this.infoMap.forEach((value, key, map) => {
-      console.log(value, key, map);
-    });
+    // this.infoMap.forEach((value, key, map) => {
+    //   console.log(value, key, map);
+    // });
+    const values = this.infoMap.values();
+    const a = values.next();
+    (a.value as any).bodyInfo.weightInfo.weight = 999;
   },
 }, {
   immutable: true,

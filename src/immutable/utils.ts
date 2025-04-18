@@ -1,8 +1,8 @@
 import { whatsType, typeString } from "../utils";
 import type { PrimitiveState } from "../types";
 import type {
-  ApplyOriginFunctionType, ArrayPrototypeProxyableValueType,
-  CreateProxyType, KeyChainsSourceItemType,
+  ApplyOriginFunctionType, ArrayLikeIteratorsType,
+  CreateProxyType, KeyChainsSourceItemType, ProxyableType,
 } from "./types";
 
 const proxyableSet = new Set(["Object", "Array", "Map"]);
@@ -47,7 +47,8 @@ const arrayMapSetPrototypeProxyableSet = new Set<ApplyOriginFunctionType>()
   .add(Map.prototype.clear)
   .add(Map.prototype.delete)
   .add(Map.prototype.set)
-  .add(Map.prototype.forEach);
+  .add(Map.prototype.forEach)
+  .add(Map.prototype.values);
 
 export const isArrayMapSetPrototypeProxyable = (value: any): boolean => {
   return arrayMapSetPrototypeProxyableSet.has(value);
@@ -79,42 +80,41 @@ export const createNewRefValue = <T>(value: T): T => {
  * @description Custom iteration processing for iterable data types.
  */
 export const iteratorProcessing = <S extends PrimitiveState>(
-  target: ArrayLike<S>,
-  parentTarget: any[],
+  target: ArrayLikeIteratorsType<S>,
+  parentTarget: ProxyableType<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
-  applyOriginFunction?: ArrayPrototypeProxyableValueType,
+  applyOriginFunction?: ApplyOriginFunctionType,
   toReversedFlag?: boolean,
   entriesFlag?: boolean,
 ) => {
   const type = whatsType(target);
-  // TODO 目前先支持数组、数组迭代器类型
+
   if (type === "Array" || type === "ArrayIterator") {
     const iterators = type === "ArrayIterator"
       ? (target as any as ArrayIterator<S>).toArray()
       : target;
 
     // Does not affect the primitive iterators on the prototype chain (prototype [Symbol. iterator])
-    // @ts-ignore
     target[Symbol.iterator] = () => {
       // Index and conditional processing for toReversed method
-      let index = !toReversedFlag ? -1 : iterators?.length;
+      let index = !toReversedFlag ? -1 : iterators.length;
 
       return {
         next() {
           !toReversedFlag ? index++ : index--;
 
-          const condition = !toReversedFlag ? index < iterators?.length : index >= 0;
+          const condition = !toReversedFlag ? index < iterators.length : index >= 0;
 
           return condition
             ? {
               done: false,
               value: entriesFlag
                 ? [
-                  iterators?.[index][0],
+                  iterators[index][0],
                   createProxy(
-                    iterators?.[index][1],
+                    iterators[index][1],
                     parentTarget,
                     firstLevelKey,
                     new Set(keyChains).add({ key: index }),
@@ -122,7 +122,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
                   ),
                 ]
                 : createProxy(
-                  iterators?.[index],
+                  iterators[index],
                   parentTarget,
                   firstLevelKey,
                   new Set(keyChains).add({ key: index }),
@@ -133,7 +133,47 @@ export const iteratorProcessing = <S extends PrimitiveState>(
         }
       };
     };
-    // @ts-ignore
     type === "ArrayIterator" && (target.next = target[Symbol.iterator]().next);
+  }
+
+  if (type === "MapIterator") {
+    const keys = parentTarget.keys().toArray();
+    const iterators = (target as any as MapIterator<S>).toArray();
+
+    // Does not affect the primitive iterators on the prototype chain (prototype [Symbol. iterator])
+    target[Symbol.iterator] = () => {
+      let index = -1;
+
+      return {
+        next() {
+          index++;
+
+          return index < iterators.length
+            ? {
+              done: false,
+              value: entriesFlag
+                ? [
+                  keys[index][0],
+                  createProxy(
+                    iterators[index][1],
+                    parentTarget,
+                    firstLevelKey,
+                    new Set(keyChains).add({ key: keys[index] }),
+                    applyOriginFunction,
+                  ),
+                ]
+                : createProxy(
+                  iterators[index],
+                  parentTarget,
+                  firstLevelKey,
+                  new Set(keyChains).add({ key: keys[index] }),
+                  applyOriginFunction,
+                ),
+            }
+            : { done: true };
+        }
+      };
+    };
+    target.next = target[Symbol.iterator]().next;
   }
 };

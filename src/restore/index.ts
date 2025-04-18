@@ -29,7 +29,7 @@ export const mergeStateKeys = <S extends PrimitiveState>(
       (
         Object.keys(reducerState) as (keyof S)[]
       ).concat(
-        Array.from(stateMap.keys())
+        stateMap.keys().toArray()
       )
     )
   );

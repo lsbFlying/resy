@@ -57,23 +57,28 @@ const useStore = defineStore({
     // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.clear();
     // this.infoMap.delete("nationality");
     // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.delete("reach");
-    console.log(1, (
-      (
-        this.infoMap.get("personInfo") as PersonInfo
-      )!.bodyInfo.heightInfo as Map<"height" | "reach", number>
-    ).get("reach"));
+    // console.log(1, (
+    //   (
+    //     this.infoMap.get("personInfo") as PersonInfo
+    //   )!.bodyInfo.heightInfo as Map<"height" | "reach", number>
+    // ).get("reach"));
+    // (
+    //   (
+    //     (
+    //       this.infoMap.get("personInfo") as PersonInfo
+    //     )!.bodyInfo.heightInfo as Map<"height" | "reach", number>
+    //   ).get("reach") as { value: number } | undefined
+    // )!.value = Math.floor(Math.random() * 1000);
+    // (
+    //   (
+    //     this.infoMap.get("personInfo") as PersonInfo
+    //   )!.bodyInfo.heightInfo as Map<"height" | "reach", number>
+    // ).delete("reach");
     (
       (
-        (
-          this.infoMap.get("personInfo") as PersonInfo
-        )!.bodyInfo.heightInfo as Map<"height" | "reach", number>
-      ).get("reach") as { value: number } | undefined
-    )!.value = Math.floor(Math.random() * 1000);
-    console.log(2, (
-      (
         this.infoMap.get("personInfo") as PersonInfo
-      )!.bodyInfo.heightInfo as Map<"height" | "reach", number>
-    ).get("reach"));
+      )!.bodyInfo.heightInfo as Map<"height" | "reach", number | { value: number }>
+    ).set("reach", { value: 987 });
   },
 }, {
   immutable: true,
@@ -121,7 +126,7 @@ const App = () => {
       <p>age-level:{ageLevel}</p>
       <p>name:{name}</p>
       <p>height:{height}</p>
-      <p>reach:{reach.value}</p>
+      <p>reach:{reach?.value}</p>
       <p>weight:{weight}</p>
       <p>weight-level:{weightLevel}</p>
       <button onClick={updateInfoMap}>updateInfoMap</button>

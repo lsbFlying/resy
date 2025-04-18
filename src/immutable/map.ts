@@ -3,9 +3,10 @@
  */
 
 import type { MapType, PrimitiveState, ValueOf } from "../types";
-import {
+import type {
   ProxyableType, CreateProxyType, MapPrototypeProxyableValueType,
-  KeyChainsSourceItemType, ArrayPrototypeProxyableValueType, MapPrototypeProxyableFactoryType, MapWithGrandparentKeyType,
+  KeyChainsSourceItemType, ArrayPrototypeProxyableValueType,
+  MapPrototypeProxyableFactoryType, MapWithGrandparentKeyType,
 } from "./types";
 import type { Store } from "../store/types";
 import { proxyable } from "./utils";
@@ -92,6 +93,39 @@ export const applyDeleteFactory: MapPrototypeProxyableFactoryType = <S extends P
   return (key: keyof S) => {
     const curKey = Array.from(keyChains!).at(-1)?.key;
     parentTarget.delete(key);
+    return singleUpdate!(
+      curKey!,
+      new Map(parentTarget) as ValueOf<S>,
+      false,
+      thisArg[__GRANDPARENT_KEY__],
+      firstLevelKey,
+      keyChains,
+      applyOriginFunction,
+    );
+  };
+};
+
+export const applySetFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
+  applyOriginFunction: MapPrototypeProxyableValueType,
+  thisArg: MapWithGrandparentKeyType<S>,
+  parentTarget: MapType<S>,
+  _createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+  singleUpdate?: (
+    key: keyof S,
+    value: ValueOf<S>,
+    isDelete: boolean,
+    target: object | S,
+    firstLevelKey?: keyof S,
+    keyChains?: Set<KeyChainsSourceItemType<S>>,
+    applyOriginFunction?: ArrayPrototypeProxyableValueType,
+  ) => boolean,
+) => {
+  return (key: keyof S, value: ValueOf<S>) => {
+    const curKey = Array.from(keyChains!).at(-1)?.key;
+    parentTarget.set(key, value);
     return singleUpdate!(
       curKey!,
       new Map(parentTarget) as ValueOf<S>,

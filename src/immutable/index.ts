@@ -13,7 +13,9 @@ import {
   applyAtFactory, applyValuesFactory, applyConcatFactory,
   applyEntriesFactory, applySliceFactory, applyWithFactory,
 } from "./immutable-array";
-import { applyGetFactory, applyClearFactory, applyDeleteFactory } from "./map";
+import {
+  applyGetFactory, applyClearFactory, applyDeleteFactory, applySetFactory,
+} from "./map";
 
 export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   | ArrayPrototypeProxyableKeyType
@@ -53,4 +55,5 @@ export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
   .set("with", applyWithFactory)
   .set("get", applyGetFactory)
   .set("clear", applyClearFactory)
-  .set("delete", applyDeleteFactory);
+  .set("delete", applyDeleteFactory)
+  .set("set", applySetFactory);

@@ -161,18 +161,13 @@ export const applyForEachFactory: MapPrototypeProxyableFactoryType = <S extends 
             ) as ValueOf<S>
           )
           : value,
-        // TODO key需要代理吗？？？
-        proxyable(key)
-          ? (
-            createProxy(
-              key as any as ProxyableType<S>,
-              parentTarget,
-              firstLevelKey,
-              new Set(keyChains).add({ key }),
-              applyOriginFunction,
-            ) as ValueOf<S>
-          )
-          : key,
+        /**
+         * @description There is no need to proxy the `key`.
+         * Even if the keys are reference types and the internal data of the referenced objects changes,
+         * it should not trigger changes in the `Map`,
+         * as the state of the `Map` depends on the key's reference rather than the key's content.
+         */
+        key,
         // TODO waiting test
         thisArg,
       );

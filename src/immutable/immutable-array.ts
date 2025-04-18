@@ -12,11 +12,19 @@ import { iteratorProcessing, proxyable } from "./utils";
 
 export const applyFlatFactory = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
-  _applyOriginFunction: ArrayPrototypeProxyableValueType,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
   parentTarget: any[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => {
   return function <A, D extends number = 1>(this: A, depth?: D) {
+    iteratorProcessing(
+      parentTarget as any as ArrayLikeIteratorsType<S>, parentTarget,
+      createProxy, firstLevelKey, keyChains, applyOriginFunction,
+    );
+
     const depthTemp = depth ?? 1;
     const result = [] as FlatArray<A, D>[];
 
@@ -24,7 +32,7 @@ export const applyFlatFactory = <S extends PrimitiveState>(
     const flatten = (array: any[], currentDepth: number) => {
       for (const item of array) {
         if (Array.isArray(item) && currentDepth < depthTemp) {
-          flatten(item, currentDepth + 1); // 递归处理
+          flatten(item, currentDepth + 1);
         } else {
           result.push(item);
         }
@@ -49,8 +57,8 @@ export const applyToReversedFactory = <S extends PrimitiveState>(
   return () => {
     const iterators = parentTarget.toReversed();
     iteratorProcessing(
-      iterators as any as ArrayLikeIteratorsType<S>, parentTarget, createProxy, firstLevelKey,
-      keyChains, applyOriginFunction, true,
+      iterators as any as ArrayLikeIteratorsType<S>, parentTarget, createProxy,
+      firstLevelKey, keyChains, applyOriginFunction, true,
     );
     return [...iterators];
   };
@@ -103,8 +111,8 @@ export const applyToSortedFactory = <S extends PrimitiveState>(
      * `const spo = storeProxyWeakMap.get(target); ...`.
      */
     iteratorProcessing(
-      iterators as any as ArrayLikeIteratorsType<S>, parentTarget, createProxy,
-      firstLevelKey, keyChains, applyOriginFunction,
+      iterators as any as ArrayLikeIteratorsType<S>, parentTarget,
+      createProxy, firstLevelKey, keyChains, applyOriginFunction,
     );
     return [...iterators];
   };
@@ -157,8 +165,8 @@ export const applyArrayValuesFactory = <S extends PrimitiveState>(
   return () => {
     const iterators = parentTarget.values();
     iteratorProcessing(
-      iterators as any as ArrayLikeIteratorsType<S>, parentTarget, createProxy,
-      firstLevelKey, keyChains, applyOriginFunction,
+      iterators as any as ArrayLikeIteratorsType<S>, parentTarget,
+      createProxy, firstLevelKey, keyChains, applyOriginFunction,
     );
     return iterators;
   };
@@ -166,11 +174,18 @@ export const applyArrayValuesFactory = <S extends PrimitiveState>(
 
 export const applyConcatFactory = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
-  _applyOriginFunction: ArrayPrototypeProxyableValueType,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
   parentTarget: any[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => {
   return <T>(...items: (T | ConcatArray<T>)[]): T[] => {
+    iteratorProcessing(
+      parentTarget as any as ArrayLikeIteratorsType<S>, parentTarget,
+      createProxy, firstLevelKey, keyChains, applyOriginFunction,
+    );
     return [...parentTarget].concat(...items);
   };
 };
@@ -196,22 +211,36 @@ export const applyArrayEntriesFactory = <S extends PrimitiveState>(
 
 export const applySliceFactory = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
-  _applyOriginFunction: ArrayPrototypeProxyableValueType,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
   parentTarget: any[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => {
   return (start?: number, end?: number) => {
+    iteratorProcessing(
+      parentTarget as any as ArrayLikeIteratorsType<S>, parentTarget,
+      createProxy, firstLevelKey, keyChains, applyOriginFunction,
+    );
     return [...parentTarget].slice(start, end);
   };
 };
 
 export const applyWithFactory = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
-  _applyOriginFunction: ArrayPrototypeProxyableValueType,
+  applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
   parentTarget: any[],
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => {
   return <T>(index: number, value: T) => {
+    iteratorProcessing(
+      parentTarget as any as ArrayLikeIteratorsType<S>, parentTarget,
+      createProxy, firstLevelKey, keyChains, applyOriginFunction,
+    );
     return [...parentTarget].with(index, value);
   };
 };

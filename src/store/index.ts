@@ -15,13 +15,9 @@ import type { Unsubscribe, ListenerType } from "../subscribe/types";
 import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import type { SchedulerType } from "../scheduler/types";
-import type {
-  ApplyOriginFunctionType, ArrayLikeIteratorsType, KeyChainsSourceItemType,
-} from "../immutable/types";
+import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import { __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
-import {
-  proxyable, createNewRefValue, isArrayMapSetPrototypeProxyable, iteratorProcessing,
-} from "../immutable/utils";
+import { proxyable, createNewRefValue, isArrayMapSetPrototypeProxyable } from "../immutable/utils";
 import { scheduler } from "../scheduler";
 import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__,
@@ -355,12 +351,6 @@ export const createStore = <S extends PrimitiveState>(
     if (spw) return spw;
 
     const isStateMap = target === stateMap;
-
-    // TODO 可以优化针对每一个immutable-array.ts里面的代理函数进行特殊节省执行
-    !isStateMap && iteratorProcessing(
-      target as ArrayLikeIteratorsType<S>, parentTarget, createProxy,
-      firstLevelKey, keyChains, applyOriginFunction,
-    );
 
     const sp = new Proxy(target, {
       get: (_: S, key: keyof S, receiver: any) => {

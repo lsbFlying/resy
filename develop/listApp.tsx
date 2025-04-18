@@ -18,10 +18,17 @@ const useStore = defineStore({
     { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
   ],
   updateList() {
-    const values = this.list.entries();
-    const a = values.next();
-    console.log(a.value);
-    (a.value as any[])[1].list[0].name = "asdasd";
+    // const values = this.list.entries();
+    // const a = values.next();
+    // console.log(a.value);
+    // (a.value as any[])[1].list[0].name = "asdasd";
+    // const newList = this.list.concat(
+    //   { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    //   { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
+    // );
+    // newList[0].name = "123asd";
+    // const newList = this.list.flat();
+    // newList[0].name = "123asd";
   },
   updateList2() {
     // this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });
@@ -54,6 +61,7 @@ const App = () => {
       <div>
         {
           list.map((item, index) => {
+            // const item = itemOrigin[0];
             return (
               <div key={`${item.name}${item.age}${index}`}>
                 name:{item.name}; age:{item.age}

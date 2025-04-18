@@ -27,6 +27,7 @@ export const applyLoopFactory = <S extends PrimitiveState>(
   keyChains?: Set<KeyChainsSourceItemType<S>>,
 ) => {
   const applyName = applyOriginFunction.name as ArrayPrototypeProxyableKeyType;
+  // TODO 待处理，比如find方法返回的数据可能没有代理，待检查
   return (callback: ArrayPrototypeProxyableCallbackType) => {
     return (
       parentTarget[applyName] as ArrayPrototypeProxyableLoopFactoryValueType

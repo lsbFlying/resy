@@ -1,6 +1,6 @@
 import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type { Store } from "../store/types";
-import { __GRANDPARENT_KEY__ } from "./static";
+import { __GRANDPARENT_KEY__, __ITERATOR_META_PROCESSING_KEY__ } from "./static";
 
 export type ProxyableType<S extends PrimitiveState> = S | S[] | MapType<S>;
 
@@ -171,6 +171,7 @@ export type ArrayLikeIteratorsType<S extends PrimitiveState> = ArrayLike<S> & {
     value?: ValueOf<S> | S[] | Store<S>;
     done: boolean;
   },
+  [__ITERATOR_META_PROCESSING_KEY__]: boolean;
 };
 
 export type ArrayMapSetIteratorType<S extends PrimitiveState> = ArrayIterator<S> | MapIterator<S> | SetIterator<S>;

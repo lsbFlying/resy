@@ -4,6 +4,7 @@ import type {
   ApplyOriginFunctionType, ArrayLikeIteratorsType, CreateProxyType,
   KeyChainsSourceItemType, ProxyableType, ArrayMapSetIteratorType,
 } from "./types";
+import { __ITERATOR_META_PROCESSING_KEY__ } from "./static";
 
 const proxyableSet = new Set(["Object", "Array", "Map"]);
 
@@ -92,6 +93,9 @@ export const iteratorProcessing = <S extends PrimitiveState>(
   toReversedFlag?: boolean,
   entriesFlag?: boolean,
 ) => {
+  // If it has already been processed, return directly
+  if (target[__ITERATOR_META_PROCESSING_KEY__]) return;
+
   const type = whatsType(target);
 
   const AMS_IteratorFlag = type === "ArrayIterator" || type === "MapIterator";
@@ -156,5 +160,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
       };
     };
     AMS_IteratorFlag && (target.next = target[Symbol.iterator]().next);
+    // Mark processed
+    target[__ITERATOR_META_PROCESSING_KEY__] = true;
   }
 };

@@ -132,8 +132,7 @@ export const createStore = <S extends PrimitiveState>(
 
     if (typeof state === "function") {
       // processing of prevState
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      stateTemp = (state as StateFnType<S>)(immutable ? store : mapToObject(stateMap));
+      stateTemp = (state as StateFnType<S>)(mapToObject(stateMap));
     }
 
     if (stateTemp !== null) {
@@ -166,8 +165,7 @@ export const createStore = <S extends PrimitiveState>(
     let stateTemp = state;
 
     if (typeof state === "function") {
-      // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      stateTemp = (state as StateFnType<S>)(immutable ? store : mapToObject(stateMap));
+      stateTemp = (state as StateFnType<S>)(mapToObject(stateMap));
     }
     // Borrowing setState to synchronize the update scheduling mechanism of Resy itself.
     setState(stateTemp, callback);

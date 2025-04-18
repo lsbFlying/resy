@@ -29,6 +29,9 @@ const useStore = defineStore({
     // newList[0].name = "123asd";
     // const newList = this.list.flat();
     // newList[0].name = "123asd";
+    for (const listElement of this.list) {
+      console.log(listElement);
+    }
   },
   updateList2() {
     // this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });

@@ -82,6 +82,10 @@ export const createNewRefValue = <T>(value: T): T => {
 
 /**
  * @description Custom iteration processing for iterable data types.
+ * It also handles scenarios involving `for...of` loops.
+ * The `for...of` loop reads the `Symbol.iterator` property,
+ * which invokes iterator methods such as `values` or `entries`.
+ * These methods are equipped with proxy handling.
  */
 export const iteratorProcessing = <S extends PrimitiveState>(
   target: ArrayLikeIteratorsType<S>,
@@ -117,20 +121,20 @@ export const iteratorProcessing = <S extends PrimitiveState>(
 
           const condition = !toReversedFlag ? index < iterators.length : index >= 0;
 
-          const key = entriesFlag
-            ? iterators[index][0]
-            /**
-             * @description In scenarios where the `map.values` method returns a `MapIterator`
-             * and cannot retrieve the associated keys,
-             * the `map.keys` method is used to obtain the corresponding keys for indexing.
-             */
-            : type === "MapIterator"
-              ? keys[index]
-              : index;
-          const value = entriesFlag ? iterators[index][1] : iterators[index];
+          if (condition) {
+            const key = entriesFlag
+              ? iterators[index][0]
+              /**
+               * @description In scenarios where the `map.values` method returns a `MapIterator`
+               * and cannot retrieve the associated keys,
+               * the `map.keys` method is used to obtain the corresponding keys for indexing.
+               */
+              : type === "MapIterator"
+                ? keys[index]
+                : index;
+            const value = entriesFlag ? iterators[index][1] : iterators[index];
 
-          return condition
-            ? {
+            return {
               done: false,
               value: entriesFlag
                 ? [
@@ -154,8 +158,9 @@ export const iteratorProcessing = <S extends PrimitiveState>(
                     applyOriginFunction,
                   )
                   : value,
-            }
-            : { done: true };
+            };
+          }
+          return { done: true };
         }
       };
     };

@@ -1,7 +1,7 @@
 import { whatsType, typeString } from "../utils";
 import type { PrimitiveState } from "../types";
 import type {
-  ApplyOriginFunction, ArrayPrototypeProxyableValueType,
+  ApplyOriginFunctionType, ArrayPrototypeProxyableValueType,
   CreateProxyType, KeyChainsSourceItemType,
 } from "./types";
 
@@ -12,7 +12,7 @@ export const proxyable = (value: unknown): boolean => {
 };
 
 // A collection of functions that can be executed by proxies for arrays, Maps, and Set prototype chains.
-const arrayMapSetPrototypeProxyableSet = new Set<ApplyOriginFunction>()
+const arrayMapSetPrototypeProxyableSet = new Set<ApplyOriginFunctionType>()
   .add(Array.prototype.forEach)
   .add(Array.prototype.map)
   .add(Array.prototype.filter)

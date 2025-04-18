@@ -15,10 +15,10 @@ export type CreateProxyType<S extends PrimitiveState> = (
   parentTarget?: ProxyableType<S>,
   firstLevelKey?: keyof S,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
-  applyOriginFunction?: ApplyOriginFunction,
+  applyOriginFunction?: ApplyOriginFunctionType,
 ) => Store<S>;
 
-export type ApplyOriginFunction = ArrayPrototypeProxyableValueType | MapPrototypeProxyableValueType;
+export type ApplyOriginFunctionType = ArrayPrototypeProxyableValueType | MapPrototypeProxyableValueType;
 
 export type ArrayPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   Array<T>,
@@ -140,7 +140,7 @@ export type MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
     target: object | S,
     firstLevelKey?: keyof S,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
-    applyOriginFunction?: ApplyOriginFunction,
+    applyOriginFunction?: ApplyOriginFunctionType,
   ) => boolean,
 ) => (
   | MapPrototypeProxyableGetFactoryValueType<S>

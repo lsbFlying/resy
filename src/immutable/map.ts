@@ -6,7 +6,7 @@ import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type {
   ProxyableType, CreateProxyType, MapPrototypeProxyableValueType,
   KeyChainsSourceItemType, MapPrototypeProxyableFactoryType,
-  MapWithGrandparentKeyType, ApplyOriginFunction,
+  MapWithGrandparentKeyType, ApplyOriginFunctionType,
 } from "./types";
 import type { Store } from "../store/types";
 import { proxyable } from "./utils";
@@ -50,7 +50,7 @@ export const applyClearFactory: MapPrototypeProxyableFactoryType = <S extends Pr
     target: object | S,
     firstLevelKey?: keyof S,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
-    applyOriginFunction?: ApplyOriginFunction,
+    applyOriginFunction?: ApplyOriginFunctionType,
   ) => boolean,
 ) => {
   return () => {
@@ -87,7 +87,7 @@ export const applyDeleteFactory: MapPrototypeProxyableFactoryType = <S extends P
     target: object | S,
     firstLevelKey?: keyof S,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
-    applyOriginFunction?: ApplyOriginFunction,
+    applyOriginFunction?: ApplyOriginFunctionType,
   ) => boolean,
 ) => {
   return (key: keyof S) => {
@@ -120,7 +120,7 @@ export const applySetFactory: MapPrototypeProxyableFactoryType = <S extends Prim
     target: object | S,
     firstLevelKey?: keyof S,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
-    applyOriginFunction?: ApplyOriginFunction,
+    applyOriginFunction?: ApplyOriginFunctionType,
   ) => boolean,
 ) => {
   return (key: keyof S, value: ValueOf<S>) => {

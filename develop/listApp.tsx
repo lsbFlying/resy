@@ -18,13 +18,10 @@ const useStore = defineStore({
     { name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) },
   ],
   updateList() {
-    // const newList = [...this.list.values()];
-    // console.log(newList);
-    // // newList.next().value!.name = "hello";
-    // newList[1].name = "hello";
-    // todo 函数代理结合链式更新有问题
-    this.list.at(0)!.list!.at(0)!.name = "hello ok";
-    // console.log(this.list);
+    console.log(this.list);
+    const newList = [...this.list];
+    this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });
+    console.log(newList, this.list);
   },
   updateList2() {
     // this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });
@@ -35,7 +32,6 @@ const useStore = defineStore({
     // const temp = this.list;
     // temp.fill(item);
     // // temp[1].name = `${Math.floor(Math.random() * 1000)}`;
-    // // todo 这样会导致属性链出现问题
     // temp[0].name = "asdasdas";
     // test = this.list.fill(item);
     // // this.list[0].name = "asdasdas";

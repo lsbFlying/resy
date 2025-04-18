@@ -2,10 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 // import Comp from "./App";
 // import Comp from "./listApp";
-import Comp from "./mapSetApp";
-// import Comp from "./Tpp";
-// import Comp from "./signal-test1";
-// import Comp from "./signal-test1";
+import Comp from "./mapApp";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

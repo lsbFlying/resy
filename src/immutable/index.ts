@@ -1,5 +1,5 @@
 import type {
-  ArrayPrototypeProxyableKeyType, MapPrototypeProxyableKeyType,
+  ArrayPrototypeProxyableValueType, MapPrototypeProxyableValueType,
   ArrayPrototypeProxyableFactoryType, MapPrototypeProxyableFactoryType,
 } from "./types";
 import {
@@ -14,46 +14,48 @@ import {
   applyEntriesFactory, applySliceFactory, applyWithFactory,
 } from "./immutable-array";
 import {
-  applyGetFactory, applyClearFactory, applyDeleteFactory, applySetFactory,
+  applyGetFactory, applyClearFactory, applyDeleteFactory,
+  applySetFactory, applyForEachFactory,
 } from "./map";
 
-export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ = new Map<
-  | ArrayPrototypeProxyableKeyType
-  | MapPrototypeProxyableKeyType,
+export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ = new Map<
+  | ArrayPrototypeProxyableValueType
+  | MapPrototypeProxyableValueType,
   | ArrayPrototypeProxyableFactoryType
   | MapPrototypeProxyableFactoryType
 >()
-  .set("forEach", applyLoopFactory)
-  .set("map", applyLoopFactory)
-  .set("filter", applyLoopFactory)
-  .set("find", applyLoopFactory)
-  .set("findIndex", applyLoopFactory)
-  .set("findLast", applyLoopFactory)
-  .set("findLastIndex", applyLoopFactory)
-  .set("every", applyLoopFactory)
-  .set("some", applyLoopFactory)
-  .set("flatMap", applyLoopFactory)
-  .set("flat", applyFlatFactory)
-  .set("push", applyPushFactory)
-  .set("pop", applyPopFactory)
-  .set("fill", applyFillFactory)
-  .set("reverse", applyReverseFactory)
-  .set("toReversed", applyToReversedFactory)
-  .set("shift", applyShiftFactory)
-  .set("unshift", applyUnshiftFactory)
-  .set("sort", applySortFactory)
-  .set("toSorted", applyToSortedFactory)
-  .set("splice", applySpliceFactory)
-  .set("copyWithin", applyCopyWithinFactory)
-  .set("at", applyAtFactory)
-  .set("values", applyValuesFactory)
-  .set("concat", applyConcatFactory)
-  .set("entries", applyEntriesFactory)
-  .set("reduce", applyReduceFactory)
-  .set("reduceRight", applyReduceFactory)
-  .set("slice", applySliceFactory)
-  .set("with", applyWithFactory)
-  .set("get", applyGetFactory)
-  .set("clear", applyClearFactory)
-  .set("delete", applyDeleteFactory)
-  .set("set", applySetFactory);
+  .set(Array.prototype.forEach, applyLoopFactory)
+  .set(Array.prototype.map, applyLoopFactory)
+  .set(Array.prototype.filter, applyLoopFactory)
+  .set(Array.prototype.find, applyLoopFactory)
+  .set(Array.prototype.findIndex, applyLoopFactory)
+  .set(Array.prototype.findLast, applyLoopFactory)
+  .set(Array.prototype.findLastIndex, applyLoopFactory)
+  .set(Array.prototype.every, applyLoopFactory)
+  .set(Array.prototype.some, applyLoopFactory)
+  .set(Array.prototype.flatMap, applyLoopFactory)
+  .set(Array.prototype.flat, applyFlatFactory)
+  .set(Array.prototype.push, applyPushFactory)
+  .set(Array.prototype.pop, applyPopFactory)
+  .set(Array.prototype.fill, applyFillFactory)
+  .set(Array.prototype.reverse, applyReverseFactory)
+  .set(Array.prototype.toReversed, applyToReversedFactory)
+  .set(Array.prototype.shift, applyShiftFactory)
+  .set(Array.prototype.unshift, applyUnshiftFactory)
+  .set(Array.prototype.sort, applySortFactory)
+  .set(Array.prototype.toSorted, applyToSortedFactory)
+  .set(Array.prototype.splice, applySpliceFactory)
+  .set(Array.prototype.copyWithin, applyCopyWithinFactory)
+  .set(Array.prototype.at, applyAtFactory)
+  .set(Array.prototype.values, applyValuesFactory)
+  .set(Array.prototype.concat, applyConcatFactory)
+  .set(Array.prototype.entries, applyEntriesFactory)
+  .set(Array.prototype.reduce, applyReduceFactory)
+  .set(Array.prototype.reduceRight, applyReduceFactory)
+  .set(Array.prototype.slice, applySliceFactory)
+  .set(Array.prototype.with, applyWithFactory)
+  .set(Map.prototype.get, applyGetFactory)
+  .set(Map.prototype.clear, applyClearFactory)
+  .set(Map.prototype.delete, applyDeleteFactory)
+  .set(Map.prototype.set, applySetFactory)
+  .set(Map.prototype.forEach, applyForEachFactory);

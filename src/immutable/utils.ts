@@ -1,7 +1,8 @@
 import { whatsType, typeString } from "../utils";
 import type { PrimitiveState } from "../types";
 import type {
-  ArrayPrototypeProxyableValueType, CreateProxyType, KeyChainsSourceItemType,
+  ApplyOriginFunction, ArrayPrototypeProxyableValueType,
+  CreateProxyType, KeyChainsSourceItemType,
 } from "./types";
 
 const proxyableSet = new Set(["Object", "Array", "Map"]);
@@ -11,7 +12,7 @@ export const proxyable = (value: unknown): boolean => {
 };
 
 // A collection of functions that can be executed by proxies for arrays, Maps, and Set prototype chains.
-const arrayMapSetPrototypeProxyableSet = new Set<ArrayPrototypeProxyableValueType>()
+const arrayMapSetPrototypeProxyableSet = new Set<ApplyOriginFunction>()
   .add(Array.prototype.forEach)
   .add(Array.prototype.map)
   .add(Array.prototype.filter)
@@ -45,7 +46,8 @@ const arrayMapSetPrototypeProxyableSet = new Set<ArrayPrototypeProxyableValueTyp
   .add(Map.prototype.get)
   .add(Map.prototype.clear)
   .add(Map.prototype.delete)
-  .add(Map.prototype.set);
+  .add(Map.prototype.set)
+  .add(Map.prototype.forEach);
 
 export const isArrayMapSetPrototypeProxyable = (value: any): boolean => {
   return arrayMapSetPrototypeProxyableSet.has(value);

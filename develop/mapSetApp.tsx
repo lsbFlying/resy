@@ -74,11 +74,14 @@ const useStore = defineStore({
     //     this.infoMap.get("personInfo") as PersonInfo
     //   )!.bodyInfo.heightInfo as Map<"height" | "reach", number>
     // ).delete("reach");
-    (
-      (
-        this.infoMap.get("personInfo") as PersonInfo
-      )!.bodyInfo.heightInfo as Map<"height" | "reach", number | { value: number }>
-    ).set("reach", { value: 987 });
+    // (
+    //   (
+    //     this.infoMap.get("personInfo") as PersonInfo
+    //   )!.bodyInfo.heightInfo as Map<"height" | "reach", number | { value: number }>
+    // ).set("reach", { value: 987 });
+    this.infoMap.forEach((value, key, map) => {
+      console.log(value, key, map);
+    });
   },
 }, {
   immutable: true,

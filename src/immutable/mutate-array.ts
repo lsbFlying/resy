@@ -42,6 +42,7 @@ export const applyLoopFactory = <S extends PrimitiveState>(
           )
           : item,
         index,
+        // TODO waiting test
         thisArg,
       );
     }) as any;

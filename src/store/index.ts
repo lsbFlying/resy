@@ -16,7 +16,7 @@ import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import type { SchedulerType } from "../scheduler/types";
 import type { ArrayPrototypeProxyableValueType, KeyChainsSourceItemType } from "../immutable/types";
-import { __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__ } from "../immutable";
+import { __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
 import {
   proxyable, createNewRefValue, isArrayMapSetPrototypeProxyable, iteratorProcessing,
 } from "../immutable/utils";
@@ -408,8 +408,9 @@ export const createStore = <S extends PrimitiveState>(
       // The `apply` here is written specifically for prototype chain functions
       // that are applicable to proxyable types such as `Array`, `Map`, and `Set`.
       apply(applyOriginFunction: any, thisArg: any, argArray: any[]) {
+        console.log(applyOriginFunction === Map.prototype.get);
         return Reflect.apply(
-          __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__.get(applyOriginFunction.name)!(
+          __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
             storeProxyWeakMap, applyOriginFunction, thisArg, parentTarget,
             createProxy, firstLevelKey, keyChains, singleUpdate,
           ),

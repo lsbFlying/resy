@@ -12,7 +12,7 @@ import { proxyable } from "./utils";
 import { __GRANDPARENT_KEY__ } from "./static";
 
 export const applyGetFactory = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   _thisArg: MapWithGrandparentKeyType<S>,
   parentTarget: MapType<S>,
@@ -25,12 +25,9 @@ export const applyGetFactory = <S extends PrimitiveState>(
     return proxyable(value)
       ? createProxy(
         value as ProxyableType<S>,
-        // TODO 这里父节点可能不对
         parentTarget,
         firstLevelKey,
         new Set(keyChains).add({ key }),
-        // TODO map has get problem
-        // keyChains?.add({ key }),
         applyOriginFunction,
       ) as ValueOf<S>
       : value;
@@ -38,7 +35,7 @@ export const applyGetFactory = <S extends PrimitiveState>(
 };
 
 export const applyClearFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapWithGrandparentKeyType<S>,
   _parentTarget: MapType<S>,
@@ -75,7 +72,7 @@ export const applyClearFactory: MapPrototypeProxyableFactoryType = <S extends Pr
 };
 
 export const applyDeleteFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapWithGrandparentKeyType<S>,
   parentTarget: MapType<S>,

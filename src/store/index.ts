@@ -108,7 +108,7 @@ export const createStore = <S extends PrimitiveState>(
   // The core map of store
   const storeMap: StoreMap<S> = new Map();
 
-  const storeProxyWeakMap = new WeakMap<object, Store<S>>();
+  const storeProxyWeakMap = new WeakMap<object, Map<any, Store<S>>>();
 
   // The storage stack of this proxy object for the class component
   const classThisPointerSet = new Set<ClassInstanceTypeOfConnectStore<S>>();
@@ -132,7 +132,8 @@ export const createStore = <S extends PrimitiveState>(
 
     if (typeof state === "function") {
       // processing of prevState
-      stateTemp = (state as StateFnType<S>)(mapToObject(stateMap));
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      stateTemp = (state as StateFnType<S>)(immutable ? store : mapToObject(stateMap));
     }
 
     if (stateTemp !== null) {
@@ -165,7 +166,8 @@ export const createStore = <S extends PrimitiveState>(
     let stateTemp = state;
 
     if (typeof state === "function") {
-      stateTemp = (state as StateFnType<S>)(mapToObject(stateMap));
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      stateTemp = (state as StateFnType<S>)(immutable ? store : mapToObject(stateMap));
     }
     // Borrowing setState to synchronize the update scheduling mechanism of Resy itself.
     setState(stateTemp, callback);
@@ -254,10 +256,6 @@ export const createStore = <S extends PrimitiveState>(
       const changed = !Object.is(prevValue, value);
 
       const firstLevelValue = stateMap.get(firstLevelKey!);
-      const firstLevelValueIsMap = whatsType(firstLevelValue) === "Map";
-      const initialValue = firstLevelValueIsMap
-        ? mapToObject(firstLevelValue as MapType<S>)
-        : firstLevelValue;
 
       if (changed) {
         // No first level attribute chain array
@@ -273,6 +271,8 @@ export const createStore = <S extends PrimitiveState>(
           currentIndex,
           array,
         ) => {
+          const isMapType = whatsType(previousValue) === "Map";
+
           currentIndex !== array.length - 1
             /**
              * @description Update the attribute chain except for the attribute objects of each layer before the last level,
@@ -280,11 +280,21 @@ export const createStore = <S extends PrimitiveState>(
              * it will result in the attribute chain's layer by layer properties not being treated as immutable,
              * which will create a dependency invariant bug on the hook's dependency array.
              */
-            ? ((previousValue as any)[itemKey] = createNewRefValue((previousValue as S)[itemKey]))
+            ? isMapType
+              ? (previousValue as MapType<S>).set(
+                itemKey,
+                createNewRefValue((previousValue as MapType<S>).get(itemKey) as ValueOf<S>)
+              )
+              : ((previousValue as any)[itemKey] = createNewRefValue((previousValue as S)[itemKey]))
             // Update the attributes of the last level in the attribute chain
-            : ((previousValue as S)[key] = value);
-          return (previousValue as S)[itemKey];
-        }, initialValue);
+            : isMapType
+              ? (previousValue as MapType<S>).set(itemKey, value)
+              : ((previousValue as S)[itemKey] = value);
+
+          return isMapType
+            ? (previousValue as MapType<S>).get(itemKey)
+            : (previousValue as S)[itemKey];
+        }, firstLevelValue);
 
         /**
          * @description This refers to the scenario where a function property has already been proxied using `apply`,
@@ -314,11 +324,7 @@ export const createStore = <S extends PrimitiveState>(
            * it will show that the previous and current values are equal,
            * ultimately leading to the update being skipped.
            */
-          (
-            firstLevelValueIsMap
-              ? objectToMap(initialValue as S)
-              : createNewRefValue(firstLevelValue)
-          ) as ValueOf<S>,
+          createNewRefValue(firstLevelValue) as ValueOf<S>,
           isDelete,
           stateMap,
         )
@@ -344,8 +350,8 @@ export const createStore = <S extends PrimitiveState>(
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ArrayPrototypeProxyableValueType,
   ) => {
-    // TODO 这里的spw优化代理有问题，相同的方法但是可能是不同的层级，导致后续层级同一个方法可能就直接被返回了
-    const spw = storeProxyWeakMap.get(target);
+    const spo = storeProxyWeakMap.get(target);
+    const spw = spo?.get(keyChains);
     if (spw) return spw;
 
     const isStateMap = target === stateMap;
@@ -380,10 +386,6 @@ export const createStore = <S extends PrimitiveState>(
                 ? IAMSPP
                   ? new Set(keyChains)
                   : new Set(keyChains).add({ key })
-                // TODO map has get problem
-                // ? IAMSPP
-                //   ? keyChains
-                //   : keyChains.add({ key })
                 : new Set().add({ key })
             ) as Set<KeyChainsSourceItemType<S>>,
           );
@@ -405,11 +407,9 @@ export const createStore = <S extends PrimitiveState>(
         key, undefined as ValueOf<S>, true, target, firstLevelKey,
         new Set(keyChains).add({ key }), applyOriginFunction,
       ),
-      /**
-       * TODO 这里的apply是针对Array、Map、Set类型的可代理的原型链函数而写的
-       */
+      // The `apply` here is written specifically for prototype chain functions
+      // that are applicable to proxyable types such as `Array`, `Map`, and `Set`.
       apply(applyOriginFunction: any, thisArg: any, argArray: any[]) {
-        // TODO 这里父节点parentTarget可能不对，可能在哪一环节捕捉缺失
         return Reflect.apply(
           __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_MAP__.get(applyOriginFunction.name)!(
             storeProxyWeakMap, applyOriginFunction, thisArg, parentTarget,
@@ -421,7 +421,12 @@ export const createStore = <S extends PrimitiveState>(
       },
     } as ProxyHandler<S>) as Store<S>;
 
-    storeProxyWeakMap.set(target, sp);
+    /**
+     * @description It is necessary to combine `keyChains` with `sp` for processing
+     * to prevent logical errors in recursive proxying
+     * caused by the scenario where the same proxy target appears at different levels.
+     */
+    storeProxyWeakMap.set(target, new Map().set(keyChains, sp));
 
     return sp;
   };

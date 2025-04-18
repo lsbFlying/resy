@@ -10,7 +10,7 @@ export const proxyable = (value: unknown): boolean => {
   return proxyableSet.has(whatsType(value));
 };
 
-// todo 数组、Map、Set原型链可以被代理执行的函数
+// A collection of functions that can be executed by proxies for arrays, Maps, and Set prototype chains.
 const arrayMapSetPrototypeProxyableSet = new Set<ArrayPrototypeProxyableValueType>()
   .add(Array.prototype.forEach)
   .add(Array.prototype.map)

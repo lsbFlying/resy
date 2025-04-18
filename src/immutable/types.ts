@@ -87,7 +87,7 @@ export type ArrayPrototypeProxyableReduceFactoryValueType = <T>(
 ) => T;
 
 export type ArrayPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: S[],
   parentTarget: S[],
@@ -122,7 +122,7 @@ export type MapPrototypeProxyableKeyType = keyof MapPrototypeProxyableType;
 export type MapPrototypeProxyableValueType = ValueOf<MapPrototypeProxyableType>;
 
 export type MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapWithGrandparentKeyType<S>,
   parentTarget: MapType<S>,

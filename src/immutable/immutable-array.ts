@@ -11,7 +11,7 @@ import type { Store } from "../store/types";
 import { iteratorProcessing, proxyable } from "./utils";
 
 export const applyFlatFactory = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   _applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
   parentTarget: any[],
@@ -38,7 +38,7 @@ export const applyFlatFactory = <S extends PrimitiveState>(
 };
 
 export const applyToReversedFactory = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
   parentTarget: any[],
@@ -57,7 +57,7 @@ export const applyToReversedFactory = <S extends PrimitiveState>(
 };
 
 export const applyToSortedFactory = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
   parentTarget: any[],
@@ -100,7 +100,7 @@ export const applyToSortedFactory = <S extends PrimitiveState>(
      * In other words, when the `[...iterators]` operation executes the `createProxy` proxy operation again,
      * it merely returns the proxy results from the previous `toSorted` method.
      * Refer to the code snippet:
-     * `const spw = storeProxyWeakMap.get(target); if (spw) return spw;`.
+     * `const spo = storeProxyWeakMap.get(target); ...`.
      */
     iteratorProcessing(
       iterators as any, parentTarget, createProxy,
@@ -111,7 +111,7 @@ export const applyToSortedFactory = <S extends PrimitiveState>(
 };
 
 export const applyAtFactory = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
   parentTarget: any[],
@@ -146,7 +146,7 @@ export const applyAtFactory = <S extends PrimitiveState>(
 };
 
 export const applyValuesFactory = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
   parentTarget: any[],
@@ -165,7 +165,7 @@ export const applyValuesFactory = <S extends PrimitiveState>(
 };
 
 export const applyConcatFactory = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   _applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
   parentTarget: any[],
@@ -176,7 +176,7 @@ export const applyConcatFactory = <S extends PrimitiveState>(
 };
 
 export const applyEntriesFactory = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
   parentTarget: any[],
@@ -195,7 +195,7 @@ export const applyEntriesFactory = <S extends PrimitiveState>(
 };
 
 export const applySliceFactory = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   _applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
   parentTarget: any[],
@@ -206,7 +206,7 @@ export const applySliceFactory = <S extends PrimitiveState>(
 };
 
 export const applyWithFactory = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   _applyOriginFunction: ArrayPrototypeProxyableValueType,
   _thisArg: any[],
   parentTarget: any[],

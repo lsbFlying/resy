@@ -18,7 +18,7 @@ import type { Store } from "../store/types";
 import { proxyable } from "./utils";
 
 export const applyLoopFactory = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
   parentTarget: any[],
@@ -49,7 +49,7 @@ export const applyLoopFactory = <S extends PrimitiveState>(
 };
 
 export const applyPushFactory = <S extends PrimitiveState>(
-  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
   parentTarget: any[],
@@ -72,7 +72,7 @@ export const applyPushFactory = <S extends PrimitiveState>(
 };
 
 export const applyPopFactory = <S extends PrimitiveState>(
-  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
   parentTarget: any[],
@@ -104,7 +104,7 @@ export const applyPopFactory = <S extends PrimitiveState>(
 };
 
 export const applyFillFactory = <S extends PrimitiveState>(
-  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
   parentTarget: any[],
@@ -142,7 +142,7 @@ export const applyFillFactory = <S extends PrimitiveState>(
 };
 
 export const applyReverseFactory = <S extends PrimitiveState>(
-  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
   parentTarget: any[],
@@ -172,7 +172,7 @@ export const applyReverseFactory = <S extends PrimitiveState>(
 };
 
 export const applyShiftFactory = <S extends PrimitiveState>(
-  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
   parentTarget: any[],
@@ -195,7 +195,7 @@ export const applyShiftFactory = <S extends PrimitiveState>(
 };
 
 export const applyUnshiftFactory = <S extends PrimitiveState>(
-  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
   parentTarget: any[],
@@ -214,7 +214,7 @@ export const applyUnshiftFactory = <S extends PrimitiveState>(
 };
 
 export const applySortFactory = <S extends PrimitiveState>(
-  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
   parentTarget: any[],
@@ -267,7 +267,7 @@ export const applySortFactory = <S extends PrimitiveState>(
 };
 
 export const applySpliceFactory = <S extends PrimitiveState>(
-  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
   parentTarget: any[],
@@ -288,7 +288,7 @@ export const applySpliceFactory = <S extends PrimitiveState>(
 };
 
 export const applyCopyWithinFactory = <S extends PrimitiveState>(
-  storeProxyWeakMap: WeakMap<object, Store<S>>,
+  storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
   parentTarget: any[],
@@ -351,7 +351,7 @@ export const applyCopyWithinFactory = <S extends PrimitiveState>(
 };
 
 export const applyReduceFactory = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Store<S>>,
+  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,
   thisArg: any[],
   parentTarget: any[],

@@ -57,11 +57,11 @@ const useStore = defineStore({
     // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.clear();
     // this.infoMap.delete("nationality");
     // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.delete("reach");
-    // console.log((
-    //   (
-    //     this.infoMap.get("personInfo") as PersonInfo
-    //   )!.bodyInfo.heightInfo as Map<"height" | "reach", number>
-    // ).get("reach"));
+    console.log(1, (
+      (
+        this.infoMap.get("personInfo") as PersonInfo
+      )!.bodyInfo.heightInfo as Map<"height" | "reach", number>
+    ).get("reach"));
     (
       (
         (
@@ -69,6 +69,11 @@ const useStore = defineStore({
         )!.bodyInfo.heightInfo as Map<"height" | "reach", number>
       ).get("reach") as { value: number } | undefined
     )!.value = Math.floor(Math.random() * 1000);
+    console.log(2, (
+      (
+        this.infoMap.get("personInfo") as PersonInfo
+      )!.bodyInfo.heightInfo as Map<"height" | "reach", number>
+    ).get("reach"));
   },
 }, {
   immutable: true,

@@ -33,9 +33,10 @@ export const applyAddFactory: SetPrototypeProxyableFactoryType = <S extends Prim
   return (value: S) => {
     const curKey = Array.from(keyChains!).at(-1)?.key;
     parentTarget.add(value);
+    const result = new Set(parentTarget);
     singleUpdate?.(
       curKey!,
-      new Set(parentTarget) as ValueOf<S>,
+      result as ValueOf<S>,
       false,
       /**
        * @description Here, the goal is actually to locate the parent node data of the map,
@@ -47,6 +48,7 @@ export const applyAddFactory: SetPrototypeProxyableFactoryType = <S extends Prim
       keyChains,
       applyOriginFunction,
     );
+    return result;
   };
 };
 
@@ -115,6 +117,7 @@ export const applySetDeleteFactory: SetPrototypeProxyableFactoryType = <S extend
   };
 };
 
+// todo waiting develop
 export const applySetForEachFactory: SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: SetPrototypeProxyableValueType,
@@ -158,6 +161,7 @@ export const applySetForEachFactory: SetPrototypeProxyableFactoryType = <S exten
   };
 };
 
+// todo waiting develop
 export const applySetKeysValuesFactory: SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: SetPrototypeProxyableValueType,
@@ -177,6 +181,7 @@ export const applySetKeysValuesFactory: SetPrototypeProxyableFactoryType = <S ex
   };
 };
 
+// todo waiting develop
 export const applySetEntriesFactory: SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: SetPrototypeProxyableValueType,

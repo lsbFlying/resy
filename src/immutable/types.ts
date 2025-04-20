@@ -159,7 +159,7 @@ export type MapPrototypeProxyableClearFactoryValueType = () => void;
 export type MapPrototypeProxyableDeleteFactoryValueType<S extends PrimitiveState> = (key: keyof S) => boolean;
 export type MapPrototypeProxyableSetFactoryValueType<S extends PrimitiveState> = (key: keyof S, value: ValueOf<S>) => boolean;
 export type MapPrototypeProxyableForEachFactoryValueType<S extends PrimitiveState> = (
-  value: ValueOf<S>, key: keyof S, map: Map<keyof S, ValueOf<S>>
+  callback: (value: ValueOf<S>, key: keyof S, map: Map<keyof S, ValueOf<S>>) => void
 ) => void;
 
 export type SetWithGrandparentKeyType<S extends PrimitiveState> = Set<S> & {
@@ -206,7 +206,9 @@ export type SetPrototypeProxyableAddFactoryValueType<S extends PrimitiveState> =
 export type SetPrototypeProxyableClearFactoryValueType = () => void;
 export type SetPrototypeProxyableDeleteFactoryValueType<S extends PrimitiveState> = (value: S) => boolean;
 export type SetPrototypeProxyableForEachFactoryValueType<S extends PrimitiveState> = (
-  value: S, value2: S, map: Set<S>
+  callback: (
+    value: S, value2: S, map: Set<S>
+  ) => void
 ) => void;
 
 export type ArrayLikeIteratorsType<S extends PrimitiveState> = ArrayLike<S> & {

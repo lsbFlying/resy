@@ -2,7 +2,7 @@ import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type { Store } from "../store/types";
 import { __GRANDPARENT_KEY__, __ITERATOR_META_PROCESSING_KEY__ } from "./static";
 
-export type ProxyableType<S extends PrimitiveState> = S | S[] | MapType<S>;
+export type ProxyableType<S extends PrimitiveState> = S | S[] | MapType<S> | Set<S>;
 
 // The collection of attribute chains set as object types is
 // to prevent different levels of attributes from having the same attribute name.
@@ -18,7 +18,10 @@ export type CreateProxyType<S extends PrimitiveState> = (
   applyOriginFunction?: ApplyOriginFunctionType,
 ) => Store<S>;
 
-export type ApplyOriginFunctionType = ArrayPrototypeProxyableValueType | MapPrototypeProxyableValueType;
+export type ApplyOriginFunctionType =
+  | ArrayPrototypeProxyableValueType
+  | MapPrototypeProxyableValueType
+  | SetPrototypeProxyableValueType;
 
 export type ArrayPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
   Array<T>,
@@ -124,7 +127,6 @@ export type MapPrototypeProxyableType<T extends PrimitiveState = any> = Pick<
   | "values"
   | "entries"
 >;
-// export type MapPrototypeProxyableKeyType = keyof MapPrototypeProxyableType;
 export type MapPrototypeProxyableValueType = ValueOf<MapPrototypeProxyableType>;
 
 export type MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
@@ -158,6 +160,53 @@ export type MapPrototypeProxyableDeleteFactoryValueType<S extends PrimitiveState
 export type MapPrototypeProxyableSetFactoryValueType<S extends PrimitiveState> = (key: keyof S, value: ValueOf<S>) => boolean;
 export type MapPrototypeProxyableForEachFactoryValueType<S extends PrimitiveState> = (
   value: ValueOf<S>, key: keyof S, map: Map<keyof S, ValueOf<S>>
+) => void;
+
+export type SetWithGrandparentKeyType<S extends PrimitiveState> = Set<S> & {
+  [__GRANDPARENT_KEY__]: SetWithGrandparentKeyType<S>;
+};
+
+export type SetPrototypeProxyableType<T extends PrimitiveState = any> = Pick<
+  Set<T>,
+  | "add"
+  | "clear"
+  | "delete"
+  | "forEach"
+  | "keys"
+  | "values"
+  | "entries"
+>;
+export type SetPrototypeProxyableValueType = ValueOf<SetPrototypeProxyableType>;
+
+export type SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
+  storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
+  applyOriginFunction: SetPrototypeProxyableValueType,
+  thisArg: SetWithGrandparentKeyType<S>,
+  parentTarget: Set<S>,
+  createProxy: CreateProxyType<S>,
+  firstLevelKey?: keyof S,
+  keyChains?: Set<KeyChainsSourceItemType<S>>,
+  singleUpdate?: (
+    key: keyof S,
+    value: ValueOf<S>,
+    isDelete: boolean,
+    target: object | S,
+    firstLevelKey?: keyof S,
+    keyChains?: Set<KeyChainsSourceItemType<S>>,
+    applyOriginFunction?: ApplyOriginFunctionType,
+  ) => boolean,
+) => (
+  | SetPrototypeProxyableAddFactoryValueType<S>
+  | SetPrototypeProxyableClearFactoryValueType
+  | SetPrototypeProxyableDeleteFactoryValueType<S>
+  | SetPrototypeProxyableForEachFactoryValueType<S>
+);
+
+export type SetPrototypeProxyableAddFactoryValueType<S extends PrimitiveState> = (value: S) => Set<S>;
+export type SetPrototypeProxyableClearFactoryValueType = () => void;
+export type SetPrototypeProxyableDeleteFactoryValueType<S extends PrimitiveState> = (value: S) => boolean;
+export type SetPrototypeProxyableForEachFactoryValueType<S extends PrimitiveState> = (
+  value: S, value2: S, map: Set<S>
 ) => void;
 
 export type ArrayLikeIteratorsType<S extends PrimitiveState> = ArrayLike<S> & {

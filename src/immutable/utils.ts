@@ -6,7 +6,7 @@ import type {
 } from "./types";
 import { __ITERATOR_META_PROCESSING_KEY__ } from "./static";
 
-const proxyableSet = new Set(["Object", "Array", "Map"]);
+const proxyableSet = new Set(["Object", "Array", "Map", "Set"]);
 
 export const proxyable = (value: unknown): boolean => {
   return proxyableSet.has(whatsType(value));
@@ -52,7 +52,15 @@ const arrayMapSetPrototypeProxyableSet = new Set<ApplyOriginFunctionType>()
   .add(Map.prototype.set)
   .add(Map.prototype.forEach)
   .add(Map.prototype.values)
-  .add(Map.prototype.entries);
+  .add(Map.prototype.entries)
+  // map
+  .add(Set.prototype.add)
+  .add(Set.prototype.clear)
+  .add(Set.prototype.delete)
+  .add(Set.prototype.forEach)
+  .add(Set.prototype.keys)
+  .add(Set.prototype.values)
+  .add(Set.prototype.entries);
 
 export const isArrayMapSetPrototypeProxyable = (value: any): boolean => {
   return arrayMapSetPrototypeProxyableSet.has(value);

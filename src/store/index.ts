@@ -261,6 +261,7 @@ export const createStore = <S extends PrimitiveState>(
         }
         noneFirstLevelKeyChains.shift();
 
+        // TODO 应该可以通过递归循环优化处理
         noneFirstLevelKeyChains.reduce((
           previousValue,
           itemKey,

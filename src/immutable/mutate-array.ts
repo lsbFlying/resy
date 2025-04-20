@@ -143,6 +143,7 @@ export const applyFillFactory = <S extends PrimitiveState>(
   };
 };
 
+// TODO array、map、set的很多代理方法涉及到直接更改parentTarget，这会导致不符合“不可变性设计原则”，待修改...
 export const applyReverseFactory = <S extends PrimitiveState>(
   storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: ArrayPrototypeProxyableValueType,

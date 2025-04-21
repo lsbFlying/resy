@@ -39,7 +39,7 @@ export const applyMapClearFactory: MapPrototypeProxyableFactoryType = <S extends
   _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapWithGrandparentKeyType<S>,
-  _parentTarget: MapType<S>,
+  parentTarget: MapType<S>,
   _createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
@@ -55,6 +55,7 @@ export const applyMapClearFactory: MapPrototypeProxyableFactoryType = <S extends
 ) => {
   return () => {
     const curKey = Array.from(keyChains!).at(-1)?.key;
+    if (!parentTarget.size) return;
     singleUpdate?.(
       curKey!,
       new Map() as ValueOf<S>,
@@ -92,6 +93,8 @@ export const applyMapDeleteFactory: MapPrototypeProxyableFactoryType = <S extend
 ) => {
   return (key: keyof S) => {
     const curKey = Array.from(keyChains!).at(-1)?.key;
+    if (!parentTarget.has(key)) return false;
+    // todo dev, parentTarget发生变化，不符合“不可变性设计原则”
     parentTarget.delete(key);
     return singleUpdate!(
       curKey!,
@@ -125,16 +128,24 @@ export const applySetFactory: MapPrototypeProxyableFactoryType = <S extends Prim
 ) => {
   return (key: keyof S, value: ValueOf<S>) => {
     const curKey = Array.from(keyChains!).at(-1)?.key;
+    const oldValue = parentTarget.get(key);
+
+    if (Object.is(oldValue, value)) return parentTarget;
+
+    // todo dev, parentTarget发生变化，不符合“不可变性设计原则”
     parentTarget.set(key, value);
-    return singleUpdate!(
+    const newValue = new Map(parentTarget);
+
+    singleUpdate!(
       curKey!,
-      new Map(parentTarget) as ValueOf<S>,
+      newValue as ValueOf<S>,
       false,
       thisArg[__GRANDPARENT_KEY__],
       firstLevelKey,
       keyChains,
       applyOriginFunction,
     );
+    return newValue;
   };
 };
 

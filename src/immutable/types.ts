@@ -64,7 +64,7 @@ export type MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
 export type MapPrototypeProxyableGetFactoryValueType<S extends PrimitiveState> = (key: keyof S) => ValueOf<S> | undefined;
 export type MapPrototypeProxyableClearFactoryValueType = () => void;
 export type MapPrototypeProxyableDeleteFactoryValueType<S extends PrimitiveState> = (key: keyof S) => boolean;
-export type MapPrototypeProxyableSetFactoryValueType<S extends PrimitiveState> = (key: keyof S, value: ValueOf<S>) => boolean;
+export type MapPrototypeProxyableSetFactoryValueType<S extends PrimitiveState> = (key: keyof S, value: ValueOf<S>) => MapType<S>;
 export type MapPrototypeProxyableForEachFactoryValueType<S extends PrimitiveState> = (
   callback: (value: ValueOf<S>, key: keyof S, map: Map<keyof S, ValueOf<S>>) => void
 ) => void;

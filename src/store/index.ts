@@ -339,6 +339,7 @@ export const createStore = <S extends PrimitiveState>(
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ApplyOriginFunctionType,
   ) => {
+    // todo 代理缓存复用的方式还可以再优化一下
     const spo = storeProxyWeakMap.get(target);
     const spw = spo?.get(keyChains);
     if (spw) return spw;

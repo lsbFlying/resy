@@ -43,7 +43,6 @@ import { useSubscription as useSubscriptionCore } from "../subscribe";
 import { willUpdatingProcessing } from "../subscribe/utils";
 import { __DEV__, batchUpdate } from "../static";
 import { useDebugValue, useEffect, useState } from "react";
-import { __GRANDPARENT_KEY__ } from "../immutable/static";
 
 /**
  * createStore
@@ -396,7 +395,7 @@ export const createStore = <S extends PrimitiveState>(
           return boundFnProcessing(key, value, target, stateMap, store);
         }
 
-        return key !== __GRANDPARENT_KEY__ ? value : parentTarget;
+        return value;
       },
       set: (_: S, key: keyof S, value: ValueOf<S>) => singleUpdate(
         key, value, false, target, firstLevelKey,

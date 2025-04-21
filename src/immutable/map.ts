@@ -9,7 +9,6 @@ import type {
   ApplyOriginFunctionType, IteratorsType, MapPrototypeProxyableFactoryType,
 } from "./types";
 import { iteratorProcessing, proxyable } from "./utils";
-import { __GRANDPARENT_KEY__ } from "./static";
 
 const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   applyOriginFunction: MapPrototypeProxyableValueType,
@@ -58,7 +57,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
           curKey!,
           newValue as ValueOf<S>,
           false,
-          thisArg[__GRANDPARENT_KEY__],
+          parentTarget,
           firstLevelKey,
           keyChains,
           applyOriginFunction,
@@ -78,7 +77,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
           curKey!,
           new Map(parentTarget) as ValueOf<S>,
           false,
-          thisArg[__GRANDPARENT_KEY__],
+          parentTarget,
           firstLevelKey,
           keyChains,
           applyOriginFunction,
@@ -94,12 +93,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
           curKey!,
           new Map() as ValueOf<S>,
           false,
-          /**
-           * @description Here, the goal is actually to locate the parent node data of the map,
-           * which refers to the grandparent node data in the `keyChains` hierarchy
-           * of the proxy target object of the current `clear` prototype function.
-           */
-          thisArg[__GRANDPARENT_KEY__],
+          parentTarget,
           firstLevelKey,
           keyChains,
           applyOriginFunction,

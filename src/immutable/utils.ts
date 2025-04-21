@@ -41,17 +41,16 @@ export const isMapSetPrototypeProxyable = (value: any): boolean => {
  */
 export const createNewRefValue = <T>(value: T): T => {
   const type = typeString.call(value);
+  console.log(type);
   switch (type) {
     case "[object Object]":
-      // Using `new Object(value)`, its reference will not change.
       return Object.assign({}, value);
     case "[object Array]":
       return (value as unknown[]).slice() as T;
     case "[object Map]":
       return new Map(value as Iterable<readonly [unknown, unknown]>) as T;
-    // TODO waiting develop
-    // case "[object Set]":
-    //   return new Set(value as Iterable<unknown>) as T;
+    case "[object Set]":
+      return new Set(value as Iterable<unknown>) as T;
     default:
       return value;
   }

@@ -43,46 +43,6 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
           ) as ValueOf<S>
           : value;
       };
-    case "clear":
-      return () => {
-        const curKey = Array.from(keyChains!).at(-1)?.key;
-
-        if (!parentTarget.size) return;
-
-        singleUpdate?.(
-          curKey!,
-          new Map() as ValueOf<S>,
-          false,
-          /**
-           * @description Here, the goal is actually to locate the parent node data of the map,
-           * which refers to the grandparent node data in the `keyChains` hierarchy
-           * of the proxy target object of the current `clear` prototype function.
-           */
-          thisArg[__GRANDPARENT_KEY__],
-          firstLevelKey,
-          keyChains,
-          applyOriginFunction,
-        );
-      };
-    case "delete":
-      return (key: keyof S) => {
-        const curKey = Array.from(keyChains!).at(-1)?.key;
-
-        if (!parentTarget.has(key)) return false;
-
-        // todo dev, parentTarget发生变化，不符合“不可变性设计原则”
-        parentTarget.delete(key);
-
-        return singleUpdate!(
-          curKey!,
-          new Map(parentTarget) as ValueOf<S>,
-          false,
-          thisArg[__GRANDPARENT_KEY__],
-          firstLevelKey,
-          keyChains,
-          applyOriginFunction,
-        );
-      };
     case "set":
       return (key: keyof S, value: ValueOf<S>) => {
         const curKey = Array.from(keyChains!).at(-1)?.key;
@@ -104,6 +64,46 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
           applyOriginFunction,
         );
         return newValue;
+      };
+    case "delete":
+      return (key: keyof S) => {
+        const curKey = Array.from(keyChains!).at(-1)?.key;
+
+        if (!parentTarget.has(key)) return false;
+
+        // todo dev, parentTarget发生变化，不符合“不可变性设计原则”
+        parentTarget.delete(key);
+
+        return singleUpdate!(
+          curKey!,
+          new Map(parentTarget) as ValueOf<S>,
+          false,
+          thisArg[__GRANDPARENT_KEY__],
+          firstLevelKey,
+          keyChains,
+          applyOriginFunction,
+        );
+      };
+    case "clear":
+      return () => {
+        const curKey = Array.from(keyChains!).at(-1)?.key;
+
+        if (!parentTarget.size) return;
+
+        singleUpdate?.(
+          curKey!,
+          new Map() as ValueOf<S>,
+          false,
+          /**
+           * @description Here, the goal is actually to locate the parent node data of the map,
+           * which refers to the grandparent node data in the `keyChains` hierarchy
+           * of the proxy target object of the current `clear` prototype function.
+           */
+          thisArg[__GRANDPARENT_KEY__],
+          firstLevelKey,
+          keyChains,
+          applyOriginFunction,
+        );
       };
     case "forEach":
       return (callback: (value: ValueOf<S>, key: keyof S, map: Map<keyof S, ValueOf<S>>) => void) => {

@@ -2,7 +2,7 @@ import { whatsType, typeString } from "../utils";
 import type { PrimitiveState } from "../types";
 import type {
   ApplyOriginFunctionType, IteratorsType, CreateProxyType,
-  KeyChainsSourceItemType, ProxyableType, ArrayMapSetIteratorType,
+  KeyChainsSourceItemType, ArrayMapSetIteratorType, IteratorsParentType,
 } from "./types";
 import { __ITERATOR_META_PROCESSING_KEY__ } from "./static";
 
@@ -66,16 +66,14 @@ export const createNewRefValue = <T>(value: T): T => {
  */
 export const iteratorProcessing = <S extends PrimitiveState>(
   iterator: IteratorsType<S>,
-  parentTarget: ProxyableType<S>,
+  parentTarget: IteratorsParentType<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
   applyOriginFunction?: ApplyOriginFunctionType,
   entriesFlag?: boolean,
 ) => {
-  // If it has already been processed, return directly
-  if (iterator[__ITERATOR_META_PROCESSING_KEY__]) return;
-
+  if (parentTarget[__ITERATOR_META_PROCESSING_KEY__]) return;
   const type = whatsType(iterator);
 
   const AM_IteratorFlag = type === "ArrayIterator" || type === "MapIterator";
@@ -139,7 +137,6 @@ export const iteratorProcessing = <S extends PrimitiveState>(
       };
     };
     AM_IteratorFlag && (iterator.next = iterator[Symbol.iterator]().next);
-    // Mark processed
-    iterator[__ITERATOR_META_PROCESSING_KEY__] = true;
+    parentTarget[__ITERATOR_META_PROCESSING_KEY__] = true;
   }
 };

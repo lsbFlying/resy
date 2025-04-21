@@ -74,8 +74,8 @@ const useStore = defineStore({
   infoMap: new Map<"personInfo" | "nationality", PersonInfo | Nationality>(Object.entries(infoObj) as any),
   updateInfoMap() {
     // console.log((this.infoMap.get("personInfo") as PersonInfo)?.bodyInfo.weightInfo.weight);
-    (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.reach.value = 999;
-    console.log(this.infoMap);
+    // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.reach.value = 999;
+    // console.log(this.infoMap);
     // this.infoMap.clear();
     // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.clear();
     // this.infoMap.delete("nationality");
@@ -109,12 +109,14 @@ const useStore = defineStore({
     // const a = values.next();
     // (a.value as any[])[1].bodyInfo.weightInfo.weight = 999;
     // console.log(values.next());
-    // for (const [key, value] of this.infoMap) {
-    //   console.log(key, value);
-    //   if (typeof value === "object") {
-    //     ((value as PersonInfo).bodyInfo.heightInfo.get("reach") as { value: number }).value = 3453;
-    //   }
-    // }
+    for (const [key, value] of this.infoMap) {
+      console.log(key, value);
+      if (typeof value === "object") {
+        // ((value as PersonInfo).bodyInfo.heightInfo.get("reach") as { value: number }).value = 3453;
+        // (value as PersonInfo).bodyInfo.heightInfo.reach.value = Math.random();
+        console.log((value as PersonInfo).bodyInfo.heightInfo.reach.value);
+      }
+    }
   },
 }, {
   immutable: true,

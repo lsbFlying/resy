@@ -57,22 +57,6 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
         );
         return result;
       };
-    case "clear":
-      return () => {
-        const curKey = Array.from(keyChains!).at(-1)?.key;
-
-        if (!parentTarget.size) return;
-
-        singleUpdate?.(
-          curKey!,
-          new Set() as ValueOf<S>,
-          false,
-          thisArg[__GRANDPARENT_KEY__],
-          firstLevelKey,
-          keyChains,
-          applyOriginFunction,
-        );
-      };
     case "delete":
       return (value: S) => {
         const curKey = Array.from(keyChains!).at(-1)?.key;
@@ -84,6 +68,22 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
         return singleUpdate!(
           curKey!,
           new Set(parentTarget) as ValueOf<S>,
+          false,
+          thisArg[__GRANDPARENT_KEY__],
+          firstLevelKey,
+          keyChains,
+          applyOriginFunction,
+        );
+      };
+    case "clear":
+      return () => {
+        const curKey = Array.from(keyChains!).at(-1)?.key;
+
+        if (!parentTarget.size) return;
+
+        singleUpdate?.(
+          curKey!,
+          new Set() as ValueOf<S>,
           false,
           thisArg[__GRANDPARENT_KEY__],
           firstLevelKey,

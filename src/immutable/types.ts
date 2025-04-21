@@ -127,7 +127,10 @@ export type IteratorsType<S extends PrimitiveState> = ArrayLike<S> & {
     value?: ValueOf<S> | S[] | Store<S>;
     done: boolean;
   },
-  [__ITERATOR_META_PROCESSING_KEY__]: boolean;
+};
+
+export type IteratorsParentType<S extends PrimitiveState> = ProxyableType<S> & {
+  [__ITERATOR_META_PROCESSING_KEY__]?: boolean;
 };
 
 export type ArrayMapSetIteratorType<S extends PrimitiveState> = ArrayIterator<S> | MapIterator<S> | SetIterator<S>;

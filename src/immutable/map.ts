@@ -55,7 +55,9 @@ export const applyMapClearFactory: MapPrototypeProxyableFactoryType = <S extends
 ) => {
   return () => {
     const curKey = Array.from(keyChains!).at(-1)?.key;
+
     if (!parentTarget.size) return;
+
     singleUpdate?.(
       curKey!,
       new Map() as ValueOf<S>,
@@ -93,9 +95,12 @@ export const applyMapDeleteFactory: MapPrototypeProxyableFactoryType = <S extend
 ) => {
   return (key: keyof S) => {
     const curKey = Array.from(keyChains!).at(-1)?.key;
+
     if (!parentTarget.has(key)) return false;
+
     // todo dev, parentTarget发生变化，不符合“不可变性设计原则”
     parentTarget.delete(key);
+
     return singleUpdate!(
       curKey!,
       new Map(parentTarget) as ValueOf<S>,

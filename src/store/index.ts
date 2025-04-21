@@ -339,6 +339,7 @@ export const createStore = <S extends PrimitiveState>(
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ApplyOriginFunctionType,
   ) => {
+    // TODO 每次传入的keyChains是新的引用，这里找不到旧的缓存，待修改优化
     const spw = storeProxyWeakMap.get(keyChains ?? target);
     if (spw) return spw;
 

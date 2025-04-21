@@ -4,40 +4,18 @@
 
 import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type {
-  ProxyableType, CreateProxyType, MapPrototypeProxyableValueType,
-  KeyChainsSourceItemType, MapPrototypeProxyableFactoryType,
-  MapWithGrandparentKeyType, ApplyOriginFunctionType, IteratorsType,
+  KeyChainsSourceItemType, ProxyableType, CreateProxyType,
+  MapPrototypeProxyableValueType, MapWithGrandparentKeyType,
+  ApplyOriginFunctionType, IteratorsType, MapPrototypeProxyableFactoryType,
 } from "./types";
 import { iteratorProcessing, proxyable } from "./utils";
 import { __GRANDPARENT_KEY__ } from "./static";
 
-export const applyGetFactory = <S extends PrimitiveState>(
-  applyOriginFunction: MapPrototypeProxyableValueType,
-  _thisArg: MapWithGrandparentKeyType<S>,
-  parentTarget: MapType<S>,
-  createProxy: CreateProxyType<S>,
-  firstLevelKey?: keyof S,
-  keyChains?: Set<KeyChainsSourceItemType<S>>,
-) => {
-  return (key: keyof S): ValueOf<S> | undefined => {
-    const value = parentTarget.get(key);
-    return proxyable(value)
-      ? createProxy(
-        value as ProxyableType<S>,
-        parentTarget,
-        firstLevelKey,
-        new Set(keyChains).add({ key }),
-        applyOriginFunction,
-      ) as ValueOf<S>
-      : value;
-  };
-};
-
-export const applyMapClearFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
+const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapWithGrandparentKeyType<S>,
   parentTarget: MapType<S>,
-  _createProxy: CreateProxyType<S>,
+  createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
   singleUpdate?: (
@@ -50,173 +28,131 @@ export const applyMapClearFactory: MapPrototypeProxyableFactoryType = <S extends
     applyOriginFunction?: ApplyOriginFunctionType,
   ) => boolean,
 ) => {
-  return () => {
-    const curKey = Array.from(keyChains!).at(-1)?.key;
+  const fnName = applyOriginFunction.name;
+  switch (fnName) {
+    case "get":
+      return (key: keyof S): ValueOf<S> | undefined => {
+        const value = parentTarget.get(key);
+        return proxyable(value)
+          ? createProxy(
+            value as ProxyableType<S>,
+            parentTarget,
+            firstLevelKey,
+            new Set(keyChains).add({ key }),
+            applyOriginFunction,
+          ) as ValueOf<S>
+          : value;
+      };
+    case "clear":
+      return () => {
+        const curKey = Array.from(keyChains!).at(-1)?.key;
 
-    if (!parentTarget.size) return;
+        if (!parentTarget.size) return;
 
-    singleUpdate?.(
-      curKey!,
-      new Map() as ValueOf<S>,
-      false,
-      /**
-       * @description Here, the goal is actually to locate the parent node data of the map,
-       * which refers to the grandparent node data in the `keyChains` hierarchy
-       * of the proxy target object of the current `clear` prototype function.
-       */
-      thisArg[__GRANDPARENT_KEY__],
-      firstLevelKey,
-      keyChains,
-      applyOriginFunction,
-    );
-  };
+        singleUpdate?.(
+          curKey!,
+          new Map() as ValueOf<S>,
+          false,
+          /**
+           * @description Here, the goal is actually to locate the parent node data of the map,
+           * which refers to the grandparent node data in the `keyChains` hierarchy
+           * of the proxy target object of the current `clear` prototype function.
+           */
+          thisArg[__GRANDPARENT_KEY__],
+          firstLevelKey,
+          keyChains,
+          applyOriginFunction,
+        );
+      };
+    case "delete":
+      return (key: keyof S) => {
+        const curKey = Array.from(keyChains!).at(-1)?.key;
+
+        if (!parentTarget.has(key)) return false;
+
+        // todo dev, parentTarget发生变化，不符合“不可变性设计原则”
+        parentTarget.delete(key);
+
+        return singleUpdate!(
+          curKey!,
+          new Map(parentTarget) as ValueOf<S>,
+          false,
+          thisArg[__GRANDPARENT_KEY__],
+          firstLevelKey,
+          keyChains,
+          applyOriginFunction,
+        );
+      };
+    case "set":
+      return (key: keyof S, value: ValueOf<S>) => {
+        const curKey = Array.from(keyChains!).at(-1)?.key;
+        const oldValue = parentTarget.get(key);
+
+        if (Object.is(oldValue, value)) return parentTarget;
+
+        // todo dev, parentTarget发生变化，不符合“不可变性设计原则”
+        parentTarget.set(key, value);
+        const newValue = new Map(parentTarget);
+
+        singleUpdate!(
+          curKey!,
+          newValue as ValueOf<S>,
+          false,
+          thisArg[__GRANDPARENT_KEY__],
+          firstLevelKey,
+          keyChains,
+          applyOriginFunction,
+        );
+        return newValue;
+      };
+    case "forEach":
+      return (callback: (value: ValueOf<S>, key: keyof S, map: Map<keyof S, ValueOf<S>>) => void) => {
+        parentTarget.forEach((value, key) => {
+          callback(
+            proxyable(value)
+              ? (
+                createProxy(
+                  value as ProxyableType<S>,
+                  parentTarget,
+                  firstLevelKey,
+                  new Set(keyChains).add({ key }),
+                  applyOriginFunction,
+                ) as ValueOf<S>
+              )
+              : value,
+            /**
+             * @description There is no need to proxy the `key`.
+             * Even if the keys are reference types and the internal data of the referenced objects changes,
+             * it should not trigger changes in the `Map`,
+             * as the state of the `Map` depends on the key's reference rather than the key's content.
+             */
+            key,
+            // TODO waiting test
+            thisArg,
+          );
+        });
+      };
+    case "values":
+      return () => {
+        const iterators = parentTarget.values();
+        iteratorProcessing(
+          iterators as any as IteratorsType<S>, parentTarget, createProxy,
+          firstLevelKey, keyChains, applyOriginFunction,
+        );
+        return iterators;
+      };
+    case "entries":
+      return () => {
+        const iterators = parentTarget.entries();
+        iteratorProcessing(
+          iterators as any as IteratorsType<S>, parentTarget, createProxy,
+          firstLevelKey, keyChains, applyOriginFunction, true,
+        );
+        return iterators;
+      };
+    default:
+      return applyOriginFunction as any;
+  }
 };
 
-export const applyMapDeleteFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  applyOriginFunction: MapPrototypeProxyableValueType,
-  thisArg: MapWithGrandparentKeyType<S>,
-  parentTarget: MapType<S>,
-  _createProxy: CreateProxyType<S>,
-  firstLevelKey?: keyof S,
-  keyChains?: Set<KeyChainsSourceItemType<S>>,
-  singleUpdate?: (
-    key: keyof S,
-    value: ValueOf<S>,
-    isDelete: boolean,
-    target: object | S,
-    firstLevelKey?: keyof S,
-    keyChains?: Set<KeyChainsSourceItemType<S>>,
-    applyOriginFunction?: ApplyOriginFunctionType,
-  ) => boolean,
-) => {
-  return (key: keyof S) => {
-    const curKey = Array.from(keyChains!).at(-1)?.key;
-
-    if (!parentTarget.has(key)) return false;
-
-    // todo dev, parentTarget发生变化，不符合“不可变性设计原则”
-    parentTarget.delete(key);
-
-    return singleUpdate!(
-      curKey!,
-      new Map(parentTarget) as ValueOf<S>,
-      false,
-      thisArg[__GRANDPARENT_KEY__],
-      firstLevelKey,
-      keyChains,
-      applyOriginFunction,
-    );
-  };
-};
-
-export const applySetFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  applyOriginFunction: MapPrototypeProxyableValueType,
-  thisArg: MapWithGrandparentKeyType<S>,
-  parentTarget: MapType<S>,
-  _createProxy: CreateProxyType<S>,
-  firstLevelKey?: keyof S,
-  keyChains?: Set<KeyChainsSourceItemType<S>>,
-  singleUpdate?: (
-    key: keyof S,
-    value: ValueOf<S>,
-    isDelete: boolean,
-    target: object | S,
-    firstLevelKey?: keyof S,
-    keyChains?: Set<KeyChainsSourceItemType<S>>,
-    applyOriginFunction?: ApplyOriginFunctionType,
-  ) => boolean,
-) => {
-  return (key: keyof S, value: ValueOf<S>) => {
-    const curKey = Array.from(keyChains!).at(-1)?.key;
-    const oldValue = parentTarget.get(key);
-
-    if (Object.is(oldValue, value)) return parentTarget;
-
-    // todo dev, parentTarget发生变化，不符合“不可变性设计原则”
-    parentTarget.set(key, value);
-    const newValue = new Map(parentTarget);
-
-    singleUpdate!(
-      curKey!,
-      newValue as ValueOf<S>,
-      false,
-      thisArg[__GRANDPARENT_KEY__],
-      firstLevelKey,
-      keyChains,
-      applyOriginFunction,
-    );
-    return newValue;
-  };
-};
-
-export const applyMapForEachFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  applyOriginFunction: MapPrototypeProxyableValueType,
-  thisArg: MapWithGrandparentKeyType<S>,
-  parentTarget: MapType<S>,
-  createProxy: CreateProxyType<S>,
-  firstLevelKey?: keyof S,
-  keyChains?: Set<KeyChainsSourceItemType<S>>,
-) => {
-  return (callback: (value: ValueOf<S>, key: keyof S, map: Map<keyof S, ValueOf<S>>) => void) => {
-    parentTarget.forEach((value, key) => {
-      callback(
-        proxyable(value)
-          ? (
-            createProxy(
-              value as ProxyableType<S>,
-              parentTarget,
-              firstLevelKey,
-              new Set(keyChains).add({ key }),
-              applyOriginFunction,
-            ) as ValueOf<S>
-          )
-          : value,
-        /**
-         * @description There is no need to proxy the `key`.
-         * Even if the keys are reference types and the internal data of the referenced objects changes,
-         * it should not trigger changes in the `Map`,
-         * as the state of the `Map` depends on the key's reference rather than the key's content.
-         */
-        key,
-        // TODO waiting test
-        thisArg,
-      );
-    });
-  };
-};
-
-export const applyMapValuesFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  applyOriginFunction: MapPrototypeProxyableValueType,
-  _thisArg: MapWithGrandparentKeyType<S>,
-  parentTarget: MapType<S>,
-  createProxy: CreateProxyType<S>,
-  firstLevelKey?: keyof S,
-  keyChains?: Set<KeyChainsSourceItemType<S>>,
-) => {
-  return () => {
-    const iterators = parentTarget.values();
-    iteratorProcessing(
-      iterators as any as IteratorsType<S>, parentTarget, createProxy,
-      firstLevelKey, keyChains, applyOriginFunction,
-    );
-    return iterators;
-  };
-};
-
-export const applyMapEntriesFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  applyOriginFunction: MapPrototypeProxyableValueType,
-  _thisArg: MapWithGrandparentKeyType<S>,
-  parentTarget: MapType<S>,
-  createProxy: CreateProxyType<S>,
-  firstLevelKey?: keyof S,
-  keyChains?: Set<KeyChainsSourceItemType<S>>,
-) => {
-  return () => {
-    const iterators = parentTarget.entries();
-    iteratorProcessing(
-      iterators as any as IteratorsType<S>, parentTarget, createProxy,
-      firstLevelKey, keyChains, applyOriginFunction, true,
-    );
-    return iterators;
-  };
-};
+export default applyMapPrototypeFactory;

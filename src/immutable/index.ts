@@ -2,14 +2,8 @@ import type {
   MapPrototypeProxyableValueType, MapPrototypeProxyableFactoryType,
   SetPrototypeProxyableValueType, SetPrototypeProxyableFactoryType,
 } from "./types";
-import {
-  applyGetFactory, applyMapClearFactory, applyMapDeleteFactory, applySetFactory,
-  applyMapForEachFactory, applyMapValuesFactory, applyMapEntriesFactory,
-} from "./map";
-import {
-  applyAddFactory, applySetClearFactory, applySetDeleteFactory, applySetForEachFactory,
-  applySetKeysValuesFactory, applySetEntriesFactory,
-} from "./set";
+import applyMapPrototypeFactory from "./map";
+import applySetPrototypeFactory from "./set";
 
 export const __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ = new Map<
   | MapPrototypeProxyableValueType
@@ -18,18 +12,18 @@ export const __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ = new Map<
   | SetPrototypeProxyableFactoryType
 >()
   // map
-  .set(Map.prototype.get, applyGetFactory)
-  .set(Map.prototype.clear, applyMapClearFactory)
-  .set(Map.prototype.delete, applyMapDeleteFactory)
-  .set(Map.prototype.set, applySetFactory)
-  .set(Map.prototype.forEach, applyMapForEachFactory)
-  .set(Map.prototype.values, applyMapValuesFactory)
-  .set(Map.prototype.entries, applyMapEntriesFactory)
+  .set(Map.prototype.get, applyMapPrototypeFactory)
+  .set(Map.prototype.clear, applyMapPrototypeFactory)
+  .set(Map.prototype.delete, applyMapPrototypeFactory)
+  .set(Map.prototype.set, applyMapPrototypeFactory)
+  .set(Map.prototype.forEach, applyMapPrototypeFactory)
+  .set(Map.prototype.values, applyMapPrototypeFactory)
+  .set(Map.prototype.entries, applyMapPrototypeFactory)
   // set
-  .set(Set.prototype.add, applyAddFactory)
-  .set(Set.prototype.clear, applySetClearFactory)
-  .set(Set.prototype.delete, applySetDeleteFactory)
-  .set(Set.prototype.forEach, applySetForEachFactory)
-  .set(Set.prototype.keys, applySetKeysValuesFactory)
-  .set(Set.prototype.values, applySetKeysValuesFactory)
-  .set(Set.prototype.entries, applySetEntriesFactory);
+  .set(Set.prototype.add, applySetPrototypeFactory)
+  .set(Set.prototype.clear, applySetPrototypeFactory)
+  .set(Set.prototype.delete, applySetPrototypeFactory)
+  .set(Set.prototype.forEach, applySetPrototypeFactory)
+  .set(Set.prototype.keys, applySetPrototypeFactory)
+  .set(Set.prototype.values, applySetPrototypeFactory)
+  .set(Set.prototype.entries, applySetPrototypeFactory);

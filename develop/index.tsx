@@ -1,9 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 // import Comp from "./App";
-// import Comp from "./listApp";
+import Comp from "./listApp";
 // import Comp from "./mapApp";
-import Comp from "./setApp";
+// import Comp from "./setApp";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

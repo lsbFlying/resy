@@ -384,8 +384,11 @@ export const createStore = <S extends PrimitiveState>(
         }
 
         if (typeof value === "function" && !(value as AnyBoundFn).__bound__) {
-          // eslint-disable-next-line @typescript-eslint/no-use-before-define
-          return boundFnProcessing(key, value, target, stateMap, store);
+          // TODO 数组原型方法会自动处理代理操作，因为数组的每一项元素的读取都会通过index索引来获取
+          return !hasOwnProperty.call(Array.prototype, value.name)
+            // eslint-disable-next-line @typescript-eslint/no-use-before-define
+            ? boundFnProcessing(key, value, target, stateMap, store)
+            : value;
         }
 
         return key !== __GRANDPARENT_KEY__ ? value : parentTarget;

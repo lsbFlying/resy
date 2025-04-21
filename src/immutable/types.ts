@@ -37,7 +37,6 @@ export type MapPrototypeProxyableType<T extends PrimitiveState = any> = Pick<
 export type MapPrototypeProxyableValueType = ValueOf<MapPrototypeProxyableType>;
 
 export type MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapWithGrandparentKeyType<S>,
   parentTarget: MapType<S>,
@@ -86,7 +85,6 @@ export type SetPrototypeProxyableType<T extends PrimitiveState = any> = Pick<
 export type SetPrototypeProxyableValueType = ValueOf<SetPrototypeProxyableType>;
 
 export type SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: SetPrototypeProxyableValueType,
   thisArg: SetWithGrandparentKeyType<S>,
   parentTarget: Set<S>,

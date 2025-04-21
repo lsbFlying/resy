@@ -294,16 +294,9 @@ export const createStore = <S extends PrimitiveState>(
         }, firstLevelValue);
 
         /**
-         * @description This refers to the scenario where a function property has already been proxied using `apply`,
-         * and the array element parameters within the callback function
-         * of the proxied function property undergo another round of proxying.
-         * In this scenario, the `applyOriginFunction` parameter appears,
-         * which refers to the function property from the previous layer of proxy.
-         *
-         * Since the `applyLoopFactory` internally involves secondary proxying of array elements,
-         * but the proxied array elements may not necessarily be updated,
-         * the removal operation is not handled immediately within `applyLoopFactory`.
-         * Instead, it is executed here within the logic branch that performs actual updates.
+         * @description The prototype function proxies of the parent object of `Map` and `Set` have been updated.
+         * At this point, it is necessary to remove the previous proxies for the prototype functions;
+         * otherwise, subsequent read and write operations will not be able to access the latest proxied data.
          */
         applyOriginFunction && storeProxyWeakMap.delete(applyOriginFunction);
       }
@@ -383,7 +376,16 @@ export const createStore = <S extends PrimitiveState>(
           );
         }
 
-        // TODO 数组原型方法会自动处理代理操作，因为数组的每一项元素的读取都会通过index索引来获取
+        /**
+         * @description The array prototype methods will automatically handle proxy operations,
+         * because accessing each element of an array is done through its index,
+         * which will be intercepted by the proxy.
+         * Therefore, for array prototype methods, we can simply return them directly.
+         *
+         * Moreover, they need to be checked and executed before the "__bound__" conditional branch below;
+         * otherwise, they will be intercepted and handled first by the "__bound__" branch,
+         * making it impossible to reach the array prototype judgment branch.
+         */
         if (hasOwnProperty.call(Array.prototype, (value as AnyFn).name)) return value;
 
         if (typeof value === "function" && !(value as AnyBoundFn).__bound__) {
@@ -407,7 +409,7 @@ export const createStore = <S extends PrimitiveState>(
       apply(applyOriginFunction: any, thisArg: any, argArray: any[]) {
         return Reflect.apply(
           __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
-            storeProxyWeakMap, applyOriginFunction, thisArg, parentTarget,
+            applyOriginFunction, thisArg, parentTarget,
             createProxy, firstLevelKey, keyChains, singleUpdate,
           ),
           thisArg,

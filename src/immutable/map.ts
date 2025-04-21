@@ -8,12 +8,10 @@ import type {
   KeyChainsSourceItemType, MapPrototypeProxyableFactoryType,
   MapWithGrandparentKeyType, ApplyOriginFunctionType, IteratorsType,
 } from "./types";
-import type { Store } from "../store/types";
 import { iteratorProcessing, proxyable } from "./utils";
 import { __GRANDPARENT_KEY__ } from "./static";
 
 export const applyGetFactory = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   _thisArg: MapWithGrandparentKeyType<S>,
   parentTarget: MapType<S>,
@@ -36,7 +34,6 @@ export const applyGetFactory = <S extends PrimitiveState>(
 };
 
 export const applyMapClearFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapWithGrandparentKeyType<S>,
   parentTarget: MapType<S>,
@@ -76,7 +73,6 @@ export const applyMapClearFactory: MapPrototypeProxyableFactoryType = <S extends
 };
 
 export const applyMapDeleteFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapWithGrandparentKeyType<S>,
   parentTarget: MapType<S>,
@@ -114,7 +110,6 @@ export const applyMapDeleteFactory: MapPrototypeProxyableFactoryType = <S extend
 };
 
 export const applySetFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapWithGrandparentKeyType<S>,
   parentTarget: MapType<S>,
@@ -155,7 +150,6 @@ export const applySetFactory: MapPrototypeProxyableFactoryType = <S extends Prim
 };
 
 export const applyMapForEachFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapWithGrandparentKeyType<S>,
   parentTarget: MapType<S>,
@@ -192,7 +186,6 @@ export const applyMapForEachFactory: MapPrototypeProxyableFactoryType = <S exten
 };
 
 export const applyMapValuesFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   _thisArg: MapWithGrandparentKeyType<S>,
   parentTarget: MapType<S>,
@@ -211,7 +204,6 @@ export const applyMapValuesFactory: MapPrototypeProxyableFactoryType = <S extend
 };
 
 export const applyMapEntriesFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: MapPrototypeProxyableValueType,
   _thisArg: MapWithGrandparentKeyType<S>,
   parentTarget: MapType<S>,

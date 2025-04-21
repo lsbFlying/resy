@@ -8,12 +8,10 @@ import type {
   KeyChainsSourceItemType, SetPrototypeProxyableFactoryType,
   SetWithGrandparentKeyType, ApplyOriginFunctionType, IteratorsType,
 } from "./types";
-import type { Store } from "../store/types";
 import { iteratorProcessing, proxyable } from "./utils";
 import { __GRANDPARENT_KEY__ } from "./static";
 
 export const applyAddFactory: SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: SetPrototypeProxyableValueType,
   thisArg: SetWithGrandparentKeyType<S>,
   parentTarget: Set<S>,
@@ -59,7 +57,6 @@ export const applyAddFactory: SetPrototypeProxyableFactoryType = <S extends Prim
 };
 
 export const applySetClearFactory: SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: SetPrototypeProxyableValueType,
   thisArg: SetWithGrandparentKeyType<S>,
   parentTarget: Set<S>,
@@ -94,7 +91,6 @@ export const applySetClearFactory: SetPrototypeProxyableFactoryType = <S extends
 };
 
 export const applySetDeleteFactory: SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: SetPrototypeProxyableValueType,
   thisArg: SetWithGrandparentKeyType<S>,
   parentTarget: Set<S>,
@@ -132,7 +128,6 @@ export const applySetDeleteFactory: SetPrototypeProxyableFactoryType = <S extend
 
 // todo waiting develop
 export const applySetForEachFactory: SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: SetPrototypeProxyableValueType,
   thisArg: SetWithGrandparentKeyType<S>,
   parentTarget: Set<S>,
@@ -176,7 +171,6 @@ export const applySetForEachFactory: SetPrototypeProxyableFactoryType = <S exten
 
 // todo waiting develop
 export const applySetKeysValuesFactory: SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: SetPrototypeProxyableValueType,
   _thisArg: SetWithGrandparentKeyType<S>,
   parentTarget: Set<S>,
@@ -196,7 +190,6 @@ export const applySetKeysValuesFactory: SetPrototypeProxyableFactoryType = <S ex
 
 // todo waiting develop
 export const applySetEntriesFactory: SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  _storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
   applyOriginFunction: SetPrototypeProxyableValueType,
   _thisArg: SetWithGrandparentKeyType<S>,
   parentTarget: Set<S>,

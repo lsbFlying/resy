@@ -105,7 +105,7 @@ export const createStore = <S extends PrimitiveState>(
   // The core map of store
   const storeMap: StoreMap<S> = new Map();
 
-  const storeProxyWeakMap = new WeakMap<object, Map<any, Store<S>>>();
+  const storeProxyWeakMap = new WeakMap<Set<KeyChainsSourceItemType<S>> | object, Store<S>>();
 
   // The storage stack of this proxy object for the class component
   const classThisPointerSet = new Set<ClassInstanceTypeOfConnectStore<S>>();
@@ -339,9 +339,7 @@ export const createStore = <S extends PrimitiveState>(
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ApplyOriginFunctionType,
   ) => {
-    // todo 代理缓存复用的方式还可以再优化一下
-    const spo = storeProxyWeakMap.get(target);
-    const spw = spo?.get(keyChains);
+    const spw = storeProxyWeakMap.get(keyChains ?? target);
     if (spw) return spw;
 
     const isStateSource = target === stateMap;
@@ -421,7 +419,7 @@ export const createStore = <S extends PrimitiveState>(
      * to prevent logical errors in recursive proxying
      * caused by the scenario where the same proxy target appears at different levels.
      */
-    storeProxyWeakMap.set(target, new Map().set(keyChains, sp));
+    storeProxyWeakMap.set(keyChains ?? target, sp);
 
     return sp;
   };

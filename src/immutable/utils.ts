@@ -41,7 +41,6 @@ export const isMapSetPrototypeProxyable = (value: any): boolean => {
  */
 export const createNewRefValue = <T>(value: T): T => {
   const type = typeString.call(value);
-  console.log(type);
   switch (type) {
     case "[object Object]":
       return Object.assign({}, value);

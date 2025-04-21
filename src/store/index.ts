@@ -386,7 +386,10 @@ export const createStore = <S extends PrimitiveState>(
          * otherwise, they will be intercepted and handled first by the "__bound__" branch,
          * making it impossible to reach the array prototype judgment branch.
          */
-        if (hasOwnProperty.call(Array.prototype, (value as AnyFn).name)) return value;
+        if (
+          typeof value === "function"
+          && hasOwnProperty.call(Array.prototype, (value as AnyFn).name)
+        ) return value;
 
         if (typeof value === "function" && !(value as AnyBoundFn).__bound__) {
           // eslint-disable-next-line @typescript-eslint/no-use-before-define

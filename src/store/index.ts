@@ -380,18 +380,13 @@ export const createStore = <S extends PrimitiveState>(
          * @description The array prototype methods will automatically handle proxy operations,
          * because accessing each element of an array is done through its index,
          * which will be intercepted by the proxy.
-         * Therefore, for array prototype methods, we can simply return them directly.
-         *
-         * Moreover, they need to be checked and executed before the "__bound__" conditional branch below;
-         * otherwise, they will be intercepted and handled first by the "__bound__" branch,
-         * making it impossible to reach the array prototype judgment branch.
+         * Therefore, for array prototype methods, we don't need any special treatment.
          */
         if (
           typeof value === "function"
-          && hasOwnProperty.call(Array.prototype, (value as AnyFn).name)
-        ) return value;
-
-        if (typeof value === "function" && !(value as AnyBoundFn).__bound__) {
+          && !hasOwnProperty.call(Array.prototype, (value as AnyFn).name)
+          && !(value as AnyBoundFn).__bound__
+        ) {
           // eslint-disable-next-line @typescript-eslint/no-use-before-define
           return boundFnProcessing(key, value, target, stateMap, store);
         }

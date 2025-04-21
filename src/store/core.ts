@@ -324,14 +324,14 @@ export const boundFnProcessing = <S extends PrimitiveState>(
   stateMap: MapType<S>,
   store: Store<S>,
 ) => {
-  const stateSource = target === stateMap;
+  const isStateSource = target === stateMap;
   const boundFn = ((...args: any[]) => (value as AnyFn).apply(
     // Maintaining the source orientation of the `this` pointer.
-    stateSource ? store : target,
+    isStateSource ? store : target,
     args,
   )) as AnyBoundFn;
   boundFn.__bound__ = true;
-  if (stateSource) {
+  if (isStateSource) {
     stateMap.set(key, boundFn as ValueOf<S>);
   } else {
     (target as S)[key] = boundFn as ValueOf<S>;

@@ -3,6 +3,16 @@ import React, {
 } from "react";
 import { defineStore } from "../src";
 
+// const state = new Proxy(new Map(Object.entries({ name: "asd", age: 12 })), {
+//   get(target: Map<"name" | "age", string | number>, p: any, receiver: any): any {
+//     console.log("key-p:", p);
+//     // return Reflect.get(target, p, receiver);
+//     // return target[p];
+//     return target[p].bind(target);
+//   },
+// });
+// console.log(state.get("name"));
+
 const infoObj = {
   personInfo: {
     ageInfo: {
@@ -13,12 +23,18 @@ const infoObj = {
       name: "Liu-Shan-Bao",
     },
     bodyInfo: {
-      heightInfo: new Map(Object.entries({
+      // heightInfo: new Map(Object.entries({
+      //   height: 170,
+      //   reach: {
+      //     value: 170
+      //   },
+      // })),
+      heightInfo: {
         height: 170,
         reach: {
           value: 170
         },
-      })),
+      },
       weightInfo: {
         weight: 64,
         level: "bantamweight",
@@ -38,7 +54,13 @@ type PersonInfo = {
     name: string;
   };
   bodyInfo: {
-    heightInfo: Map<"height" | "reach", number | { value: number }>;
+    // heightInfo: Map<"height" | "reach", number | { value: number }>;
+    heightInfo: {
+      height: number;
+      reach: {
+        value: number;
+      },
+    };
     weightInfo: {
       weight: number;
       level: string;
@@ -52,7 +74,8 @@ const useStore = defineStore({
   infoMap: new Map<"personInfo" | "nationality", PersonInfo | Nationality>(Object.entries(infoObj) as any),
   updateInfoMap() {
     // console.log((this.infoMap.get("personInfo") as PersonInfo)?.bodyInfo.weightInfo.weight);
-    // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.reach = Math.floor(Math.random() * 1000);
+    (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.reach.value = 999;
+    console.log(this.infoMap);
     // this.infoMap.clear();
     // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.clear();
     // this.infoMap.delete("nationality");
@@ -86,12 +109,12 @@ const useStore = defineStore({
     // const a = values.next();
     // (a.value as any[])[1].bodyInfo.weightInfo.weight = 999;
     // console.log(values.next());
-    for (const [key, value] of this.infoMap) {
-      console.log(key, value);
-      if (typeof value === "object") {
-        ((value as PersonInfo).bodyInfo.heightInfo.get("reach") as { value: number }).value = 3453;
-      }
-    }
+    // for (const [key, value] of this.infoMap) {
+    //   console.log(key, value);
+    //   if (typeof value === "object") {
+    //     ((value as PersonInfo).bodyInfo.heightInfo.get("reach") as { value: number }).value = 3453;
+    //   }
+    // }
   },
 }, {
   immutable: true,
@@ -105,9 +128,9 @@ const App = () => {
   const { age, level: ageLevel } = ageInfo ?? {};
   const { name } = nameInfo ?? {};
   const { heightInfo, weightInfo } = bodyInfo ?? {};
-  // const { height, reach } = heightInfo ?? {};
-  const height = heightInfo?.get("height") as number;
-  const reach = heightInfo?.get("reach") as { value: number };
+  const { height, reach } = heightInfo ?? {};
+  // const height = heightInfo?.get("height") as number;
+  // const reach = heightInfo?.get("reach") as { value: number };
   const { weight, level: weightLevel } = weightInfo ?? {};
 
   useEffect(() => {

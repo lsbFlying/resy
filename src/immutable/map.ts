@@ -6,7 +6,7 @@ import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type {
   ProxyableType, CreateProxyType, MapPrototypeProxyableValueType,
   KeyChainsSourceItemType, MapPrototypeProxyableFactoryType,
-  MapWithGrandparentKeyType, ApplyOriginFunctionType, ArrayLikeIteratorsType,
+  MapWithGrandparentKeyType, ApplyOriginFunctionType, IteratorsType,
 } from "./types";
 import type { Store } from "../store/types";
 import { iteratorProcessing, proxyable } from "./utils";
@@ -187,7 +187,7 @@ export const applyMapValuesFactory: MapPrototypeProxyableFactoryType = <S extend
   return () => {
     const iterators = parentTarget.values();
     iteratorProcessing(
-      iterators as any as ArrayLikeIteratorsType<S>, parentTarget, createProxy,
+      iterators as any as IteratorsType<S>, parentTarget, createProxy,
       firstLevelKey, keyChains, applyOriginFunction,
     );
     return iterators;
@@ -206,8 +206,8 @@ export const applyMapEntriesFactory: MapPrototypeProxyableFactoryType = <S exten
   return () => {
     const iterators = parentTarget.entries();
     iteratorProcessing(
-      iterators as any as ArrayLikeIteratorsType<S>, parentTarget, createProxy,
-      firstLevelKey, keyChains, applyOriginFunction, undefined, true,
+      iterators as any as IteratorsType<S>, parentTarget, createProxy,
+      firstLevelKey, keyChains, applyOriginFunction, true,
     );
     return iterators;
   };

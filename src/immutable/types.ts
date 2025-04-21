@@ -18,100 +18,7 @@ export type CreateProxyType<S extends PrimitiveState> = (
   applyOriginFunction?: ApplyOriginFunctionType,
 ) => Store<S>;
 
-export type ApplyOriginFunctionType =
-  | ArrayPrototypeProxyableValueType
-  | MapPrototypeProxyableValueType
-  | SetPrototypeProxyableValueType;
-
-export type ArrayPrototypeProxyableType<T extends PrimitiveState = {}> = Pick<
-  Array<T>,
-  | "forEach"
-  | "map"
-  | "filter"
-  | "find"
-  | "findIndex"
-  | "findLast"
-  | "findLastIndex"
-  | "every"
-  | "some"
-  | "flatMap"
-  | "flat"
-  | "push"
-  | "pop"
-  | "fill"
-  | "reverse"
-  | "toReversed"
-  | "shift"
-  | "unshift"
-  | "sort"
-  | "toSorted"
-  | "splice"
-  | "copyWithin"
-  | "at"
-  | "values"
-  | "concat"
-  | "entries"
-  | "reduce"
-  | "reduceRight"
-  | "slice"
-  | "with"
->;
-export type ArrayPrototypeProxyableKeyType = keyof ArrayPrototypeProxyableType;
-export type ArrayPrototypeProxyableValueType = ValueOf<ArrayPrototypeProxyableType>;
-
-export type ArrayPrototypeProxyableCallbackType<T = any> = (value: T, index: number, array: T[]) => (void | T);
-
-export type ArrayPrototypeProxyableLoopFactoryValueType = <T>(callback: ArrayPrototypeProxyableCallbackType) => (void | T[]);
-
-export type ArrayPrototypeProxyablePushFactoryValueType = <T>(...items: T[]) => number;
-
-export type ArrayPrototypeProxyableSortFactoryValueType = <T>(compareFn?: (a: T, b: T) => number) => T[];
-
-export type ArrayPrototypeProxyableCopyWithinFactoryValueType = <T>(
-  target: number,
-  start: number,
-  end?: number,
-) => T[];
-
-export type ArrayPrototypeProxyableAtFactoryValueType = <T>(index: number) => (T | undefined);
-
-export type ArrayPrototypeProxyableValuesFactoryValueType = <T>() => ArrayIterator<T>;
-
-export type ArrayPrototypeProxyableConcatFactoryValueType = <T>(...items: (T | ConcatArray<T>)[]) => T[];
-
-export type ArrayPrototypeProxyableEntriesFactoryValueType = <T>() => ArrayIterator<[number, T]>;
-
-export type ArrayPrototypeProxyableFlatFactoryValueType = <A, D extends number = 1>(this: A, depth?: D) => FlatArray<A, D>[];
-
-export type ArrayPrototypeProxyableReduceInitFactoryValueType = <T>(
-  callback: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T,
-  initialValue: T,
-) => T;
-export type ArrayPrototypeProxyableReduceFactoryValueType = <T>(
-  callback: (previousValue: T, currentValue: T, currentIndex: number, array: T[]) => T,
-) => T;
-
-export type ArrayPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  storeProxyWeakMap: WeakMap<object, Map<any, Store<S>>>,
-  applyOriginFunction: ArrayPrototypeProxyableValueType,
-  thisArg: S[],
-  parentTarget: S[],
-  createProxy: CreateProxyType<S>,
-  firstLevelKey?: keyof S,
-  keyChains?: Set<KeyChainsSourceItemType<S>>,
-) => (
-  | ArrayPrototypeProxyableLoopFactoryValueType
-  | ArrayPrototypeProxyableSortFactoryValueType
-  | ArrayPrototypeProxyableAtFactoryValueType
-  | ArrayPrototypeProxyableFlatFactoryValueType
-  | ArrayPrototypeProxyableCopyWithinFactoryValueType
-  | ArrayPrototypeProxyablePushFactoryValueType
-  | ArrayPrototypeProxyableValuesFactoryValueType
-  | ArrayPrototypeProxyableConcatFactoryValueType
-  | ArrayPrototypeProxyableEntriesFactoryValueType
-  | ArrayPrototypeProxyableReduceFactoryValueType
-  | ArrayPrototypeProxyableReduceInitFactoryValueType
-);
+export type ApplyOriginFunctionType = MapPrototypeProxyableValueType | SetPrototypeProxyableValueType;
 
 export type MapWithGrandparentKeyType<S extends PrimitiveState> = MapType<S> & {
   [__GRANDPARENT_KEY__]: MapWithGrandparentKeyType<S>;
@@ -211,7 +118,7 @@ export type SetPrototypeProxyableForEachFactoryValueType<S extends PrimitiveStat
   ) => void
 ) => void;
 
-export type ArrayLikeIteratorsType<S extends PrimitiveState> = ArrayLike<S> & {
+export type IteratorsType<S extends PrimitiveState> = ArrayLike<S> & {
   [Symbol.iterator]: () => {
     next(): {
       value?: ValueOf<S> | S[] | Store<S>;

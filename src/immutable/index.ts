@@ -1,6 +1,5 @@
 import type {
-  MapPrototypeProxyableValueType,
-  MapPrototypeProxyableFactoryType,
+  MapPrototypeProxyableValueType, MapPrototypeProxyableFactoryType,
   SetPrototypeProxyableValueType, SetPrototypeProxyableFactoryType,
 } from "./types";
 import {
@@ -12,7 +11,7 @@ import {
   applySetKeysValuesFactory, applySetEntriesFactory,
 } from "./set";
 
-export const __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ = new Map<
+export const __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ = new Map<
   | MapPrototypeProxyableValueType
   | SetPrototypeProxyableValueType,
   | MapPrototypeProxyableFactoryType

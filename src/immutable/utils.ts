@@ -1,7 +1,7 @@
 import { whatsType, typeString } from "../utils";
 import type { PrimitiveState } from "../types";
 import type {
-  ApplyOriginFunctionType, ArrayLikeIteratorsType, CreateProxyType,
+  ApplyOriginFunctionType, IteratorsType, CreateProxyType,
   KeyChainsSourceItemType, ProxyableType, ArrayMapSetIteratorType,
 } from "./types";
 import { __ITERATOR_META_PROCESSING_KEY__ } from "./static";
@@ -12,8 +12,8 @@ export const proxyable = (value: unknown): boolean => {
   return proxyableSet.has(whatsType(value));
 };
 
-// A collection of functions that can be executed by proxies for arrays, Maps, and Set prototype chains.
-const arrayMapSetPrototypeProxyableSet = new Set<ApplyOriginFunctionType>()
+// A collection of functions that can be executed by proxies for Maps、 Set prototype chains.
+const mapSetPrototypeProxyableSet = new Set<ApplyOriginFunctionType>()
   // map
   .add(Map.prototype.get)
   .add(Map.prototype.clear)
@@ -31,8 +31,8 @@ const arrayMapSetPrototypeProxyableSet = new Set<ApplyOriginFunctionType>()
   .add(Set.prototype.values)
   .add(Set.prototype.entries);
 
-export const isArrayMapSetPrototypeProxyable = (value: any): boolean => {
-  return arrayMapSetPrototypeProxyableSet.has(value);
+export const isMapSetPrototypeProxyable = (value: any): boolean => {
+  return mapSetPrototypeProxyableSet.has(value);
 };
 
 /**
@@ -65,13 +65,12 @@ export const createNewRefValue = <T>(value: T): T => {
  * These methods are equipped with proxy handling.
  */
 export const iteratorProcessing = <S extends PrimitiveState>(
-  iterator: ArrayLikeIteratorsType<S>,
+  iterator: IteratorsType<S>,
   parentTarget: ProxyableType<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
   applyOriginFunction?: ApplyOriginFunctionType,
-  toReversedFlag?: boolean,
   entriesFlag?: boolean,
 ) => {
   // If it has already been processed, return directly
@@ -79,26 +78,24 @@ export const iteratorProcessing = <S extends PrimitiveState>(
 
   const type = whatsType(iterator);
 
-  const AMS_IteratorFlag = type === "ArrayIterator" || type === "MapIterator";
+  const AM_IteratorFlag = type === "ArrayIterator" || type === "MapIterator";
 
-  if (type === "Array" || AMS_IteratorFlag) {
+  if (AM_IteratorFlag) {
     const keys = type === "MapIterator" ? parentTarget.keys().toArray() : null;
-    const iteratorArray = AMS_IteratorFlag
+    const iteratorArray = AM_IteratorFlag
       ? (iterator as any as ArrayMapSetIteratorType<S>).toArray()
       : iterator;
 
     // Does not affect the primitive iterators on the prototype chain (prototype [Symbol. iterator])
     iterator[Symbol.iterator] = () => {
       // Index and conditional processing for toReversed method
-      let index = !toReversedFlag ? -1 : iteratorArray.length;
+      let index = -1;
 
       return {
         next() {
-          !toReversedFlag ? index++ : index--;
+          index++;
 
-          const condition = !toReversedFlag ? index < iteratorArray.length : index >= 0;
-
-          if (condition) {
+          if (index < iteratorArray.length) {
             const key = entriesFlag
               ? iteratorArray[index][0]
               /**
@@ -141,7 +138,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
         }
       };
     };
-    AMS_IteratorFlag && (iterator.next = iterator[Symbol.iterator]().next);
+    AM_IteratorFlag && (iterator.next = iterator[Symbol.iterator]().next);
     // Mark processed
     iterator[__ITERATOR_META_PROCESSING_KEY__] = true;
   }

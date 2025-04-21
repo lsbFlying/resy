@@ -6,7 +6,7 @@ import type { PrimitiveState, ValueOf } from "../types";
 import type {
   ProxyableType, CreateProxyType, SetPrototypeProxyableValueType,
   KeyChainsSourceItemType, SetPrototypeProxyableFactoryType,
-  SetWithGrandparentKeyType, ApplyOriginFunctionType, ArrayLikeIteratorsType,
+  SetWithGrandparentKeyType, ApplyOriginFunctionType, IteratorsType,
 } from "./types";
 import type { Store } from "../store/types";
 import { iteratorProcessing, proxyable } from "./utils";
@@ -174,7 +174,7 @@ export const applySetKeysValuesFactory: SetPrototypeProxyableFactoryType = <S ex
   return () => {
     const iterators = parentTarget.values();
     iteratorProcessing(
-      iterators as any as ArrayLikeIteratorsType<S>, parentTarget, createProxy,
+      iterators as any as IteratorsType<S>, parentTarget, createProxy,
       firstLevelKey, keyChains, applyOriginFunction,
     );
     return iterators;
@@ -194,8 +194,8 @@ export const applySetEntriesFactory: SetPrototypeProxyableFactoryType = <S exten
   return () => {
     const iterators = parentTarget.entries();
     iteratorProcessing(
-      iterators as any as ArrayLikeIteratorsType<S>, parentTarget, createProxy,
-      firstLevelKey, keyChains, applyOriginFunction, undefined, true,
+      iterators as any as IteratorsType<S>, parentTarget, createProxy,
+      firstLevelKey, keyChains, applyOriginFunction, true,
     );
     return iterators;
   };

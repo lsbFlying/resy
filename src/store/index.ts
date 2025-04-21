@@ -16,8 +16,8 @@ import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import type { SchedulerType } from "../scheduler/types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
-import { __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
-import { proxyable, createNewRefValue, isArrayMapSetPrototypeProxyable } from "../immutable/utils";
+import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
+import { proxyable, createNewRefValue, isMapSetPrototypeProxyable } from "../immutable/utils";
 import { scheduler } from "../scheduler";
 import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__,
@@ -101,7 +101,7 @@ export const createStore = <S extends PrimitiveState>(
   // Subscription listener stack
   const listenerSet = new Set<ListenerType<S>>();
   // Dependency Collection for getters or computed
-  const stateKeysSet = new Set<keyof S>();
+  const computedStateDepsSet = new Set<keyof S>();
 
   // The core map of store
   const storeMap: StoreMap<S> = new Map();
@@ -351,7 +351,7 @@ export const createStore = <S extends PrimitiveState>(
     const spw = spo?.get(keyChains);
     if (spw) return spw;
 
-    const isStateMap = target === stateMap;
+    const isStateSource = target === stateMap;
 
     const sp = new Proxy(target, {
       get: (_: S, key: keyof S, receiver: any) => {
@@ -360,22 +360,22 @@ export const createStore = <S extends PrimitiveState>(
         const externalValue = externalMap.get(key as keyof ExternalMapValue<S>);
         if (externalValue) return externalValue;
 
-        const value = isStateMap
+        const value = isStateSource
           ? stateMap.get(key)
           : (target as S)[key];
 
-        isStateMap && stateKeysSet.add(key);
+        isStateSource && computedStateDepsSet.add(key);
 
-        // Proxy array prototype chain with proxyable functions
-        const IAMSPP = isArrayMapSetPrototypeProxyable(value);
-        if (immutable && (proxyable(value) || IAMSPP)) {
+        // Proxy map、set prototype chain with proxyable functions
+        const IMSPP = isMapSetPrototypeProxyable(value);
+        if (immutable && (proxyable(value) || IMSPP)) {
           return createProxy(
             value as object,
             target,
             firstLevelKey ?? key,
             (
               keyChains
-                ? IAMSPP
+                ? IMSPP
                   ? new Set(keyChains)
                   : new Set(keyChains).add({ key })
                 : new Set().add({ key })
@@ -383,12 +383,12 @@ export const createStore = <S extends PrimitiveState>(
           );
         }
 
+        // TODO 数组原型方法会自动处理代理操作，因为数组的每一项元素的读取都会通过index索引来获取
+        if (hasOwnProperty.call(Array.prototype, (value as AnyFn).name)) return value;
+
         if (typeof value === "function" && !(value as AnyBoundFn).__bound__) {
-          // TODO 数组原型方法会自动处理代理操作，因为数组的每一项元素的读取都会通过index索引来获取
-          return !hasOwnProperty.call(Array.prototype, value.name)
-            // eslint-disable-next-line @typescript-eslint/no-use-before-define
-            ? boundFnProcessing(key, value, target, stateMap, store)
-            : value;
+          // eslint-disable-next-line @typescript-eslint/no-use-before-define
+          return boundFnProcessing(key, value, target, stateMap, store);
         }
 
         return key !== __GRANDPARENT_KEY__ ? value : parentTarget;
@@ -403,10 +403,10 @@ export const createStore = <S extends PrimitiveState>(
         new Set(keyChains).add({ key }), applyOriginFunction,
       ),
       // The `apply` here is written specifically for prototype chain functions
-      // that are applicable to proxyable types such as `Array`, `Map`, and `Set`.
+      // that are applicable to proxyable types such as `Map`, and `Set`.
       apply(applyOriginFunction: any, thisArg: any, argArray: any[]) {
         return Reflect.apply(
-          __ARRAY_MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
+          __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
             storeProxyWeakMap, applyOriginFunction, thisArg, parentTarget,
             createProxy, firstLevelKey, keyChains, singleUpdate,
           ),
@@ -493,11 +493,11 @@ export const createStore = <S extends PrimitiveState>(
           : () => {
             const [{ result, stateKeys }, update] = useState(() => {
               // Clear the previous dirty dependencies before collecting them
-              stateKeysSet.clear();
+              computedStateDepsSet.clear();
               const res = (boundFnValue as AnyFn)();
               return {
                 result: res,
-                stateKeys: Array.from(stateKeysSet) as (keyof S)[],
+                stateKeys: Array.from(computedStateDepsSet) as (keyof S)[],
               };
             });
 
@@ -507,11 +507,11 @@ export const createStore = <S extends PrimitiveState>(
                * prevent dependency changes caused by conditional logic
                * start
                */
-              stateKeysSet.clear();
+              computedStateDepsSet.clear();
 
               const res = (boundFnValue as AnyFn)();
 
-              const newDeps = Array.from(stateKeysSet);
+              const newDeps = Array.from(computedStateDepsSet);
 
               (stateKeys.toString() !== newDeps.toString()) && update(prevState => ({
                 ...prevState,

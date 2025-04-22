@@ -4,6 +4,8 @@ export const hasOwnProperty = Object.prototype.hasOwnProperty;
 
 export const typeString = Object.prototype.toString;
 
+export const slice = Array.prototype.slice;
+
 /** Identifying what type of data */
 export const whatsType = (value: unknown): NativeDataType => {
   const type = typeString.call(value);

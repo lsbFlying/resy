@@ -1,4 +1,4 @@
-import { whatsType, typeString } from "../utils";
+import { whatsType, typeString, slice } from "../utils";
 import type { PrimitiveState } from "../types";
 import type {
   ApplyOriginFunctionType, IteratorsType, CreateProxyType,
@@ -45,7 +45,7 @@ export const createNewRefValue = <T>(value: T): T => {
     case "[object Object]":
       return Object.assign({}, value);
     case "[object Array]":
-      return (value as unknown[]).slice() as T;
+      return slice.call(value as unknown[]) as T;
     case "[object Map]": {
       const res =  new Map(value as Iterable<readonly [unknown, unknown]>) as T;
       (value as ProxyTargetType)[__PROXY_TARGET_ID__] && ((res as ProxyTargetType)[__PROXY_TARGET_ID__] = Symbol());

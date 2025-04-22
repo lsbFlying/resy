@@ -1,9 +1,9 @@
 import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type { Store } from "../store/types";
-import { __ITERATOR_META_PROCESSING_KEY__, __PROXY_TARGET_ID__ } from "./static";
+import { __ITERATOR_META_PROCESSING_KEY__, __PROXY_TARGET_KEY__ } from "./static";
 
 export type ProxyTargetType = object & {
-  [__PROXY_TARGET_ID__]: symbol;
+  [__PROXY_TARGET_KEY__]: symbol;
 };
 
 export type ProxyableType<S extends PrimitiveState> = S | S[] | MapType<S> | Set<S>;
@@ -18,6 +18,7 @@ export type CreateProxyType<S extends PrimitiveState> = (
   target: ProxyableType<S>,
   parentTarget?: ProxyableType<S>,
   firstLevelKey?: keyof S,
+  keyLevel?: number,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
   applyOriginFunction?: ApplyOriginFunctionType,
 ) => Store<S>;

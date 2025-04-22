@@ -4,7 +4,7 @@ import type {
   ApplyOriginFunctionType, IteratorsType, CreateProxyType,
   KeyChainsSourceItemType, ArrayMapSetIteratorType, IteratorsParentType, ProxyTargetType,
 } from "./types";
-import { __ITERATOR_META_PROCESSING_KEY__, __PROXY_TARGET_ID__ } from "./static";
+import { __ITERATOR_META_PROCESSING_KEY__, __PROXY_TARGET_KEY__ } from "./static";
 
 const proxyableSet = new Set(["Object", "Array", "Map", "Set"]);
 
@@ -48,12 +48,12 @@ export const createNewRefValue = <T>(value: T): T => {
       return slice.call(value as unknown[]) as T;
     case "[object Map]": {
       const res =  new Map(value as Iterable<readonly [unknown, unknown]>) as T;
-      (value as ProxyTargetType)[__PROXY_TARGET_ID__] && ((res as ProxyTargetType)[__PROXY_TARGET_ID__] = Symbol());
+      (value as ProxyTargetType)[__PROXY_TARGET_KEY__] && ((res as ProxyTargetType)[__PROXY_TARGET_KEY__] = Symbol());
       return res;
     }
     case "[object Set]": {
       const res = new Set(value as Iterable<unknown>) as T;
-      (value as ProxyTargetType)[__PROXY_TARGET_ID__] && ((res as ProxyTargetType)[__PROXY_TARGET_ID__] = Symbol());
+      (value as ProxyTargetType)[__PROXY_TARGET_KEY__] && ((res as ProxyTargetType)[__PROXY_TARGET_KEY__] = Symbol());
       return res;
     }
     default:

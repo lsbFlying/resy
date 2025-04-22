@@ -45,7 +45,7 @@ import { useSubscription as useSubscriptionCore } from "../subscribe";
 import { willUpdatingProcessing } from "../subscribe/utils";
 import { __DEV__, batchUpdate } from "../static";
 import { useDebugValue, useEffect, useState } from "react";
-import { __PROXY_TARGET_ID__ } from "../immutable/static";
+import { __PROXY_TARGET_KEY__ } from "../immutable/static";
 
 /**
  * createStore
@@ -108,7 +108,7 @@ export const createStore = <S extends PrimitiveState>(
   // The core map of store
   const storeMap: StoreMap<S> = new Map();
 
-  const storeProxyWeakMap = new WeakMap<symbol, Store<S>>();
+  const storeProxyWeakMap = new WeakMap<symbol, Map<number, Store<S>>>();
 
   // The storage stack of this proxy object for the class component
   const classThisPointerSet = new Set<ClassInstanceTypeOfConnectStore<S>>();
@@ -273,7 +273,11 @@ export const createStore = <S extends PrimitiveState>(
           array,
         ) => {
           const isMapType = whatsType(previousValue) === "Map";
+          console.log(target, itemKey, isMapType
+            ? (previousValue as MapType<S>).get(itemKey)
+            : ((previousValue as S)[itemKey]));
 
+          // TODO set类型的更新循环还没有完全开发验证完毕，waiting develop
           currentIndex !== array.length - 1
             /**
              * @description Update the attribute chain except for the attribute objects of each layer before the last level,
@@ -304,7 +308,7 @@ export const createStore = <S extends PrimitiveState>(
          */
         // TODO waiting considering
         // applyOriginFunction && storeProxyWeakMap.delete(
-        //   (applyOriginFunction as ProxyTargetType)[__PROXY_TARGET_ID__]
+        //   (applyOriginFunction as ProxyTargetType)[__PROXY_TARGET_KEY__]
         // );
       }
 
@@ -344,6 +348,7 @@ export const createStore = <S extends PrimitiveState>(
     target: object,
     parentTarget: any = stateMap,
     firstLevelKey?: keyof S,
+    keyLevel?: number,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ApplyOriginFunctionType,
   ) => {
@@ -357,12 +362,13 @@ export const createStore = <S extends PrimitiveState>(
      * This is essentially equivalent to you controlling the object's global "meta identity" (meta key),
      * rather than relying solely on proxyCache/WeakMap.
      */
-    !(target as ProxyTargetType)[__PROXY_TARGET_ID__] && (
-      (target as ProxyTargetType)[__PROXY_TARGET_ID__] = Symbol()
+    !(target as ProxyTargetType)[__PROXY_TARGET_KEY__] && (
+      (target as ProxyTargetType)[__PROXY_TARGET_KEY__] = Symbol()
     );
-    const proxyTargetId = (target as ProxyTargetType)[__PROXY_TARGET_ID__];
+    const proxyTargetId = (target as ProxyTargetType)[__PROXY_TARGET_KEY__];
 
-    const spw = storeProxyWeakMap.get(proxyTargetId);
+    const spo = storeProxyWeakMap.get(proxyTargetId);
+    const spw = spo?.get((keyLevel ?? 1));
     if (spw) return spw;
 
     const isStateSource = target === stateMap;
@@ -377,6 +383,7 @@ export const createStore = <S extends PrimitiveState>(
         const value = isStateSource
           ? stateMap.get(key)
           : (target as S)[key];
+        // console.log(value);
 
         isStateSource && computedStateDepsSet.add(key);
 
@@ -387,6 +394,7 @@ export const createStore = <S extends PrimitiveState>(
             value as object,
             target,
             firstLevelKey ?? key,
+            (keyLevel ?? 1) + 1,
             (
               keyChains
                 ? IMSPP
@@ -437,7 +445,8 @@ export const createStore = <S extends PrimitiveState>(
       },
     } as ProxyHandler<S>) as Store<S>;
 
-    storeProxyWeakMap.set(proxyTargetId, sp);
+    // Distinguishing potential identical targets in internal data through attribute hierarchy.
+    storeProxyWeakMap.set(proxyTargetId, new Map().set((keyLevel ?? 1), sp));
 
     return sp;
   };

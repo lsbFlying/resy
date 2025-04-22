@@ -43,6 +43,7 @@ export type MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   parentTarget: MapType<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
+  keyLevel?: number,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
   singleUpdate?: (
     key: keyof S,
@@ -87,6 +88,7 @@ export type SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   parentTarget: Set<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
+  keyLevel?: number,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
   singleUpdate?: (
     key: keyof S,

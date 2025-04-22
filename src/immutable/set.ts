@@ -16,6 +16,7 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
   parentTarget: Set<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
+  keyLevel?: number,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
   singleUpdate?: (
     key: keyof S,
@@ -95,6 +96,7 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
                   value as ProxyableType<S>,
                   parentTarget,
                   firstLevelKey,
+                  (keyLevel ?? 1) + 1,
                   // todo waiting modified
                   new Set(keyChains).add({ key: "?" }),
                   applyOriginFunction,
@@ -107,6 +109,7 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
                   value2 as ProxyableType<S>,
                   parentTarget,
                   firstLevelKey,
+                  (keyLevel ?? 1) + 1,
                   // todo waiting modified
                   new Set(keyChains).add({ key: "?" }),
                   applyOriginFunction,

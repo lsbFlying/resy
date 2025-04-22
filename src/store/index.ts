@@ -437,8 +437,8 @@ export const createStore = <S extends PrimitiveState>(
       apply(applyOriginFunction: any, thisArg: any, argArray: any[]) {
         return Reflect.apply(
           __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
-            applyOriginFunction, thisArg, parentTarget,
-            createProxy, firstLevelKey, keyChains, singleUpdate,
+            applyOriginFunction, thisArg, parentTarget, createProxy,
+            firstLevelKey, keyLevel, keyChains, singleUpdate,
           ),
           thisArg,
           argArray,

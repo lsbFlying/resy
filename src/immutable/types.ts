@@ -1,6 +1,10 @@
 import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type { Store } from "../store/types";
-import { __GRANDPARENT_KEY__, __ITERATOR_META_PROCESSING_KEY__ } from "./static";
+import { __ITERATOR_META_PROCESSING_KEY__, __PROXY_TARGET_ID__ } from "./static";
+
+export type ProxyTargetType = object & {
+  [__PROXY_TARGET_ID__]: symbol;
+};
 
 export type ProxyableType<S extends PrimitiveState> = S | S[] | MapType<S> | Set<S>;
 
@@ -20,10 +24,6 @@ export type CreateProxyType<S extends PrimitiveState> = (
 
 export type ApplyOriginFunctionType = MapPrototypeProxyableValueType | SetPrototypeProxyableValueType;
 
-export type MapWithGrandparentKeyType<S extends PrimitiveState> = MapType<S> & {
-  [__GRANDPARENT_KEY__]: MapWithGrandparentKeyType<S>;
-};
-
 export type MapPrototypeProxyableType<T extends PrimitiveState = any> = Pick<
   Map<keyof T, ValueOf<T>>,
   | "get"
@@ -38,7 +38,7 @@ export type MapPrototypeProxyableValueType = ValueOf<MapPrototypeProxyableType>;
 
 export type MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   applyOriginFunction: MapPrototypeProxyableValueType,
-  thisArg: MapWithGrandparentKeyType<S>,
+  thisArg: MapType<S>,
   parentTarget: MapType<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
@@ -68,10 +68,6 @@ export type MapPrototypeProxyableForEachFactoryValueType<S extends PrimitiveStat
   callback: (value: ValueOf<S>, key: keyof S, map: Map<keyof S, ValueOf<S>>) => void
 ) => void;
 
-export type SetWithGrandparentKeyType<S extends PrimitiveState> = Set<S> & {
-  [__GRANDPARENT_KEY__]: SetWithGrandparentKeyType<S>;
-};
-
 export type SetPrototypeProxyableType<T extends PrimitiveState = any> = Pick<
   Set<T>,
   | "add"
@@ -86,7 +82,7 @@ export type SetPrototypeProxyableValueType = ValueOf<SetPrototypeProxyableType>;
 
 export type SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   applyOriginFunction: SetPrototypeProxyableValueType,
-  thisArg: SetWithGrandparentKeyType<S>,
+  thisArg: Set<S>,
   parentTarget: Set<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,

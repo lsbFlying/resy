@@ -1,2 +1,4 @@
 // The key is a flag indicating whether the `iteratorProcessing` function has completed processing.
-export const __ITERATOR_META_PROCESSING_KEY__ = Symbol("iteratorMetaProcessingKey");
+export const __ITERATOR_META_PROCESSING_KEY__ = Symbol("iterator_meta_processing_key");
+
+export const __PROXY_TARGET_ID__ = Symbol("proxy_target_id");

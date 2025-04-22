@@ -15,7 +15,9 @@ import type { Unsubscribe, ListenerType } from "../subscribe/types";
 import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import type { SchedulerType } from "../scheduler/types";
-import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
+import type {
+  ApplyOriginFunctionType, KeyChainsSourceItemType, ProxyTargetType,
+} from "../immutable/types";
 import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
 import { proxyable, createNewRefValue, isMapSetPrototypeProxyable } from "../immutable/utils";
 import { scheduler } from "../scheduler";
@@ -43,6 +45,7 @@ import { useSubscription as useSubscriptionCore } from "../subscribe";
 import { willUpdatingProcessing } from "../subscribe/utils";
 import { __DEV__, batchUpdate } from "../static";
 import { useDebugValue, useEffect, useState } from "react";
+import { __PROXY_TARGET_ID__ } from "../immutable/static";
 
 /**
  * createStore
@@ -105,7 +108,7 @@ export const createStore = <S extends PrimitiveState>(
   // The core map of store
   const storeMap: StoreMap<S> = new Map();
 
-  const storeProxyWeakMap = new WeakMap<Set<KeyChainsSourceItemType<S>> | object, Store<S>>();
+  const storeProxyWeakMap = new WeakMap<symbol, Store<S>>();
 
   // The storage stack of this proxy object for the class component
   const classThisPointerSet = new Set<ClassInstanceTypeOfConnectStore<S>>();
@@ -239,7 +242,8 @@ export const createStore = <S extends PrimitiveState>(
     target: object | S = stateMap,
     firstLevelKey?: keyof S,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
-    applyOriginFunction?: ApplyOriginFunctionType,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _applyOriginFunction?: ApplyOriginFunctionType,
   ): boolean => {
     if (target !== stateMap) {
       // During each update, the target here is the latest target object obtained by the previous agent,
@@ -297,7 +301,10 @@ export const createStore = <S extends PrimitiveState>(
          * At this point, it is necessary to remove the previous proxies for the prototype functions;
          * otherwise, subsequent read and write operations will not be able to access the latest proxied data.
          */
-        applyOriginFunction && storeProxyWeakMap.delete(applyOriginFunction);
+        // TODO waiting considering
+        // applyOriginFunction && storeProxyWeakMap.delete(
+        //   (applyOriginFunction as ProxyTargetType)[__PROXY_TARGET_ID__]
+        // );
       }
 
       return changed
@@ -339,8 +346,22 @@ export const createStore = <S extends PrimitiveState>(
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ApplyOriginFunctionType,
   ) => {
-    // TODO 每次传入的keyChains是新的引用，这里找不到旧的缓存，待修改优化
-    const spw = storeProxyWeakMap.get(keyChains ?? target);
+    /**
+     * @description Application-level “identity anchor”
+     * Manually assign a marker in the data structure
+     * (e.g., wrapping each business object with an ID or meta information layer).
+     * The proxy is based on the "identity" rather than the plain literal object.
+     * When replacing an "equivalent" object,
+     * maintain the original anchor and make the proxy depend on this anchor.
+     * This is essentially equivalent to you controlling the object's global "meta identity" (meta key),
+     * rather than relying solely on proxyCache/WeakMap.
+     */
+    if (!(target as ProxyTargetType)[__PROXY_TARGET_ID__]) {
+      (target as ProxyTargetType)[__PROXY_TARGET_ID__] = Symbol();
+    }
+    const proxyTargetId = (target as ProxyTargetType)[__PROXY_TARGET_ID__];
+
+    const spw = storeProxyWeakMap.get(proxyTargetId);
     if (spw) return spw;
 
     const isStateSource = target === stateMap;
@@ -415,12 +436,7 @@ export const createStore = <S extends PrimitiveState>(
       },
     } as ProxyHandler<S>) as Store<S>;
 
-    /**
-     * @description It is necessary to combine `keyChains` with `sp` for processing
-     * to prevent logical errors in recursive proxying
-     * caused by the scenario where the same proxy target appears at different levels.
-     */
-    storeProxyWeakMap.set(keyChains ?? target, sp);
+    storeProxyWeakMap.set(proxyTargetId, sp);
 
     return sp;
   };

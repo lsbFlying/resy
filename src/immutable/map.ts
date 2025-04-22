@@ -5,14 +5,14 @@
 import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type {
   KeyChainsSourceItemType, ProxyableType, CreateProxyType,
-  MapPrototypeProxyableValueType, MapWithGrandparentKeyType,
-  ApplyOriginFunctionType, IteratorsType, MapPrototypeProxyableFactoryType,
+  MapPrototypeProxyableValueType, ApplyOriginFunctionType,
+  IteratorsType, MapPrototypeProxyableFactoryType,
 } from "./types";
 import { iteratorProcessing, proxyable } from "./utils";
 
 const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   applyOriginFunction: MapPrototypeProxyableValueType,
-  thisArg: MapWithGrandparentKeyType<S>,
+  thisArg: MapType<S>,
   parentTarget: MapType<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,

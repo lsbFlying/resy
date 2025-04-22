@@ -6,13 +6,13 @@ import type { PrimitiveState, ValueOf } from "../types";
 import type {
   ProxyableType, CreateProxyType, SetPrototypeProxyableValueType,
   KeyChainsSourceItemType, SetPrototypeProxyableFactoryType,
-  SetWithGrandparentKeyType, ApplyOriginFunctionType, IteratorsType,
+  ApplyOriginFunctionType, IteratorsType,
 } from "./types";
 import { iteratorProcessing, proxyable } from "./utils";
 
 const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   applyOriginFunction: SetPrototypeProxyableValueType,
-  thisArg: SetWithGrandparentKeyType<S>,
+  thisArg: Set<S>,
   parentTarget: Set<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,

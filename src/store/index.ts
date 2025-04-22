@@ -366,9 +366,9 @@ export const createStore = <S extends PrimitiveState>(
     !(target as ProxyTargetType)[__PROXY_TARGET_KEY__] && (
       (target as ProxyTargetType)[__PROXY_TARGET_KEY__] = Symbol()
     );
-    const proxyTargetId = (target as ProxyTargetType)[__PROXY_TARGET_KEY__];
+    const proxyTargetKey = (target as ProxyTargetType)[__PROXY_TARGET_KEY__];
 
-    const spo = storeProxyWeakMap.get(proxyTargetId);
+    const spo = storeProxyWeakMap.get(proxyTargetKey);
     const spw = spo?.get((keyLevel ?? 1));
     if (spw) return spw;
 
@@ -447,7 +447,7 @@ export const createStore = <S extends PrimitiveState>(
     } as ProxyHandler<S>) as Store<S>;
 
     // Distinguishing potential identical targets in internal data through attribute hierarchy.
-    storeProxyWeakMap.set(proxyTargetId, new Map().set((keyLevel ?? 1), sp));
+    storeProxyWeakMap.set(proxyTargetKey, new Map().set((keyLevel ?? 1), sp));
 
     return sp;
   };

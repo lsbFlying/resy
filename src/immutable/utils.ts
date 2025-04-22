@@ -48,12 +48,16 @@ export const createNewRefValue = <T>(value: T): T => {
       return slice.call(value as unknown[]) as T;
     case "[object Map]": {
       const res =  new Map(value as Iterable<readonly [unknown, unknown]>) as T;
-      (value as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__] && ((res as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__] = Symbol());
+      (value as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__] && (
+        (res as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__] = Symbol()
+      );
       return res;
     }
     case "[object Set]": {
       const res = new Set(value as Iterable<unknown>) as T;
-      (value as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__] && ((res as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__] = Symbol());
+      (value as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__] && (
+        (res as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__] = Symbol()
+      );
       return res;
     }
     default:
@@ -73,6 +77,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
   parentTarget: IteratorsParentType<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
+  keyLevel?: number,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
   applyOriginFunction?: ApplyOriginFunctionType,
   entriesFlag?: boolean,
@@ -120,6 +125,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
                       value,
                       parentTarget,
                       firstLevelKey,
+                      (keyLevel ?? 1) + 1,
                       new Set(keyChains).add({ key }),
                       applyOriginFunction,
                     )
@@ -130,6 +136,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
                     value,
                     parentTarget,
                     firstLevelKey,
+                    (keyLevel ?? 1) + 1,
                     new Set(keyChains).add({ key }),
                     applyOriginFunction,
                   )

@@ -134,7 +134,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
         const iterators = parentTarget.values();
         iteratorProcessing(
           iterators as any as IteratorsType<S>, parentTarget, createProxy,
-          firstLevelKey, keyChains, applyOriginFunction,
+          firstLevelKey, keyLevel, keyChains, applyOriginFunction,
         );
         return iterators;
       };
@@ -143,7 +143,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
         const iterators = parentTarget.entries();
         iteratorProcessing(
           iterators as any as IteratorsType<S>, parentTarget, createProxy,
-          firstLevelKey, keyChains, applyOriginFunction, true,
+          firstLevelKey, keyLevel, keyChains, applyOriginFunction, true,
         );
         return iterators;
       };

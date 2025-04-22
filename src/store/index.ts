@@ -248,6 +248,7 @@ export const createStore = <S extends PrimitiveState>(
     if (target !== stateMap) {
       // During each update, the target here is the latest target object obtained by the previous agent,
       // so the PrevValue here is also the latest data before the update.
+      // TODO 这里读取数据要考虑map、set类型，还要考虑target的最新数据的情况
       const prevValue = (target as S)[key];
 
       // Directly compare the PrevValue with the current value to be updated
@@ -356,9 +357,9 @@ export const createStore = <S extends PrimitiveState>(
      * This is essentially equivalent to you controlling the object's global "meta identity" (meta key),
      * rather than relying solely on proxyCache/WeakMap.
      */
-    if (!(target as ProxyTargetType)[__PROXY_TARGET_ID__]) {
-      (target as ProxyTargetType)[__PROXY_TARGET_ID__] = Symbol();
-    }
+    !(target as ProxyTargetType)[__PROXY_TARGET_ID__] && (
+      (target as ProxyTargetType)[__PROXY_TARGET_ID__] = Symbol()
+    );
     const proxyTargetId = (target as ProxyTargetType)[__PROXY_TARGET_ID__];
 
     const spw = storeProxyWeakMap.get(proxyTargetId);

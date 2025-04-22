@@ -344,6 +344,7 @@ export const createStore = <S extends PrimitiveState>(
     }
   };
 
+  // TODO target最新化访问未解决
   const createProxy = (
     target: object,
     parentTarget: any = stateMap,

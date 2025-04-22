@@ -273,9 +273,6 @@ export const createStore = <S extends PrimitiveState>(
           array,
         ) => {
           const isMapType = whatsType(previousValue) === "Map";
-          console.log(target, itemKey, isMapType
-            ? (previousValue as MapType<S>).get(itemKey)
-            : ((previousValue as S)[itemKey]));
 
           // TODO set类型的更新循环还没有完全开发验证完毕，waiting develop
           currentIndex !== array.length - 1
@@ -288,9 +285,15 @@ export const createStore = <S extends PrimitiveState>(
             ? isMapType
               ? (previousValue as MapType<S>).set(
                 itemKey,
-                createNewRefValue((previousValue as MapType<S>).get(itemKey) as ValueOf<S>)
+                createNewRefValue(
+                  (previousValue as MapType<S>).get(itemKey) as ValueOf<S>,
+                  currentIndex + 2,
+                )
               )
-              : ((previousValue as any)[itemKey] = createNewRefValue((previousValue as S)[itemKey]))
+              : ((previousValue as any)[itemKey] = createNewRefValue(
+                (previousValue as S)[itemKey],
+                currentIndex + 2,
+              ))
             // Update the attributes of the last level in the attribute chain
             : isMapType
               ? (previousValue as MapType<S>).set(itemKey, value)

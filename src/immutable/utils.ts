@@ -39,7 +39,7 @@ export const isMapSetPrototypeProxyable = (value: any): boolean => {
  * @description Create a new reference type data value with the same content based on the given reference type data.
  * Here, a few of the more common and widely used data types within the ComplexValueType are handled.
  */
-export const createNewRefValue = <T>(value: T): T => {
+export const createNewRefValue = <T>(value: T, keyLevel = 1): T => {
   const type = typeString.call(value);
   switch (type) {
     case "[object Object]":
@@ -48,16 +48,12 @@ export const createNewRefValue = <T>(value: T): T => {
       return slice.call(value as unknown[]) as T;
     case "[object Map]": {
       const res =  new Map(value as Iterable<readonly [unknown, unknown]>) as T;
-      (value as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__] && (
-        (res as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__] = Symbol()
-      );
+      (res as ProxyTargetType)[`${__PROXY_TARGET_KEY_PREFIX__}${keyLevel}`] = Symbol();
       return res;
     }
     case "[object Set]": {
       const res = new Set(value as Iterable<unknown>) as T;
-      (value as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__] && (
-        (res as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__] = Symbol()
-      );
+      (res as ProxyTargetType)[`${__PROXY_TARGET_KEY_PREFIX__}${keyLevel}`] = Symbol();
       return res;
     }
     default:

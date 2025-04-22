@@ -45,7 +45,7 @@ import { useSubscription as useSubscriptionCore } from "../subscribe";
 import { willUpdatingProcessing } from "../subscribe/utils";
 import { __DEV__, batchUpdate } from "../static";
 import { useDebugValue, useEffect, useState } from "react";
-import { __PROXY_TARGET_KEY__ } from "../immutable/static";
+import { __PROXY_TARGET_KEY_PREFIX__ } from "../immutable/static";
 
 /**
  * createStore
@@ -308,7 +308,7 @@ export const createStore = <S extends PrimitiveState>(
          */
         // TODO waiting considering
         // applyOriginFunction && storeProxyWeakMap.delete(
-        //   (applyOriginFunction as ProxyTargetType)[__PROXY_TARGET_KEY__]
+        //   (applyOriginFunction as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__]
         // );
       }
 
@@ -363,7 +363,7 @@ export const createStore = <S extends PrimitiveState>(
      * This is essentially equivalent to you controlling the object's global "meta identity" (meta key),
      * rather than relying solely on proxyCache/WeakMap.
      */
-    const currentProxyTargetKey = `${__PROXY_TARGET_KEY__}${keyLevel}`;
+    const currentProxyTargetKey = `${__PROXY_TARGET_KEY_PREFIX__}${keyLevel}`;
     !(target as ProxyTargetType)[currentProxyTargetKey] && (
       (target as ProxyTargetType)[currentProxyTargetKey] = Symbol()
     );

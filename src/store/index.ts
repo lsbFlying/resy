@@ -108,7 +108,7 @@ export const createStore = <S extends PrimitiveState>(
   // The core map of store
   const storeMap: StoreMap<S> = new Map();
 
-  const storeProxyWeakMap = new WeakMap<symbol, Map<number, Store<S>>>();
+  const storeProxyWeakMap = new WeakMap<symbol, Store<S>>();
 
   // The storage stack of this proxy object for the class component
   const classThisPointerSet = new Set<ClassInstanceTypeOfConnectStore<S>>();
@@ -363,13 +363,13 @@ export const createStore = <S extends PrimitiveState>(
      * This is essentially equivalent to you controlling the object's global "meta identity" (meta key),
      * rather than relying solely on proxyCache/WeakMap.
      */
-    !(target as ProxyTargetType)[__PROXY_TARGET_KEY__] && (
-      (target as ProxyTargetType)[__PROXY_TARGET_KEY__] = Symbol()
+    const currentProxyTargetKey = `${__PROXY_TARGET_KEY__}${keyLevel}`;
+    !(target as ProxyTargetType)[currentProxyTargetKey] && (
+      (target as ProxyTargetType)[currentProxyTargetKey] = Symbol()
     );
-    const proxyTargetKey = (target as ProxyTargetType)[__PROXY_TARGET_KEY__];
+    const proxyTargetKey = (target as ProxyTargetType)[currentProxyTargetKey];
 
-    const spo = storeProxyWeakMap.get(proxyTargetKey);
-    const spw = spo?.get((keyLevel ?? 1));
+    const spw = storeProxyWeakMap.get(proxyTargetKey);
     if (spw) return spw;
 
     const isStateSource = target === stateMap;
@@ -447,7 +447,7 @@ export const createStore = <S extends PrimitiveState>(
     } as ProxyHandler<S>) as Store<S>;
 
     // Distinguishing potential identical targets in internal data through attribute hierarchy.
-    storeProxyWeakMap.set(proxyTargetKey, new Map().set((keyLevel ?? 1), sp));
+    storeProxyWeakMap.set(proxyTargetKey, sp);
 
     return sp;
   };

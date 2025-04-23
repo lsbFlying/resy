@@ -366,7 +366,7 @@ export const createStore = <S extends PrimitiveState>(
      * This is essentially equivalent to you controlling the object's global "meta identity" (meta key),
      * rather than relying solely on proxyCache/WeakMap.
      */
-    const currentProxyTargetKey = `${__PROXY_TARGET_KEY_PREFIX__}${keyLevel}`;
+    const currentProxyTargetKey = Symbol.for(`${__PROXY_TARGET_KEY_PREFIX__}_${keyLevel}`);
     !(target as ProxyTargetType)[currentProxyTargetKey] && (
       (target as ProxyTargetType)[currentProxyTargetKey] = Symbol()
     );

@@ -3,7 +3,12 @@ import type { Store } from "../store/types";
 import { __ITERATOR_META_PROCESSING_KEY__ } from "./static";
 
 export type ProxyTargetType = object & {
-  [key: string]: symbol;
+  /**
+   * @description Using a symbol as the property key for an application's "identity anchor"
+   * on an object does not affect normal operations;
+   * for example, `Object.keys` will not return keys of type symbol.
+   */
+  [key: symbol]: symbol;
 };
 
 export type ProxyableType<S extends PrimitiveState> = S | S[] | MapType<S> | Set<S>;

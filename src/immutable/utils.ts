@@ -48,12 +48,12 @@ export const createNewRefValue = <T>(value: T, keyLevel = 1): T => {
       return slice.call(value as unknown[]) as T;
     case "[object Map]": {
       const res =  new Map(value as Iterable<readonly [unknown, unknown]>) as T;
-      (res as ProxyTargetType)[`${__PROXY_TARGET_KEY_PREFIX__}${keyLevel}`] = Symbol();
+      (res as ProxyTargetType)[Symbol.for(`${__PROXY_TARGET_KEY_PREFIX__}_${keyLevel}`)] = Symbol();
       return res;
     }
     case "[object Set]": {
       const res = new Set(value as Iterable<unknown>) as T;
-      (res as ProxyTargetType)[`${__PROXY_TARGET_KEY_PREFIX__}${keyLevel}`] = Symbol();
+      (res as ProxyTargetType)[Symbol.for(`${__PROXY_TARGET_KEY_PREFIX__}_${keyLevel}`)] = Symbol();
       return res;
     }
     default:

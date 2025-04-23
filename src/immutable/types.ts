@@ -2,15 +2,6 @@ import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type { Store } from "../store/types";
 import { __ITERATOR_META_PROCESSING_KEY__ } from "./static";
 
-export type ProxyTargetType = object & {
-  /**
-   * @description Using a symbol as the property key for an application's "identity anchor"
-   * on an object does not affect normal operations;
-   * for example, `Object.keys` will not return keys of type symbol.
-   */
-  [key: symbol]: symbol;
-};
-
 export type ProxyableType<S extends PrimitiveState> = S | S[] | MapType<S> | Set<S>;
 
 // The collection of attribute chains set as object types is
@@ -138,8 +129,3 @@ export type IteratorsParentType<S extends PrimitiveState> = ProxyableType<S> & {
 };
 
 export type ArrayMapSetIteratorType<S extends PrimitiveState> = ArrayIterator<S> | MapIterator<S> | SetIterator<S>;
-
-export type TargetAnchorMapValueType<S extends PrimitiveState> = {
-  latestTarget: object | S;
-  latestParentTarget: object | S;
-};

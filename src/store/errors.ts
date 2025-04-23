@@ -42,7 +42,7 @@ export const stateErrorProcessing = (params: {
   }
 };
 
-// Options configuration type error processing of createStore
+// Options configuration type error processing of createStore/defineStore
 export const optionsErrorProcessing = (
   options?: InnerStoreOptions,
 ) => {
@@ -70,7 +70,7 @@ export const optionsErrorProcessing = (
     )
   ) {
     throw new Error(
-      "resy's createStore(...): Expected the last optional 'options' argument to be a StoreOptions type params."
+      "resy's createStore/defineStore(...): Expected the last optional 'options' argument to be a StoreOptions type params."
       + ` Instead received: ${optionsType.toLocaleLowerCase()}.`
     );
   }
@@ -124,26 +124,6 @@ export const stateCallbackErrorProcessing = <S extends PrimitiveState>(callback?
     throw new Error(
       "resy's stateCallback(...): Expected the last optional 'callback' argument to be a function. "
       + `Instead received: ${callbackType.toLocaleLowerCase()}.`
-    );
-  }
-};
-
-/**
- * @description It's not recommended to set the store created by createStore as the prototype of some objects,
- * as the store internally hijacks the binding of this context for function properties
- * (which does not affect arrow functions).
- * This means that for the inherited properties of those set objects,
- * the direction of this will be changed to the hijacked this object specified within the store.
- * The issues caused by such hijacking of this binding also extend to property descriptors like setters and getters.
- * Since the hijacking of this binding for function properties deviates from the native behavior,
- * this could lead to confusion.
- * Therefore, such operations are discouraged!
- */
-export const protoPointStoreErrorProcessing = (receiver: any, store: any) => {
-  if (__DEV__ && receiver !== store) {
-    console.error(
-      "Warning: It's not recommended to set the store created by createStore as the prototype of some objects" +
-      " as the store internally hijacks the binding of this context for function properties!"
     );
   }
 };

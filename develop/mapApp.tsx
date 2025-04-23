@@ -3,16 +3,6 @@ import React, {
 } from "react";
 import { defineStore } from "../src";
 
-// const state = new Proxy(new Map(Object.entries({ name: "asd", age: 12 })), {
-//   get(target: Map<"name" | "age", string | number>, p: any, receiver: any): any {
-//     console.log("key-p:", p);
-//     // return Reflect.get(target, p, receiver);
-//     // return target[p];
-//     return target[p].bind(target);
-//   },
-// });
-// console.log(state.get("name"));
-
 const infoObj = {
   personInfo: {
     ageInfo: {
@@ -74,6 +64,7 @@ const useStore = defineStore({
   infoMap: new Map<"personInfo" | "nationality", PersonInfo | Nationality>(Object.entries(infoObj) as any),
   updateInfoMap() {
     // console.log((this.infoMap.get("personInfo") as PersonInfo)?.bodyInfo.weightInfo.weight);
+    // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.reach.value = Math.random();
     (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.reach.value = 999;
     // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo = {
     //   height: Math.random(),

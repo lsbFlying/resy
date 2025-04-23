@@ -38,7 +38,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
             value as ProxyableType<S>,
             parentTarget,
             firstLevelKey,
-            (keyLevel ?? 1) + 1,
+            (keyLevel ?? 0) + 1,
             new Set(keyChains).add({ key }),
             applyOriginFunction,
           ) as ValueOf<S>
@@ -111,7 +111,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
                   value as ProxyableType<S>,
                   parentTarget,
                   firstLevelKey,
-                  (keyLevel ?? 1) + 1,
+                  (keyLevel ?? 0) + 1,
                   new Set(keyChains).add({ key }),
                   applyOriginFunction,
                 ) as ValueOf<S>

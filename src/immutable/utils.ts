@@ -1,8 +1,8 @@
 import { whatsType, typeString, slice } from "../utils";
-import type { PrimitiveState } from "../types";
+import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type {
-  ApplyOriginFunctionType, IteratorsType, CreateProxyType,
-  KeyChainsSourceItemType, ArrayMapSetIteratorType, IteratorsParentType, ProxyTargetType,
+  ApplyOriginFunctionType, IteratorsType, CreateProxyType, KeyChainsSourceItemType,
+  ArrayMapSetIteratorType, IteratorsParentType, ProxyTargetType, TargetAnchorMapValueType,
 } from "./types";
 import { __ITERATOR_META_PROCESSING_KEY__, __PROXY_TARGET_KEY_PREFIX__ } from "./static";
 
@@ -39,7 +39,7 @@ export const isMapSetPrototypeProxyable = (value: any): boolean => {
  * @description Create a new reference type data value with the same content based on the given reference type data.
  * Here, a few of the more common and widely used data types within the ComplexValueType are handled.
  */
-export const createNewRefValue = <T>(value: T, keyLevel = 1): T => {
+export const createNewRefValue = <T>(value: T, proxyTargetKey?: symbol): T => {
   const type = typeString.call(value);
   switch (type) {
     case "[object Object]":
@@ -47,13 +47,15 @@ export const createNewRefValue = <T>(value: T, keyLevel = 1): T => {
     case "[object Array]":
       return slice.call(value as unknown[]) as T;
     case "[object Map]": {
+      const currentProxyTargetKey = proxyTargetKey ?? Reflect.ownKeys(value!).at(-1) as symbol;
       const res =  new Map(value as Iterable<readonly [unknown, unknown]>) as T;
-      (res as ProxyTargetType)[Symbol.for(`${__PROXY_TARGET_KEY_PREFIX__}_${keyLevel}`)] = Symbol();
+      (res as ProxyTargetType)[currentProxyTargetKey] = Symbol();
       return res;
     }
     case "[object Set]": {
+      const currentProxyTargetKey = proxyTargetKey ?? Reflect.ownKeys(value!).at(-1) as symbol;
       const res = new Set(value as Iterable<unknown>) as T;
-      (res as ProxyTargetType)[Symbol.for(`${__PROXY_TARGET_KEY_PREFIX__}_${keyLevel}`)] = Symbol();
+      (res as ProxyTargetType)[currentProxyTargetKey] = Symbol();
       return res;
     }
     default:
@@ -121,7 +123,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
                       value,
                       parentTarget,
                       firstLevelKey,
-                      (keyLevel ?? 1) + 1,
+                      (keyLevel ?? 0) + 1,
                       new Set(keyChains).add({ key }),
                       applyOriginFunction,
                     )
@@ -132,7 +134,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
                     value,
                     parentTarget,
                     firstLevelKey,
-                    (keyLevel ?? 1) + 1,
+                    (keyLevel ?? 0) + 1,
                     new Set(keyChains).add({ key }),
                     applyOriginFunction,
                   )
@@ -146,4 +148,35 @@ export const iteratorProcessing = <S extends PrimitiveState>(
     AM_IteratorFlag && (iterator.next = iterator[Symbol.iterator]().next);
     parentTarget[__ITERATOR_META_PROCESSING_KEY__] = true;
   }
+};
+
+export const updateTargetAnchorMap = <S extends PrimitiveState>(
+  targetAnchorMap: Map<symbol, TargetAnchorMapValueType<S>>,
+  stateMap: MapType<S>,
+  previousValue: ValueOf<S>,
+  currentIndex: number,
+  array: (keyof S)[],
+) => {
+  const currentProxyTargetKey = Reflect.ownKeys(previousValue!).at(-1) as symbol;
+  const parentKey = array[currentIndex - 1];
+
+  const oldTargetAnchorMap = targetAnchorMap.get(currentProxyTargetKey)!;
+
+  const latestParentTarget = oldTargetAnchorMap.latestParentTarget;
+  let newLatestParentTarget = latestParentTarget;
+  if (parentKey) {
+    const type = whatsType(latestParentTarget);
+    newLatestParentTarget = createNewRefValue(latestParentTarget, currentProxyTargetKey);
+    // TODO 暂时未考虑set类型，waiting develop
+    type === "Map"
+      ? (newLatestParentTarget as MapType<S>).set(parentKey, previousValue)
+      : (newLatestParentTarget as S)[parentKey] = previousValue;
+  }
+
+  targetAnchorMap.set(currentProxyTargetKey, {
+    latestTarget: previousValue!,
+    latestParentTarget: !parentKey
+      ? stateMap
+      : newLatestParentTarget,
+  });
 };

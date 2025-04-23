@@ -16,10 +16,13 @@ import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import type { SchedulerType } from "../scheduler/types";
 import type {
-  ApplyOriginFunctionType, KeyChainsSourceItemType, ProxyTargetType,
+  ApplyOriginFunctionType, KeyChainsSourceItemType,
+  ProxyTargetType, TargetAnchorMapValueType,
 } from "../immutable/types";
 import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
-import { proxyable, createNewRefValue, isMapSetPrototypeProxyable } from "../immutable/utils";
+import {
+  proxyable, createNewRefValue, isMapSetPrototypeProxyable, updateTargetAnchorMap,
+} from "../immutable/utils";
 import { scheduler } from "../scheduler";
 import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__,
@@ -109,6 +112,9 @@ export const createStore = <S extends PrimitiveState>(
   const storeMap: StoreMap<S> = new Map();
 
   const storeProxyWeakMap = new WeakMap<symbol, Store<S>>();
+
+  // Obtain the anchor map for the latest target object data
+  const targetAnchorMap = new Map<symbol, TargetAnchorMapValueType<S>>();
 
   // The storage stack of this proxy object for the class component
   const classThisPointerSet = new Set<ClassInstanceTypeOfConnectStore<S>>();
@@ -285,19 +291,15 @@ export const createStore = <S extends PrimitiveState>(
             ? isMapType
               ? (previousValue as MapType<S>).set(
                 itemKey,
-                createNewRefValue(
-                  (previousValue as MapType<S>).get(itemKey) as ValueOf<S>,
-                  currentIndex + 2,
-                )
+                createNewRefValue((previousValue as MapType<S>).get(itemKey) as ValueOf<S>)
               )
-              : ((previousValue as any)[itemKey] = createNewRefValue(
-                (previousValue as S)[itemKey],
-                currentIndex + 2,
-              ))
+              : ((previousValue as any)[itemKey] = createNewRefValue((previousValue as S)[itemKey]))
             // Update the attributes of the last level in the attribute chain
             : isMapType
               ? (previousValue as MapType<S>).set(itemKey, value)
               : ((previousValue as S)[itemKey] = value);
+
+          updateTargetAnchorMap(targetAnchorMap, stateMap, previousValue!, currentIndex, array);
 
           return isMapType
             ? (previousValue as MapType<S>).get(itemKey)
@@ -356,6 +358,14 @@ export const createStore = <S extends PrimitiveState>(
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ApplyOriginFunctionType,
   ) => {
+    const currentProxyTargetKey = Symbol.for(`${__PROXY_TARGET_KEY_PREFIX__}_${keyLevel ?? 0}`);
+
+    !targetAnchorMap.get(currentProxyTargetKey)
+    && targetAnchorMap.set(currentProxyTargetKey, {
+      latestTarget: target,
+      latestParentTarget: parentTarget,
+    });
+
     /**
      * @description Application-level “identity anchor”
      * Manually assign a marker in the data structure
@@ -366,7 +376,6 @@ export const createStore = <S extends PrimitiveState>(
      * This is essentially equivalent to you controlling the object's global "meta identity" (meta key),
      * rather than relying solely on proxyCache/WeakMap.
      */
-    const currentProxyTargetKey = Symbol.for(`${__PROXY_TARGET_KEY_PREFIX__}_${keyLevel}`);
     !(target as ProxyTargetType)[currentProxyTargetKey] && (
       (target as ProxyTargetType)[currentProxyTargetKey] = Symbol()
     );
@@ -384,9 +393,11 @@ export const createStore = <S extends PrimitiveState>(
         const externalValue = externalMap.get(key as keyof ExternalMapValue<S>);
         if (externalValue) return externalValue;
 
+        const latestTarget = targetAnchorMap.get(currentProxyTargetKey)!.latestTarget;
         const value = isStateSource
           ? stateMap.get(key)
-          : (target as S)[key];
+          : (latestTarget as S)[key];
+        // todo waiting remove
         // console.log(value);
 
         isStateSource && computedStateDepsSet.add(key);
@@ -398,7 +409,7 @@ export const createStore = <S extends PrimitiveState>(
             value as object,
             target,
             firstLevelKey ?? key,
-            (keyLevel ?? 1) + 1,
+            (keyLevel ?? 0) + 1,
             (
               keyChains
                 ? IMSPP
@@ -421,26 +432,33 @@ export const createStore = <S extends PrimitiveState>(
           && !(value as AnyBoundFn).__bound__
         ) {
           // eslint-disable-next-line @typescript-eslint/no-use-before-define
-          return boundFnProcessing(key, value, target, stateMap, store);
+          return boundFnProcessing(key, value, latestTarget, stateMap, store);
         }
 
         return value;
       },
-      set: (_: S, key: keyof S, value: ValueOf<S>) => singleUpdate(
-        key, value, false, target, firstLevelKey,
-        new Set(keyChains).add({ key }), applyOriginFunction,
-      ),
+      set: (_: S, key: keyof S, value: ValueOf<S>) => {
+        const latestTarget = targetAnchorMap.get(currentProxyTargetKey)!.latestTarget;
+        return singleUpdate(
+          key, value, false, latestTarget, firstLevelKey,
+          new Set(keyChains).add({ key }), applyOriginFunction,
+        );
+      },
       // Delete will also play an updating role
-      deleteProperty: (_: S, key: keyof S) => singleUpdate(
-        key, undefined as ValueOf<S>, true, target, firstLevelKey,
-        new Set(keyChains).add({ key }), applyOriginFunction,
-      ),
+      deleteProperty: (_: S, key: keyof S) => {
+        const latestTarget = targetAnchorMap.get(currentProxyTargetKey)!.latestTarget;
+        return singleUpdate(
+          key, undefined as ValueOf<S>, true, latestTarget, firstLevelKey,
+          new Set(keyChains).add({ key }), applyOriginFunction,
+        );
+      },
       // The `apply` here is written specifically for prototype chain functions
       // that are applicable to proxyable types such as `Map`, and `Set`.
       apply(applyOriginFunction: any, thisArg: any, argArray: any[]) {
+        const latestParentTarget = targetAnchorMap.get(currentProxyTargetKey)!.latestParentTarget;
         return Reflect.apply(
           __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
-            applyOriginFunction, thisArg, parentTarget, createProxy,
+            applyOriginFunction, thisArg, latestParentTarget as any, createProxy,
             firstLevelKey, keyLevel, keyChains, singleUpdate,
           ),
           thisArg,

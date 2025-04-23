@@ -138,3 +138,8 @@ export type IteratorsParentType<S extends PrimitiveState> = ProxyableType<S> & {
 };
 
 export type ArrayMapSetIteratorType<S extends PrimitiveState> = ArrayIterator<S> | MapIterator<S> | SetIterator<S>;
+
+export type TargetAnchorMapValueType<S extends PrimitiveState> = {
+  latestTarget: object | S;
+  latestParentTarget: object | S;
+};

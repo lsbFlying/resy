@@ -243,10 +243,6 @@ export const createStore = <S extends PrimitiveState>(
     if (target !== stateMap) {
       // During each update, the target here is the latest target object obtained by the previous agent,
       // so the PrevValue here is also the latest data before the update.
-      // const type = whatsType(target);
-      // const prevValue = type === "Map"
-      //   ? (target as MapType<S>).get(key)
-      //   : (target as S)[key];
       const prevValue = (target as S)[key];
 
       // Directly compare the PrevValue with the current value to be updated

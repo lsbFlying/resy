@@ -2,17 +2,18 @@
  * @description prototype method proxies for set.
  */
 
-import type { PrimitiveState, ValueOf } from "../types";
+import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type {
   ProxyableType, CreateProxyType, SetPrototypeProxyableValueType,
   KeyChainsSourceItemType, SetPrototypeProxyableFactoryType,
   ApplyOriginFunctionType, IteratorsType,
 } from "./types";
-import { iteratorProcessing, proxyable } from "./utils";
+import { createNewRefValue, iteratorProcessing, proxyable, reduceChanged } from "./utils";
 
 const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   applyOriginFunction: SetPrototypeProxyableValueType,
   thisArg: Set<S>,
+  stateMap: MapType<S>,
   parentTarget: Set<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
@@ -32,58 +33,49 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
   switch (fnName) {
     case "add":
       return (value: S) => {
-        const curKey = Array.from(keyChains!).at(-1)?.key;
-
         if (parentTarget.has(value)) return parentTarget;
 
-        // todo dev, parentTarget发生变化，不符合“不可变性设计原则”
-        parentTarget.add(value);
+        const newValue = createNewRefValue(parentTarget).add(value);
+        const firstLevelValue = stateMap.get(firstLevelKey!);
+        reduceChanged(newValue as ValueOf<S>, keyChains!, firstLevelValue);
 
-        const result = new Set(parentTarget);
-
-        singleUpdate?.(
-          curKey!,
-          result as ValueOf<S>,
+        singleUpdate!(
+          firstLevelKey!,
+          createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
-          parentTarget,
-          firstLevelKey,
-          keyChains,
-          applyOriginFunction,
+          stateMap,
         );
-        return result;
+        return newValue;
       };
     case "delete":
       return (value: S) => {
-        const curKey = Array.from(keyChains!).at(-1)?.key;
         if (!parentTarget.has(value)) return false;
 
-        // todo dev, parentTarget发生变化，不符合“不可变性设计原则”
-        parentTarget.delete(value);
+        const newValue = createNewRefValue(parentTarget);
+        const result = newValue.delete(value);
+        const firstLevelValue = stateMap.get(firstLevelKey!);
+        reduceChanged(newValue as ValueOf<S>, keyChains!, firstLevelValue);
 
-        return singleUpdate!(
-          curKey!,
-          new Set(parentTarget) as ValueOf<S>,
+        singleUpdate!(
+          firstLevelKey!,
+          createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
-          parentTarget,
-          firstLevelKey,
-          keyChains,
-          applyOriginFunction,
+          stateMap,
         );
+        return result;
       };
     case "clear":
       return () => {
-        const curKey = Array.from(keyChains!).at(-1)?.key;
-
         if (!parentTarget.size) return;
 
-        singleUpdate?.(
-          curKey!,
-          new Set() as ValueOf<S>,
+        const firstLevelValue = stateMap.get(firstLevelKey!);
+        reduceChanged(new Set() as ValueOf<S>, keyChains!, firstLevelValue);
+
+        singleUpdate!(
+          firstLevelKey!,
+          createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
-          parentTarget,
-          firstLevelKey,
-          keyChains,
-          applyOriginFunction,
+          stateMap,
         );
       };
     case "forEach":

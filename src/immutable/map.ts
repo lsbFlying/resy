@@ -8,11 +8,14 @@ import type {
   MapPrototypeProxyableValueType, ApplyOriginFunctionType,
   IteratorsType, MapPrototypeProxyableFactoryType,
 } from "./types";
-import { iteratorProcessing, proxyable } from "./utils";
+import {
+  createNewRefValue, iteratorProcessing, proxyable, reduceChanged,
+} from "./utils";
 
 const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapType<S>,
+  stateMap: MapType<S>,
   parentTarget: MapType<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
@@ -46,59 +49,51 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
       };
     case "set":
       return (key: keyof S, value: ValueOf<S>) => {
-        const curKey = Array.from(keyChains!).at(-1)?.key;
         const oldValue = parentTarget.get(key);
 
         if (Object.is(oldValue, value)) return parentTarget;
 
-        // todo dev, parentTarget发生变化，不符合“不可变性设计原则”
-        parentTarget.set(key, value);
-        const newValue = new Map(parentTarget);
+        const newValue = createNewRefValue(parentTarget).set(key, value);
+        const firstLevelValue = stateMap.get(firstLevelKey!);
+        reduceChanged(value, keyChains!, firstLevelValue);
 
         singleUpdate!(
-          curKey!,
-          newValue as ValueOf<S>,
+          firstLevelKey!,
+          createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
-          parentTarget,
-          firstLevelKey,
-          keyChains,
-          applyOriginFunction,
+          stateMap,
         );
         return newValue;
       };
     case "delete":
       return (key: keyof S) => {
-        const curKey = Array.from(keyChains!).at(-1)?.key;
-
         if (!parentTarget.has(key)) return false;
 
-        // todo dev, parentTarget发生变化，不符合“不可变性设计原则”
-        parentTarget.delete(key);
+        const newValue = createNewRefValue(parentTarget);
+        const result = newValue.delete(key);
+        const firstLevelValue = stateMap.get(firstLevelKey!);
+        reduceChanged(newValue as ValueOf<S>, keyChains!, firstLevelValue);
 
-        return singleUpdate!(
-          curKey!,
-          new Map(parentTarget) as ValueOf<S>,
+        singleUpdate!(
+          firstLevelKey!,
+          createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
-          parentTarget,
-          firstLevelKey,
-          keyChains,
-          applyOriginFunction,
+          stateMap,
         );
+        return result;
       };
     case "clear":
       return () => {
-        const curKey = Array.from(keyChains!).at(-1)?.key;
-
         if (!parentTarget.size) return;
 
-        singleUpdate?.(
-          curKey!,
-          new Map() as ValueOf<S>,
+        const firstLevelValue = stateMap.get(firstLevelKey!);
+        reduceChanged(new Map() as ValueOf<S>, keyChains!, firstLevelValue);
+
+        singleUpdate!(
+          firstLevelKey!,
+          createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
-          parentTarget,
-          firstLevelKey,
-          keyChains,
-          applyOriginFunction,
+          stateMap,
         );
       };
     case "forEach":

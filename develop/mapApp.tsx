@@ -65,25 +65,28 @@ const useStore = defineStore({
   updateInfoMap() {
     // console.log((this.infoMap.get("personInfo") as PersonInfo)?.bodyInfo.weightInfo.weight);
     // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.reach.value = Math.random();
-    (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.reach.value = 999;
+    // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.reach.value = 170;
     // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo = {
     //   height: Math.random(),
     //   reach: {
     //     value: Math.random(),
     //   },
     // };
-    // (this.infoMap.set("personInfo", {
-    //   ...infoObj.personInfo,
-    //   bodyInfo: {
-    //     ...infoObj.personInfo.bodyInfo,
-    //     heightInfo: {
-    //       ...infoObj.personInfo.bodyInfo.heightInfo,
-    //       reach: {
-    //         value: Math.random(),
-    //       },
-    //     },
-    //   }
-    // }));
+    console.log(this.infoMap);
+    (this.infoMap.set("personInfo", {
+      ...infoObj.personInfo,
+      bodyInfo: {
+        ...infoObj.personInfo.bodyInfo,
+        heightInfo: {
+          ...infoObj.personInfo.bodyInfo.heightInfo,
+          reach: {
+            value: Math.random(),
+            // value: 170,
+          },
+        },
+      }
+    }));
+    console.log(this.infoMap.get("personInfo"));
     // console.log(this.infoMap);
     // this.infoMap.clear();
     // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.clear();

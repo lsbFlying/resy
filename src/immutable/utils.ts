@@ -1,5 +1,5 @@
 import { whatsType, typeString, slice } from "../utils";
-import type { PrimitiveState } from "../types";
+import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type {
   ApplyOriginFunctionType, IteratorsType, CreateProxyType,
   KeyChainsSourceItemType, ArrayMapSetIteratorType, IteratorsParentType,
@@ -137,4 +137,60 @@ export const iteratorProcessing = <S extends PrimitiveState>(
     AM_IteratorFlag && (iterator.next = iterator[Symbol.iterator]().next);
     parentTarget[__ITERATOR_META_PROCESSING_KEY__] = true;
   }
+};
+
+export const reduceChanged = <S extends PrimitiveState>(
+  value: ValueOf<S>,
+  keyChains: Set<KeyChainsSourceItemType<S>>,
+  firstLevelValue?: ValueOf<S>,
+) => {
+  // No first level attribute chain array
+  const noneFirstLevelKeyChains: (keyof S)[] = [];
+  for (const item of keyChains) {
+    noneFirstLevelKeyChains.push(item.key);
+  }
+  noneFirstLevelKeyChains.shift();
+
+  // TODO 应该可以通过递归循环优化处理
+  noneFirstLevelKeyChains.reduce((
+    previousValue,
+    itemKey,
+    currentIndex,
+    array,
+  ) => {
+    const isMapType = whatsType(previousValue) === "Map";
+
+    // TODO set类型的更新循环还没有完全开发验证完毕，waiting develop
+    currentIndex !== array.length - 1
+      /**
+       * @description Update the attribute chain except for the attribute objects of each layer before the last level,
+       * This is very important. If the update here is ignored,
+       * it will result in the attribute chain's layer by layer properties not being treated as immutable,
+       * which will create a dependency invariant bug on the hook's dependency array.
+       */
+      ? isMapType
+        ? (previousValue as MapType<S>).set(
+          itemKey,
+          createNewRefValue((previousValue as MapType<S>).get(itemKey) as ValueOf<S>)
+        )
+        : ((previousValue as any)[itemKey] = createNewRefValue((previousValue as S)[itemKey]))
+      // Update the attributes of the last level in the attribute chain
+      : isMapType
+        ? (previousValue as MapType<S>).set(itemKey, value)
+        : ((previousValue as S)[itemKey] = value);
+
+    return isMapType
+      ? (previousValue as MapType<S>).get(itemKey)
+      : (previousValue as S)[itemKey];
+  }, firstLevelValue);
+
+  /**
+   * @description The prototype function proxies of the parent object of `Map` and `Set` have been updated.
+   * At this point, it is necessary to remove the previous proxies for the prototype functions;
+   * otherwise, subsequent read and write operations will not be able to access the latest proxied data.
+   */
+  // TODO waiting considering
+  // applyOriginFunction && storeProxyMap.delete(
+  //   (applyOriginFunction as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__]
+  // );
 };

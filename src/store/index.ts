@@ -17,7 +17,7 @@ import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import type { SchedulerType } from "../scheduler/types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
-import { proxyable, createNewRefValue } from "../immutable/utils";
+import { proxyable, createNewRefValue, reduceChanged } from "../immutable/utils";
 import { scheduler } from "../scheduler";
 import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__,
@@ -26,7 +26,7 @@ import {
 import {
   __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__, __GETTERS_PREFIX__,
 } from "./static";
-import { hasOwnProperty, whatsType } from "../utils";
+import { hasOwnProperty } from "../utils";
 import {
   stateErrorProcessing, optionsErrorProcessing,
   subscribeErrorProcessing, setOptionsErrorProcessing,
@@ -243,66 +243,20 @@ export const createStore = <S extends PrimitiveState>(
     if (target !== stateMap) {
       // During each update, the target here is the latest target object obtained by the previous agent,
       // so the PrevValue here is also the latest data before the update.
-      // TODO 这里读取数据要考虑map、set类型
+      // const type = whatsType(target);
+      // const prevValue = type === "Map"
+      //   ? (target as MapType<S>).get(key)
+      //   : (target as S)[key];
       const prevValue = (target as S)[key];
 
       // Directly compare the PrevValue with the current value to be updated
       // to see if the data needs to be updated and processed.
       const changed = !Object.is(prevValue, value);
+      console.log(key, value, prevValue, target, changed);
 
       const firstLevelValue = stateMap.get(firstLevelKey!);
 
-      if (changed) {
-        // No first level attribute chain array
-        const noneFirstLevelKeyChains: (keyof S)[] = [];
-        for (const item of keyChains!) {
-          noneFirstLevelKeyChains.push(item.key);
-        }
-        noneFirstLevelKeyChains.shift();
-
-        // TODO 应该可以通过递归循环优化处理
-        noneFirstLevelKeyChains.reduce((
-          previousValue,
-          itemKey,
-          currentIndex,
-          array,
-        ) => {
-          const isMapType = whatsType(previousValue) === "Map";
-
-          // TODO set类型的更新循环还没有完全开发验证完毕，waiting develop
-          currentIndex !== array.length - 1
-            /**
-             * @description Update the attribute chain except for the attribute objects of each layer before the last level,
-             * This is very important. If the update here is ignored,
-             * it will result in the attribute chain's layer by layer properties not being treated as immutable,
-             * which will create a dependency invariant bug on the hook's dependency array.
-             */
-            ? isMapType
-              ? (previousValue as MapType<S>).set(
-                itemKey,
-                createNewRefValue((previousValue as MapType<S>).get(itemKey) as ValueOf<S>)
-              )
-              : ((previousValue as any)[itemKey] = createNewRefValue((previousValue as S)[itemKey]))
-            // Update the attributes of the last level in the attribute chain
-            : isMapType
-              ? (previousValue as MapType<S>).set(itemKey, value)
-              : ((previousValue as S)[itemKey] = value);
-
-          return isMapType
-            ? (previousValue as MapType<S>).get(itemKey)
-            : (previousValue as S)[itemKey];
-        }, firstLevelValue);
-
-        /**
-         * @description The prototype function proxies of the parent object of `Map` and `Set` have been updated.
-         * At this point, it is necessary to remove the previous proxies for the prototype functions;
-         * otherwise, subsequent read and write operations will not be able to access the latest proxied data.
-         */
-        // TODO waiting considering
-        // applyOriginFunction && storeProxyMap.delete(
-        //   (applyOriginFunction as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__]
-        // );
-      }
+      if (changed) reduceChanged(value, keyChains!, firstLevelValue);
 
       return changed
         ? singleUpdate(
@@ -404,8 +358,8 @@ export const createStore = <S extends PrimitiveState>(
       // that are applicable to proxyable types such as `Map`, and `Set`.
       apply: (applyOriginFunction: any, thisArg: any, argArray: any[]) => Reflect.apply(
         __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
-          applyOriginFunction, thisArg, parentTarget as any, createProxy,
-          firstLevelKey, keyLevel, keyChains, singleUpdate,
+          applyOriginFunction, thisArg, stateMap, parentTarget as any,
+          createProxy, firstLevelKey, keyLevel, keyChains, singleUpdate,
         ),
         thisArg,
         argArray,

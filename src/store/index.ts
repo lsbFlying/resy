@@ -252,7 +252,6 @@ export const createStore = <S extends PrimitiveState>(
       // Directly compare the PrevValue with the current value to be updated
       // to see if the data needs to be updated and processed.
       const changed = !Object.is(prevValue, value);
-      console.log(key, value, prevValue, target, changed);
 
       const firstLevelValue = stateMap.get(firstLevelKey!);
 

@@ -10,6 +10,7 @@ import type {
 } from "./types";
 import { createNewRefValue, iteratorProcessing, proxyable, reduceChanged } from "./utils";
 
+// TODO waiting develop sure
 const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   applyOriginFunction: SetPrototypeProxyableValueType,
   thisArg: Set<S>,

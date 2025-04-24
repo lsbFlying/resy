@@ -55,7 +55,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
 
         const newValue = createNewRefValue(parentTarget).set(key, value);
         const firstLevelValue = stateMap.get(firstLevelKey!);
-        reduceChanged(value, keyChains!, firstLevelValue);
+        reduceChanged(value as ValueOf<S>, new Set(keyChains).add({ key, }), firstLevelValue);
 
         singleUpdate!(
           firstLevelKey!,
@@ -72,7 +72,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
         const newValue = createNewRefValue(parentTarget);
         const result = newValue.delete(key);
         const firstLevelValue = stateMap.get(firstLevelKey!);
-        reduceChanged(newValue as ValueOf<S>, keyChains!, firstLevelValue);
+        reduceChanged(newValue as ValueOf<S>, new Set(keyChains).add({ key, }), firstLevelValue);
 
         singleUpdate!(
           firstLevelKey!,

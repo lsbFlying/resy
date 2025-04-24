@@ -72,7 +72,7 @@ const useStore = defineStore({
     //     value: Math.random(),
     //   },
     // };
-    console.log(this.infoMap);
+    // console.log(this.infoMap);
     (this.infoMap.set("personInfo", {
       ...infoObj.personInfo,
       bodyInfo: {
@@ -86,7 +86,7 @@ const useStore = defineStore({
         },
       }
     }));
-    console.log(this.infoMap.get("personInfo"));
+    // console.log(this.infoMap.get("personInfo"));
     // console.log(this.infoMap);
     // this.infoMap.clear();
     // (this.infoMap.get("personInfo") as PersonInfo)!.bodyInfo.heightInfo.clear();

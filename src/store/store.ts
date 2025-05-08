@@ -53,6 +53,9 @@ export default class StoreCore<S extends PrimitiveState> {
       __functionName__: (options as InnerStoreOptions)?.__functionName__ ?? "createStore",
     };
 
+    // for development tools
+    this.externalMap.set(__STORE_NAMESPACE__, this.options.namespace);
+
     stateErrorProcessing({ state: this.reducerState, options: this.options });
 
     this.stateMap = objectToMap(this.reducerState);
@@ -63,42 +66,6 @@ export default class StoreCore<S extends PrimitiveState> {
     if (this.options.__useConciseState__ || this.options.__enableMacros__) {
       this.externalMap.set("store", this.store);
     }
-
-    // for development tools
-    this.externalMap.set(__STORE_NAMESPACE__, this.options.namespace);
-
-    /** ============================== For core utils start ============================== */
-    this.externalMap.set("setState", this.setState);
-    this.externalMap.set("syncUpdate", this.syncUpdate);
-    this.externalMap.set("restore", this.restore);
-    this.externalMap.set("subscribe", this.subscribe);
-    /** ============================== For core utils end ============================== */
-
-    /** ============================== For core store start ============================== */
-    /**
-     * @description Here, __USE_STORE_KEY__ is not placed under the branch where optionsTemp.__mode__ === "state",
-     * because computed needs the rendering capability of engineStore.
-     */
-    this.externalMap.set(__USE_STORE_KEY__, this.engineStore);
-    this.externalMap.set(__REGENERATIVE_SYSTEM_KEY__, __REGENERATIVE_SYSTEM_KEY__);
-    /** ============================== For core store end ============================== */
-
-    this.externalMap.set("setOptions", this.setOptions);
-    this.externalMap.set("getOptions", this.getOptions);
-
-    this.externalMap.set("useStore", this.useStore);
-    this.externalMap.set("useSubscription", this.useSubscription);
-
-    /**
-     * @description The reason why the three operation functions for class components
-     * — connect, classUnmountProcessing, and classInitialStateRetrieve
-     * cannot be extracted for external operations
-     * is that a simple external call cannot access these internal related data,
-     * so they have to be written inside createStore.
-     */
-    this.externalMap.set(__CLASS_CONNECT_STORE_KEY__, this.classConnectStore);
-    this.externalMap.set(__CLASS_UNMOUNT_PROCESSING_KEY__, this.classUnmountProcessing);
-    this.externalMap.set(__CLASS_INITIAL_STATE_RETRIEVE_KEY__, this.initialStateRetrieve);
   }
 
   /** ============================== For core constant ready start ============================== */
@@ -133,13 +100,6 @@ export default class StoreCore<S extends PrimitiveState> {
 
   // The storage stack of this proxy object for the class component
   classThisPointerSet = new Set<ClassInstanceTypeOfConnectStore<S>>();
-
-  /**
-   * @description Map for additional related internal objects of store
-   * For example, some related functions or identifiers,
-   * such as setState, subscribe and internal identity __REGENERATIVE_SYSTEM_KEY__
-   */
-  externalMap: ExternalMapType<S> = new Map();
   /** ============================== For core constant ready end ============================== */
 
   /** ============================== For core helpers start ============================== */
@@ -876,4 +836,35 @@ export default class StoreCore<S extends PrimitiveState> {
     this.deferRestoreProcessing();
   };
   /** ============================== For class components use end ============================== */
+
+  /**
+   * @description Map for additional related internal objects of store
+   * For example, some related functions or identifiers,
+   * such as setState, subscribe and internal identity __REGENERATIVE_SYSTEM_KEY__
+   */
+  externalMap: ExternalMapType<S> = new Map()
+    .set("setState", this.setState)
+    .set("syncUpdate", this.syncUpdate)
+    .set("restore", this.restore)
+    .set("subscribe", this.subscribe)
+    /**
+     * @description Here, __USE_STORE_KEY__ is not placed under the branch where optionsTemp.__mode__ === "state",
+     * because computed needs the rendering capability of engineStore.
+     */
+    .set(__USE_STORE_KEY__, this.engineStore)
+    .set(__REGENERATIVE_SYSTEM_KEY__, __REGENERATIVE_SYSTEM_KEY__)
+    .set("setOptions", this.setOptions)
+    .set("getOptions", this.getOptions)
+    .set("useStore", this.useStore)
+    .set("useSubscription", this.useSubscription)
+    /**
+     * @description The reason why the three operation functions for class components
+     * — connect, classUnmountProcessing, and classInitialStateRetrieve
+     * cannot be extracted for external operations
+     * is that a simple external call cannot access these internal related data,
+     * so they have to be written inside createStore.
+     */
+    .set(__CLASS_CONNECT_STORE_KEY__, this.classConnectStore)
+    .set(__CLASS_UNMOUNT_PROCESSING_KEY__, this.classUnmountProcessing)
+    .set(__CLASS_INITIAL_STATE_RETRIEVE_KEY__, this.initialStateRetrieve);
 }

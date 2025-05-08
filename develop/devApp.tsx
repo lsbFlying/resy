@@ -7,6 +7,7 @@ type Store = {
   test(): string;
 };
 
+console.time("createStore");
 const store = createStore<Store>({
   count: 0,
   text: "hello world",
@@ -14,6 +15,7 @@ const store = createStore<Store>({
     return `${this.count}-${this.text}`;
   },
 });
+console.timeEnd("createStore");
 
 export default class App extends ComponentWithStore {
 

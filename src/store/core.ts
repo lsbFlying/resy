@@ -3,11 +3,11 @@ import type {
   StoreMapValue, StoreMapValueType, StoreMap, InitialState,
   StateRefCounterMapType, State, StoreOptions, AnyBoundFn, Store,
 } from "./types";
-import type { SchedulerType } from "../scheduler/types";
 import type { ListenerParams, ListenerType } from "../subscribe/types";
 import type { InitialFnCanExecMapType } from "../restore/types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
+import { Scheduler } from "../scheduler";
 import { initialStateRetrieve, deferRestoreProcessing } from "../restore";
 import { batchUpdate } from "../static";
 import { __CLASS_IS_MOUNTED_KEY__, __CLASS_STATE_REF_SET_KEY__ } from "../class-connect/static";
@@ -30,7 +30,7 @@ export const hookConnectStore = <S extends PrimitiveState>(
   stateMap: MapType<S>,
   storeStateRefCounterMap: StateRefCounterMapType,
   storeMap: StoreMap<S>,
-  schedulerProcessor: MapType<SchedulerType<S>>,
+  scheduler: Scheduler<S>,
   initialFnCanExecMap: InitialFnCanExecMapType,
   classThisPointerSet: Set<ClassInstanceTypeOfConnectStore<S>>,
   initialState?: InitialState<S>,
@@ -55,7 +55,7 @@ export const hookConnectStore = <S extends PrimitiveState>(
 
       deferRestoreProcessing(
         options, reducerState, stateMap, storeStateRefCounterMap,
-        schedulerProcessor, initialFnCanExecMap, classThisPointerSet,
+        scheduler, initialFnCanExecMap, classThisPointerSet,
         initialState, () => {
           // Release memory if there are no component references
           if (!singleStoreChangeSet.size) {
@@ -96,7 +96,7 @@ export const connectHook = <S extends PrimitiveState>(
   stateMap: MapType<S>,
   storeStateRefCounterMap: StateRefCounterMapType,
   storeMap: StoreMap<S>,
-  schedulerProcessor: MapType<SchedulerType<S>>,
+  scheduler: Scheduler<S>,
   initialFnCanExecMap: InitialFnCanExecMapType,
   classThisPointerSet: Set<ClassInstanceTypeOfConnectStore<S>>,
   initialState?: InitialState<S>,
@@ -106,7 +106,7 @@ export const connectHook = <S extends PrimitiveState>(
   return (
     hookConnectStore(
       key, options, reducerState, stateMap, storeStateRefCounterMap,
-      storeMap, schedulerProcessor, initialFnCanExecMap,
+      storeMap, scheduler, initialFnCanExecMap,
       classThisPointerSet, initialState,
     ).get(key)!.get("useSyncExternalStore") as StoreMapValueType<S>["useSyncExternalStore"]
   )();
@@ -166,7 +166,7 @@ export const pushTask = <S extends PrimitiveState>(
   key: keyof S,
   value: ValueOf<S>,
   stateMap: MapType<S>,
-  schedulerProcessor: MapType<SchedulerType<S>>,
+  scheduler: Scheduler<S>,
   options: StoreOptions,
   reducerState: S,
   storeStateRefCounterMap: StateRefCounterMapType,
@@ -180,7 +180,7 @@ export const pushTask = <S extends PrimitiveState>(
   // which lays the foundation for subsequent batch updates.
   !isDelete ? stateMap.set(key, value) : stateMap.delete(key);
 
-  (schedulerProcessor.get("pushTask") as SchedulerType<S>["pushTask"])(
+  scheduler.pushTask(
     key,
     value,
     () => {
@@ -193,7 +193,7 @@ export const pushTask = <S extends PrimitiveState>(
       (
         hookConnectStore(
           key, options, reducerState, stateMap, storeStateRefCounterMap,
-          storeMap, schedulerProcessor, initialFnCanExecMap,
+          storeMap, scheduler, initialFnCanExecMap,
           classThisPointerSet, initialState,
         ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
       )();
@@ -207,24 +207,24 @@ export const pushTask = <S extends PrimitiveState>(
  * the update execution of data and tasks are placed onto the stack, and subsequently flushed.
  */
 export const finallyBatchProcessing = <S extends PrimitiveState>(
-  schedulerProcessor: MapType<SchedulerType<S>>,
+  scheduler: Scheduler<S>,
   prevBatchState: MapType<S>,
   stateMap: MapType<S>,
   listenerSet: Set<ListenerType<S>>,
 ) => {
   const {
     taskDataMap, taskQueueMap, callbackStackSet,
-  } = (schedulerProcessor.get("getSchedulerQueue") as SchedulerType<S>["getSchedulerQueue"])();
+  } = scheduler;
 
-  if ((taskDataMap.size > 0 || callbackStackSet.size > 0) && !schedulerProcessor.get("isUpdating")) {
+  if ((taskDataMap.size > 0 || callbackStackSet.size > 0) && !scheduler.isUpdating) {
     // Reduce the generation of redundant microtasks through the isUpdating flag
-    schedulerProcessor.set("isUpdating", Promise.resolve().then(() => {
+    scheduler.isUpdating = Promise.resolve().then(() => {
       /**
        * @description Reset the isUpdating and willUpdating flags
        * to ensure that each subsequent round of update batching can proceed and operate normally.
        */
-      schedulerProcessor.set("isUpdating", null);
-      schedulerProcessor.set("willUpdating", null);
+      scheduler.isUpdating = null;
+      scheduler.willUpdating = null;
 
       batchUpdate(() => {
         if (taskDataMap.size > 0) {
@@ -243,7 +243,7 @@ export const finallyBatchProcessing = <S extends PrimitiveState>(
          * The task data and task queue are immediately flushed and cleared,
          * freeing up space in preparation for the next round of data updates.
          */
-        (schedulerProcessor.get("flushTask") as SchedulerType<S>["flushTask"])();
+        scheduler.flushTask();
 
         // 🌟 The execution of subscribe and callback needs to be placed after flush,
         // otherwise their own update queues will be emptied in advance, affecting their own internal execution.
@@ -282,7 +282,7 @@ export const finallyBatchProcessing = <S extends PrimitiveState>(
           });
         }
       });
-    }));
+    });
   }
 };
 

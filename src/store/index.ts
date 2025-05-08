@@ -14,11 +14,10 @@ import type { InitialFnCanExecMapType } from "../restore/types";
 import type { Unsubscribe, ListenerType } from "../subscribe/types";
 import type { AnyFn, MapType, ValueOf, PrimitiveState } from "../types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
-import type { SchedulerType } from "../scheduler/types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
 import { proxyable, createNewRefValue, reduceChanged } from "../immutable/utils";
-import { scheduler } from "../scheduler";
+import { Scheduler } from "../scheduler";
 import {
   __CLASS_CONNECT_STORE_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__,
   __CLASS_INITIAL_STATE_RETRIEVE_KEY__,
@@ -81,7 +80,7 @@ export const createStore = <S extends PrimitiveState>(
 
   stateErrorProcessing({ state: reducerState, options: optionsTemp });
 
-  const schedulerProcessor = scheduler<S>();
+  const scheduler = new Scheduler<S>();
 
   // Tag counters for data references of store
   const storeStateRefCounterMap: StateRefCounterMapType = new Map().set("counter", 0);
@@ -121,7 +120,7 @@ export const createStore = <S extends PrimitiveState>(
 
   /** ============================== For core utils use start ============================== */
   const setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    willUpdatingProcessing(listenerSet, schedulerProcessor, prevBatchState, stateMap);
+    willUpdatingProcessing(listenerSet, scheduler, prevBatchState, stateMap);
 
     let stateTemp = state;
 
@@ -137,7 +136,7 @@ export const createStore = <S extends PrimitiveState>(
         const value = (stateTemp as S)[key];
         if (!Object.is(value, stateMap.get(key))) {
           pushTask(
-            key, value, stateMap, schedulerProcessor, optionsTemp, reducerState,
+            key, value, stateMap, scheduler, optionsTemp, reducerState,
             storeStateRefCounterMap, storeMap, initialFnCanExecMap,
             classThisPointerSet, initialState,
           );
@@ -145,11 +144,9 @@ export const createStore = <S extends PrimitiveState>(
       });
     }
 
-    (schedulerProcessor.get("pushCallbackStack") as SchedulerType<S>["pushCallbackStack"])(
-      stateMap, stateTemp as State<S>, callback,
-    );
+    scheduler.pushCallbackStack(stateMap, stateTemp as State<S>, callback);
 
-    finallyBatchProcessing(schedulerProcessor, prevBatchState, stateMap, listenerSet);
+    finallyBatchProcessing(scheduler, prevBatchState, stateMap, listenerSet);
   };
 
   /**
@@ -173,7 +170,7 @@ export const createStore = <S extends PrimitiveState>(
           (
             hookConnectStore(
               key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap,
-              storeMap, schedulerProcessor, initialFnCanExecMap,
+              storeMap, scheduler, initialFnCanExecMap,
               classThisPointerSet, initialState,
             ).get(key)!.get("updater") as StoreMapValueType<S>["updater"]
           )();
@@ -184,7 +181,7 @@ export const createStore = <S extends PrimitiveState>(
 
   // Reset recovery initialization state data
   const restore = (callback?: StateCallback<S>) => {
-    willUpdatingProcessing(listenerSet, schedulerProcessor, prevBatchState, stateMap);
+    willUpdatingProcessing(listenerSet, scheduler, prevBatchState, stateMap);
 
     retrieveReducerState(reducerState, initialState);
 
@@ -194,18 +191,16 @@ export const createStore = <S extends PrimitiveState>(
       if (!Object.is(originValue, stateMap.get(key))) {
         state![key] = originValue;
         pushTask(
-          key, originValue, stateMap, schedulerProcessor, optionsTemp,
+          key, originValue, stateMap, scheduler, optionsTemp,
           reducerState, storeStateRefCounterMap, storeMap, initialFnCanExecMap,
           classThisPointerSet, initialState, !hasOwnProperty.call(reducerState, key),
         );
       }
     });
 
-    (schedulerProcessor.get("pushCallbackStack") as SchedulerType<S>["pushCallbackStack"])(
-      stateMap, state, callback,
-    );
+    scheduler.pushCallbackStack(stateMap, state, callback);
 
-    finallyBatchProcessing(schedulerProcessor, prevBatchState, stateMap, listenerSet);
+    finallyBatchProcessing(scheduler, prevBatchState, stateMap, listenerSet);
   };
 
   // Subscription function
@@ -273,13 +268,13 @@ export const createStore = <S extends PrimitiveState>(
         : true;
     } else {
       if (!Object.is(value, stateMap.get(key))) {
-        willUpdatingProcessing(listenerSet, schedulerProcessor, prevBatchState, stateMap);
+        willUpdatingProcessing(listenerSet, scheduler, prevBatchState, stateMap);
         pushTask(
-          key, value, stateMap, schedulerProcessor, optionsTemp, reducerState,
+          key, value, stateMap, scheduler, optionsTemp, reducerState,
           storeStateRefCounterMap, storeMap, initialFnCanExecMap,
           classThisPointerSet, initialState, isDelete,
         );
-        finallyBatchProcessing(schedulerProcessor, prevBatchState, stateMap, listenerSet);
+        finallyBatchProcessing(scheduler, prevBatchState, stateMap, listenerSet);
       }
       return true;
     }
@@ -387,7 +382,7 @@ export const createStore = <S extends PrimitiveState>(
 
         return connectHook(
           key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap,
-          storeMap, schedulerProcessor, initialFnCanExecMap,
+          storeMap, scheduler, initialFnCanExecMap,
           classThisPointerSet, initialState,
         );
       }
@@ -419,7 +414,7 @@ export const createStore = <S extends PrimitiveState>(
          */
         fnStateful && connectHook(
           key, optionsTemp, reducerState, stateMap, storeStateRefCounterMap,
-          storeMap, schedulerProcessor, initialFnCanExecMap,
+          storeMap, scheduler, initialFnCanExecMap,
           classThisPointerSet, initialState,
         );
 
@@ -555,7 +550,7 @@ export const createStore = <S extends PrimitiveState>(
     classThisPointerSet.delete(this);
     deferRestoreProcessing(
       optionsTemp, reducerState, stateMap, storeStateRefCounterMap,
-      schedulerProcessor, initialFnCanExecMap,
+      scheduler, initialFnCanExecMap,
       classThisPointerSet, initialState,
     );
   }

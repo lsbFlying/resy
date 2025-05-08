@@ -1,8 +1,8 @@
 import type { PrimitiveState, MapType, Callback } from "../types";
 import type { InitialFnCanExecMapType } from "./types";
 import type { InitialState, StateRefCounterMapType, StoreOptions } from "../store/types";
-import type { SchedulerType } from "../scheduler/types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
+import { Scheduler } from "../scheduler";
 import { hasOwnProperty } from "../utils";
 import { clearObject } from "./utils";
 
@@ -138,15 +138,15 @@ export function deferRestoreProcessing<S extends PrimitiveState>(
   reducerState: S,
   stateMap: MapType<S>,
   storeStateRefCounterMap: StateRefCounterMapType,
-  schedulerProcessor: MapType<SchedulerType<S>>,
+  scheduler: Scheduler<S>,
   initialFnCanExecMap: InitialFnCanExecMapType,
   classThisPointerSet: Set<ClassInstanceTypeOfConnectStore<S>>,
   initialState?: InitialState<S>,
   callback?: Callback,
 ) {
-  if (!schedulerProcessor.get("deferEffectDestructorExecFlag")) {
-    schedulerProcessor.set("deferEffectDestructorExecFlag", Promise.resolve().then(() => {
-      schedulerProcessor.set("deferEffectDestructorExecFlag", null);
+  if (!scheduler.deferEffectDestructorExecFlag) {
+    scheduler.deferEffectDestructorExecFlag = Promise.resolve().then(() => {
+      scheduler.deferEffectDestructorExecFlag = null;
       if (!storeStateRefCounterMap.get("counter") && !classThisPointerSet.size) {
         unmountRestore(
           options, reducerState, stateMap, storeStateRefCounterMap,
@@ -154,6 +154,6 @@ export function deferRestoreProcessing<S extends PrimitiveState>(
         );
       }
       callback?.();
-    }));
+    });
   }
 }

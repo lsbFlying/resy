@@ -179,35 +179,6 @@ export default class StoreCore<S extends PrimitiveState> {
   };
 
   /** restore utils start */
-  /**
-   * By using "storeStateRefCounterMap" and "classThisPointerSet",
-   * we determine whether the store still has component references.
-   * As long as there is at least one component referencing,
-   * the data will not be reset since it is currently in use within the business logic and does not constitute a complete unmount.
-   * The complete unmount cycle corresponds to the entire usage cycle of the store.
-   */
-  unmountRestore = () => {
-    const {
-      classThisPointerSet, storeStateRefCounterMap,
-      options, initialState,
-      initialFnCanExecMap,
-    } = this;
-    const noRefFlag = !classThisPointerSet.size
-      && !storeStateRefCounterMap.get("counter");
-    /**
-     * When initialState is a function,
-     * it does not have to be executed at unmount time,
-     * because initialization time is sure to reset execution,
-     * thus optimizing code execution efficiency.
-     */
-    if (options.unmountRestore && noRefFlag && typeof initialState !== "function") {
-      this.restoreProcessing();
-    }
-    if (typeof initialState === "function" && noRefFlag) {
-      initialFnCanExecMap.set("canExec", true);
-    }
-  };
-
   initialStateRetrieve = () => {
     const { initialFnCanExecMap } = this;
     // The relevant judgment logic is similar to unmountRestore.
@@ -235,14 +206,40 @@ export default class StoreCore<S extends PrimitiveState> {
    * a microtask can be used to postpone the unmount process.
    */
   deferRestoreProcessing = (callback?: Callback) => {
-    const {
-      scheduler, storeStateRefCounterMap, classThisPointerSet,
-    } = this;
+    const { scheduler } = this;
     if (!scheduler.deferEffectDestructorExecFlag) {
       scheduler.deferEffectDestructorExecFlag = Promise.resolve().then(() => {
         scheduler.deferEffectDestructorExecFlag = undefined;
+        const {
+          storeStateRefCounterMap, classThisPointerSet,
+        } = this;
         if (!storeStateRefCounterMap.get("counter") && !classThisPointerSet.size) {
-          this.unmountRestore();
+          /**
+           * By using "storeStateRefCounterMap" and "classThisPointerSet",
+           * we determine whether the store still has component references.
+           * As long as there is at least one component referencing,
+           * the data will not be reset since it is currently in use within the business logic
+           * and does not constitute a complete unmount.
+           * The complete unmount cycle corresponds to the entire usage cycle of the store.
+           */
+          const {
+            options, initialState,
+            initialFnCanExecMap,
+          } = this;
+          const noRefFlag = !classThisPointerSet.size
+            && !storeStateRefCounterMap.get("counter");
+          /**
+           * When initialState is a function,
+           * it does not have to be executed at unmount time,
+           * because initialization time is sure to reset execution,
+           * thus optimizing code execution efficiency.
+           */
+          if (options.unmountRestore && noRefFlag && typeof initialState !== "function") {
+            this.restoreProcessing();
+          }
+          if (typeof initialState === "function" && noRefFlag) {
+            initialFnCanExecMap.set("canExec", true);
+          }
         }
         callback?.();
       });

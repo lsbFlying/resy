@@ -28,3 +28,10 @@ export const objectToMap = <S extends PrimitiveState>(object: S) => {
     new Map(),
   );
 };
+
+/** clear object */
+export const clearObject = <S extends PrimitiveState>(object: S) => {
+  Object.keys(object).forEach(key => {
+    delete object[key];
+  });
+};

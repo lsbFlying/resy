@@ -1,17 +1,16 @@
 import type {
-  AnyBoundFn, CorePropsType, ExternalMapType, ExternalMapValue, InitialState, InnerStoreOptions,
-  State, StateCallback, StateFnType, StateRefCounterMapType, StateWithThisType, Store, StoreMap,
+  AnyBoundFn, CorePropsType, ExternalMapType, ExternalMapValue, InitialState,
+  InnerStoreOptions, State, StateCallback, StateFnType, StateRefCounterMapType,
+  StateWithThisType, Store, StoreMap, InitialFnCanExecMapType,
 } from "./types";
 import type { AnyFn, Callback, MapType, PrimitiveState, ValueOf } from "../types";
-import type { InitialFnCanExecMapType } from "../restore/types";
 import type { ListenerParams, ListenerType, Unsubscribe } from "../subscribe/types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
-import { clearObject } from "../restore/utils";
 import Scheduler from "../scheduler";
 import {
   optionsErrorProcessing, setOptionsErrorProcessing, stateErrorProcessing, subscribeErrorProcessing,
 } from "./errors";
-import { mapToObject, objectToMap, shallowCloneMap } from "./utils";
+import { mapToObject, objectToMap, shallowCloneMap, clearObject } from "./utils";
 import {
   __GETTERS_PREFIX__, __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__,
 } from "./static";

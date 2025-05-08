@@ -58,6 +58,12 @@ export default class StoreCore<S extends PrimitiveState> {
     this.stateMap = objectToMap(this.reducerState);
     this.prevBatchState = objectToMap(this.reducerState);
 
+    this.store = this.createProxy();
+    // Enable useConciseState and defineStore to have data tracking capabilities through the store
+    if (this.options.__useConciseState__ || this.options.__enableMacros__) {
+      this.externalMap.set("store", this.store);
+    }
+
     // for development tools
     this.externalMap.set(__STORE_NAMESPACE__, this.options.namespace);
 
@@ -682,16 +688,8 @@ export default class StoreCore<S extends PrimitiveState> {
     } as ProxyHandler<S>) as Store<S>;
   };
 
-  store: Store<S> | undefined;
   // A proxy object with the capabilities of updating and data tracking.
-  genStore = () => {
-    this.store = this.createProxy();
-    // Enable useConciseState and defineStore to have data tracking capabilities through the store
-    if (this.options.__useConciseState__ || this.options.__enableMacros__) {
-      this.externalMap.set("store", this.store);
-    }
-    return this.store;
-  };
+  store: Store<S>;
 
   // Proxy of driver update re-render for useStore
   engineStore = new Proxy({} as S, {

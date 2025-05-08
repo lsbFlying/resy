@@ -15,7 +15,9 @@ export type ClassStoreType<S extends PrimitiveState> =
 
 // This is the connection type used by the base classes ComponentWithStore and PureComponentWithStore in the class component
 export type ClassConnectStoreType = {
-  [__CLASS_CONNECT_STORE_KEY__]<S extends PrimitiveState>(): ClassStoreType<S>;
+  [__CLASS_CONNECT_STORE_KEY__]<S extends PrimitiveState>(
+    thisArg: ClassInstanceTypeOfConnectStore<S>,
+  ): ClassStoreType<S>;
 };
 
 // The types of different store mounted on this pointer of the class component

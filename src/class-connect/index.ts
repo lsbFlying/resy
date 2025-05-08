@@ -18,7 +18,7 @@ export class ComponentWithStore<
 > extends Component<P, S, SS> {
   constructor(props: P) {
     super(props);
-    constructorProcessing.apply(this as any);
+    constructorProcessing(this as any);
   }
 
   static displayName: undefined | string = undefined;
@@ -32,7 +32,7 @@ export class ComponentWithStore<
   [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
 
   connectStore<S extends PrimitiveState>(store: Store<S>): ClassStoreType<S> {
-    return connectStoreCore.apply(this as any, [store]) as ClassStoreType<S>;
+    return connectStoreCore(this as any, store) as ClassStoreType<S>;
   }
 }
 
@@ -47,7 +47,7 @@ export class PureComponentWithStore<
 > extends PureComponent<P, S, SS> {
   constructor(props: P) {
     super(props);
-    constructorProcessing.apply(this as any);
+    constructorProcessing(this as any);
   }
 
   static displayName: undefined | string = undefined;
@@ -61,6 +61,6 @@ export class PureComponentWithStore<
   [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
 
   connectStore<S extends PrimitiveState>(store: Store<S>): ClassStoreType<S> {
-    return connectStoreCore.apply(this as any, [store]) as ClassStoreType<S>;
+    return connectStoreCore(this as any, store) as ClassStoreType<S>;
   }
 }

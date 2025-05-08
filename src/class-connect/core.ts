@@ -8,18 +8,18 @@ import {
 } from "./static";
 import { storeErrorProcessing } from "../store/errors";
 
-export function constructorProcessing<S extends PrimitiveState>(this: ClassInstanceTypeOfConnectStore<S>) {
-  const instanceMounted = this.componentDidMount;
+export function constructorProcessing<S extends PrimitiveState>(thisArg: ClassInstanceTypeOfConnectStore<S>) {
+  const instanceMounted = thisArg.componentDidMount;
 
-  this.componentDidMount = () => {
-    instanceMounted?.apply(this);
+  thisArg.componentDidMount = () => {
+    instanceMounted?.apply(thisArg);
     /**
      * @description Previously,
      * the `isMounted` method from the `updater` object of React's class instances was used to determine component state.
      * However, React removed this method in later versions,
      * and now a new custom approach is used for update detection.
      */
-    this[__CLASS_IS_MOUNTED_KEY__] = true;
+    thisArg[__CLASS_IS_MOUNTED_KEY__] = true;
   };
 
   /**
@@ -28,18 +28,18 @@ export function constructorProcessing<S extends PrimitiveState>(this: ClassInsta
    * At the same time, the logic code of the extracted
    * child class instance's componentWillUnmount can be executed within the new logic.
    */
-  const instanceUnmount = this.componentWillUnmount;
+  const instanceUnmount = thisArg.componentWillUnmount;
 
   /**
    * @description Mounting a method on the component instance allows the subclass
    * to access componentWillUnmount again when it runs for this purpose in strict mode,
    * while writing a public 'componentWillUnmount' instance method in the class does not achieve this effect.
    */
-  this.componentWillUnmount = () => {
-    this[__CLASS_IS_MOUNTED_KEY__] = false;
+  thisArg.componentWillUnmount = () => {
+    thisArg[__CLASS_IS_MOUNTED_KEY__] = false;
 
     // The original 'this' pointing cannot be missing
-    instanceUnmount?.apply(this);
+    instanceUnmount?.apply(thisArg);
     /**
      * @description The strict mode of class components does not provide accurate predictability
      * and safety guarantees for the execution of component lifecycles.
@@ -51,11 +51,11 @@ export function constructorProcessing<S extends PrimitiveState>(this: ClassInsta
      * to determine if it's a real unmount or a fake unmount caused by strict mode.
      */
     Promise.resolve().then(() => {
-      if (!this[__CLASS_IS_MOUNTED_KEY__]) {
+      if (!thisArg[__CLASS_IS_MOUNTED_KEY__]) {
         // Clear the data references used by the class component in rendering
-        this[__CLASS_STATE_REF_SET_KEY__].clear();
+        thisArg[__CLASS_STATE_REF_SET_KEY__].clear();
         // References to these data are recorded and added through “connectClass”
-        this[__CLASS_THIS_POINTER_STORES_KEY__].forEach((store: Store<S>) => {
+        thisArg[__CLASS_THIS_POINTER_STORES_KEY__].forEach((store: Store<S>) => {
           /**
            * After the class component is unmounted and its internal data references are cleared,
            * the unmount logic of the class component is executed
@@ -63,7 +63,7 @@ export function constructorProcessing<S extends PrimitiveState>(this: ClassInsta
            * firstly, removing this proxy instance of class from the internal classThisPointerSet of the store,
            * and secondly, resetting the data to it`s initial state
            */
-          (store[__CLASS_UNMOUNT_PROCESSING_KEY__ as keyof S] as AnyFn).apply(this);
+          (store[__CLASS_UNMOUNT_PROCESSING_KEY__ as keyof S] as AnyFn)(thisArg);
         });
       }
     });
@@ -71,14 +71,14 @@ export function constructorProcessing<S extends PrimitiveState>(this: ClassInsta
 }
 
 export function connectStoreCore<S extends PrimitiveState>(
-  this: ClassInstanceTypeOfConnectStore<S>,
+  thisArg: ClassInstanceTypeOfConnectStore<S>,
   store: Store<S>,
 ): ClassStoreType<S> {
   storeErrorProcessing(store, "connectStore");
   store[__CLASS_INITIAL_STATE_RETRIEVE_KEY__ as keyof S]();
-  this[__CLASS_THIS_POINTER_STORES_KEY__].add(store);
+  thisArg[__CLASS_THIS_POINTER_STORES_KEY__].add(store);
   // Transform the called object to get this pointer of class,
   // in order to facilitate subsequent operations on class
-  this[__CLASS_CONNECT_STORE_KEY__] = store[__CLASS_CONNECT_STORE_KEY__ as keyof S];
-  return this[__CLASS_CONNECT_STORE_KEY__]!();
+  thisArg[__CLASS_CONNECT_STORE_KEY__] = store[__CLASS_CONNECT_STORE_KEY__ as keyof S];
+  return thisArg[__CLASS_CONNECT_STORE_KEY__](thisArg);
 }

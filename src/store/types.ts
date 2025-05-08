@@ -4,6 +4,8 @@ import type {
   ClassConnectStoreType, ClassUnmountProcessingType, ClassInitialStateRetrieveType,
 } from "../class-connect/types";
 import { __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__ } from "./static";
+import type StateMeta from "./state";
+import type StoreCore from "./store";
 
 /**
  * @description The second parameter configuration item of createStore
@@ -59,6 +61,11 @@ export interface InnerStoreOptions extends StoreOptions {
   readonly __functionName__?: string;
 }
 
+export type CorePropsType<S extends PrimitiveState> = {
+  initialState?: InitialState<S>,
+  options?: StoreOptions,
+};
+
 /**
  * @description Type of storeMapValue
  */
@@ -106,7 +113,7 @@ export interface StoreType<S extends PrimitiveState> {
 
 export type StoreMapValue<S extends PrimitiveState> = MapType<StoreMapValueType<S>>;
 // Type of storeMap
-export type StoreMap<S extends PrimitiveState> = Map<keyof S, StoreMapValue<S>>;
+export type StoreMap<S extends PrimitiveState> = Map<keyof S, StateMeta<S>>;
 
 // Some additional extensions of tool classes and property sets of methods needed within store
 export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S>
@@ -291,4 +298,9 @@ export type AnyBoundFn = AnyFn & {
    * @description The flag attribute bound to the internal processing function attribute.
    */
   __bound__?: boolean;
+};
+
+export type StateMetaProps<S extends PrimitiveState> = {
+  thisArgStore: StoreCore<S>;
+  key: keyof S;
 };

@@ -6,7 +6,6 @@ import type {
 import type { AnyFn, Callback, MapType, PrimitiveState, ValueOf } from "../types";
 import type { ListenerParams, ListenerType, Unsubscribe } from "../subscribe/types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
-import Scheduler from "../scheduler";
 import {
   optionsErrorProcessing, setOptionsErrorProcessing, stateErrorProcessing, subscribeErrorProcessing,
 } from "./errors";
@@ -26,6 +25,7 @@ import { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/t
 import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
 import { useDebugValue, useEffect, useState } from "react";
 import { useSubscription as useSubscriptionCore } from "../subscribe";
+import Scheduler from "../scheduler";
 import StateMeta from "./state";
 
 /**

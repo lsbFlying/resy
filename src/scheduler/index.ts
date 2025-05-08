@@ -15,11 +15,11 @@ export default class Scheduler<S extends PrimitiveState> {
   callbackStackSet = new Set<StateCallbackItem<S>>();
 
   // Flag for ongoing update
-  isUpdating: Promise<void> | null = null;
+  isUpdating?: Promise<void>;
   // Flag for the upcoming update execution
-  willUpdating: true | null = null;
+  willUpdating?: true;
   // Flag to delay the execution of the return registration function in useEffect
-  deferEffectDestructorExecFlag: Promise<void> | null = null;
+  deferEffectDestructorExecFlag?: Promise<void>;
 
   // Push both the updated data (in key/value pairs) and the update task queue into the stack
   pushTask = (key: keyof S, value: ValueOf<S>, task: Callback) => {

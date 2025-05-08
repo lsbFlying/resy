@@ -69,7 +69,7 @@ export default class StoreCore<S extends PrimitiveState> {
   }
 
   /** ============================== For core constant ready start ============================== */
-  initialState: InitialState<S> | undefined;
+  initialState?: InitialState<S>;
   // Retrieve the reducerState
   reducerState: S;
   options;
@@ -240,7 +240,7 @@ export default class StoreCore<S extends PrimitiveState> {
     } = this;
     if (!scheduler.deferEffectDestructorExecFlag) {
       scheduler.deferEffectDestructorExecFlag = Promise.resolve().then(() => {
-        scheduler.deferEffectDestructorExecFlag = null;
+        scheduler.deferEffectDestructorExecFlag = undefined;
         if (!storeStateRefCounterMap.get("counter") && !classThisPointerSet.size) {
           this.unmountRestore();
         }
@@ -334,8 +334,8 @@ export default class StoreCore<S extends PrimitiveState> {
          * @description Reset the isUpdating and willUpdating flags
          * to ensure that each subsequent round of update batching can proceed and operate normally.
          */
-        scheduler.isUpdating = null;
-        scheduler.willUpdating = null;
+        scheduler.isUpdating = undefined;
+        scheduler.willUpdating = undefined;
 
         batchUpdate(() => {
           if (taskDataMap.size > 0) {
@@ -842,21 +842,20 @@ export default class StoreCore<S extends PrimitiveState> {
    * For example, some related functions or identifiers,
    * such as setState, subscribe and internal identity __REGENERATIVE_SYSTEM_KEY__
    */
-  externalMap: ExternalMapType<S> = new Map()
-    .set("setState", this.setState)
-    .set("syncUpdate", this.syncUpdate)
-    .set("restore", this.restore)
-    .set("subscribe", this.subscribe)
-    /**
-     * @description Here, __USE_STORE_KEY__ is not placed under the branch where optionsTemp.__mode__ === "state",
-     * because computed needs the rendering capability of engineStore.
-     */
-    .set(__USE_STORE_KEY__, this.engineStore)
-    .set(__REGENERATIVE_SYSTEM_KEY__, __REGENERATIVE_SYSTEM_KEY__)
-    .set("setOptions", this.setOptions)
-    .set("getOptions", this.getOptions)
-    .set("useStore", this.useStore)
-    .set("useSubscription", this.useSubscription)
+  externalMap: ExternalMapType<S> = new Map([
+    ["setState", this.setState],
+    ["syncUpdate", this.syncUpdate],
+    ["restore", this.restore],
+    ["subscribe", this.subscribe],
+
+    [__USE_STORE_KEY__, this.engineStore],
+    [__REGENERATIVE_SYSTEM_KEY__, __REGENERATIVE_SYSTEM_KEY__],
+
+    ["setOptions", this.setOptions],
+    ["getOptions", this.getOptions],
+    ["useStore", this.useStore],
+    ["useSubscription", this.useSubscription],
+
     /**
      * @description The reason why the three operation functions for class components
      * — connect, classUnmountProcessing, and classInitialStateRetrieve
@@ -864,7 +863,8 @@ export default class StoreCore<S extends PrimitiveState> {
      * is that a simple external call cannot access these internal related data,
      * so they have to be written inside createStore.
      */
-    .set(__CLASS_CONNECT_STORE_KEY__, this.classConnectStore)
-    .set(__CLASS_UNMOUNT_PROCESSING_KEY__, this.classUnmountProcessing)
-    .set(__CLASS_INITIAL_STATE_RETRIEVE_KEY__, this.initialStateRetrieve);
+    [__CLASS_CONNECT_STORE_KEY__, this.classConnectStore],
+    [__CLASS_UNMOUNT_PROCESSING_KEY__, this.classUnmountProcessing],
+    [__CLASS_INITIAL_STATE_RETRIEVE_KEY__, this.initialStateRetrieve],
+  ] as [keyof ExternalMapValue<S>, ValueOf<ExternalMapValue<S>>][]);
 }

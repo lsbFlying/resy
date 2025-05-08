@@ -1,4 +1,4 @@
-import type { Callback, ValueOf, PrimitiveState, MapType, AnyFn } from "../types";
+import type { PrimitiveState, MapType, AnyFn } from "../types";
 import type { ListenerType, SubscribeType } from "../subscribe/types";
 import type {
   ClassConnectStoreType, ClassUnmountProcessingType, ClassInitialStateRetrieveType,
@@ -66,24 +66,6 @@ export type CorePropsType<S extends PrimitiveState> = {
   options?: StoreOptions,
 };
 
-/**
- * @description Type of storeMapValue
- */
-export type StoreMapValueType<S extends PrimitiveState> = {
-  // The current source data state change event subscription callback, which is useSyncExternalStore's subscribe
-  subscribe: (onStoreChange: Callback) => Callback;
-  // Get the current source data (individual data attribute status)
-  getSnapshot: () => ValueOf<S>;
-  /**
-   * @description Using the current source data,
-   * can be simply understood as having the effect of useState,
-   * possessing the ability to drive page updates and rendering.
-   */
-  useSyncExternalStore: () => ValueOf<S>;
-  // An updater for updating source data
-  updater: Callback;
-};
-
 /** Some of the core tool method types of store */
 export type StoreCoreUtils<S extends PrimitiveState> = Readonly<
   & SetStateType<S>
@@ -111,7 +93,6 @@ export interface StoreType<S extends PrimitiveState> {
   readonly store: Store<S>;
 }
 
-export type StoreMapValue<S extends PrimitiveState> = MapType<StoreMapValueType<S>>;
 // Type of storeMap
 export type StoreMap<S extends PrimitiveState> = Map<keyof S, StateMeta<S>>;
 

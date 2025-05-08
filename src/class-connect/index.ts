@@ -21,13 +21,13 @@ export class ComponentWithStore<
     constructorProcessing(this as any);
   }
 
-  static displayName: undefined | string = undefined;
+  static displayName?: string;
 
   [__CLASS_IS_MOUNTED_KEY__] = false;
 
   [__CLASS_STATE_REF_SET_KEY__] = new Set<keyof S>();
 
-  [__CLASS_CONNECT_STORE_KEY__]: ValueOf<ClassConnectStoreType> | undefined;
+  [__CLASS_CONNECT_STORE_KEY__]?: ValueOf<ClassConnectStoreType>;
 
   [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
 
@@ -50,13 +50,13 @@ export class PureComponentWithStore<
     constructorProcessing(this as any);
   }
 
-  static displayName: undefined | string = undefined;
+  static displayName?: string;
 
   [__CLASS_IS_MOUNTED_KEY__] = false;
 
   [__CLASS_STATE_REF_SET_KEY__] = new Set<keyof S>();
 
-  [__CLASS_CONNECT_STORE_KEY__]: ValueOf<ClassConnectStoreType> | undefined;
+  [__CLASS_CONNECT_STORE_KEY__]?: ValueOf<ClassConnectStoreType>;
 
   [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
 

@@ -5,7 +5,6 @@ import { effectStateInListenerKeys } from "../store/helpers";
 import { useDebugValue, useEffect, useRef } from "react";
 import { storeErrorProcessing, subscribeErrorProcessing } from "../store/errors";
 import { __DEV__ } from "../static";
-import { __STORE_NAMESPACE__ } from "../store/static";
 
 /**
  * @description Hook of subscribe
@@ -35,10 +34,9 @@ export const useSubscription = <S extends PrimitiveState>(
   };
 
   if (__DEV__) {
-    const store_namespace = store[__STORE_NAMESPACE__ as keyof S]
-      ? {
-        namespace: store[__STORE_NAMESPACE__ as keyof S],
-      }
+    const namespace = store.options.namespace;
+    const store_namespace = namespace
+      ? { namespace }
       : null;
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useDebugValue({

@@ -1,6 +1,6 @@
 import type {
-  AnyBoundFn, CorePropsType, ExternalMapType, ExternalMapValue, InitialState,
-  InnerStoreOptions, State, StateCallback, StateFnType, StateRefCounterMapType,
+  AnyBoundFn, CorePropsType, InitialState, InnerStoreOptions,
+  State, StateCallback, StateFnType, StateRefCounterMapType,
   StateWithThisType, Store, StoreMap, InitialFnCanExecMapType,
 } from "./types";
 import type { AnyFn, Callback, MapType, PrimitiveState, ValueOf } from "../types";
@@ -10,13 +10,8 @@ import {
   optionsErrorProcessing, setOptionsErrorProcessing, stateErrorProcessing, subscribeErrorProcessing,
 } from "./errors";
 import { mapToObject, objectToMap, shallowCloneMap, clearObject } from "./utils";
-import {
-  __GETTERS_PREFIX__, __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__,
-} from "./static";
-import {
-  __CLASS_IS_MOUNTED_KEY__, __CLASS_STATE_REF_SET_KEY__, __CLASS_CONNECT_STORE_KEY__,
-  __CLASS_UNMOUNT_PROCESSING_KEY__, __CLASS_INITIAL_STATE_RETRIEVE_KEY__,
-} from "../class-connect/static";
+import { __GETTERS_PREFIX__, __REGENERATIVE_SYSTEM_BRAND_KEY__ } from "./static";
+import { __CLASS_IS_MOUNTED_KEY__, __CLASS_STATE_REF_SET_KEY__ } from "../class-connect/static";
 import { hasOwnProperty } from "../utils";
 import { __DEV__, batchUpdate } from "../static";
 import { effectStateInListenerKeys } from "./helpers";
@@ -53,20 +48,15 @@ export default class StoreCore<S extends PrimitiveState> {
       __functionName__: (options as InnerStoreOptions)?.__functionName__ ?? "createStore",
     };
 
-    // for development tools
-    this.externalMap.set(__STORE_NAMESPACE__, this.options.namespace);
-
     stateErrorProcessing({ state: this.reducerState, options: this.options });
 
     this.stateMap = objectToMap(this.reducerState);
     this.prevBatchState = objectToMap(this.reducerState);
 
     this.store = this.createProxy();
-    // Enable useConciseState and defineStore to have data tracking capabilities through the store
-    if (this.options.__useConciseState__ || this.options.__enableMacros__) {
-      this.externalMap.set("store", this.store);
-    }
   }
+
+  __REGENERATIVE_SYSTEM_BRAND_KEY__ = __REGENERATIVE_SYSTEM_BRAND_KEY__;
 
   /** ============================== For core constant ready start ============================== */
   initialState?: InitialState<S>;
@@ -537,8 +527,7 @@ export default class StoreCore<S extends PrimitiveState> {
     applyOriginFunction?: ApplyOriginFunctionType,
   ) => {
     const {
-      stateMap, computedStateDepsSet, externalMap,
-      options,
+      stateMap, computedStateDepsSet, options,
     } = this;
     return new Proxy(target, {
       get: (_: S, key: keyof S) => {
@@ -550,9 +539,9 @@ export default class StoreCore<S extends PrimitiveState> {
 
         isStateSource && computedStateDepsSet.add(key);
 
-        const externalValue = externalMap.get(key as keyof ExternalMapValue<S>);
+        const isCoreProp = hasOwnProperty.call(this, key);
 
-        if (!externalValue && options.immutable && proxyable(value)) {
+        if (!isCoreProp && options.immutable && proxyable(value)) {
           return this.createProxy(
             value as object,
             target,
@@ -576,7 +565,7 @@ export default class StoreCore<S extends PrimitiveState> {
          * Therefore, for array prototype methods, we don't need any special treatment.
          */
         if (
-          !externalValue
+          !isCoreProp
           && typeof value === "function"
           && !hasOwnProperty.call(Array.prototype, (value as AnyFn).name)
           && !(value as AnyBoundFn).__bound__
@@ -584,7 +573,7 @@ export default class StoreCore<S extends PrimitiveState> {
           return this.boundFnProcessing(key, value, target);
         }
 
-        return !externalValue ? value : externalValue;
+        return !isCoreProp ? value : this[key as keyof StoreCore<S>];
       },
       set: (_: S, key: keyof S, value: ValueOf<S>) => this.singleUpdate(
         key, value, false, target, firstLevelKey,
@@ -614,15 +603,13 @@ export default class StoreCore<S extends PrimitiveState> {
   // Proxy of driver update re-render for useStore
   engineStore = new Proxy({} as S, {
     get: (_: StoreMap<S>, key: keyof S) => {
-      const {
-        stateMap, externalMap, options,
-      } = this;
+      const { stateMap, options } = this;
       // Get the latest value
       const value = stateMap.get(key);
 
-      const externalValue = externalMap.get(key as keyof ExternalMapValue<S>);
+      const isCoreProp = hasOwnProperty.call(this, key);
 
-      if (!externalValue && typeof value !== "function") {
+      if (!isCoreProp && typeof value !== "function") {
         // eslint-disable-next-line react-hooks/rules-of-hooks
         __DEV__ && useDebugValue({
           key,
@@ -637,7 +624,7 @@ export default class StoreCore<S extends PrimitiveState> {
         return this.connectHook(key);
       }
 
-      if (!externalValue && typeof value === "function") {
+      if (!isCoreProp && typeof value === "function") {
         // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
         !(value as AnyBoundFn).__bound__ && this.boundFnProcessing(key, value, stateMap);
 
@@ -713,7 +700,7 @@ export default class StoreCore<S extends PrimitiveState> {
           };
       }
 
-      return externalValue;
+      return this[key as keyof StoreCore<S>];
     },
   } as ProxyHandler<any>);
   /** ============================== For core render end ============================== */
@@ -799,18 +786,21 @@ export default class StoreCore<S extends PrimitiveState> {
       get: (_: StoreMap<S>, key: keyof S) => {
         // Compatible with scenarios where both hook components and class components are used together.
         if (key === "useStore") return () => classEngineStore;
-        const { stateMap, externalMap } = this;
 
-        const value = stateMap.get(key);
+        const isCoreProp = hasOwnProperty.call(this, key);
 
-        return externalMap.get(key as keyof ExternalMapValue<S>) || (
-          typeof value !== "function"
-            ? this.connectClass(thisArg, key)
-            // Invoke a function data hook to grant the ability to update and render function data.
-            : (...args: any[]) => (
-              this.connectClass(thisArg, key) as AnyFn
-            ).apply(classEngineStore, args)
-        );
+        const value = this.stateMap.get(key);
+
+        return !isCoreProp
+          ? (
+            typeof value !== "function"
+              ? this.connectClass(thisArg, key)
+              // Invoke a function data hook to grant the ability to update and render function data.
+              : (...args: any[]) => (
+                this.connectClass(thisArg, key) as AnyFn
+              ).apply(classEngineStore, args)
+          )
+          : this[key as keyof StoreCore<S>];
       },
     } as ProxyHandler<any>);
 
@@ -823,35 +813,4 @@ export default class StoreCore<S extends PrimitiveState> {
     this.deferRestoreProcessing();
   };
   /** ============================== For class components use end ============================== */
-
-  /**
-   * @description Map for additional related internal objects of store
-   * For example, some related functions or identifiers,
-   * such as setState, subscribe and internal identity __REGENERATIVE_SYSTEM_KEY__
-   */
-  externalMap: ExternalMapType<S> = new Map([
-    ["setState", this.setState],
-    ["syncUpdate", this.syncUpdate],
-    ["restore", this.restore],
-    ["subscribe", this.subscribe],
-
-    [__USE_STORE_KEY__, this.engineStore],
-    [__REGENERATIVE_SYSTEM_KEY__, __REGENERATIVE_SYSTEM_KEY__],
-
-    ["setOptions", this.setOptions],
-    ["getOptions", this.getOptions],
-    ["useStore", this.useStore],
-    ["useSubscription", this.useSubscription],
-
-    /**
-     * @description The reason why the three operation functions for class components
-     * — connect, classUnmountProcessing, and classInitialStateRetrieve
-     * cannot be extracted for external operations
-     * is that a simple external call cannot access these internal related data,
-     * so they have to be written inside createStore.
-     */
-    [__CLASS_CONNECT_STORE_KEY__, this.classConnectStore],
-    [__CLASS_UNMOUNT_PROCESSING_KEY__, this.classUnmountProcessing],
-    [__CLASS_INITIAL_STATE_RETRIEVE_KEY__, this.initialStateRetrieve],
-  ] as [keyof ExternalMapValue<S>, ValueOf<ExternalMapValue<S>>][]);
 }

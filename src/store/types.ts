@@ -1,11 +1,7 @@
 import type { PrimitiveState, MapType, AnyFn } from "../types";
 import type { ListenerType, SubscribeType } from "../subscribe/types";
-import type {
-  ClassConnectStoreType, ClassUnmountProcessingType, ClassInitialStateRetrieveType,
-} from "../class-connect/types";
 import type StateMeta from "./state";
 import type StoreCore from "./store";
-import { __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__ } from "./static";
 
 /**
  * @description The second parameter configuration item of createStore
@@ -95,21 +91,6 @@ export interface StoreType<S extends PrimitiveState> {
 
 // Type of storeMap
 export type StoreMap<S extends PrimitiveState> = Map<keyof S, StateMeta<S>>;
-
-// Some additional extensions of tool classes and property sets of methods needed within store
-export type ExternalMapValue<S extends PrimitiveState> = StoreUtils<S>
-  & ClassConnectStoreType
-  & ClassUnmountProcessingType
-  & ClassInitialStateRetrieveType
-  & {
-  [__REGENERATIVE_SYSTEM_KEY__]: symbol;
-  [__USE_STORE_KEY__]: object;
-  [__STORE_NAMESPACE__]?: string;
-  readonly store: Store<S>;
-};
-
-// Type of externalMap
-export type ExternalMapType<S extends PrimitiveState> = MapType<ExternalMapValue<S>>;
 
 /** Update the data type of the parameter */
 export type State<S extends PrimitiveState> = Partial<S> | S | null;

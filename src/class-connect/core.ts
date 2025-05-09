@@ -1,10 +1,9 @@
 import type { ClassInstanceTypeOfConnectStore, ClassStoreType } from "./types";
-import type { PrimitiveState, AnyFn } from "../types";
+import type { PrimitiveState } from "../types";
 import type { Store } from "../store/types";
+import type StoreCore from "../store/store";
 import {
-  __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_CONNECT_STORE_KEY__,
-  __CLASS_INITIAL_STATE_RETRIEVE_KEY__, __CLASS_STATE_REF_SET_KEY__,
-  __CLASS_UNMOUNT_PROCESSING_KEY__, __CLASS_IS_MOUNTED_KEY__,
+  __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_STATE_REF_SET_KEY__, __CLASS_IS_MOUNTED_KEY__,
 } from "./static";
 import { storeErrorProcessing } from "../store/errors";
 
@@ -63,7 +62,7 @@ export function constructorProcessing<S extends PrimitiveState>(thisArg: ClassIn
            * firstly, removing this proxy instance of class from the internal classThisPointerSet of the store,
            * and secondly, resetting the data to it`s initial state
            */
-          (store[__CLASS_UNMOUNT_PROCESSING_KEY__ as keyof S] as AnyFn)(thisArg);
+          (store as any as StoreCore<S>).classUnmountProcessing(thisArg);
         });
       }
     });
@@ -75,10 +74,7 @@ export function connectStoreCore<S extends PrimitiveState>(
   store: Store<S>,
 ): ClassStoreType<S> {
   storeErrorProcessing(store, "connectStore");
-  store[__CLASS_INITIAL_STATE_RETRIEVE_KEY__ as keyof S]();
+  (store as any as StoreCore<S>).initialStateRetrieve();
   thisArg[__CLASS_THIS_POINTER_STORES_KEY__].add(store);
-  // Transform the called object to get this pointer of class,
-  // in order to facilitate subsequent operations on class
-  thisArg[__CLASS_CONNECT_STORE_KEY__] = store[__CLASS_CONNECT_STORE_KEY__ as keyof S];
-  return thisArg[__CLASS_CONNECT_STORE_KEY__](thisArg);
+  return (store as any as StoreCore<S>).classConnectStore(thisArg);
 }

@@ -1,9 +1,7 @@
 import type { PrimitiveState } from "../types";
 import type { GetOptionsType, SetOptionsType, State, Store, StoreCoreUtils } from "../store/types";
 import {
-  __CLASS_INITIAL_STATE_RETRIEVE_KEY__, __CLASS_THIS_POINTER_STORES_KEY__,
-  __CLASS_STATE_REF_SET_KEY__, __CLASS_UNMOUNT_PROCESSING_KEY__,
-  __CLASS_CONNECT_STORE_KEY__, __CLASS_IS_MOUNTED_KEY__,
+  __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_STATE_REF_SET_KEY__, __CLASS_IS_MOUNTED_KEY__,
 } from "./static";
 
 /** This is the data type returned by the class after connecting to the store */
@@ -12,13 +10,6 @@ export type ClassStoreType<S extends PrimitiveState> =
   & StoreCoreUtils<S>
   & Readonly<SetOptionsType>
   & Readonly<GetOptionsType>;
-
-// This is the connection type used by the base classes ComponentWithStore and PureComponentWithStore in the class component
-export type ClassConnectStoreType = {
-  [__CLASS_CONNECT_STORE_KEY__]<S extends PrimitiveState>(
-    thisArg: ClassInstanceTypeOfConnectStore<S>,
-  ): ClassStoreType<S>;
-};
 
 // The types of different store mounted on this pointer of the class component
 export type ClassThisPointerStoresType<S extends PrimitiveState = any> = {
@@ -30,16 +21,6 @@ export type ClassStateRefSetType<S extends PrimitiveState> = {
   [__CLASS_STATE_REF_SET_KEY__]: Set<keyof S>;
 };
 
-// This is the type of method that is executed after the class component is unmounted
-export type ClassUnmountProcessingType = {
-  [__CLASS_UNMOUNT_PROCESSING_KEY__](): void;
-}
-
-// This is the type of recovery performed by the class if the store initialization parameter is a function
-export type ClassInitialStateRetrieveType = {
-  [__CLASS_INITIAL_STATE_RETRIEVE_KEY__](): void;
-};
-
 export type ClassIsMountedType = {
   [__CLASS_IS_MOUNTED_KEY__]: boolean;
 };
@@ -48,7 +29,6 @@ export type ClassIsMountedType = {
 export type ClassInstanceTypeOfConnectStore<S extends PrimitiveState> =
   PrimitiveState &
   Readonly<{ setState(state: State<S>): void }> &
-  ClassConnectStoreType &
   ClassThisPointerStoresType &
   ClassStateRefSetType<S> &
   ClassIsMountedType;

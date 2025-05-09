@@ -1,9 +1,9 @@
-import type { ClassConnectStoreType, ClassStoreType } from "./types";
-import type { ValueOf, PrimitiveState } from "../types";
+import type { ClassStoreType } from "./types";
+import type { PrimitiveState } from "../types";
 import type { Store } from "../store/types";
 import { Component, PureComponent } from "react";
 import {
-  __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_CONNECT_STORE_KEY__, __CLASS_STATE_REF_SET_KEY__, __CLASS_IS_MOUNTED_KEY__,
+  __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_STATE_REF_SET_KEY__, __CLASS_IS_MOUNTED_KEY__,
 } from "./static";
 import { connectStoreCore, constructorProcessing } from "./core";
 
@@ -26,8 +26,6 @@ export class ComponentWithStore<
   [__CLASS_IS_MOUNTED_KEY__] = false;
 
   [__CLASS_STATE_REF_SET_KEY__] = new Set<keyof S>();
-
-  [__CLASS_CONNECT_STORE_KEY__]?: ValueOf<ClassConnectStoreType>;
 
   [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
 
@@ -55,8 +53,6 @@ export class PureComponentWithStore<
   [__CLASS_IS_MOUNTED_KEY__] = false;
 
   [__CLASS_STATE_REF_SET_KEY__] = new Set<keyof S>();
-
-  [__CLASS_CONNECT_STORE_KEY__]?: ValueOf<ClassConnectStoreType>;
 
   [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
 

@@ -1,7 +1,6 @@
 import type { InitialState, InnerStoreOptions, Store, MacroStore, ClassicStore } from "./types";
 import type { PrimitiveState } from "../types";
 import { useMemo } from "react";
-import { __USE_STORE_KEY__ } from "./static";
 import { storeErrorProcessing } from "./errors";
 import StoreCore from "./store";
 
@@ -15,7 +14,7 @@ export const useStore = <S extends PrimitiveState>(
   store: Store<S>,
 ): ClassicStore<S> => {
   storeErrorProcessing(store, "useStore");
-  return store[__USE_STORE_KEY__ as keyof S];
+  return store.engineStore;
 };
 
 /**

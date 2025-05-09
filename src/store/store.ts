@@ -305,12 +305,10 @@ export default class StoreCore<S extends PrimitiveState> {
         scheduler.willUpdating = undefined;
 
         batchUpdate(() => {
-          if (taskDataMap.size > 0) {
-            // Perform update task
-            taskQueueMap.forEach(task => {
-              task();
-            });
-          }
+          // Perform update task
+          taskDataMap.size > 0 && taskQueueMap.forEach(task => {
+            task();
+          });
 
           // Make a shallow clone of the "taskDataMap" data for the "effectState" of "subscribe",
           // Perform a shallowClone before executing flushTask, otherwise, it might become impossible to retrieve `taskDataMap`.
@@ -340,16 +338,13 @@ export default class StoreCore<S extends PrimitiveState> {
           if (listenerSet.size > 0) {
             // Reduce the burden of executing `mapToObject` on three data sets through proxy.
             const listenerDataProxy = new Proxy({} as ListenerParams<S>, {
-              get(_: ListenerParams<S>, listenerDataKey: keyof ListenerParams<S>): any {
-                if (listenerDataKey === "effectState") {
-                  return mapToObject(effectStateTemp!);
-                }
-                if (listenerDataKey === "nextState") {
-                  return mapToObject(stateMap!);
-                }
-                if (listenerDataKey === "prevState") {
-                  return mapToObject(prevBatchState!);
-                }
+              get(
+                _: ListenerParams<S>,
+                listenerDataKey: keyof ListenerParams<S>,
+              ): Readonly<S> | Readonly<Partial<S>> | undefined {
+                if (listenerDataKey === "effectState") return mapToObject(effectStateTemp!);
+                if (listenerDataKey === "nextState") return mapToObject(stateMap!);
+                if (listenerDataKey === "prevState") return mapToObject(prevBatchState!);
               }
             } as ProxyHandler<ListenerParams<S>>);
 
@@ -367,17 +362,19 @@ export default class StoreCore<S extends PrimitiveState> {
   boundFnProcessing = (key: keyof S, value: AnyBoundFn, target: object) => {
     const { stateMap, store } = this;
     const isStateSource = target === stateMap;
+
     const boundFn = ((...args: any[]) => (value as AnyFn).apply(
       // Maintaining the source orientation of the `this` pointer.
       isStateSource ? store : target,
       args,
     )) as AnyBoundFn;
+
     boundFn.__bound__ = true;
-    if (isStateSource) {
-      stateMap.set(key, boundFn as ValueOf<S>);
-    } else {
-      (target as S)[key] = boundFn as ValueOf<S>;
-    }
+
+    isStateSource
+      ? stateMap.set(key, boundFn as ValueOf<S>)
+      : ((target as S)[key] = boundFn as ValueOf<S>);
+
     return boundFn as ValueOf<S>;
   };
 
@@ -395,10 +392,8 @@ export default class StoreCore<S extends PrimitiveState> {
 
     let stateTemp = state;
 
-    if (typeof state === "function") {
-      // processing of prevState
-      stateTemp = (state as StateFnType<S>)(mapToObject(stateMap));
-    }
+    // processing of prevState
+    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(mapToObject(stateMap)));
 
     if (stateTemp !== null) {
       stateErrorProcessing({ state: stateTemp, fnName: "setState、syncUpdate" });
@@ -423,21 +418,18 @@ export default class StoreCore<S extends PrimitiveState> {
   syncUpdate = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
     let stateTemp = state;
 
-    if (typeof state === "function") {
-      stateTemp = (state as StateFnType<S>)(mapToObject(this.stateMap));
-    }
+    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(mapToObject(this.stateMap)));
+
     // Borrowing setState to synchronize the update scheduling mechanism of Resy itself.
     this.setState(stateTemp, callback);
 
-    if (stateTemp !== null) {
-      batchUpdate(() => {
-        Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
-          const value = (stateTemp as Partial<S> | S)[key];
-          this.classUpdater(key, value);
-          this.hookConnectStore(key).get(key)!.updater();
-        });
+    stateTemp !== null && batchUpdate(() => {
+      Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
+        const value = (stateTemp as Partial<S> | S)[key];
+        this.classUpdater(key, value);
+        this.hookConnectStore(key).get(key)!.updater();
       });
-    }
+    });
   };
 
   // Reset recovery initialization state data
@@ -469,8 +461,9 @@ export default class StoreCore<S extends PrimitiveState> {
     const { listenerSet } = this;
 
     subscribeErrorProcessing(listener, stateKeys);
+
     const listenerWrap: ListenerType<S> = data => {
-      if (effectStateInListenerKeys(data.effectState, stateKeys)) listener(data);
+      effectStateInListenerKeys(data.effectState, stateKeys) && listener(data);
     };
 
     listenerSet.add(listenerWrap);
@@ -505,7 +498,7 @@ export default class StoreCore<S extends PrimitiveState> {
 
       const firstLevelValue = stateMap.get(firstLevelKey!);
 
-      if (changed) reduceChanged(value, keyChains!, firstLevelValue);
+      changed && reduceChanged(value, keyChains!, firstLevelValue);
 
       return changed
         ? this.singleUpdate(
@@ -732,9 +725,7 @@ export default class StoreCore<S extends PrimitiveState> {
     this.options.unmountRestore = options.unmountRestore;
   };
 
-  getOptions = () => {
-    return Object.assign({}, this.options);
-  };
+  getOptions = () => Object.assign({}, this.options);
   /** ============================== For operate options end ============================== */
 
   /** ============================== For hook components start ============================== */
@@ -743,9 +734,7 @@ export default class StoreCore<S extends PrimitiveState> {
    * 🌟 The reason why it is not changed to store.useStore
    * is due to the consideration of the rules for the use of the hook function.
    */
-  useStore = () => {
-    return this.engineStore;
-  };
+  useStore = () => this.engineStore;
 
   useSubscription = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
     const { options, store } = this;
@@ -768,6 +757,7 @@ export default class StoreCore<S extends PrimitiveState> {
   /** ============================== For class components use start ============================== */
   classUpdater = (key: keyof S, value: ValueOf<S>) => {
     const { classThisPointerSet } = this;
+    // todo “?.” waiting removed
     classThisPointerSet?.forEach(classThisPointerItem => {
       /**
        * There is an "updater" attribute on the internal this pointer of react's class,
@@ -775,7 +765,7 @@ export default class StoreCore<S extends PrimitiveState> {
        * If it is in "React.StrictMode" mode,
        * React will discard the first generated instance and the instance will not be mounted.
        */
-      if (classThisPointerItem[__CLASS_IS_MOUNTED_KEY__]) {
+      classThisPointerItem[__CLASS_IS_MOUNTED_KEY__]
         /**
          * @description Determine whether the currently updated data property
          * is used in the class component, and if not, do not update it.
@@ -788,12 +778,10 @@ export default class StoreCore<S extends PrimitiveState> {
          * 🌟 Adding "?.has" is to prevent some class components from making an empty connection,
          * that is, connecting to the store but not using it. Generally speaking, this is not done,
          */
-        classThisPointerItem[__CLASS_STATE_REF_SET_KEY__]?.has(key) && (
+        ? classThisPointerItem[__CLASS_STATE_REF_SET_KEY__]?.has(key) && (
           classThisPointerItem.setState({ [key]: value } as State<S>)
-        );
-      } else {
-        classThisPointerSet.delete(classThisPointerItem);
-      }
+        )
+        : classThisPointerSet.delete(classThisPointerItem);
     });
   };
 
@@ -806,6 +794,7 @@ export default class StoreCore<S extends PrimitiveState> {
   // Connecting this pointer of the class component (therefore, this cannot be an arrow function)
   classConnectStore = (thisArg: ClassInstanceTypeOfConnectStore<S>) => {
     this.classThisPointerSet.add(thisArg);
+
     // Data agents for use by class components
     const classEngineStore = new Proxy({} as S, {
       get: (_: StoreMap<S>, key: keyof S) => {
@@ -825,6 +814,7 @@ export default class StoreCore<S extends PrimitiveState> {
         );
       },
     } as ProxyHandler<any>);
+
     return classEngineStore;
   };
 

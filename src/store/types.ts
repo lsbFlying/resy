@@ -3,9 +3,9 @@ import type { ListenerType, SubscribeType } from "../subscribe/types";
 import type {
   ClassConnectStoreType, ClassUnmountProcessingType, ClassInitialStateRetrieveType,
 } from "../class-connect/types";
-import { __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__ } from "./static";
 import type StateMeta from "./state";
 import type StoreCore from "./store";
+import { __REGENERATIVE_SYSTEM_KEY__, __STORE_NAMESPACE__, __USE_STORE_KEY__ } from "./static";
 
 /**
  * @description The second parameter configuration item of createStore
@@ -63,7 +63,7 @@ export interface InnerStoreOptions extends StoreOptions {
 
 export type CorePropsType<S extends PrimitiveState> = {
   initialState?: InitialState<S>,
-  options?: StoreOptions,
+  options?: InnerStoreOptions,
 };
 
 /** Some of the core tool method types of store */

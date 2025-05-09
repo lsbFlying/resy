@@ -1,6 +1,6 @@
-import { createStore } from "./index";
 import type { PrimitiveState } from "../types";
 import type { InitialState, InnerStoreOptions, StoreOptions, UseMacroStore } from "./types";
+import StoreCore from "./store";
 
 /**
  * @description Define the preprocessed store type for the createStore macro,
@@ -56,9 +56,12 @@ export const defineStore = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
   options?: StoreOptions,
 ): UseMacroStore<S> => {
-  return createStore(initialState, {
-    ...options,
-    __enableMacros__: true,
-    __functionName__: defineStore.name,
-  } as InnerStoreOptions).useStore as UseMacroStore<S>;
+  return new StoreCore({
+    initialState,
+    options: {
+      ...options,
+      __enableMacros__: true,
+      __functionName__: defineStore.name,
+    } as InnerStoreOptions
+  }).useStore as UseMacroStore<S>;
 };

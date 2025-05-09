@@ -179,6 +179,7 @@ export default class StoreCore<S extends PrimitiveState> {
   };
 
   /** restore utils start */
+  // Retrieve recovery processing when initialState is a function
   initialStateRetrieve = () => {
     const { initialFnCanExecMap } = this;
     // The relevant judgment logic is similar to unmountRestore.
@@ -246,37 +247,6 @@ export default class StoreCore<S extends PrimitiveState> {
     }
   };
   /** restore utils end */
-
-  classUpdater = (key: keyof S, value: ValueOf<S>) => {
-    const { classThisPointerSet } = this;
-    classThisPointerSet?.forEach(classThisPointerItem => {
-      /**
-       * There is an "updater" attribute on the internal this pointer of react's class,
-       * and an "isMounted" method is mounted on it to determine whether the component has been loaded.
-       * If it is in "React.StrictMode" mode,
-       * React will discard the first generated instance and the instance will not be mounted.
-       */
-      if (classThisPointerItem[__CLASS_IS_MOUNTED_KEY__]) {
-        /**
-         * @description Determine whether the currently updated data property
-         * is used in the class component, and if not, do not update it.
-         * 🌟 Don't worry about the use of hidden attributes caused by operations such as ternary operators.
-         * Even the use of hidden attributes here will not cause rendering problems,
-         * because the state attribute reference of the class component does not have a hook rule.
-         * At the same time, when a hidden attribute is discovered by a new rendering,
-         * it will immediately generate a new state attribute reference.
-         * Therefore, this is always safe, and it can avoid unnecessary re-renders.
-         * 🌟 Adding "?.has" is to prevent some class components from making an empty connection,
-         * that is, connecting to the store but not using it. Generally speaking, this is not done,
-         */
-        classThisPointerItem[__CLASS_STATE_REF_SET_KEY__]?.has(key) && (
-          classThisPointerItem.setState({ [key]: value } as State<S>)
-        );
-      } else {
-        classThisPointerSet.delete(classThisPointerItem);
-      }
-    });
-  };
 
   hookConnectStore = (key: keyof S) => {
     const { storeMap } = this;
@@ -796,6 +766,37 @@ export default class StoreCore<S extends PrimitiveState> {
   /** ============================== For hook components end ============================== */
 
   /** ============================== For class components use start ============================== */
+  classUpdater = (key: keyof S, value: ValueOf<S>) => {
+    const { classThisPointerSet } = this;
+    classThisPointerSet?.forEach(classThisPointerItem => {
+      /**
+       * There is an "updater" attribute on the internal this pointer of react's class,
+       * and an "isMounted" method is mounted on it to determine whether the component has been loaded.
+       * If it is in "React.StrictMode" mode,
+       * React will discard the first generated instance and the instance will not be mounted.
+       */
+      if (classThisPointerItem[__CLASS_IS_MOUNTED_KEY__]) {
+        /**
+         * @description Determine whether the currently updated data property
+         * is used in the class component, and if not, do not update it.
+         * 🌟 Don't worry about the use of hidden attributes caused by operations such as ternary operators.
+         * Even the use of hidden attributes here will not cause rendering problems,
+         * because the state attribute reference of the class component does not have a hook rule.
+         * At the same time, when a hidden attribute is discovered by a new rendering,
+         * it will immediately generate a new state attribute reference.
+         * Therefore, this is always safe, and it can avoid unnecessary re-renders.
+         * 🌟 Adding "?.has" is to prevent some class components from making an empty connection,
+         * that is, connecting to the store but not using it. Generally speaking, this is not done,
+         */
+        classThisPointerItem[__CLASS_STATE_REF_SET_KEY__]?.has(key) && (
+          classThisPointerItem.setState({ [key]: value } as State<S>)
+        );
+      } else {
+        classThisPointerSet.delete(classThisPointerItem);
+      }
+    });
+  };
+
   connectClass = (thisArg: ClassInstanceTypeOfConnectStore<S>, key: keyof S) => {
     // In class, Set is used for reference tags and combined with the size attribute of Set to judge.
     thisArg[__CLASS_STATE_REF_SET_KEY__].add(key);

@@ -757,8 +757,7 @@ export default class StoreCore<S extends PrimitiveState> {
   /** ============================== For class components use start ============================== */
   classUpdater = (key: keyof S, value: ValueOf<S>) => {
     const { classThisPointerSet } = this;
-    // todo “?.” waiting removed
-    classThisPointerSet?.forEach(classThisPointerItem => {
+    classThisPointerSet.forEach(classThisPointerItem => {
       /**
        * There is an "updater" attribute on the internal this pointer of react's class,
        * and an "isMounted" method is mounted on it to determine whether the component has been loaded.

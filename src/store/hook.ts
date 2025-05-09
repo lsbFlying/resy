@@ -3,7 +3,7 @@ import type { PrimitiveState } from "../types";
 import { useMemo } from "react";
 import { __USE_STORE_KEY__ } from "./static";
 import { storeErrorProcessing } from "./errors";
-import { createStore } from "./index";
+import StoreCore from "./store";
 
 /**
  * useStore api
@@ -39,13 +39,15 @@ export const useConciseState = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
 ): MacroStore<S> => {
   return useMemo(() => {
-    return createStore<S>(
-      initialState,
-      {
-        __useConciseState__: true,
-        __functionName__: useConciseState.name,
-      } as InnerStoreOptions,
-    );
+    return (
+      new StoreCore<S>({
+        initialState,
+        options: {
+          __useConciseState__: true,
+          __functionName__: useConciseState.name,
+        } as InnerStoreOptions,
+      })
+    ).engineStore;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])[__USE_STORE_KEY__ as keyof S];
+  }, []);
 };

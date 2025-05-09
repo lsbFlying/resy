@@ -777,7 +777,7 @@ export default class StoreCore<S extends PrimitiveState> {
     return this.stateMap.get(key);
   };
 
-  // Connecting this pointer of the class component (therefore, this cannot be an arrow function)
+  // Connecting this pointer of the class component
   classConnectStore = (thisArg: ClassInstanceTypeOfConnectStore<S>) => {
     this.classThisPointerSet.add(thisArg);
 

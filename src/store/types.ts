@@ -57,11 +57,6 @@ export interface InnerStoreOptions extends StoreOptions {
   readonly __functionName__?: string;
 }
 
-export type CorePropsType<S extends PrimitiveState> = {
-  initialState?: InitialState<S>,
-  options?: InnerStoreOptions,
-};
-
 /** Some of the core tool method types of store */
 export type StoreCoreUtils<S extends PrimitiveState> = Readonly<
   & SetStateType<S>

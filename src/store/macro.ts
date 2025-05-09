@@ -56,12 +56,12 @@ export const defineStore = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
   options?: StoreOptions,
 ): UseMacroStore<S> => {
-  return new StoreCore({
+  return new StoreCore(
     initialState,
-    options: {
+    {
       ...options,
       __enableMacros__: true,
       __functionName__: defineStore.name,
     } as InnerStoreOptions
-  }).useStore as UseMacroStore<S>;
+  ).useStore as UseMacroStore<S>;
 };

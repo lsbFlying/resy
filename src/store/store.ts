@@ -1,7 +1,7 @@
 import type {
-  AnyBoundFn, CorePropsType, InitialState, InnerStoreOptions,
-  State, StateCallback, StateFnType, StateRefCounterMapType,
-  StateWithThisType, Store, StoreMap, InitialFnCanExecMapType,
+  AnyBoundFn, InitialState, InnerStoreOptions, State, StateCallback,
+  StateFnType, StateRefCounterMapType, StateWithThisType, Store,
+  StoreMap, InitialFnCanExecMapType, StoreOptions,
 } from "./types";
 import type { AnyFn, Callback, MapType, PrimitiveState, ValueOf } from "../types";
 import type { ListenerParams, ListenerType, Unsubscribe } from "../subscribe/types";
@@ -27,9 +27,7 @@ import StateMeta from "./state";
  * @description core
  */
 export default class StoreCore<S extends PrimitiveState> {
-  constructor(props: CorePropsType<S>) {
-    const { initialState, options } = props;
-
+  constructor(initialState?: InitialState<S>, options?: StoreOptions) {
     this.initialState = initialState;
     this.reducerState = initialState === undefined
       ? ({} as StateWithThisType<S>)

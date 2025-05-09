@@ -39,13 +39,13 @@ export const useConciseState = <S extends PrimitiveState>(
 ): MacroStore<S> => {
   return useMemo(() => {
     return (
-      new StoreCore<S>({
+      new StoreCore<S>(
         initialState,
-        options: {
+        {
           __useConciseState__: true,
           __functionName__: useConciseState.name,
-        } as InnerStoreOptions,
-      })
+        } as InnerStoreOptions
+      )
     ).engineStore;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

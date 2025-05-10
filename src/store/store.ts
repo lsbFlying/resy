@@ -193,9 +193,9 @@ export default class StoreCore<S extends PrimitiveState> {
    * (with memory release being performed in the callback).
    * This early release of memory removes the previous state-meta,
    * and any subsequent updates or renderings will regenerate a new state-meta.
-   * However, this process leads to the updater function's singlePropStoreChangeSet
+   * However, this process leads to the updater function's stateChangeQueue
    * within state-meta referencing the address of the previously outdated state-meta.
-   * Meanwhile, that old singlePropStoreChangeSet has already been deleted.
+   * Meanwhile, that old stateChangeQueue has already been deleted.
    * and cleared with the early release of the state-meta's memory,
    * leading to the updater function's incapability to make valid updates.
    * Here, to ensure operations such as unmount, freeing memory,

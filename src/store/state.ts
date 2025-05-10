@@ -1,5 +1,4 @@
 import type { Callback, PrimitiveState } from "../types";
-import type { StateMetaProps } from "./types";
 import type StoreCore from "./store";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 
@@ -10,10 +9,9 @@ import useSyncExternalStoreExports from "use-sync-external-store/shim";
 const { useSyncExternalStore: useSyncExternalStoreCore } = useSyncExternalStoreExports;
 
 export default class StateMeta<S extends PrimitiveState> {
-  constructor(props: StateMetaProps<S>) {
-    const { thisArgStore, key } = props;
-    this.thisArgStore = thisArgStore;
+  constructor(key: keyof S, thisArgStore: StoreCore<S>) {
     this.key = key;
+    this.thisArgStore = thisArgStore;
   }
   thisArgStore: StoreCore<S>;
   key: keyof S;
@@ -25,19 +23,14 @@ export default class StateMeta<S extends PrimitiveState> {
     // If a component references the data, the update function will be added to stateChangeSet
     this.stateChangeSet.add(onStateChange);
 
-    const {
-      thisArgStore: {
-        storeStateRefCounterMap, deferRestoreProcessing,
-        storeMap,
-      },
-    } = this;
+    const { thisArgStore: { deferRestoreProcessing, storeMap } } = this;
 
     // Increment the reference count by 1 if the component is referenced
-    storeStateRefCounterMap.set("counter", storeStateRefCounterMap.get("counter")! + 1);
+    this.thisArgStore.stateRefCounter++;
 
     return () => {
       this.stateChangeSet.delete(onStateChange);
-      storeStateRefCounterMap.set("counter", storeStateRefCounterMap.get("counter")! - 1);
+      this.thisArgStore.stateRefCounter--;
 
       deferRestoreProcessing(
         () => {

@@ -1,7 +1,6 @@
 import type { PrimitiveState, MapType, AnyFn } from "../types";
 import type { ListenerType, SubscribeType } from "../subscribe/types";
 import type StateMeta from "./state";
-import type StoreCore from "./store";
 
 /**
  * @description The second parameter configuration item of createStore
@@ -245,21 +244,11 @@ export type StateWithThisType<S extends PrimitiveState> = S extends PrimateForbi
 /** Type of initialize data */
 export type InitialState<S extends PrimitiveState> = (() => StateWithThisType<S>) | StateWithThisType<S>;
 
-// Type of counter for store
-export type StateRefCounterMapType = MapType<{
-  counter: number;
-}>;
-
 export type AnyBoundFn = AnyFn & {
   /**
    * @description The flag attribute bound to the internal processing function attribute.
    */
   __bound__?: boolean;
-};
-
-export type StateMetaProps<S extends PrimitiveState> = {
-  thisArgStore: StoreCore<S>;
-  key: keyof S;
 };
 
 // If initialState is a function,

@@ -1,7 +1,6 @@
 import type {
   AnyBoundFn, InitialState, InnerStoreOptions, State, StateCallback,
-  StateFnType, StateRefCounterMapType, StateWithThisType, Store,
-  StoreMap, InitialFnCanExecMapType, StoreOptions,
+  StateFnType, StateWithThisType, Store, StoreMap, InitialFnCanExecMapType, StoreOptions,
 } from "./types";
 import type { AnyFn, Callback, MapType, PrimitiveState, ValueOf } from "../types";
 import type { ListenerParams, ListenerType, Unsubscribe } from "../subscribe/types";
@@ -65,7 +64,7 @@ export default class StoreCore<S extends PrimitiveState> {
   scheduler = new Scheduler<S>();
 
   // Tag counters for data references of store
-  storeStateRefCounterMap: StateRefCounterMapType = new Map().set("counter", 0);
+  stateRefCounter = 0;
 
   // Flag indicating that the initialStateRetrieve function is executable
   initialFnCanExecMap: InitialFnCanExecMapType = new Map();
@@ -200,11 +199,11 @@ export default class StoreCore<S extends PrimitiveState> {
       scheduler.deferEffectDestructorExecFlag = Promise.resolve().then(() => {
         scheduler.deferEffectDestructorExecFlag = undefined;
         const {
-          storeStateRefCounterMap, classThisPointerSet,
+          stateRefCounter, classThisPointerSet,
         } = this;
-        if (!storeStateRefCounterMap.get("counter") && !classThisPointerSet.size) {
+        if (!stateRefCounter && !classThisPointerSet.size) {
           /**
-           * By using "storeStateRefCounterMap" and "classThisPointerSet",
+           * By using "stateRefCounter" and "classThisPointerSet",
            * we determine whether the store still has component references.
            * As long as there is at least one component referencing,
            * the data will not be reset since it is currently in use within the business logic
@@ -215,8 +214,7 @@ export default class StoreCore<S extends PrimitiveState> {
             options, initialState,
             initialFnCanExecMap,
           } = this;
-          const noRefFlag = !classThisPointerSet.size
-            && !storeStateRefCounterMap.get("counter");
+          const noRefFlag = !classThisPointerSet.size && !stateRefCounter;
           /**
            * When initialState is a function,
            * it does not have to be executed at unmount time,
@@ -241,7 +239,7 @@ export default class StoreCore<S extends PrimitiveState> {
     // Resolve the problem that the initialization attribute may be undefined
     if (storeMap.has(key)) return storeMap;
 
-    const storeMapValue = new StateMeta<S>({ key, thisArgStore: this });
+    const storeMapValue = new StateMeta<S>(key, this);
 
     storeMap.set(key, storeMapValue);
 

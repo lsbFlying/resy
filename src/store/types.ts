@@ -1,4 +1,4 @@
-import type { PrimitiveState, MapType, AnyFn } from "../types";
+import type { PrimitiveState, AnyFn } from "../types";
 import type { ListenerType, SubscribeType } from "../subscribe/types";
 import type StateMeta from "./state";
 
@@ -250,9 +250,3 @@ export type AnyBoundFn = AnyFn & {
    */
   __bound__?: boolean;
 };
-
-// If initialState is a function,
-// you can get the execution flag in the initialStateRetrieve handler of useStore.
-export type InitialFnCanExecMapType = MapType<{
-  canExec?: boolean | null;
-}>;

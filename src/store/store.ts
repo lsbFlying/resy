@@ -1,6 +1,6 @@
 import type {
   AnyBoundFn, InitialState, InnerStoreOptions, State, StateCallback,
-  StateFnType, StateWithThisType, Store, StoreMap, InitialFnCanExecMapType, StoreOptions,
+  StateFnType, StateWithThisType, Store, StoreMap, StoreOptions,
 } from "./types";
 import type { AnyFn, Callback, MapType, PrimitiveState, ValueOf } from "../types";
 import type { ListenerParams, ListenerType, Unsubscribe } from "../subscribe/types";
@@ -66,8 +66,12 @@ export default class StoreCore<S extends PrimitiveState> {
   // Tag counters for data references of store
   stateRefCounter = 0;
 
-  // Flag indicating that the initialStateRetrieve function is executable
-  initialFnCanExecMap: InitialFnCanExecMapType = new Map();
+  /**
+   * @description Flag indicating that the initialStateRetrieve function is executable.
+   * If initialState is a function,
+   * you can get the execution flag in the initialStateRetrieve handler of useStore.
+   */
+  initialFunctionExecutable: boolean | undefined;
 
   /**
    * @description Use Map and Set to improve performance,
@@ -168,10 +172,9 @@ export default class StoreCore<S extends PrimitiveState> {
   /** restore utils start */
   // Retrieve recovery processing when initialState is a function
   initialStateRetrieve = () => {
-    const { initialFnCanExecMap } = this;
     // The relevant judgment logic is similar to unmountRestore.
-    if (initialFnCanExecMap.get("canExec")) {
-      initialFnCanExecMap.set("canExec", null);
+    if (this.initialFunctionExecutable) {
+      this.initialFunctionExecutable = undefined;
       this.restoreProcessing();
     }
   };
@@ -212,7 +215,6 @@ export default class StoreCore<S extends PrimitiveState> {
            */
           const {
             options, initialState,
-            initialFnCanExecMap,
           } = this;
           const noRefFlag = !classThisPointerSet.size && !stateRefCounter;
           /**
@@ -225,7 +227,7 @@ export default class StoreCore<S extends PrimitiveState> {
             this.restoreProcessing();
           }
           if (typeof initialState === "function" && noRefFlag) {
-            initialFnCanExecMap.set("canExec", true);
+            this.initialFunctionExecutable = true;
           }
         }
         callback?.();

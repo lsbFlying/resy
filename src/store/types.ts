@@ -83,8 +83,8 @@ export interface StoreType<S extends PrimitiveState> {
   readonly store: Store<S>;
 }
 
-// Type of storeMap
-export type StoreMap<S extends PrimitiveState> = Map<keyof S, StateMeta<S>>;
+// Type of engineStoreMeta
+export type EngineStoreMetaType<S extends PrimitiveState> = Map<keyof S, StateMeta<S>>;
 
 /** Update the data type of the parameter */
 export type State<S extends PrimitiveState> = Partial<S> | S | null;

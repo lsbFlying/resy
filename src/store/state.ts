@@ -23,8 +23,6 @@ export default class StateMeta<S extends PrimitiveState> {
     // If a component references the data, the update function will be added to stateChangeSet
     this.stateChangeQueue.add(onStateChange);
 
-    const { thisArgStore: { deferRestoreProcessing, storeMap } } = this;
-
     // Increment the reference count by 1 if the component is referenced
     this.thisArgStore._stateRefCounter_++;
 
@@ -32,11 +30,11 @@ export default class StateMeta<S extends PrimitiveState> {
       this.stateChangeQueue.delete(onStateChange);
       this.thisArgStore._stateRefCounter_--;
 
-      deferRestoreProcessing(
+      this.thisArgStore._deferRestoreProcessing_(
         () => {
           // Release memory if there are no component references
           if (!this.stateChangeQueue.size) {
-            storeMap.delete(this.key);
+            this.thisArgStore._engineStoreMeta_.delete(this.key);
           }
         },
       );
@@ -48,12 +46,12 @@ export default class StateMeta<S extends PrimitiveState> {
   };
 
   useSyncExternalStore = () => {
-    const { thisArgStore: { storeMap }, key } = this;
+    const { thisArgStore: { _engineStoreMeta_ }, key } = this;
     // eslint-disable-next-line react-hooks/rules-of-hooks
     return useSyncExternalStoreCore(
-      storeMap.get(key)!.subscribe,
-      storeMap.get(key)!.getSnapshot,
-      storeMap.get(key)!.getSnapshot,
+      _engineStoreMeta_.get(key)!.subscribe,
+      _engineStoreMeta_.get(key)!.getSnapshot,
+      _engineStoreMeta_.get(key)!.getSnapshot,
     );
   };
 

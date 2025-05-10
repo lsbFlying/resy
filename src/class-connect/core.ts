@@ -53,16 +53,16 @@ export function constructorProcessing<S extends PrimitiveState>(thisArg: ClassIn
       if (!thisArg[__CLASS_IS_MOUNTED_KEY__]) {
         // Clear the data references used by the class component in rendering
         thisArg[__CLASS_STATE_REF_SET_KEY__].clear();
-        // References to these data are recorded and added through “connectClass”
+        // References to these data are recorded and added through “#connectClass”
         thisArg[__CLASS_THIS_POINTER_STORES_KEY__].forEach((store: Store<S>) => {
           /**
            * After the class component is unmounted and its internal data references are cleared,
            * the unmount logic of the class component is executed
            * The logic is divided into two parts:
-           * firstly, removing this proxy instance of class from the internal classThisPointerSet of the store,
+           * firstly, removing this proxy instance of class from the internal classInstanceStack of the store,
            * and secondly, resetting the data to it`s initial state
            */
-          (store as any as StoreCore<S>).classUnmountProcessing(thisArg);
+          (store as any as StoreCore<S>)._classUnmountProcessing_(thisArg);
         });
       }
     });
@@ -72,9 +72,9 @@ export function constructorProcessing<S extends PrimitiveState>(thisArg: ClassIn
 export function connectStoreCore<S extends PrimitiveState>(
   thisArg: ClassInstanceTypeOfConnectStore<S>,
   store: Store<S>,
-): ClassStoreType<S> {
+) {
   storeErrorProcessing(store, "connectStore");
-  (store as any as StoreCore<S>).initialStateRetrieve();
+  (store as any as StoreCore<S>)._initialStateRetrieve_();
   thisArg[__CLASS_THIS_POINTER_STORES_KEY__].add(store);
-  return (store as any as StoreCore<S>).classConnectStore(thisArg);
+  return (store as any as StoreCore<S>)._classConnectStore_(thisArg) as ClassStoreType<S>;
 }

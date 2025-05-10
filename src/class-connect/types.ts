@@ -5,8 +5,7 @@ import {
 } from "./static";
 
 /** This is the data type returned by the class after connecting to the store */
-export type ClassStoreType<S extends PrimitiveState> =
-  S
+export type ClassStoreType<S extends PrimitiveState> = S
   & StoreCoreUtils<S>
   & Readonly<SetOptionsType>
   & Readonly<GetOptionsType>;

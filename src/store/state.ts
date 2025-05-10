@@ -26,11 +26,11 @@ export default class StateMeta<S extends PrimitiveState> {
     const { thisArgStore: { deferRestoreProcessing, storeMap } } = this;
 
     // Increment the reference count by 1 if the component is referenced
-    this.thisArgStore.stateRefCounter++;
+    this.thisArgStore._stateRefCounter_++;
 
     return () => {
       this.stateChangeQueue.delete(onStateChange);
-      this.thisArgStore.stateRefCounter--;
+      this.thisArgStore._stateRefCounter_--;
 
       deferRestoreProcessing(
         () => {

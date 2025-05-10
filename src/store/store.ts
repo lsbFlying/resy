@@ -35,7 +35,7 @@ export default class StoreCore<S extends PrimitiveState> {
         : initialState;
 
     optionsErrorProcessing(options);
-    this.options = {
+    this._options_ = {
       unmountRestore: options?.unmountRestore ?? true,
       namespace: options?.namespace ?? undefined,
       immutable: options?.immutable ?? undefined,
@@ -47,7 +47,7 @@ export default class StoreCore<S extends PrimitiveState> {
 
     const reducerState = this.#reducerState;
 
-    stateErrorProcessing({ state: reducerState, options: this.options });
+    stateErrorProcessing({ state: reducerState, options: this._options_ });
 
     this.stateMap = objectToMap(reducerState);
     this.prevBatchState = objectToMap(reducerState);
@@ -61,19 +61,19 @@ export default class StoreCore<S extends PrimitiveState> {
   readonly #initialState?: InitialState<S>;
   // Retrieve the reducerState
   readonly #reducerState: S;
-  options;
+  readonly _options_;
 
-  scheduler = new Scheduler<S>();
+  #scheduler = new Scheduler<S>();
 
   // Tag counters for data references of store
-  stateRefCounter = 0;
+  _stateRefCounter_ = 0;
 
   /**
    * @description Flag indicating that the initialStateRetrieve function is executable.
    * If initialState is a function,
    * you can get the execution flag in the initialStateRetrieve handler of useStore.
    */
-  initialFunctionExecutable: boolean | undefined;
+  #initialFunctionExecutable: boolean | undefined;
 
   /**
    * @description Use Map and Set to improve performance,
@@ -102,8 +102,9 @@ export default class StoreCore<S extends PrimitiveState> {
    * when data changes trigger subscribers.
    */
   willUpdatingProcessing = () => {
-    if (this.listenerSet.size > 0 && !this.scheduler.willUpdating) {
-      this.scheduler.willUpdating = true;
+    const scheduler = this.#scheduler;
+    if (this.listenerSet.size > 0 && !scheduler.willUpdating) {
+      scheduler.willUpdating = true;
       // Clear first to prevent store from having delete operations that cause prevBatchState to retain deleted data
       this.prevBatchState.clear();
       this.stateMap.forEach((value, key) => {
@@ -178,8 +179,8 @@ export default class StoreCore<S extends PrimitiveState> {
   // Retrieve recovery processing when initialState is a function
   initialStateRetrieve = () => {
     // The relevant judgment logic is similar to unmountRestore.
-    if (this.initialFunctionExecutable) {
-      this.initialFunctionExecutable = undefined;
+    if (this.#initialFunctionExecutable) {
+      this.#initialFunctionExecutable = undefined;
       this.restoreProcessing();
     }
   };
@@ -202,14 +203,14 @@ export default class StoreCore<S extends PrimitiveState> {
    * a microtask can be used to postpone the unmount process.
    */
   deferRestoreProcessing = (callback?: Callback) => {
-    const { scheduler } = this;
+    const scheduler = this.#scheduler;
     if (!scheduler.deferEffectDestructorExecutable) {
       scheduler.deferEffectDestructorExecutable = Promise.resolve().then(() => {
         scheduler.deferEffectDestructorExecutable = undefined;
         const {
-          stateRefCounter, classThisPointerSet,
+          _stateRefCounter_, classThisPointerSet,
         } = this;
-        if (!stateRefCounter && !classThisPointerSet.size) {
+        if (!_stateRefCounter_ && !classThisPointerSet.size) {
           /**
            * By using "stateRefCounter" and "classThisPointerSet",
            * we determine whether the store still has component references.
@@ -218,7 +219,7 @@ export default class StoreCore<S extends PrimitiveState> {
            * and does not constitute a complete unmount.
            * The complete unmount cycle corresponds to the entire usage cycle of the store.
            */
-          const noRefFlag = !classThisPointerSet.size && !stateRefCounter;
+          const noRefFlag = !classThisPointerSet.size && !_stateRefCounter_;
           const initialState = this.#initialState;
           /**
            * When initialState is a function,
@@ -226,11 +227,11 @@ export default class StoreCore<S extends PrimitiveState> {
            * because initialization time is sure to reset execution,
            * thus optimizing code execution efficiency.
            */
-          if (this.options.unmountRestore && noRefFlag && typeof initialState !== "function") {
+          if (this._options_.unmountRestore && noRefFlag && typeof initialState !== "function") {
             this.restoreProcessing();
           }
           if (typeof initialState === "function" && noRefFlag) {
-            this.initialFunctionExecutable = true;
+            this.#initialFunctionExecutable = true;
           }
         }
         callback?.();
@@ -252,7 +253,7 @@ export default class StoreCore<S extends PrimitiveState> {
   };
 
   pushTask = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
-    const { stateMap, scheduler } = this;
+    const { stateMap } = this;
     /**
      * @description The pre-execution of the data changes accumulates
      * the logic of the correct execution of the final update,
@@ -260,7 +261,7 @@ export default class StoreCore<S extends PrimitiveState> {
      */
     !isDelete ? stateMap.set(key, value) : stateMap.delete(key);
 
-    scheduler.pushTask(
+    this.#scheduler.pushTask(
       key,
       value,
       () => {
@@ -278,9 +279,9 @@ export default class StoreCore<S extends PrimitiveState> {
 
   finallyBatchProcessing = () => {
     const {
-      scheduler, listenerSet,
-      stateMap, prevBatchState,
+      listenerSet, stateMap, prevBatchState,
     } = this;
+    const scheduler = this.#scheduler;
     const {
       taskData, taskQueue, callbackQueue,
     } = scheduler;
@@ -380,7 +381,7 @@ export default class StoreCore<S extends PrimitiveState> {
 
   /** ============================== For core utils start ============================== */
   setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    const { stateMap, scheduler } = this;
+    const { stateMap } = this;
     this.willUpdatingProcessing();
 
     let stateTemp = state;
@@ -399,7 +400,7 @@ export default class StoreCore<S extends PrimitiveState> {
       });
     }
 
-    scheduler.pushCallbackStack(stateMap, stateTemp as State<S>, callback);
+    this.#scheduler.pushCallbackStack(stateMap, stateTemp as State<S>, callback);
 
     this.finallyBatchProcessing();
   };
@@ -427,7 +428,7 @@ export default class StoreCore<S extends PrimitiveState> {
 
   // Reset recovery initialization state data
   restore = (callback?: StateCallback<S>) => {
-    const { stateMap, scheduler } = this;
+    const { stateMap } = this;
     const reducerState = this.#reducerState;
 
     this.willUpdatingProcessing();
@@ -445,7 +446,7 @@ export default class StoreCore<S extends PrimitiveState> {
       }
     });
 
-    scheduler.pushCallbackStack(stateMap, state, callback);
+    this.#scheduler.pushCallbackStack(stateMap, state, callback);
 
     this.finallyBatchProcessing();
   };
@@ -531,7 +532,8 @@ export default class StoreCore<S extends PrimitiveState> {
     applyOriginFunction?: ApplyOriginFunctionType,
   ) => {
     const {
-      stateMap, computedStateDepsSet, options,
+      stateMap, computedStateDepsSet,
+      _options_: { immutable },
     } = this;
     return new Proxy(target, {
       get: (_: S, key: keyof S) => {
@@ -545,7 +547,7 @@ export default class StoreCore<S extends PrimitiveState> {
 
         const isCoreProp = hasOwnProperty.call(this, key);
 
-        if (!isCoreProp && options.immutable && proxyable(value)) {
+        if (!isCoreProp && immutable && proxyable(value)) {
           return this.createProxy(
             value as object,
             target,
@@ -607,7 +609,14 @@ export default class StoreCore<S extends PrimitiveState> {
   // Proxy of driver update re-render for useStore
   engineStore = new Proxy({} as S, {
     get: (_: StoreMap<S>, key: keyof S) => {
-      const { stateMap, options } = this;
+      const {
+        stateMap,
+        _options_: {
+          namespace,
+          __enableMacros__,
+          enableMarcoActionStateful,
+        },
+      } = this;
       // Get the latest value
       const value = stateMap.get(key);
 
@@ -619,8 +628,8 @@ export default class StoreCore<S extends PrimitiveState> {
           key,
           value,
           ...(
-            options.namespace
-              ? { namespace: options.namespace }
+            namespace
+              ? { namespace }
               : null
           ),
         });
@@ -632,7 +641,7 @@ export default class StoreCore<S extends PrimitiveState> {
         // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
         !(value as AnyBoundFn).__bound__ && this.boundFnProcessing(key, value, stateMap);
 
-        const fnStateful = !options.__enableMacros__ || options.enableMarcoActionStateful;
+        const fnStateful = !__enableMacros__ || enableMarcoActionStateful;
 
         const boundFnValue = stateMap.get(key);
 
@@ -641,8 +650,8 @@ export default class StoreCore<S extends PrimitiveState> {
           key,
           value: boundFnValue,
           ...(
-            options.namespace
-              ? { namespace: options.namespace }
+            namespace
+              ? { namespace }
               : null
           ),
         });
@@ -713,10 +722,10 @@ export default class StoreCore<S extends PrimitiveState> {
   // Change options configuration
   setOptions = (options: { unmountRestore: boolean }) => {
     setOptionsErrorProcessing(options);
-    this.options.unmountRestore = options.unmountRestore;
+    this._options_.unmountRestore = options.unmountRestore;
   };
 
-  getOptions = () => Object.assign({}, this.options);
+  getOptions = () => Object.assign({}, this._options_);
   /** ============================== For operate options end ============================== */
 
   /** ============================== For hook components start ============================== */
@@ -728,10 +737,10 @@ export default class StoreCore<S extends PrimitiveState> {
   useStore = () => this.engineStore;
 
   useSubscription = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
-    const { options, store } = this;
+    const { store, _options_: { namespace } } = this;
     if (__DEV__) {
-      const store_namespace = options.namespace
-        ? { namespace: options.namespace }
+      const store_namespace = namespace
+        ? { namespace }
         : null;
       // eslint-disable-next-line react-hooks/rules-of-hooks
       useDebugValue({

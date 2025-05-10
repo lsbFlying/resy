@@ -198,9 +198,9 @@ export default class StoreCore<S extends PrimitiveState> {
    */
   deferRestoreProcessing = (callback?: Callback) => {
     const { scheduler } = this;
-    if (!scheduler.deferEffectDestructorExecFlag) {
-      scheduler.deferEffectDestructorExecFlag = Promise.resolve().then(() => {
-        scheduler.deferEffectDestructorExecFlag = undefined;
+    if (!scheduler.deferEffectDestructorExecutable) {
+      scheduler.deferEffectDestructorExecutable = Promise.resolve().then(() => {
+        scheduler.deferEffectDestructorExecutable = undefined;
         const {
           stateRefCounter, classThisPointerSet,
         } = this;
@@ -279,10 +279,10 @@ export default class StoreCore<S extends PrimitiveState> {
       stateMap, prevBatchState,
     } = this;
     const {
-      taskDataMap, taskQueueMap, callbackStackSet,
+      taskData, taskQueue, callbackQueue,
     } = scheduler;
 
-    if ((taskDataMap.size > 0 || callbackStackSet.size > 0) && !scheduler.isUpdating) {
+    if ((taskData.size > 0 || callbackQueue.size > 0) && !scheduler.isUpdating) {
       // Reduce the generation of redundant microtasks through the isUpdating flag
       scheduler.isUpdating = Promise.resolve().then(() => {
         /**
@@ -294,13 +294,15 @@ export default class StoreCore<S extends PrimitiveState> {
 
         batchUpdate(() => {
           // Perform update task
-          taskDataMap.size > 0 && taskQueueMap.forEach(task => {
+          taskQueue.size > 0 && taskQueue.forEach(task => {
             task();
           });
 
           // Make a shallow clone of the "taskDataMap" data for the "effectState" of "subscribe",
           // Perform a shallowClone before executing flushTask, otherwise, it might become impossible to retrieve `taskDataMap`.
-          const effectStateTemp = listenerSet.size > 0 ? shallowCloneMap(taskDataMap) : undefined;
+          const effectStateTemp = listenerSet.size > 0
+            ? shallowCloneMap(taskData)
+            : undefined;
 
           /**
            * @description So far, the task of this round of data updates is complete.
@@ -313,11 +315,11 @@ export default class StoreCore<S extends PrimitiveState> {
           // otherwise their own update queues will be emptied in advance, affecting their own internal execution.
 
           // Trigger the execution of the callback function
-          if (callbackStackSet.size > 0) {
-            callbackStackSet.forEach(({ callback, nextState }) => {
+          if (callbackQueue.size > 0) {
+            callbackQueue.forEach(({ callback, nextState }) => {
               callback(nextState);
             });
-            callbackStackSet.clear();
+            callbackQueue.clear();
           }
 
           // 🌟 As logically, the listener in subscribe needs to be executed after the callback has been executed.

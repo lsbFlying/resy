@@ -8,23 +8,23 @@ import { mapToObject } from "../store/utils";
  */
 export default class Scheduler<S extends PrimitiveState> {
   // task data of updated
-  taskDataMap: MapType<S> = new Map();
+  taskData: MapType<S> = new Map();
   // task queue of updated
-  taskQueueMap: Map<keyof S, Callback> = new Map();
-  // Callback function stack
-  callbackStackSet = new Set<StateCallbackItem<S>>();
+  taskQueue: Map<keyof S, Callback> = new Map();
+  // Callback function queue
+  callbackQueue = new Set<StateCallbackItem<S>>();
 
   // Flag for ongoing update
   isUpdating?: Promise<void>;
   // Flag for the upcoming update execution
   willUpdating?: true;
   // Flag to delay the execution of the return registration function in useEffect
-  deferEffectDestructorExecFlag?: Promise<void>;
+  deferEffectDestructorExecutable?: Promise<void>;
 
   // Push both the updated data (in key/value pairs) and the update task queue into the stack
   pushTask = (key: keyof S, value: ValueOf<S>, task: Callback) => {
-    this.taskDataMap.set(key, value);
-    this.taskQueueMap.set(key, task);
+    this.taskData.set(key, value);
+    this.taskQueue.set(key, task);
   };
 
   // Push the callback onto the stack and wait for subsequent execution
@@ -32,13 +32,13 @@ export default class Scheduler<S extends PrimitiveState> {
     if (callback !== undefined) {
       stateCallbackErrorProcessing(callback);
       const nextState: S = Object.assign({}, mapToObject(stateMap), state);
-      this.callbackStackSet.add({ nextState, callback });
+      this.callbackQueue.add({ nextState, callback });
     }
   };
 
   // Flush and clear the task data and task queue
   flushTask = () => {
-    this.taskDataMap.clear();
-    this.taskQueueMap.clear();
+    this.taskData.clear();
+    this.taskQueue.clear();
   };
 }

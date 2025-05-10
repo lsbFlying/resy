@@ -17,11 +17,11 @@ export default class StateMeta<S extends PrimitiveState> {
   key: keyof S;
 
   // The Set memory of the update function of a single attribute
-  stateChangeSet = new Set<Callback>();
+  stateChangeQueue = new Set<Callback>();
 
   subscribe = (onStateChange: Callback) => {
     // If a component references the data, the update function will be added to stateChangeSet
-    this.stateChangeSet.add(onStateChange);
+    this.stateChangeQueue.add(onStateChange);
 
     const { thisArgStore: { deferRestoreProcessing, storeMap } } = this;
 
@@ -29,13 +29,13 @@ export default class StateMeta<S extends PrimitiveState> {
     this.thisArgStore.stateRefCounter++;
 
     return () => {
-      this.stateChangeSet.delete(onStateChange);
+      this.stateChangeQueue.delete(onStateChange);
       this.thisArgStore.stateRefCounter--;
 
       deferRestoreProcessing(
         () => {
           // Release memory if there are no component references
-          if (!this.stateChangeSet.size) {
+          if (!this.stateChangeQueue.size) {
             storeMap.delete(this.key);
           }
         },
@@ -58,7 +58,7 @@ export default class StateMeta<S extends PrimitiveState> {
   };
 
   updater = () => {
-    this.stateChangeSet.forEach(stateChange => {
+    this.stateChangeQueue.forEach(stateChange => {
       stateChange();
     });
   };

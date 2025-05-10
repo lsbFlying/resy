@@ -27,8 +27,8 @@ import StateMeta from "./state";
  */
 export default class StoreCore<S extends PrimitiveState> {
   constructor(initialState?: InitialState<S>, options?: StoreOptions) {
-    this.initialState = initialState;
-    this.reducerState = initialState === undefined
+    this.#initialState = initialState;
+    this.#reducerState = initialState === undefined
       ? ({} as StateWithThisType<S>)
       : typeof initialState === "function"
         ? initialState()
@@ -45,10 +45,12 @@ export default class StoreCore<S extends PrimitiveState> {
       __functionName__: (options as InnerStoreOptions)?.__functionName__ ?? "createStore",
     };
 
-    stateErrorProcessing({ state: this.reducerState, options: this.options });
+    const reducerState = this.#reducerState;
 
-    this.stateMap = objectToMap(this.reducerState);
-    this.prevBatchState = objectToMap(this.reducerState);
+    stateErrorProcessing({ state: reducerState, options: this.options });
+
+    this.stateMap = objectToMap(reducerState);
+    this.prevBatchState = objectToMap(reducerState);
 
     this.store = this.createProxy();
   }
@@ -56,9 +58,9 @@ export default class StoreCore<S extends PrimitiveState> {
   __RESY_BRAND_KEY__ = __RESY_BRAND_KEY__;
 
   /** ============================== For core constant ready start ============================== */
-  initialState?: InitialState<S>;
+  readonly #initialState?: InitialState<S>;
   // Retrieve the reducerState
-  reducerState: S;
+  readonly #reducerState: S;
   options;
 
   scheduler = new Scheduler<S>();
@@ -120,7 +122,8 @@ export default class StoreCore<S extends PrimitiveState> {
    * Such caution ensures the precision of data recovery.
    */
   retrieveReducerState = () => {
-    const { initialState, reducerState } = this;
+    const initialState = this.#initialState;
+    const reducerState = this.#reducerState;
     if (typeof initialState === "function") {
       clearObject(reducerState);
       Object.entries(initialState()).forEach(([key, value]) => {
@@ -144,7 +147,8 @@ export default class StoreCore<S extends PrimitiveState> {
    * Neither of them is perfect, so we must merge both sets of results.
    */
   mergeStateKeys = () => {
-    const { reducerState, stateMap } = this;
+    const { stateMap } = this;
+    const reducerState = this.#reducerState;
     return Array.from(
       new Set(
         (
@@ -160,7 +164,8 @@ export default class StoreCore<S extends PrimitiveState> {
   restoreProcessing = () => {
     this.retrieveReducerState();
 
-    const { reducerState, stateMap } = this;
+    const { stateMap } = this;
+    const reducerState = this.#reducerState;
 
     this.mergeStateKeys().forEach(key => {
       hasOwnProperty.call(reducerState, key)
@@ -213,17 +218,15 @@ export default class StoreCore<S extends PrimitiveState> {
            * and does not constitute a complete unmount.
            * The complete unmount cycle corresponds to the entire usage cycle of the store.
            */
-          const {
-            options, initialState,
-          } = this;
           const noRefFlag = !classThisPointerSet.size && !stateRefCounter;
+          const initialState = this.#initialState;
           /**
            * When initialState is a function,
            * it does not have to be executed at unmount time,
            * because initialization time is sure to reset execution,
            * thus optimizing code execution efficiency.
            */
-          if (options.unmountRestore && noRefFlag && typeof initialState !== "function") {
+          if (this.options.unmountRestore && noRefFlag && typeof initialState !== "function") {
             this.restoreProcessing();
           }
           if (typeof initialState === "function" && noRefFlag) {
@@ -424,7 +427,8 @@ export default class StoreCore<S extends PrimitiveState> {
 
   // Reset recovery initialization state data
   restore = (callback?: StateCallback<S>) => {
-    const { reducerState, stateMap, scheduler } = this;
+    const { stateMap, scheduler } = this;
+    const reducerState = this.#reducerState;
 
     this.willUpdatingProcessing();
 

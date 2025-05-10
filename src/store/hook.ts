@@ -1,4 +1,6 @@
-import type { InitialState, InnerStoreOptions, Store, MacroStore, ClassicStore } from "./types";
+import type {
+  InitialState, InnerStoreOptions, Store, MacroStore, ClassicStore,
+} from "./types";
 import type { PrimitiveState } from "../types";
 import { useMemo } from "react";
 import { storeErrorProcessing } from "./errors";
@@ -36,7 +38,7 @@ export const useStore = <S extends PrimitiveState>(
  */
 export const useConciseState = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
-): MacroStore<S> => {
+) => {
   return useMemo(() => {
     return (
       new StoreCore<S>(
@@ -46,7 +48,7 @@ export const useConciseState = <S extends PrimitiveState>(
           __functionName__: useConciseState.name,
         } as InnerStoreOptions
       )
-    ).engineStore;
+    ).engineStore as MacroStore<S>;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 };

@@ -2,13 +2,13 @@ import type {
   AnyBoundFn, InitialState, InnerStoreOptions, State, StateCallback,
   StateFnType, StateWithThisType, Store, EngineStoreMetaType, StoreOptions,
 } from "./types";
-import type { AnyFn, Callback, MapType, PrimitiveState, ValueOf } from "../types";
+import type { AnyFn, Callback, PrimitiveState, ValueOf } from "../types";
 import type { ListenerParams, ListenerType, Unsubscribe } from "../subscribe/types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import {
   optionsErrorProcessing, setOptionsErrorProcessing, stateErrorProcessing, subscribeErrorProcessing,
 } from "./errors";
-import { mapToObject, objectToMap, shallowCloneMap, clearObject } from "./utils";
+import { mapToObject, shallowCloneMap, clearObject } from "./utils";
 import { __COMPUTED_PREFIX__, __RESY_BRAND_KEY__ } from "./static";
 import { __CLASS_IS_MOUNTED_KEY__, __CLASS_STATE_REF_SET_KEY__ } from "../class-connect/static";
 import { hasOwnProperty } from "../utils";
@@ -49,8 +49,8 @@ export default class StoreCore<S extends PrimitiveState> {
 
     stateErrorProcessing({ state: reducerState, options: this._options_ });
 
-    this.stateMap = objectToMap(reducerState);
-    this.prevBatchState = objectToMap(reducerState);
+    this.$state = Object.assign({}, reducerState);
+    this.#prevBatchState = Object.assign({}, reducerState);
 
     this.store = this.#createProxy();
   }
@@ -80,13 +80,9 @@ export default class StoreCore<S extends PrimitiveState> {
   // TODO waiting considering, the scenes it contains are a bit complex
   // #freezing: boolean | undefined;
 
-  /**
-   * @description Use Map and Set to improve performance,
-   * "Simultaneously, it can keep the `initialState` unchanged."
-   */
-  stateMap: MapType<S>;
+  readonly $state: S;
   // Data status of the previous update batch
-  prevBatchState: MapType<S>;
+  #prevBatchState: S;
 
   // Subscription listener stack
   readonly #listenerStack = new Set<ListenerType<S>>();
@@ -103,17 +99,17 @@ export default class StoreCore<S extends PrimitiveState> {
   /** ============================== For core helpers start ============================== */
   /**
    * @description Pre-update processing
-   * records the prevBatchState beforehand for later comparison
+   * records the prevState beforehand for later comparison
    * when data changes trigger subscribers.
    */
   #willUpdatingProcessing = () => {
     const scheduler = this.#scheduler;
     if (this.#listenerStack.size > 0 && !scheduler.willUpdating) {
       scheduler.willUpdating = true;
-      // Clear first to prevent store from having delete operations that cause prevBatchState to retain deleted data
-      this.prevBatchState.clear();
-      this.stateMap.forEach((value, key) => {
-        this.prevBatchState.set(key, value);
+      // Clear first to prevent store from having delete operations that cause prevState to retain deleted data
+      this.#prevBatchState = {} as S;
+      Object.entries(this.$state).forEach(([key, value]) => {
+        this.#prevBatchState[key as keyof S] = value;
       });
     }
   };
@@ -140,27 +136,27 @@ export default class StoreCore<S extends PrimitiveState> {
 
   /**
    * @description Get all the properties
-   * Here we merge the data attributes of the current "stateMap" and the initial "reducerState"
+   * Here we merge the data attributes of the current "$state" and the initial "reducerState"
    * in order to count all the new or deleted attributes.
    * It is convenient to use the hasOwnProperty method
    * to check whether the 'reducerState' has a specific data attribute before restoring the data.。
    * Thinking backwards,
    * if we don't aggregate all the keys,
-   * then we can only perform the traversal of keys based on either 'reducerState' or 'stateMap',
+   * then we can only perform the traversal of keys based on either 'reducerState' or '$state',
    * and restore them based on whether they have properties confirmed by the hasOwnProperty method.
    * If we choose reducerState, we will not be able to control the newly added key,
-   * and if we choose stateMap, we will not be able to delete the key.
+   * and if we choose $state, we will not be able to delete the key.
    * Neither of them is perfect, so we must merge both sets of results.
    */
   #mergeStateKeys = () => {
-    const { stateMap } = this;
+    const state = this.$state;
     const reducerState = this.#reducerState;
     return Array.from(
       new Set(
         (
           Object.keys(reducerState) as (keyof S)[]
         ).concat(
-          stateMap.keys().toArray()
+          Object.keys(state)
         )
       )
     );
@@ -170,13 +166,13 @@ export default class StoreCore<S extends PrimitiveState> {
   #restoreProcessing = () => {
     this.#retrieveReducerState();
 
-    const { stateMap } = this;
+    const state = this.$state;
     const reducerState = this.#reducerState;
 
     this.#mergeStateKeys().forEach(key => {
       hasOwnProperty.call(reducerState, key)
-        ? stateMap.set(key, reducerState[key])
-        : stateMap.delete(key);
+        ? (state[key] = reducerState[key])
+        : delete state[key];
     });
 
     // this.#freezing = true;
@@ -260,13 +256,13 @@ export default class StoreCore<S extends PrimitiveState> {
   };
 
   #pushTask = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
-    const { stateMap } = this;
+    const state = this.$state;
     /**
      * @description The pre-execution of the data changes accumulates
      * the logic of the correct execution of the final update,
      * which lays the foundation for subsequent batch updates.
      */
-    !isDelete ? stateMap.set(key, value) : stateMap.delete(key);
+    !isDelete ? (state[key] = value) : delete state[key];
 
     this.#scheduler.pushTask(
       key,
@@ -285,7 +281,6 @@ export default class StoreCore<S extends PrimitiveState> {
   };
 
   #finallyBatchProcessing = () => {
-    const { stateMap, prevBatchState } = this;
     const listenerStack = this.#listenerStack;
     const scheduler = this.#scheduler;
     const {
@@ -338,13 +333,13 @@ export default class StoreCore<S extends PrimitiveState> {
           if (listenerStack.size > 0) {
             // Reduce the burden of executing `mapToObject` on three data sets through proxy.
             const listenerDataProxy = new Proxy({} as ListenerParams<S>, {
-              get(
+              get: (
                 _: ListenerParams<S>,
                 listenerDataKey: keyof ListenerParams<S>,
-              ): Readonly<S> | Readonly<Partial<S>> | undefined {
+              ): Readonly<S> | Readonly<Partial<S>> | undefined => {
                 if (listenerDataKey === "effectState") return mapToObject(effectStateTemp!);
-                if (listenerDataKey === "nextState") return mapToObject(stateMap!);
-                if (listenerDataKey === "prevState") return mapToObject(prevBatchState!);
+                if (listenerDataKey === "nextState") return this.$state;
+                if (listenerDataKey === "prevState") return this.#prevBatchState;
               }
             } as ProxyHandler<ListenerParams<S>>);
 
@@ -360,8 +355,9 @@ export default class StoreCore<S extends PrimitiveState> {
   };
 
   #boundFnProcessing = (key: keyof S, value: AnyBoundFn, target: object) => {
-    const { stateMap, store } = this;
-    const isStateSource = target === stateMap;
+    const { store } = this;
+    const state = this.$state;
+    const isStateSource = target === state;
 
     const boundFn = ((...args: any[]) => (value as AnyFn).apply(
       // Maintaining the source orientation of the `this` pointer.
@@ -372,7 +368,7 @@ export default class StoreCore<S extends PrimitiveState> {
     boundFn.__bound__ = true;
 
     isStateSource
-      ? stateMap.set(key, boundFn as ValueOf<S>)
+      ? (state[key] = boundFn as ValueOf<S>)
       : ((target as S)[key] = boundFn as ValueOf<S>);
 
     return boundFn as ValueOf<S>;
@@ -387,26 +383,26 @@ export default class StoreCore<S extends PrimitiveState> {
 
   /** ============================== For core utils start ============================== */
   setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    const { stateMap } = this;
+    const _state_ = this.$state;
     this.#willUpdatingProcessing();
 
     let stateTemp = state;
 
     // processing of prevState
-    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(mapToObject(stateMap)));
+    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(Object.assign({}, this.$state)));
 
     if (stateTemp !== null) {
       stateErrorProcessing({ state: stateTemp, fnName: "setState、syncUpdate" });
       // The update of hook is an independent update dispatch action, and traversal processing is needed to unify the stack.
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         const value = (stateTemp as S)[key];
-        if (!Object.is(value, this.stateMap.get(key))) {
+        if (!Object.is(value, _state_[key])) {
           this.#pushTask(key, value);
         }
       });
     }
 
-    this.#scheduler.pushCallbackStack(stateMap, stateTemp as State<S>, callback);
+    this.#scheduler.pushCallbackStack(_state_, stateTemp as State<S>, callback);
 
     this.#finallyBatchProcessing();
   };
@@ -418,7 +414,7 @@ export default class StoreCore<S extends PrimitiveState> {
   syncUpdate = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
     let stateTemp = state;
 
-    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(mapToObject(this.stateMap)));
+    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(Object.assign({}, this.$state)));
 
     // Borrowing setState to synchronize the update scheduling mechanism of Resy itself.
     this.setState(stateTemp, callback);
@@ -434,7 +430,7 @@ export default class StoreCore<S extends PrimitiveState> {
 
   // Reset recovery initialization state data
   restore = (callback?: StateCallback<S>) => {
-    const { stateMap } = this;
+    const _state_ = this.$state;
     const reducerState = this.#reducerState;
 
     this.#willUpdatingProcessing();
@@ -444,7 +440,7 @@ export default class StoreCore<S extends PrimitiveState> {
     const state = {} as State<S>;
     this.#mergeStateKeys().forEach(key => {
       const originValue = reducerState[key];
-      if (!Object.is(originValue, stateMap.get(key))) {
+      if (!Object.is(originValue, _state_[key])) {
         state![key] = originValue;
         this.#pushTask(
           key, originValue, !hasOwnProperty.call(reducerState, key),
@@ -452,7 +448,7 @@ export default class StoreCore<S extends PrimitiveState> {
       }
     });
 
-    this.#scheduler.pushCallbackStack(stateMap, state, callback);
+    this.#scheduler.pushCallbackStack(_state_, state, callback);
 
     this.#finallyBatchProcessing();
   };
@@ -481,7 +477,7 @@ export default class StoreCore<S extends PrimitiveState> {
     key: keyof S,
     value: ValueOf<S>,
     isDelete = false,
-    target: object | S = this.stateMap,
+    target: object | S = this.$state,
     firstLevelKey?: keyof S,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -489,9 +485,9 @@ export default class StoreCore<S extends PrimitiveState> {
   ): boolean => {
     // if (this.#freezing) return true;
 
-    const { stateMap } = this;
+    const state = this.$state;
 
-    if (target !== stateMap) {
+    if (target !== state) {
       // During each update, the target here is the latest target object obtained by the previous agent,
       // so the PrevValue here is also the latest data before the update.
       const prevValue = (target as S)[key];
@@ -500,7 +496,7 @@ export default class StoreCore<S extends PrimitiveState> {
       // to see if the data needs to be updated and processed.
       const changed = !Object.is(prevValue, value);
 
-      const firstLevelValue = stateMap.get(firstLevelKey!);
+      const firstLevelValue = state[firstLevelKey!];
 
       changed && reduceChanged(value, keyChains!, firstLevelValue);
 
@@ -513,17 +509,17 @@ export default class StoreCore<S extends PrimitiveState> {
            * the incremental processing of `noneFirstLevelKeyChains` and `firstLevelValue` in the preceding `reduce` function
            * will result in no actual change to the references.
            * Consequently, when reaching the "else" branch
-           * and executing the logic of `if (!Object.is(value, stateMap.get(key)))`,
+           * and executing the logic of `if (!Object.is(value, $state[key]))`,
            * it will show that the previous and current values are equal,
            * ultimately leading to the update being skipped.
            */
           createNewRefValue(firstLevelValue) as ValueOf<S>,
           isDelete,
-          stateMap,
+          state,
         )
         : true;
     } else {
-      if (!Object.is(value, stateMap.get(key))) {
+      if (!Object.is(value, state[key])) {
         this.#willUpdatingProcessing();
         this.#pushTask(key, value, isDelete);
         this.#finallyBatchProcessing();
@@ -533,23 +529,24 @@ export default class StoreCore<S extends PrimitiveState> {
   };
 
   #createProxy = (
-    target: object = this.stateMap,
-    parentTarget: any = this.stateMap,
+    target: object = this.$state,
+    parentTarget: any = this.$state,
     firstLevelKey?: keyof S,
     keyLevel?: number,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ApplyOriginFunctionType,
   ) => {
     const {
-      stateMap, computedDeps,
+      computedDeps,
       _options_: { immutable },
     } = this;
+    const state = this.$state;
     return new Proxy(target, {
       get: (_: S, key: keyof S) => {
-        const isStateSource = target === stateMap;
+        const isStateSource = target === state;
 
         const value = isStateSource
-          ? stateMap.get(key)
+          ? state[key]
           : (target as S)[key];
 
         isStateSource && computedDeps.add(key);
@@ -603,7 +600,7 @@ export default class StoreCore<S extends PrimitiveState> {
       // that are applicable to proxyable types such as `Map`, and `Set`.
       apply: (applyOriginFunction: any, thisArg: any, argArray: any[]) => Reflect.apply(
         __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
-          applyOriginFunction, thisArg, stateMap, parentTarget as any,
+          applyOriginFunction, thisArg, state, parentTarget as any,
           this.#createProxy, firstLevelKey, keyLevel, keyChains, this.#singleUpdate,
         ),
         thisArg,
@@ -619,15 +616,16 @@ export default class StoreCore<S extends PrimitiveState> {
   engineStore = new Proxy({} as S, {
     get: (_: S, key: keyof S) => {
       const {
-        stateMap,
         _options_: {
           namespace,
           __enableMacros__,
           enableMarcoActionStateful,
         },
       } = this;
+      const state = this.$state;
+
       // Get the latest value
-      const value = stateMap.get(key);
+      const value = state[key];
 
       const isCoreProp = hasOwnProperty.call(this, key);
 
@@ -648,11 +646,11 @@ export default class StoreCore<S extends PrimitiveState> {
 
       if (!isCoreProp && typeof value === "function") {
         // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
-        !(value as AnyBoundFn).__bound__ && this.#boundFnProcessing(key, value, stateMap);
+        !(value as AnyBoundFn).__bound__ && this.#boundFnProcessing(key, value, state);
 
         const fnStateful = !__enableMacros__ || enableMarcoActionStateful;
 
-        const boundFnValue = stateMap.get(key);
+        const boundFnValue = state[key];
 
         // eslint-disable-next-line react-hooks/rules-of-hooks
         fnStateful && __DEV__ && useDebugValue({
@@ -667,7 +665,7 @@ export default class StoreCore<S extends PrimitiveState> {
 
         /**
          * @description Enable function properties to have the ability to update rendering.
-         * Placing both the __bound__ and the stateMap's set operation before the #connectHook
+         * Placing both the __bound__ and the state's set operation before the #connectHook
          * can preemptively avoid the tearing synchronization handling inside useSyncExternalStore,
          * resulting in twice the redundant rendering execution.
          */
@@ -796,7 +794,7 @@ export default class StoreCore<S extends PrimitiveState> {
   #connectClass = (thisArg: ClassInstanceTypeOfConnectStore<S>, key: keyof S) => {
     // In class, Set is used for reference tags and combined with the size attribute of Set to judge.
     thisArg[__CLASS_STATE_REF_SET_KEY__].add(key);
-    return this.stateMap.get(key);
+    return this.$state[key];
   };
 
   // Connecting this pointer of the class component
@@ -811,7 +809,7 @@ export default class StoreCore<S extends PrimitiveState> {
 
         const isCoreProp = hasOwnProperty.call(this, key);
 
-        const value = this.stateMap.get(key);
+        const value = this.$state[key];
 
         return !isCoreProp
           ? (

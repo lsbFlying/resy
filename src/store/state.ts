@@ -42,7 +42,7 @@ export default class StateMeta<S extends PrimitiveState> {
   };
 
   getSnapshot = () => {
-    return this.thisArgStore.stateMap.get(this.key);
+    return this.thisArgStore.$state[this.key];
   };
 
   useSyncExternalStore = () => {

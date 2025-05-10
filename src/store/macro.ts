@@ -1,5 +1,7 @@
+import type {
+  InitialState, InnerStoreOptions, StoreOptions, UseMacroStore,
+} from "./types";
 import type { PrimitiveState } from "../types";
-import type { InitialState, InnerStoreOptions, StoreOptions, UseMacroStore } from "./types";
 import StoreCore from "./store";
 
 /**

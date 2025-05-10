@@ -36,7 +36,7 @@ export type MapPrototypeProxyableValueType = ValueOf<MapPrototypeProxyableType>;
 export type MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapType<S>,
-  stateMap: MapType<S>,
+  state: S,
   parentTarget: MapType<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
@@ -82,7 +82,7 @@ export type SetPrototypeProxyableValueType = ValueOf<SetPrototypeProxyableType>;
 export type SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   applyOriginFunction: SetPrototypeProxyableValueType,
   thisArg: Set<S>,
-  stateMap: MapType<S>,
+  state: S,
   parentTarget: Set<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,

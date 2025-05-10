@@ -1,7 +1,6 @@
 import type { MapType, PrimitiveState, Callback, ValueOf } from "../types";
 import type { StateCallbackItem, State, StateCallback } from "../store/types";
 import { stateCallbackErrorProcessing } from "../store/errors";
-import { mapToObject } from "../store/utils";
 
 /**
  * @description Scheduling instance for batch updates.
@@ -28,10 +27,10 @@ export default class Scheduler<S extends PrimitiveState> {
   };
 
   // Push the callback onto the stack and wait for subsequent execution
-  pushCallbackStack = (stateMap: MapType<S>, state: State<S>, callback?: StateCallback<S>) => {
+  pushCallbackStack = (_state_: S, state: State<S>, callback?: StateCallback<S>) => {
     if (callback !== undefined) {
       stateCallbackErrorProcessing(callback);
-      const nextState: S = Object.assign({}, mapToObject(stateMap), state);
+      const nextState: S = Object.assign({}, _state_, state);
       this.callbackQueue.add({ nextState, callback });
     }
   };

@@ -15,7 +15,7 @@ import {
 const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapType<S>,
-  stateMap: MapType<S>,
+  state: S,
   parentTarget: MapType<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
@@ -54,14 +54,14 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
         if (Object.is(oldValue, value)) return parentTarget;
 
         const newValue = createNewRefValue(parentTarget).set(key, value);
-        const firstLevelValue = stateMap.get(firstLevelKey!);
+        const firstLevelValue = state[firstLevelKey!];
         reduceChanged(value as ValueOf<S>, new Set(keyChains).add({ key, }), firstLevelValue);
 
         singleUpdate!(
           firstLevelKey!,
           createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
-          stateMap,
+          state,
         );
         return newValue;
       };
@@ -71,14 +71,14 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
 
         const newValue = createNewRefValue(parentTarget);
         const result = newValue.delete(key);
-        const firstLevelValue = stateMap.get(firstLevelKey!);
+        const firstLevelValue = state[firstLevelKey!];
         reduceChanged(newValue as ValueOf<S>, new Set(keyChains).add({ key, }), firstLevelValue);
 
         singleUpdate!(
           firstLevelKey!,
           createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
-          stateMap,
+          state,
         );
         return result;
       };
@@ -86,14 +86,14 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
       return () => {
         if (!parentTarget.size) return;
 
-        const firstLevelValue = stateMap.get(firstLevelKey!);
+        const firstLevelValue = state[firstLevelKey!];
         reduceChanged(new Map() as ValueOf<S>, keyChains!, firstLevelValue);
 
         singleUpdate!(
           firstLevelKey!,
           createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
-          stateMap,
+          state,
         );
       };
     case "forEach":

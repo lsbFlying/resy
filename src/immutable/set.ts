@@ -2,7 +2,7 @@
  * @description prototype method proxies for set.
  */
 
-import type { MapType, PrimitiveState, ValueOf } from "../types";
+import type { PrimitiveState, ValueOf } from "../types";
 import type {
   ProxyableType, CreateProxyType, SetPrototypeProxyableValueType,
   KeyChainsSourceItemType, SetPrototypeProxyableFactoryType,
@@ -14,7 +14,7 @@ import { createNewRefValue, iteratorProcessing, proxyable, reduceChanged } from 
 const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   applyOriginFunction: SetPrototypeProxyableValueType,
   thisArg: Set<S>,
-  stateMap: MapType<S>,
+  state: S,
   parentTarget: Set<S>,
   createProxy: CreateProxyType<S>,
   firstLevelKey?: keyof S,
@@ -37,14 +37,14 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
         if (parentTarget.has(value)) return parentTarget;
 
         const newValue = createNewRefValue(parentTarget).add(value);
-        const firstLevelValue = stateMap.get(firstLevelKey!);
+        const firstLevelValue = state[firstLevelKey!];
         reduceChanged(newValue as ValueOf<S>, keyChains!, firstLevelValue);
 
         singleUpdate!(
           firstLevelKey!,
           createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
-          stateMap,
+          state,
         );
         return newValue;
       };
@@ -54,14 +54,14 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
 
         const newValue = createNewRefValue(parentTarget);
         const result = newValue.delete(value);
-        const firstLevelValue = stateMap.get(firstLevelKey!);
+        const firstLevelValue = state[firstLevelKey!];
         reduceChanged(newValue as ValueOf<S>, keyChains!, firstLevelValue);
 
         singleUpdate!(
           firstLevelKey!,
           createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
-          stateMap,
+          state,
         );
         return result;
       };
@@ -69,14 +69,14 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
       return () => {
         if (!parentTarget.size) return;
 
-        const firstLevelValue = stateMap.get(firstLevelKey!);
+        const firstLevelValue = state[firstLevelKey!];
         reduceChanged(new Set() as ValueOf<S>, keyChains!, firstLevelValue);
 
         singleUpdate!(
           firstLevelKey!,
           createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
-          stateMap,
+          state,
         );
       };
     case "forEach":

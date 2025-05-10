@@ -18,17 +18,6 @@ export const mapToObject = <S extends PrimitiveState>(map: MapType<S>): S => {
   return object;
 };
 
-/** object to map */
-export const objectToMap = <S extends PrimitiveState>(object: S) => {
-  return Object.keys(object).reduce(
-    (prev, key) => {
-      prev.set(key, object[key]);
-      return prev;
-    },
-    new Map(),
-  );
-};
-
 /** clear object */
 export const clearObject = <S extends PrimitiveState>(object: S) => {
   Object.keys(object).forEach(key => {

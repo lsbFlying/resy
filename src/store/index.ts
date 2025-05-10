@@ -23,5 +23,5 @@ export const createStore = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
   options?: StoreOptions,
 ): Store<S> => {
-  return (new StoreCore(initialState, options)).store!;
+  return (new StoreCore(initialState, options)).store;
 };

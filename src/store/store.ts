@@ -8,7 +8,7 @@ import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import {
   optionsErrorProcessing, setOptionsErrorProcessing, stateErrorProcessing, subscribeErrorProcessing,
 } from "./errors";
-import { mapToObject, shallowCloneMap, clearObject } from "./utils";
+import { mapToObject, shallowCloneMap } from "./utils";
 import { __COMPUTED_PREFIX__, __RESY_BRAND_KEY__ } from "./static";
 import { __CLASS_IS_MOUNTED_KEY__, __CLASS_STATE_REF_SET_KEY__ } from "../class-connect/static";
 import { hasOwnProperty } from "../utils";
@@ -60,7 +60,7 @@ export default class StoreCore<S extends PrimitiveState> {
   /** ============================== For core constant ready start ============================== */
   readonly #initialState?: InitialState<S>;
   // Retrieve the reducerState
-  readonly #reducerState: S;
+  #reducerState: S;
   readonly _options_;
 
   readonly #scheduler = new Scheduler<S>();
@@ -125,11 +125,10 @@ export default class StoreCore<S extends PrimitiveState> {
    */
   #retrieveReducerState = () => {
     const initialState = this.#initialState;
-    const reducerState = this.#reducerState;
     if (typeof initialState === "function") {
-      clearObject(reducerState);
+      this.#reducerState = {} as S;
       Object.entries(initialState()).forEach(([key, value]) => {
-        reducerState[key as keyof S] = value;
+        this.#reducerState[key as keyof S] = value;
       });
     }
   };

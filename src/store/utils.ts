@@ -17,10 +17,3 @@ export const mapToObject = <S extends PrimitiveState>(map: MapType<S>): S => {
   }
   return object;
 };
-
-/** clear object */
-export const clearObject = <S extends PrimitiveState>(object: S) => {
-  Object.keys(object).forEach(key => {
-    delete object[key];
-  });
-};

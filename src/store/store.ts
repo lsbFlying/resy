@@ -75,6 +75,11 @@ export default class StoreCore<S extends PrimitiveState> {
    */
   #initialFunctionExecutable: boolean | undefined;
 
+  // After unmount resetting the state (`#restoreProcessing` function has been executed),
+  // it is in a frozen state where updates are prohibited.
+  // TODO waiting considering, the scenes it contains are a bit complex
+  // #freezing: boolean | undefined;
+
   /**
    * @description Use Map and Set to improve performance,
    * "Simultaneously, it can keep the `initialState` unchanged."
@@ -173,11 +178,16 @@ export default class StoreCore<S extends PrimitiveState> {
         ? stateMap.set(key, reducerState[key])
         : stateMap.delete(key);
     });
+
+    // this.#freezing = true;
   };
 
   /** restore utils start */
   // Retrieve recovery processing when initialState is a function
   _initialStateRetrieve_ = () => {
+    // unfreeze for normal rendering updates
+    // this.#freezing = undefined;
+
     // The relevant judgment logic is similar to unmountRestore.
     if (this.#initialFunctionExecutable) {
       this.#initialFunctionExecutable = undefined;
@@ -477,7 +487,10 @@ export default class StoreCore<S extends PrimitiveState> {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _applyOriginFunction?: ApplyOriginFunctionType,
   ): boolean => {
+    // if (this.#freezing) return true;
+
     const { stateMap } = this;
+
     if (target !== stateMap) {
       // During each update, the target here is the latest target object obtained by the previous agent,
       // so the PrevValue here is also the latest data before the update.

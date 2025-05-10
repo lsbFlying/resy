@@ -10,7 +10,7 @@ import {
   optionsErrorProcessing, setOptionsErrorProcessing, stateErrorProcessing, subscribeErrorProcessing,
 } from "./errors";
 import { mapToObject, objectToMap, shallowCloneMap, clearObject } from "./utils";
-import { __GETTERS_PREFIX__, __REGENERATIVE_SYSTEM_BRAND_KEY__ } from "./static";
+import { __GETTERS_PREFIX__, __RESY_BRAND_KEY__ } from "./static";
 import { __CLASS_IS_MOUNTED_KEY__, __CLASS_STATE_REF_SET_KEY__ } from "../class-connect/static";
 import { hasOwnProperty } from "../utils";
 import { __DEV__, batchUpdate } from "../static";
@@ -54,7 +54,7 @@ export default class StoreCore<S extends PrimitiveState> {
     this.store = this.createProxy();
   }
 
-  __REGENERATIVE_SYSTEM_BRAND_KEY__ = __REGENERATIVE_SYSTEM_BRAND_KEY__;
+  __RESY_BRAND_KEY__ = __RESY_BRAND_KEY__;
 
   /** ============================== For core constant ready start ============================== */
   initialState?: InitialState<S>;

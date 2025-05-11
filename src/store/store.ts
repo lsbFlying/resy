@@ -106,11 +106,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     const scheduler = this.#scheduler;
     if (this.#listenerStack.size > 0 && !scheduler.willUpdating) {
       scheduler.willUpdating = true;
-      // Clear first to prevent store from having delete operations that cause prevState to retain deleted data
-      this.#prevBatchState = {} as S;
-      Object.entries(this.$state).forEach(([key, value]) => {
-        this.#prevBatchState[key as keyof S] = value;
-      });
+      this.#prevBatchState = Object.assign({}, this.$state) as S;
     }
   };
 

@@ -1,4 +1,4 @@
-import type { MapType, PrimitiveState, Callback, ValueOf } from "../types";
+import type { PrimitiveState, Callback, ValueOf } from "../types";
 import type { StateCallbackItem, State, StateCallback } from "../store/types";
 import { stateCallbackErrorProcessing } from "../store/errors";
 
@@ -7,7 +7,7 @@ import { stateCallbackErrorProcessing } from "../store/errors";
  */
 export default class Scheduler<S extends PrimitiveState> {
   // task data of updated
-  taskData: MapType<S> = new Map();
+  taskData = {} as S;
   // task queue of updated
   taskQueue: Map<keyof S, Callback> = new Map();
   // Callback function queue
@@ -22,7 +22,7 @@ export default class Scheduler<S extends PrimitiveState> {
 
   // Push both the updated data (in key/value pairs) and the update task queue into the stack
   pushTask = (key: keyof S, value: ValueOf<S>, task: Callback) => {
-    this.taskData.set(key, value);
+    this.taskData[key] = value;
     this.taskQueue.set(key, task);
   };
 
@@ -37,7 +37,7 @@ export default class Scheduler<S extends PrimitiveState> {
 
   // Flush and clear the task data and task queue
   flushTask = () => {
-    this.taskData.clear();
+    this.taskData = {} as S;
     this.taskQueue.clear();
   };
 }

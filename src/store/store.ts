@@ -3,12 +3,11 @@ import type {
   StateWithThisType, Store, EngineStoreMetaType, StoreOptions, MacroStore, UseMacroStore,
 } from "./types";
 import type { AnyFn, Callback, PrimitiveState, ValueOf } from "../types";
-import type { ListenerParams, ListenerType, Unsubscribe } from "../subscribe/types";
+import type { ListenerType, Unsubscribe } from "../subscribe/types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
 import {
   optionsErrorProcessing, setOptionsErrorProcessing, stateErrorProcessing, subscribeErrorProcessing,
 } from "./errors";
-import { mapToObject, shallowCloneMap } from "./utils";
 import { __COMPUTED_PREFIX__, __RESY_BRAND_KEY__ } from "./static";
 import { __CLASS_IS_MOUNTED_KEY__, __CLASS_STATE_REF_SET_KEY__ } from "../class-connect/static";
 import { hasOwnProperty } from "../utils";
@@ -286,7 +285,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       taskData, taskQueue, callbackQueue,
     } = scheduler;
 
-    if ((taskData.size > 0 || callbackQueue.size > 0) && !scheduler.isUpdating) {
+    if ((taskQueue.size > 0 || callbackQueue.size > 0) && !scheduler.isUpdating) {
       // Reduce the generation of redundant microtasks through the isUpdating flag
       scheduler.isUpdating = Promise.resolve().then(() => {
         /**
@@ -298,14 +297,14 @@ export default class StoreMeta<S extends PrimitiveState> {
 
         batchUpdate(() => {
           // Perform update task
-          taskQueue.size > 0 && taskQueue.forEach(task => {
+          taskQueue.forEach(task => {
             task();
           });
 
           // Make a shallow clone of the "taskDataMap" data for the "effectState" of "subscribe",
           // Perform a shallowClone before executing flushTask, otherwise, it might become impossible to retrieve `taskDataMap`.
           const effectStateTemp = listenerStack.size > 0
-            ? shallowCloneMap(taskData)
+            ? Object.assign({}, taskData)
             : undefined;
 
           /**
@@ -330,22 +329,14 @@ export default class StoreMeta<S extends PrimitiveState> {
 
           // Trigger the execution of subscription snooping
           if (listenerStack.size > 0) {
-            // Reduce the burden of executing `mapToObject` on three data sets through proxy.
-            const listenerDataProxy = new Proxy({} as ListenerParams<S>, {
-              get: (
-                _: ListenerParams<S>,
-                listenerDataKey: keyof ListenerParams<S>,
-              ): Readonly<S> | Readonly<Partial<S>> | undefined => {
-                if (listenerDataKey === "effectState") return mapToObject(effectStateTemp!);
-                if (listenerDataKey === "nextState") return this.$state;
-                if (listenerDataKey === "prevState") return this.#prevBatchState;
-              }
-            } as ProxyHandler<ListenerParams<S>>);
-
             listenerStack.forEach(item => {
               // the clone returned by mapToObject ensures that the externally subscribed data
               // maintains it`s purity and security as much as possible in terms of usage.
-              item(listenerDataProxy);
+              item({
+                effectState: effectStateTemp!,
+                nextState: this.$state,
+                prevState: this.#prevBatchState,
+              });
             });
           }
         });

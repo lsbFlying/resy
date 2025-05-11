@@ -127,10 +127,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   #retrieveReducerState = () => {
     const initialState = this.#initialState;
     if (typeof initialState === "function") {
-      this.#reducerState = {} as S;
-      Object.entries(initialState()).forEach(([key, value]) => {
-        this.#reducerState[key as keyof S] = value;
-      });
+      this.#reducerState = initialState() as S;
     }
   };
 

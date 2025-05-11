@@ -80,7 +80,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   // TODO waiting considering, the scenes it contains are a bit complex
   // #freezing: boolean | undefined;
 
-  readonly $state: S;
+  $state: S;
   // Data status of the previous update batch
   #prevBatchState: S;
 
@@ -157,14 +157,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   #restoreProcessing = () => {
     this.#retrieveReducerState();
 
-    const state = this.$state;
-    const reducerState = this.#reducerState;
-
-    this.#mergeStateKeys().forEach(key => {
-      hasOwnProperty.call(reducerState, key)
-        ? (state[key] = reducerState[key])
-        : delete state[key];
-    });
+    this.$state = Object.assign({}, this.#reducerState) as S;
 
     // this.#freezing = true;
   };
@@ -519,20 +512,15 @@ export default class StoreMeta<S extends PrimitiveState> {
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ApplyOriginFunctionType,
   ) => {
-    const {
-      computedDeps,
-      _options_: { immutable },
-    } = this;
-    const state = this.$state;
+    const { computedDeps, _options_: { immutable } } = this;
     return new Proxy(target, {
       get: (_: S, key: keyof S) => {
-        const isStateSource = target === state;
 
-        const value = isStateSource
-          ? state[key]
-          : (target as S)[key];
+        const is$State = !firstLevelKey;
 
-        isStateSource && computedDeps.add(key);
+        const value = is$State ? this.$state[key] : (target as S)[key];
+
+        is$State && computedDeps.add(key);
 
         const isCoreProp = hasOwnProperty.call(this, key);
 
@@ -583,7 +571,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       // that are applicable to proxyable types such as `Map`, and `Set`.
       apply: (applyOriginFunction: any, thisArg: any, argArray: any[]) => Reflect.apply(
         __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
-          applyOriginFunction, thisArg, state, parentTarget as any,
+          applyOriginFunction, thisArg, this.$state, parentTarget as any,
           this.#createProxy, firstLevelKey, keyLevel, keyChains, this.#singleUpdate,
         ),
         thisArg,

@@ -50,8 +50,8 @@ export default class StoreMeta<S extends PrimitiveState> {
 
     stateErrorProcessing({ state: reducerState, options: this._options_ });
 
-    this.$state = Object.assign({}, reducerState);
-    this.#prevBatchState = Object.assign({}, reducerState);
+    this.$state = reducerState;
+    this.#prevBatchState = reducerState;
 
     this.store = this.#createProxy();
   }

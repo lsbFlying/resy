@@ -125,34 +125,6 @@ export default class StoreMeta<S extends PrimitiveState> {
     );
   };
 
-  /**
-   * @description Get all the properties
-   * Here we merge the data attributes of the current "$state" and the initial "reducerState"
-   * in order to count all the new or deleted attributes.
-   * It is convenient to use the hasOwnProperty method
-   * to check whether the 'reducerState' has a specific data attribute before restoring the data.。
-   * Thinking backwards,
-   * if we don't aggregate all the keys,
-   * then we can only perform the traversal of keys based on either 'reducerState' or '$state',
-   * and restore them based on whether they have properties confirmed by the hasOwnProperty method.
-   * If we choose reducerState, we will not be able to control the newly added key,
-   * and if we choose $state, we will not be able to delete the key.
-   * Neither of them is perfect, so we must merge both sets of results.
-   */
-  #mergeStateKeys = () => {
-    const state = this.$state;
-    const reducerState = this.#reducerState;
-    return Array.from(
-      new Set(
-        (
-          Object.keys(reducerState) as (keyof S)[]
-        ).concat(
-          Object.keys(state)
-        )
-      )
-    );
-  };
-
   // Logic of recovery processing
   #restoreProcessing = () => {
     this.#retrieveReducerState();
@@ -359,13 +331,14 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   /** ============================== For core utils start ============================== */
   setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    const _state_ = this.$state;
     this.#willUpdatingProcessing();
+
+    const _state_ = this.$state;
 
     let stateTemp = state;
 
     // processing of prevState
-    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(Object.assign({}, this.$state)));
+    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(Object.assign({}, _state_)));
 
     if (stateTemp !== null) {
       stateErrorProcessing({ state: stateTemp, fnName: "setState、syncUpdate" });
@@ -407,14 +380,38 @@ export default class StoreMeta<S extends PrimitiveState> {
   // Reset recovery initialization state data
   restore = (callback?: StateCallback<S>) => {
     const _state_ = this.$state;
-    const reducerState = this.#reducerState;
 
     this.#willUpdatingProcessing();
 
     this.#retrieveReducerState();
 
+    const reducerState = this.#reducerState;
+
     const state = {} as State<S>;
-    this.#mergeStateKeys().forEach(key => {
+
+    /**
+     * @description Get all the properties
+     * Here we merge the data attributes of the current "$state" and the initial "reducerState"
+     * in order to count all the new or deleted attributes.
+     * It is convenient to use the hasOwnProperty method
+     * to check whether the 'reducerState' has a specific data attribute before restoring the data.。
+     * Thinking backwards,
+     * if we don't aggregate all the keys,
+     * then we can only perform the traversal of keys based on either 'reducerState' or '$state',
+     * and restore them based on whether they have properties confirmed by the hasOwnProperty method.
+     * If we choose reducerState, we will not be able to control the newly added key,
+     * and if we choose $state, we will not be able to delete the key.
+     * Neither of them is perfect, so we must merge both sets of results.
+     */
+    Array.from(
+      new Set(
+        (
+          Object.keys(reducerState) as (keyof S)[]
+        ).concat(
+          Object.keys(_state_)
+        )
+      )
+    ).forEach(key => {
       const originValue = reducerState[key];
       if (!Object.is(originValue, _state_[key])) {
         state![key] = originValue;

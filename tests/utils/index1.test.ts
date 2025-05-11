@@ -141,9 +141,9 @@ test("utils", () => {
   expect(whatsType(value56) === "Response").toBeTruthy();
   expect(whatsType(value57) === "AsyncFunction").toBeTruthy();
   expect(whatsType(value58) === "Error").toBeTruthy();
-  expect(whatsType(value59) === "ArrayIterator").toBeTruthy();
-  expect(whatsType(value60) === "SetIterator").toBeTruthy();
-  expect(whatsType(value61) === "MapIterator").toBeTruthy();
+  expect(whatsType(value59) === "Array Iterator").toBeTruthy();
+  expect(whatsType(value60) === "Set Iterator").toBeTruthy();
+  expect(whatsType(value61) === "Map Iterator").toBeTruthy();
 
   // 🌟 The test execution here is slightly different from the test execution result of the browser,
   // and it should be related to the small changes in the global object of vitest's test environment.

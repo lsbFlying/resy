@@ -1,7 +1,6 @@
 import type {
-  AnyBoundFn, InitialState, InnerStoreOptions, State,
-  StateCallback, StateFnType, StateWithThisType, Store,
-  EngineStoreMetaType, StoreOptions, MacroStore, UseMacroStore,
+  AnyBoundFn, InitialState, InnerStoreOptions, State, StateCallback, StateFnType,
+  StateWithThisType, Store, EngineStoreMetaType, StoreOptions, MacroStore, UseMacroStore,
 } from "./types";
 import type { AnyFn, Callback, PrimitiveState, ValueOf } from "../types";
 import type { ListenerParams, ListenerType, Unsubscribe } from "../subscribe/types";
@@ -50,8 +49,8 @@ export default class StoreMeta<S extends PrimitiveState> {
 
     stateErrorProcessing({ state: reducerState, options: this._options_ });
 
-    this.$state = reducerState;
-    this.#prevBatchState = reducerState;
+    this.$state = Object.assign({}, reducerState);
+    this.#prevBatchState = Object.assign({}, reducerState);
 
     this.store = this.#createProxy();
   }
@@ -127,7 +126,10 @@ export default class StoreMeta<S extends PrimitiveState> {
   #retrieveReducerState = () => {
     const initialState = this.#initialState;
     if (typeof initialState === "function") {
-      this.#reducerState = initialState() as S;
+      this.#reducerState = {} as S;
+      Object.entries(initialState()).forEach(([key, value]) => {
+        this.#reducerState[key as keyof S] = value;
+      });
     }
   };
 

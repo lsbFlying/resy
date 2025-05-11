@@ -72,10 +72,10 @@ export const iteratorProcessing = <S extends PrimitiveState>(
   if (parentTarget[__ITERATOR_META_PROCESSING_KEY__]) return;
   const type = whatsType(iterator);
 
-  const AM_IteratorFlag = type === "ArrayIterator" || type === "MapIterator";
+  const AM_IteratorFlag = type === "Array Iterator" || type === "Map Iterator";
 
   if (AM_IteratorFlag) {
-    const keys = type === "MapIterator" ? parentTarget.keys().toArray() : null;
+    const keys = type === "Map Iterator" ? parentTarget.keys().toArray() : null;
     const iteratorArray = AM_IteratorFlag
       ? (iterator as any as ArrayMapSetIteratorType<S>).toArray()
       : iterator;
@@ -97,7 +97,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
                * and cannot retrieve the associated keys,
                * the `map.keys` method is used to obtain the corresponding keys for indexing.
                */
-              : type === "MapIterator"
+              : type === "Map Iterator"
                 ? keys[index]
                 : index;
             const value = entriesFlag ? iteratorArray[index][1] : iteratorArray[index];

@@ -341,7 +341,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     typeof state === "function" && (stateTemp = (state as StateFnType<S>)(Object.assign({}, _state_)));
 
     if (stateTemp !== null) {
-      stateErrorProcessing({ state: stateTemp, fnName: "setState、syncUpdate" });
+      stateErrorProcessing({ state: stateTemp, fnName: "setState" });
       // The update of hook is an independent update dispatch action, and traversal processing is needed to unify the stack.
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         const value = (stateTemp as S)[key];
@@ -361,20 +361,29 @@ export default class StoreMeta<S extends PrimitiveState> {
    * to meet the needs of normal text input, it synchronizes React's update scheduling.
    */
   syncUpdate = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
+    const _state_ = this.$state;
+
     let stateTemp = state;
 
-    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(Object.assign({}, this.$state)));
+    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(Object.assign({}, _state_)));
 
-    // Borrowing setState to synchronize the update scheduling mechanism of Resy itself.
-    this.setState(stateTemp, callback);
-
-    stateTemp !== null && batchUpdate(() => {
-      Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
-        const value = (stateTemp as Partial<S> | S)[key];
-        this.#classUpdater(key, value);
-        this.#hookConnectStore(key).get(key)!.updater();
+    if (stateTemp !== null) {
+      stateErrorProcessing({ state: stateTemp, fnName: "syncUpdate" });
+      batchUpdate(() => {
+        Object.keys(stateTemp as NonNullable<State<S>>).forEach((key: keyof S) => {
+          const value = (stateTemp as S)[key];
+          if (!Object.is(_state_[key], value)) {
+            _state_[key] = value;
+            this.#classUpdater(key, value);
+            this.#hookConnectStore(key).get(key)!.updater();
+          }
+        });
       });
-    });
+    }
+
+    this.#scheduler.pushCallbackStack(_state_, stateTemp as State<S>, callback);
+
+    this.#finallyBatchProcessing();
   };
 
   // Reset recovery initialization state data

@@ -20,7 +20,7 @@ export const storeErrorProcessing = (
 // Error processing of data update parameters type
 export const stateErrorProcessing = (params: {
   state: unknown;
-  fnName?: "setState、syncUpdate" | "createStore" | "useConciseState" | "defineStore";
+  fnName?: "setState" | "syncUpdate" | "createStore" | "useConciseState" | "defineStore";
   options?: InnerStoreOptions;
 }) => {
   const { state, fnName, options } = params;

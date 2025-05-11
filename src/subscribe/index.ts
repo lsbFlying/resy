@@ -5,7 +5,7 @@ import { effectStateInListenerKeys } from "../store/helpers";
 import { useDebugValue, useEffect, useRef } from "react";
 import { storeErrorProcessing, subscribeErrorProcessing } from "../store/errors";
 import { __DEV__ } from "../static";
-import StoreCore from "../store/store";
+import StoreMeta from "../store/store";
 
 /**
  * @description Hook of subscribe
@@ -35,7 +35,7 @@ export const useSubscription = <S extends PrimitiveState>(
   };
 
   if (__DEV__) {
-    const namespace = (store as any as StoreCore<S>)._options_.namespace;
+    const namespace = (store as any as StoreMeta<S>)._options_.namespace;
     const store_namespace = namespace
       ? { namespace }
       : null;

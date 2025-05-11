@@ -1,7 +1,7 @@
 import type { ClassInstanceTypeOfConnectStore, ClassStoreType } from "./types";
 import type { PrimitiveState } from "../types";
 import type { Store } from "../store/types";
-import type StoreCore from "../store/store";
+import type StoreMeta from "../store/store";
 import {
   __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_STATE_REF_SET_KEY__, __CLASS_IS_MOUNTED_KEY__,
 } from "./static";
@@ -62,7 +62,7 @@ export function constructorProcessing<S extends PrimitiveState>(thisArg: ClassIn
            * firstly, removing this proxy instance of class from the internal classInstanceStack of the store,
            * and secondly, resetting the data to it`s initial state
            */
-          (store as any as StoreCore<S>)._classUnmountProcessing_(thisArg);
+          (store as any as StoreMeta<S>)._classUnmountProcessing_(thisArg);
         });
       }
     });
@@ -74,7 +74,7 @@ export function connectStoreCore<S extends PrimitiveState>(
   store: Store<S>,
 ) {
   storeErrorProcessing(store, "connectStore");
-  (store as any as StoreCore<S>)._initialStateRetrieve_();
+  (store as any as StoreMeta<S>)._initialStateRetrieve_();
   thisArg[__CLASS_THIS_POINTER_STORES_KEY__].add(store);
-  return (store as any as StoreCore<S>)._classConnectStore_(thisArg) as ClassStoreType<S>;
+  return (store as any as StoreMeta<S>)._classConnectStore_(thisArg) as ClassStoreType<S>;
 }

@@ -1,6 +1,7 @@
 import type {
-  AnyBoundFn, InitialState, InnerStoreOptions, State, StateCallback,
-  StateFnType, StateWithThisType, Store, EngineStoreMetaType, StoreOptions,
+  AnyBoundFn, InitialState, InnerStoreOptions, State,
+  StateCallback, StateFnType, StateWithThisType, Store,
+  EngineStoreMetaType, StoreOptions, MacroStore, UseMacroStore,
 } from "./types";
 import type { AnyFn, Callback, PrimitiveState, ValueOf } from "../types";
 import type { ListenerParams, ListenerType, Unsubscribe } from "../subscribe/types";
@@ -23,9 +24,9 @@ import Scheduler from "../scheduler";
 import StateMeta from "./state";
 
 /**
- * @description core
+ * @description The core meta-structure of store
  */
-export default class StoreCore<S extends PrimitiveState> {
+export default class StoreMeta<S extends PrimitiveState> {
   constructor(initialState?: InitialState<S>, options?: StoreOptions) {
     this.#initialState = initialState;
     this.#reducerState = initialState === undefined
@@ -584,7 +585,7 @@ export default class StoreCore<S extends PrimitiveState> {
           return this.#boundFnProcessing(key, value, target);
         }
 
-        return !isCoreProp ? value : this[key as keyof StoreCore<S>];
+        return !isCoreProp ? value : this[key as keyof StoreMeta<S>];
       },
       set: (_: S, key: keyof S, value: ValueOf<S>) => this.#singleUpdate(
         key, value, false, target, firstLevelKey,
@@ -612,7 +613,7 @@ export default class StoreCore<S extends PrimitiveState> {
   store: Store<S>;
 
   // Proxy of driver update re-render for useStore
-  engineStore = new Proxy({} as S, {
+  engineStore = new Proxy({} as MacroStore<S>, {
     get: (_: S, key: keyof S) => {
       const {
         _options_: {
@@ -719,9 +720,9 @@ export default class StoreCore<S extends PrimitiveState> {
           };
       }
 
-      return this[key as keyof StoreCore<S>];
+      return this[key as keyof StoreMeta<S>];
     },
-  } as ProxyHandler<S>);
+  } as ProxyHandler<MacroStore<S>>);
   /** ============================== For core render end ============================== */
 
   /** ============================== For operate options start ============================== */
@@ -740,7 +741,7 @@ export default class StoreCore<S extends PrimitiveState> {
    * 🌟 The reason why it is not changed to store.useStore
    * is due to the consideration of the rules for the use of the hook function.
    */
-  useStore = () => this.engineStore;
+  useStore = (() => this.engineStore) as UseMacroStore<S>;
 
   useSubscription = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
     const { store, _options_: { namespace } } = this;
@@ -819,7 +820,7 @@ export default class StoreCore<S extends PrimitiveState> {
                 this.#connectClass(thisArg, key) as AnyFn
               ).apply(classEngineStore, args)
           )
-          : this[key as keyof StoreCore<S>];
+          : this[key as keyof StoreMeta<S>];
       },
     } as ProxyHandler<S>);
 

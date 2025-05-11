@@ -1,5 +1,5 @@
 import type { Callback, PrimitiveState } from "../types";
-import type StoreCore from "./store";
+import type StoreMeta from "./store";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 
 /**
@@ -8,12 +8,15 @@ import useSyncExternalStoreExports from "use-sync-external-store/shim";
  */
 const { useSyncExternalStore: useSyncExternalStoreCore } = useSyncExternalStoreExports;
 
+/**
+ * @description The core meta-structure of state
+ */
 export default class StateMeta<S extends PrimitiveState> {
-  constructor(key: keyof S, thisArgStore: StoreCore<S>) {
+  constructor(key: keyof S, thisArgStore: StoreMeta<S>) {
     this.key = key;
     this.thisArgStore = thisArgStore;
   }
-  thisArgStore: StoreCore<S>;
+  thisArgStore: StoreMeta<S>;
   key: keyof S;
 
   // The Set memory of the update function of a single attribute

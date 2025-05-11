@@ -5,9 +5,9 @@
  * @date 2022-05-05
  * @name createStore
  */
-import type { StoreOptions, Store, InitialState } from "./types";
+import type { StoreOptions, InitialState } from "./types";
 import type { PrimitiveState } from "../types";
-import StoreCore from "./store";
+import StoreMeta from "./store";
 
 /**
  * createStore
@@ -22,6 +22,6 @@ import StoreCore from "./store";
 export const createStore = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
   options?: StoreOptions,
-): Store<S> => {
-  return (new StoreCore(initialState, options)).store;
+) => {
+  return (new StoreMeta(initialState, options)).store;
 };

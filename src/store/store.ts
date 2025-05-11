@@ -60,6 +60,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   readonly #initialState?: InitialState<S>;
   // Retrieve the reducerState
   #reducerState: S;
+  // configuration
   readonly _options_;
 
   readonly #scheduler = new Scheduler<S>();

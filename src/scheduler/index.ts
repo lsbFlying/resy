@@ -3,7 +3,7 @@ import type { StateCallbackItem, State, StateCallback } from "../store/types";
 import { stateCallbackErrorProcessing } from "../store/errors";
 
 /**
- * @description Scheduling instance for batch updates.
+ * @description Scheduler class for update.
  */
 export default class Scheduler<S extends PrimitiveState> {
   // task data of updated

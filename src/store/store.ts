@@ -464,7 +464,8 @@ export default class StoreMeta<S extends PrimitiveState> {
 
     const state = this.$state;
 
-    if (target !== state) {
+    // mutate chain update
+    if (firstLevelKey) {
       // During each update, the target here is the latest target object obtained by the previous agent,
       // so the PrevValue here is also the latest data before the update.
       const prevValue = (target as S)[key];

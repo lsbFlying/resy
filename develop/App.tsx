@@ -1,5 +1,5 @@
 import React, {
-  useEffect,
+// useEffect,
 } from "react";
 import { defineStore } from "../src";
 
@@ -31,10 +31,42 @@ const useStore = defineStore({
     // const hi = this.info.personInfo.bodyInfo.heightInfo;
     // hi.height = Math.floor(Math.random() * 1000);
     // hi.reach = Math.floor(Math.random() * 1000);
-    this.info.personInfo.bodyInfo.heightInfo.reach = Math.floor(Math.random() * 1000);
+    console.time("update");
+    for (let i = 0; i < 1; i++) {
+      // this.info.personInfo.bodyInfo.heightInfo.reach = Math.floor(Math.random() * 1000);
+      // this.info = {
+      //   ...this.info,
+      //   personInfo: {
+      //     ...this.info.personInfo,
+      //     bodyInfo: {
+      //       ...this.info.personInfo.bodyInfo,
+      //       heightInfo: {
+      //         ...this.info.personInfo.bodyInfo.heightInfo,
+      //         reach: Math.floor(Math.random() * 1000),
+      //       },
+      //     },
+      //   },
+      // };
+      this.setState({
+        info: {
+          ...this.info,
+          personInfo: {
+            ...this.info.personInfo,
+            bodyInfo: {
+              ...this.info.personInfo.bodyInfo,
+              heightInfo: {
+                ...this.info.personInfo.bodyInfo.heightInfo,
+                reach: Math.floor(Math.random() * 1000),
+              },
+            },
+          },
+        },
+      });
+    }
+    console.timeEnd("update");
   },
 }, {
-  immutable: true,
+  // immutable: true,
 });
 
 const App = () => {
@@ -47,27 +79,27 @@ const App = () => {
   const { height, reach } = heightInfo;
   const { weight, level: weightLevel } = weightInfo;
 
-  useEffect(() => {
-    console.log("info");
-  }, [info]);
-  useEffect(() => {
-    console.log("personInfo");
-  }, [personInfo]);
-  useEffect(() => {
-    console.log("ageInfo");
-  }, [ageInfo]);
-  useEffect(() => {
-    console.log("nameInfo");
-  }, [nameInfo]);
-  useEffect(() => {
-    console.log("bodyInfo");
-  }, [bodyInfo]);
-  useEffect(() => {
-    console.log("heightInfo");
-  }, [heightInfo]);
-  useEffect(() => {
-    console.log("weightInfo");
-  }, [weightInfo]);
+  // useEffect(() => {
+  //   console.log("info");
+  // }, [info]);
+  // useEffect(() => {
+  //   console.log("personInfo");
+  // }, [personInfo]);
+  // useEffect(() => {
+  //   console.log("ageInfo");
+  // }, [ageInfo]);
+  // useEffect(() => {
+  //   console.log("nameInfo");
+  // }, [nameInfo]);
+  // useEffect(() => {
+  //   console.log("bodyInfo");
+  // }, [bodyInfo]);
+  // useEffect(() => {
+  //   console.log("heightInfo");
+  // }, [heightInfo]);
+  // useEffect(() => {
+  //   console.log("weightInfo");
+  // }, [weightInfo]);
 
   return (
     <>

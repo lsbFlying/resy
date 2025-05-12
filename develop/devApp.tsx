@@ -1,63 +1,39 @@
 import { ComponentWithStore, createStore } from "../src";
 import React from "react";
 
-type Store = {
-  count: number;
-  text: string;
-  test(): string;
-};
-
 console.time("createStore");
-const store = createStore<Store>({
+const store = createStore({
   count: 0,
   text: "hello world",
-  test() {
-    return `${this.count}-${this.text}`;
-  },
+  doubleCount() {
+    console.log("doubleCount");
+    return this.count * 2;
+  }
 });
 console.timeEnd("createStore");
 
-export default class App extends ComponentWithStore {
+class App extends ComponentWithStore {
 
   store = this.connectStore(store);
 
   render() {
-    const { count, text, test } = this.store;
-    const testStr = test();
+    const { count, text, doubleCount } = this.store;
     return (
       <>
-        <p>{count}</p>
-        <p>{testStr}</p>
+        <p>count:{count}</p>
+        <p>doubleCount:{doubleCount()}</p>
+        <p>text:{text}</p>
         <button onClick={() => {
           store.count++;
-        }}>add</button>
+        }}>add
+        </button>
         <button onClick={() => {
-          store.count++;
-        }}>add2</button>
-        <input
-          placeholder="请输入"
-          value={text}
-          onChange={event => {
-            store.syncUpdate({
-              text: event.target.value,
-            });
-          }}
-        />
-        <button onClick={() => {
-          store.count--;
-        }}>subtract</button>
-        <button onClick={() => {
-          store.setState({
-            count: 9,
-          });
-        }}>change</button>
-        <button onClick={() => {
-          store.syncUpdate({
-            text: "fine",
-            count: 999,
-          });
-        }}>change2</button>
+          store.text = "hello";
+        }}>text
+        </button>
       </>
     );
   }
 }
+
+export default App;

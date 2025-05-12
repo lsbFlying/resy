@@ -13,3 +13,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <Comp />
   </>
 );
+
+/**
+ * next-version_notes:
+ * break change:
+ * 1、removed setOptions and getOptions.
+ * setOptions不利于状态管理的安全性考虑，getOptions没必要，删繁就简。
+ */

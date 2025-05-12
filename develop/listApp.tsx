@@ -33,10 +33,10 @@ const useStore = defineStore({
     //   // console.log(listElement);
     //   listElement.name = "asd";
     // }
-    // this.list.reverse();
+    this.list.reverse();
   },
   updateList2() {
-    // this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });
+    this.list.push({ name: `${Math.floor(Math.random() * 1000)}`, age: Math.floor(Math.random() * 100) });
   },
   updateList3() {
     // this.list.pop();
@@ -56,8 +56,15 @@ const useStore = defineStore({
 });
 
 const App = () => {
-  const { list, updateList, updateList2, updateList3 } = useStore();
+  const {
+    list, updateList, updateList2, updateList3, useSubscription
+  } = useStore();
   // console.log(test, list, test === list);
+
+  useSubscription(() => {
+    console.log(list);
+  }, ["list"]);
+
   return (
     <>
       <button onClick={updateList}>updateList</button>

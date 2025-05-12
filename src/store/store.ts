@@ -93,7 +93,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   readonly _engineStoreMeta_: EngineStoreMetaType<S> = new Map();
 
   // The storage stack of this instance for the class component
-  readonly #classInstanceStack = new Set<ClassInstanceTypeOfConnectStore<S>>();
+  readonly _classInstanceStack_ = new Set<ClassInstanceTypeOfConnectStore<S>>();
   /** ============================== For core constant ready end ============================== */
 
   /** ============================== For core helpers start ============================== */
@@ -170,7 +170,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       scheduler.deferEffectDestructorExecutable = Promise.resolve().then(() => {
         scheduler.deferEffectDestructorExecutable = undefined;
         const { _stateRefCounter_ } = this;
-        const classInstanceStack = this.#classInstanceStack;
+        const classInstanceStack = this._classInstanceStack_;
         if (!_stateRefCounter_ && !classInstanceStack.size) {
           /**
            * By using "stateRefCounter" and "classInstanceStack",
@@ -747,15 +747,15 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   /** ============================== For class components start ============================== */
   #classUpdater = (key: keyof S, value: ValueOf<S>) => {
-    const classInstanceStack = this.#classInstanceStack;
-    classInstanceStack.forEach(classThisPointerItem => {
+    const classInstanceStack = this._classInstanceStack_;
+    classInstanceStack.forEach(classInstanceItem => {
       /**
        * There is an "updater" attribute on the internal this pointer of react's class,
        * and an "isMounted" method is mounted on it to determine whether the component has been loaded.
        * If it is in "React.StrictMode" mode,
        * React will discard the first generated instance and the instance will not be mounted.
        */
-      classThisPointerItem[__CLASS_IS_MOUNTED_KEY__]
+      classInstanceItem[__CLASS_IS_MOUNTED_KEY__]
         /**
          * @description Determine whether the currently updated data property
          * is used in the class component, and if not, do not update it.
@@ -768,53 +768,10 @@ export default class StoreMeta<S extends PrimitiveState> {
          * 🌟 Adding "?.has" is to prevent some class components from making an empty connection,
          * that is, connecting to the store but not using it. Generally speaking, this is not done,
          */
-        ? classThisPointerItem[__CLASS_STATE_REF_SET_KEY__]?.has(key) && (
-          classThisPointerItem.setState({ [key]: value } as State<S>)
-        )
-        : classInstanceStack.delete(classThisPointerItem);
+        ? classInstanceItem[__CLASS_STATE_REF_SET_KEY__]?.has(key)
+        && classInstanceItem.setState({ [key]: value } as State<S>)
+        : classInstanceStack.delete(classInstanceItem);
     });
-  };
-
-  #connectClass = (thisArg: ClassInstanceTypeOfConnectStore<S>, key: keyof S) => {
-    // In class, Set is used for reference tags and combined with the size attribute of Set to judge.
-    thisArg[__CLASS_STATE_REF_SET_KEY__].add(key);
-    return this.$state[key];
-  };
-
-  // Connecting this pointer of the class component
-  _classConnectStore_ = (thisArg: ClassInstanceTypeOfConnectStore<S>) => {
-    this.#classInstanceStack.add(thisArg);
-
-    // Data agents for use by class components
-    const classEngineStore = new Proxy({} as S, {
-      get: (_: S, key: keyof S) => {
-        // Compatible with scenarios where both hook components and class components are used together.
-        if (key === "useStore") return () => classEngineStore;
-
-        const sourceFromThis = hasOwnProperty.call(this, key);
-
-        const value = this.$state[key];
-
-        return !sourceFromThis
-          ? (
-            typeof value !== "function"
-              ? this.#connectClass(thisArg, key)
-              // Invoke a function data hook to grant the ability to update and render function data.
-              : (...args: any[]) => (
-                this.#connectClass(thisArg, key) as AnyFn
-              ).apply(classEngineStore, args)
-          )
-          : this[key as keyof StoreMeta<S>];
-      },
-    } as ProxyHandler<S>);
-
-    return classEngineStore;
-  };
-
-  // Unmount execution of class components
-  _classUnmountProcessing_ = (thisArg: ClassInstanceTypeOfConnectStore<S>) => {
-    this.#classInstanceStack.delete(thisArg);
-    this._deferRestoreProcessing_();
   };
   /** ============================== For class components end ============================== */
 }

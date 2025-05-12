@@ -1,13 +1,14 @@
 import type { ClassInstanceTypeOfConnectStore, ClassStoreType } from "./types";
-import type { PrimitiveState } from "../types";
+import type { AnyFn, PrimitiveState } from "../types";
 import type { Store } from "../store/types";
-import type StoreMeta from "../store/store";
+import StoreMeta from "../store/store";
 import {
   __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_STATE_REF_SET_KEY__, __CLASS_IS_MOUNTED_KEY__,
 } from "./static";
 import { storeErrorProcessing } from "../store/errors";
+import { hasOwnProperty } from "../utils";
 
-export function constructorProcessing<S extends PrimitiveState>(thisArg: ClassInstanceTypeOfConnectStore<S>) {
+export const constructorProcessing = <S extends PrimitiveState>(thisArg: ClassInstanceTypeOfConnectStore<S>) => {
   const instanceMounted = thisArg.componentDidMount;
 
   thisArg.componentDidMount = () => {
@@ -62,19 +63,56 @@ export function constructorProcessing<S extends PrimitiveState>(thisArg: ClassIn
            * firstly, removing this proxy instance of class from the internal classInstanceStack of the store,
            * and secondly, resetting the data to it`s initial state
            */
-          (store as any as StoreMeta<S>)._classUnmountProcessing_(thisArg);
+          (store as any as StoreMeta<S>)._classInstanceStack_.delete(thisArg);
+          (store as any as StoreMeta<S>)._deferRestoreProcessing_();
         });
       }
     });
   };
-}
+};
 
-export function connectStoreCore<S extends PrimitiveState>(
+const connectClass = <S extends PrimitiveState>(
+  thisArg: ClassInstanceTypeOfConnectStore<S>,
+  store: StoreMeta<S>,
+  key: keyof S
+) => {
+  // In class, Set is used for reference tags and combined with the size attribute of Set to judge.
+  thisArg[__CLASS_STATE_REF_SET_KEY__].add(key);
+  return store.$state[key];
+};
+
+export const connectStoreCore = <S extends PrimitiveState>(
   thisArg: ClassInstanceTypeOfConnectStore<S>,
   store: Store<S>,
-) {
+) => {
   storeErrorProcessing(store, "connectStore");
   (store as any as StoreMeta<S>)._initialStateRetrieve_();
   thisArg[__CLASS_THIS_POINTER_STORES_KEY__].add(store);
-  return (store as any as StoreMeta<S>)._classConnectStore_(thisArg) as ClassStoreType<S>;
-}
+
+  (store as any as StoreMeta<S>)._classInstanceStack_.add(thisArg);
+
+  // Data agents for use by class components
+  const classEngineStore = new Proxy({} as S, {
+    get: (_: S, key: keyof S) => {
+      // Compatible with scenarios where both hook components and class components are used together.
+      if (key === "useStore") return () => classEngineStore;
+
+      const sourceFromThis = hasOwnProperty.call(StoreMeta, key);
+
+      const value = (store as any as StoreMeta<S>).$state[key];
+
+      return !sourceFromThis
+        ? (
+          typeof value !== "function"
+            ? connectClass(thisArg, store as any as StoreMeta<S>, key)
+            // Invoke a function data hook to grant the ability to update and render function data.
+            : (...args: any[]) => (
+              connectClass(thisArg, store as any as StoreMeta<S>, key) as AnyFn
+            ).apply(classEngineStore, args)
+        )
+        : (store as any as StoreMeta<S>)[key as keyof StoreMeta<S>];
+    },
+  } as ProxyHandler<S>);
+
+  return classEngineStore as ClassStoreType<S>;
+};

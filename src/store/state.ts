@@ -12,11 +12,11 @@ const { useSyncExternalStore: useSyncExternalStoreCore } = useSyncExternalStoreE
  * @description The core meta-structure of state
  */
 export default class StateMeta<S extends PrimitiveState> {
-  constructor(key: keyof S, thisArgStore: StoreMeta<S>) {
+  constructor(key: keyof S, storeMetaInstance: StoreMeta<S>) {
     this.key = key;
-    this.thisArgStore = thisArgStore;
+    this.storeMetaInstance = storeMetaInstance;
   }
-  thisArgStore: StoreMeta<S>;
+  storeMetaInstance: StoreMeta<S>;
   key: keyof S;
 
   // The Set memory of the update function of a single attribute
@@ -27,17 +27,17 @@ export default class StateMeta<S extends PrimitiveState> {
     this.stateChangeQueue.add(onStateChange);
 
     // Increment the reference count by 1 if the component is referenced
-    this.thisArgStore._stateRefCounter_++;
+    this.storeMetaInstance._stateRefCounter_++;
 
     return () => {
       this.stateChangeQueue.delete(onStateChange);
-      this.thisArgStore._stateRefCounter_--;
+      this.storeMetaInstance._stateRefCounter_--;
 
-      this.thisArgStore._deferRestoreProcessing_(
+      this.storeMetaInstance._deferRestoreProcessing_(
         () => {
           // Release memory if there are no component references
           if (!this.stateChangeQueue.size) {
-            this.thisArgStore._engineStoreMeta_.delete(this.key);
+            this.storeMetaInstance._engineStoreMeta_.delete(this.key);
           }
         },
       );
@@ -45,11 +45,11 @@ export default class StateMeta<S extends PrimitiveState> {
   };
 
   getSnapshot = () => {
-    return this.thisArgStore.$state[this.key];
+    return this.storeMetaInstance.$state[this.key];
   };
 
   useSyncExternalStore = () => {
-    const { thisArgStore: { _engineStoreMeta_ }, key } = this;
+    const { storeMetaInstance: { _engineStoreMeta_ }, key } = this;
     // eslint-disable-next-line react-hooks/rules-of-hooks
     return useSyncExternalStoreCore(
       _engineStoreMeta_.get(key)!.subscribe,

@@ -745,7 +745,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   };
   /** ============================== For hook components end ============================== */
 
-  /** ============================== For class components use start ============================== */
+  /** ============================== For class components start ============================== */
   #classUpdater = (key: keyof S, value: ValueOf<S>) => {
     const classInstanceStack = this.#classInstanceStack;
     classInstanceStack.forEach(classThisPointerItem => {
@@ -816,5 +816,5 @@ export default class StoreMeta<S extends PrimitiveState> {
     this.#classInstanceStack.delete(thisArg);
     this._deferRestoreProcessing_();
   };
-  /** ============================== For class components use end ============================== */
+  /** ============================== For class components end ============================== */
 }

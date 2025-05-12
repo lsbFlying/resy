@@ -302,20 +302,19 @@ export default class StoreMeta<S extends PrimitiveState> {
     }
   };
 
-  #boundFnProcessing = (key: keyof S, value: AnyBoundFn, target: object) => {
+  #boundFnProcessing = (key: keyof S, value: AnyBoundFn, target: object, sourceFrom$State: boolean) => {
     const { store } = this;
     const state = this.$state;
-    const isStateSource = target === state;
 
     const boundFn = ((...args: any[]) => (value as AnyFn).apply(
       // Maintaining the source orientation of the `this` pointer.
-      isStateSource ? store : target,
+      sourceFrom$State ? store : target,
       args,
     )) as AnyBoundFn;
 
     boundFn.__bound__ = true;
 
-    isStateSource
+    sourceFrom$State
       ? (state[key] = boundFn as ValueOf<S>)
       : ((target as S)[key] = boundFn as ValueOf<S>);
 
@@ -522,11 +521,20 @@ export default class StoreMeta<S extends PrimitiveState> {
     return new Proxy(target, {
       get: (_: S, key: keyof S) => {
 
-        const is$State = !firstLevelKey;
+        const sourceFrom$State = !firstLevelKey;
 
-        const value = is$State ? this.$state[key] : (target as S)[key];
+        /**
+         * @description `this.$state` is writable, so we need to check here,
+         * if the data originates from `$state`,
+         * the latest value should be re-fetched from this.$state.
+         * If `target[key]` is used directly,
+         * it may lead to incorrect changes due to discrepancies
+         * between the initially referenced address and the updated reference address
+         * of `this.$state` after modifications.
+         */
+        const value = sourceFrom$State ? this.$state[key] : (target as S)[key];
 
-        is$State && computedDeps.add(key);
+        sourceFrom$State && computedDeps.add(key);
 
         const isCoreProp = hasOwnProperty.call(this, key);
 
@@ -559,7 +567,7 @@ export default class StoreMeta<S extends PrimitiveState> {
           && !hasOwnProperty.call(Array.prototype, (value as AnyFn).name)
           && !(value as AnyBoundFn).__bound__
         ) {
-          return this.#boundFnProcessing(key, value, target);
+          return this.#boundFnProcessing(key, value, target, sourceFrom$State);
         }
 
         return !isCoreProp ? value : this[key as keyof StoreMeta<S>];
@@ -623,7 +631,7 @@ export default class StoreMeta<S extends PrimitiveState> {
 
       if (!isCoreProp && typeof value === "function") {
         // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
-        !(value as AnyBoundFn).__bound__ && this.#boundFnProcessing(key, value, state);
+        !(value as AnyBoundFn).__bound__ && this.#boundFnProcessing(key, value, state, true);
 
         const fnStateful = !__enableMacros__ || enableMarcoActionStateful;
 

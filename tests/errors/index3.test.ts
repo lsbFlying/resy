@@ -1,98 +1,86 @@
 import { expect, test } from "vitest";
 import { createStore } from "../../src";
 
-test("setOptions-error-scene", async () => {
+test("setState-error-scene", async () => {
 
-  const store = createStore();
-  const { setOptions } = store;
+  const store = createStore({ count: 0 });
 
   // @ts-ignore
-  expect(() => setOptions(0)).toThrowError();
+  expect(() => store.setState(0)).toThrowError();
   // @ts-ignore
-  expect(() => setOptions(1)).toThrowError();
+  expect(() => store.setState(1)).toThrowError();
   // @ts-ignore
-  expect(() => setOptions("")).toThrowError();
+  expect(() => store.setState("")).toThrowError();
   // @ts-ignore
-  expect(() => setOptions("999")).toThrowError();
+  expect(() => store.setState("999")).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState(NaN)).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState(undefined)).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState(Symbol("not object"))).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState(true)).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState(false)).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState(new Map())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState(new Set())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState(new WeakMap())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState(new WeakSet())).toThrowError();
+  // @ts-ignore
+  expect(() => store.setState([])).toThrowError();
   // @ts-ignore
   // eslint-disable-next-line no-empty-function
-  expect(() => setOptions(() => {})).toThrowError();
+  expect(() => store.setState(() => {})).toThrowError();
   // @ts-ignore
-  expect(() => setOptions([])).toThrowError();
+  expect(() => store.setState(new WeakRef({}))).toThrowError();
   // @ts-ignore
-  expect(() => setOptions(undefined)).toThrowError();
+  expect(() => store.setState(new RegExp())).toThrowError();
   // @ts-ignore
-  expect(() => setOptions()).toThrowError();
+  expect(() => store.setState(new Date())).toThrowError();
   // @ts-ignore
-  expect(() => setOptions(null)).toThrowError();
+  expect(() => store.setState(BigInt("8374565436436765"))).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({})).toThrowError();
-  // @ts-ignore
-  expect(() => setOptions(Symbol())).toThrowError();
-  // @ts-ignore
-  expect(() => setOptions(NaN)).toThrowError();
-  // @ts-ignore
-  expect(() => setOptions(false)).toThrowError();
-  // @ts-ignore
-  expect(() => setOptions(true)).toThrowError();
-  // @ts-ignore
-  expect(() => setOptions(new Map())).toThrowError();
-  // @ts-ignore
-  expect(() => setOptions(new Set())).toThrowError();
-  // @ts-ignore
-  expect(() => setOptions(new WeakMap())).toThrowError();
-  // @ts-ignore
-  expect(() => setOptions(new WeakSet())).toThrowError();
-  // @ts-ignore
-  expect(() => setOptions(new WeakRef({}))).toThrowError();
-  // @ts-ignore
-  expect(() => setOptions(new RegExp())).toThrowError();
-  // @ts-ignore
-  expect(() => setOptions(new Date())).toThrowError();
-  // @ts-ignore
-  expect(() => setOptions(BigInt("8374657843678436"))).toThrowError();
-  // @ts-ignore
-  expect(() => setOptions(window)).toThrowError();
+  expect(() => store.setState(window)).toThrowError();
 
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: 0 })).toThrowError();
+  expect(() => store.setState({}, 0)).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: 1 })).toThrowError();
+  expect(() => store.setState({}, 1)).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: "" })).toThrowError();
+  expect(() => store.setState({}, "")).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: "999" })).toThrowError();
+  expect(() => store.setState({}, "9")).toThrowError();
   // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => setOptions({ unmountRestore: () => {} })).toThrowError();
+  expect(() => store.setState({}, true)).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: [] })).toThrowError();
+  expect(() => store.setState({}, false)).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: undefined })).toThrowError();
+  expect(() => store.setState({}, null)).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: null })).toThrowError();
+  expect(() => store.setState({}, NaN)).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: {} })).toThrowError();
+  expect(() => store.setState({}, [])).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: Symbol() })).toThrowError();
+  expect(() => store.setState({}, new Map())).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: NaN })).toThrowError();
+  expect(() => store.setState({}, new Set())).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: new Map() })).toThrowError();
+  expect(() => store.setState({}, new WeakMap())).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: new Set() })).toThrowError();
+  expect(() => store.setState({}, new WeakSet())).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: new WeakMap() })).toThrowError();
+  expect(() => store.setState({}, new WeakRef({}))).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: new WeakSet() })).toThrowError();
+  expect(() => store.setState({}, new RegExp())).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: new WeakRef({}) })).toThrowError();
+  expect(() => store.setState({}, new Date())).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: new RegExp() })).toThrowError();
+  expect(() => store.setState({}, BigInt("387456834565863"))).toThrowError();
   // @ts-ignore
-  expect(() => setOptions({ unmountRestore: new Date() })).toThrowError();
-  // @ts-ignore
-  expect(() => setOptions({ unmountRestore: BigInt("8374657843678436") })).toThrowError();
-  // @ts-ignore
-  expect(() => setOptions({ unmountRestore: window })).toThrowError();
+  expect(() => store.setState({}, window)).toThrowError();
 });

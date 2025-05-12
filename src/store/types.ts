@@ -70,11 +70,7 @@ export type StoreHookUtils<S extends PrimitiveState> = Readonly<
 >;
 
 /** Tool method type of store */
-export type StoreUtils<S extends PrimitiveState> =
-  StoreCoreUtils<S>
-  & StoreHookUtils<S>
-  & Readonly<SetOptionsType>
-  & Readonly<GetOptionsType>;
+export type StoreUtils<S extends PrimitiveState> = StoreCoreUtils<S> & StoreHookUtils<S>;
 
 /** The type of store returned by createStore */
 export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
@@ -147,36 +143,6 @@ export type RestoreType<S extends PrimitiveState> = {
    * Hence, the choice of the name restore instead of reset.
    */
   restore(callback?: StateCallback<S>): void;
-};
-
-/**
- * Type of setOptions
- * @description The reason why changing StoreOptions is permissible is due to the needs of business scenarios
- * and the desire to keep development channels open and flexible.
- * This is because the static execution of createStore is by itself a limitation.
- * If there is a need for sudden changes in certain scenarios
- * and the static parameter settings cannot be made changeable at that time,
- * it would be a constraint. The existence of setOptions can lift this static restriction,
- * and setOptions should be considered an aid. However, generally speaking,
- * the configuration of StoreOptions itself should meet and satisfy the vast majority of usage scenarios,
- * so the occurrences where setOptions is needed are still relatively rare.
- */
-export type SetOptionsType = {
-  setOptions(options: Readonly<{ unmountRestore: boolean }>): void;
-};
-
-/**
- * @description When executed in conjunction with "setOptions",
- * it allows users to make different coding decisions based on various configurations,
- * while being aware of the current settings.
- * 🌟 Different from the considerations for the parameter types of "setOptions",
- * "getOptions" returns a configuration object for all settings.
- * This is because these read-only settings do not affect code security,
- * and the parameters for "setOptions" are only aimed at the "unmountRestore" configuration item.
- * Providing all configuration items may also be for the convenience of subsequent internal coding considerations.
- */
-export type GetOptionsType = {
-  getOptions(): InnerStoreOptions;
 };
 
 /** type of useStore */

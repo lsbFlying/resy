@@ -1,98 +1,44 @@
 import { expect, test } from "vitest";
 import { createStore } from "../../src";
 
-test("subscribe-error-scene", async () => {
+test("restore-error-scene", async () => {
 
   const store = createStore({ count: 0 });
 
   // @ts-ignore
-  expect(() => store.subscribe(0)).toThrowError();
+  expect(() => store.restore(0)).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe(1)).toThrowError();
+  expect(() => store.restore(1)).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe("")).toThrowError();
+  expect(() => store.restore("")).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe("hello")).toThrowError();
+  expect(() => store.restore("hello")).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe(NaN)).toThrowError();
+  expect(() => store.restore(NaN)).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe(undefined)).toThrowError();
+  expect(() => store.restore(Symbol("not object"))).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe(Symbol("not object"))).toThrowError();
+  expect(() => store.restore(true)).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe(true)).toThrowError();
+  expect(() => store.restore(false)).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe(false)).toThrowError();
+  expect(() => store.restore(new Map())).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe(new Map())).toThrowError();
+  expect(() => store.restore(new Set())).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe(new Set())).toThrowError();
+  expect(() => store.restore(new WeakMap())).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe(new WeakMap())).toThrowError();
+  expect(() => store.restore(new WeakSet())).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe(new WeakSet())).toThrowError();
+  expect(() => store.restore([])).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe([])).toThrowError();
+  expect(() => store.restore(new WeakRef({}))).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe(new WeakRef({}))).toThrowError();
+  expect(() => store.restore(new RegExp())).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe(new RegExp())).toThrowError();
+  expect(() => store.restore(new Date())).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe(new Date())).toThrowError();
+  expect(() => store.restore(BigInt("837456834658437"))).toThrowError();
   // @ts-ignore
-  expect(() => store.subscribe(BigInt("387484368564"))).toThrowError();
-  // @ts-ignore
-  expect(() => store.subscribe(window)).toThrowError();
-
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, 0)).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, 1)).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, "")).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, "hello")).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, NaN)).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, Symbol("not object"))).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, true)).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, false)).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, new Map())).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, new Set())).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, new WeakMap())).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, new WeakSet())).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, new WeakRef({}))).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, new RegExp())).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, new Date())).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, BigInt("76345743754375"))).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, window)).toThrowError();
+  expect(() => store.restore(window)).toThrowError();
 });

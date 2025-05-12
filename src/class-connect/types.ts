@@ -1,14 +1,11 @@
 import type { PrimitiveState } from "../types";
-import type { GetOptionsType, SetOptionsType, State, Store, StoreCoreUtils } from "../store/types";
+import type { State, Store, StoreCoreUtils } from "../store/types";
 import {
   __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_STATE_REF_SET_KEY__, __CLASS_IS_MOUNTED_KEY__,
 } from "./static";
 
 /** This is the data type returned by the class after connecting to the store */
-export type ClassStoreType<S extends PrimitiveState> = S
-  & StoreCoreUtils<S>
-  & Readonly<SetOptionsType>
-  & Readonly<GetOptionsType>;
+export type ClassStoreType<S extends PrimitiveState> = S & StoreCoreUtils<S>;
 
 // The types of different store mounted on this pointer of the class component
 export type ClassThisPointerStoresType<S extends PrimitiveState = any> = {

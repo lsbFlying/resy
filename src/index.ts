@@ -7,11 +7,10 @@ export * from "./subscribe";
 export * from "./class-connect";
 
 export type {
-  StoreOptions, InnerStoreOptions, StoreCoreUtils, StoreHookUtils, StoreUtils,
-  Store, StoreType, State, StateFnType, SetStateAction, SetStateType,
-  StateCallback, SyncUpdateType, RestoreType, SetOptionsType, GetOptionsType,
-  UseStoreType, ClassicStore, MacroStore, UseSubscriptionType, InitialStateForbiddenKeys,
-  StateThis, PrimateForbiddenType, StateWithThisType, InitialState,
+  StoreOptions, InnerStoreOptions, StoreCoreUtils, StoreHookUtils, StoreUtils, Store,
+  StoreType, State, StateFnType, SetStateAction, SetStateType, StateCallback,
+  SyncUpdateType, RestoreType, UseStoreType, ClassicStore, MacroStore, UseSubscriptionType,
+  InitialStateForbiddenKeys, StateThis, PrimateForbiddenType, StateWithThisType, InitialState,
 } from "./store/types";
 
 export * from "./subscribe/types";

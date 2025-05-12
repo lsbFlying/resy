@@ -76,26 +76,6 @@ export const optionsErrorProcessing = (
   }
 };
 
-// Options configuration type error processing of setOptions
-export const setOptionsErrorProcessing = (
-  options?: InnerStoreOptions,
-) => {
-  const optionsType = whatsType(options);
-  const urType = whatsType(options?.unmountRestore);
-  if (
-    __DEV__ && (
-      optionsType !== "Object" || (
-        optionsType === "Object" && urType !== "Boolean"
-      )
-    )
-  ) {
-    throw new Error(
-      "resy's setOptions(...): Expected the 'options' argument to be an object with a unmountRestore attribute."
-      + ` Instead received: ${optionsType.toLocaleLowerCase()}.`
-    );
-  }
-};
-
 // Parameter type error processing of subscribe
 export const subscribeErrorProcessing = (
   listener: unknown,

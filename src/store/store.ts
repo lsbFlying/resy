@@ -5,9 +5,7 @@ import type {
 import type { AnyFn, Callback, PrimitiveState, ValueOf } from "../types";
 import type { ListenerType, Unsubscribe } from "../subscribe/types";
 import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
-import {
-  optionsErrorProcessing, setOptionsErrorProcessing, stateErrorProcessing, subscribeErrorProcessing,
-} from "./errors";
+import { optionsErrorProcessing, stateErrorProcessing, subscribeErrorProcessing } from "./errors";
 import { __COMPUTED_PREFIX__, __RESY_BRAND_KEY__ } from "./static";
 import { __CLASS_IS_MOUNTED_KEY__, __CLASS_STATE_REF_SET_KEY__ } from "../class-connect/static";
 import { hasOwnProperty } from "../utils";
@@ -708,16 +706,6 @@ export default class StoreMeta<S extends PrimitiveState> {
     },
   } as ProxyHandler<MacroStore<S>>);
   /** ============================== For core render end ============================== */
-
-  /** ============================== For operate options start ============================== */
-  // Change options configuration
-  setOptions = (options: { unmountRestore: boolean }) => {
-    setOptionsErrorProcessing(options);
-    this._options_.unmountRestore = options.unmountRestore;
-  };
-
-  getOptions = () => Object.assign({}, this._options_);
-  /** ============================== For operate options end ============================== */
 
   /** ============================== For hook components start ============================== */
   /**

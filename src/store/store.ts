@@ -716,8 +716,8 @@ export default class StoreMeta<S extends PrimitiveState> {
   useStore = (() => this.engineStore) as UseMacroStore<S>;
 
   useSubscription = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
-    const { store, _options_: { namespace } } = this;
     if (__DEV__) {
+      const { _options_: { namespace } } = this;
       const store_namespace = namespace
         ? { namespace }
         : null;
@@ -729,7 +729,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       });
     }
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useSubscriptionCore(store!, listener, stateKeys);
+    useSubscriptionCore(this as Store<S>, listener, stateKeys);
   };
   /** ============================== For hook components end ============================== */
 

@@ -116,6 +116,7 @@ export const connectStoreCore = <S extends PrimitiveState>(
         !(value as AnyBoundFn).__bound__
         && (store as any as StoreMeta<S>)._boundFnProcessing_(key, value, classEngineStore);
 
+        // TODO waiting upgrade about memo-function
         return (!__enableMacros__ || enableMarcoActionStateful)
           ? (...args: any[]) => (
             connectClass(thisArg, store as any as StoreMeta<S>, key) as AnyFn

@@ -383,15 +383,13 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   // Reset recovery initialization state data
   restore = (callback?: StateCallback<S>) => {
-    const _state_ = this.$state;
+    const state = this.$state;
 
     this.#willUpdatingProcessing();
 
     this.#retrieveReducerState();
 
     const reducerState = this.#reducerState;
-
-    const state = {} as State<S>;
 
     /**
      * @description Get all the properties
@@ -412,20 +410,17 @@ export default class StoreMeta<S extends PrimitiveState> {
         (
           Object.keys(reducerState) as (keyof S)[]
         ).concat(
-          Object.keys(_state_)
+          Object.keys(state)
         )
       )
     ).forEach(key => {
       const originValue = reducerState[key];
-      if (!Object.is(originValue, _state_[key])) {
-        state![key] = originValue;
-        this.#pushTask(
-          key, originValue, !hasOwnProperty.call(reducerState, key),
-        );
-      }
+
+      !Object.is(originValue, state[key])
+      && this.#pushTask(key, originValue, !hasOwnProperty.call(reducerState, key));
     });
 
-    this.#scheduler.pushCallbackStack(_state_, state, callback);
+    this.#scheduler.pushCallbackStack({} as S, reducerState, callback);
 
     this.#finallyBatchProcessing();
   };

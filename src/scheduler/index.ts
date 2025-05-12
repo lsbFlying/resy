@@ -27,10 +27,10 @@ export default class Scheduler<S extends PrimitiveState> {
   };
 
   // Push the callback onto the stack and wait for subsequent execution
-  pushCallbackStack = (_state_: S, state: State<S>, callback?: StateCallback<S>) => {
+  pushCallbackStack = ($state: S, state: State<S>, callback?: StateCallback<S>) => {
     if (callback !== undefined) {
       stateCallbackErrorProcessing(callback);
-      const nextState: S = Object.assign({}, _state_, state);
+      const nextState: S = Object.assign({}, $state, state);
       this.callbackQueue.add({ nextState, callback });
     }
   };

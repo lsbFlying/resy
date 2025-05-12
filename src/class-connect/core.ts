@@ -105,6 +105,7 @@ export const connectStoreCore = <S extends PrimitiveState>(
         ? (
           typeof value !== "function"
             ? connectClass(thisArg, store as any as StoreMeta<S>, key)
+            // TODO waiting upgrade
             // Invoke a function data hook to grant the ability to update and render function data.
             : (...args: any[]) => (
               connectClass(thisArg, store as any as StoreMeta<S>, key) as AnyFn

@@ -302,21 +302,17 @@ export default class StoreMeta<S extends PrimitiveState> {
     }
   };
 
-  #boundFnProcessing = (key: keyof S, value: AnyBoundFn, target: object, sourceFrom$State: boolean) => {
+  #boundFnProcessing = (key: keyof S, value: AnyBoundFn) => {
     const { store } = this;
     const state = this.$state;
 
-    const boundFn = ((...args: any[]) => (value as AnyFn).apply(
-      // Maintaining the source orientation of the `this` pointer.
-      sourceFrom$State ? store : target,
-      args,
-    )) as AnyBoundFn;
+    const boundFn = (
+      (...args: any[]) => (value as AnyFn).apply(store, args)
+    ) as AnyBoundFn;
 
     boundFn.__bound__ = true;
 
-    sourceFrom$State
-      ? (state[key] = boundFn as ValueOf<S>)
-      : ((target as S)[key] = boundFn as ValueOf<S>);
+    state[key] = boundFn as ValueOf<S>;
 
     return boundFn as ValueOf<S>;
   };
@@ -556,18 +552,25 @@ export default class StoreMeta<S extends PrimitiveState> {
         }
 
         /**
-         * @description The array prototype methods will automatically handle proxy operations,
-         * because accessing each element of an array is done through its index,
-         * which will be intercepted by the proxy.
-         * Therefore, for array prototype methods, we don't need any special treatment.
+         * @description Only bind functions that handle `this.$state`,
+         * Processing this-binding for functions nested beyond the second level
+         * is practically unnecessary for several reasons:
+         * First, such complex and unmaintainable coding patterns are uncommon in practice.
+         * Second, even if such multi-level nested functions exist,
+         * their this context (for non-arrow functions) should naturally reference
+         * their direct host object according to JavaScript's this-binding rules.
+         *
+         * Most fundamentally, our this-binding processing specifically targets action-type handler functions.
+         * By definition, action functions are designed to be used at the first property level,
+         * so deeper nested functions are explicitly excluded from this processing.
          */
         if (
           !isCoreProp
           && typeof value === "function"
-          && !hasOwnProperty.call(Array.prototype, (value as AnyFn).name)
+          && sourceFrom$State
           && !(value as AnyBoundFn).__bound__
         ) {
-          return this.#boundFnProcessing(key, value, target, sourceFrom$State);
+          return this.#boundFnProcessing(key, value);
         }
 
         return !isCoreProp ? value : this[key as keyof StoreMeta<S>];
@@ -631,7 +634,7 @@ export default class StoreMeta<S extends PrimitiveState> {
 
       if (!isCoreProp && typeof value === "function") {
         // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
-        !(value as AnyBoundFn).__bound__ && this.#boundFnProcessing(key, value, state, true);
+        !(value as AnyBoundFn).__bound__ && this.#boundFnProcessing(key, value);
 
         const fnStateful = !__enableMacros__ || enableMarcoActionStateful;
 

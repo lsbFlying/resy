@@ -1,6 +1,6 @@
 import type { ClassInstanceTypeOfConnectStore, ClassStoreType } from "./types";
 import type { AnyFn, PrimitiveState } from "../types";
-import type { Store } from "../store/types";
+import type { AnyBoundFn, Store } from "../store/types";
 import StoreMeta from "../store/store";
 import {
   __CLASS_THIS_POINTER_STORES_KEY__, __CLASS_STATE_REF_SET_KEY__, __CLASS_IS_MOUNTED_KEY__,
@@ -91,8 +91,15 @@ export const connectStoreCore = <S extends PrimitiveState>(
 
   (store as any as StoreMeta<S>)._classInstanceStack_.add(thisArg);
 
+  const {
+    _options_: {
+      __enableMacros__,
+      enableMarcoActionStateful,
+    },
+  } = (store as any as StoreMeta<S>);
+
   // Data agents for use by class components
-  const classEngineStore = new Proxy({} as S, {
+  const classEngineStore = new Proxy({} as ClassStoreType<S>, {
     get: (_: S, key: keyof S) => {
       // Compatible with scenarios where both hook components and class components are used together.
       if (key === "useStore") return () => classEngineStore;
@@ -101,19 +108,24 @@ export const connectStoreCore = <S extends PrimitiveState>(
 
       const value = (store as any as StoreMeta<S>).$state[key];
 
-      return !sourceFromThis
-        ? (
-          typeof value !== "function"
-            ? connectClass(thisArg, store as any as StoreMeta<S>, key)
-            // TODO waiting upgrade
-            // Invoke a function data hook to grant the ability to update and render function data.
-            : (...args: any[]) => (
-              connectClass(thisArg, store as any as StoreMeta<S>, key) as AnyFn
-            ).apply(classEngineStore, args)
-        )
-        : (store as any as StoreMeta<S>)[key as keyof StoreMeta<S>];
+      if (!sourceFromThis && typeof value !== "function") {
+        return connectClass(thisArg, store as any as StoreMeta<S>, key);
+      }
+
+      if (!sourceFromThis && typeof value === "function") {
+        !(value as AnyBoundFn).__bound__
+        && (store as any as StoreMeta<S>)._boundFnProcessing_(key, value, classEngineStore);
+
+        return (!__enableMacros__ || enableMarcoActionStateful)
+          ? (...args: any[]) => (
+            connectClass(thisArg, store as any as StoreMeta<S>, key) as AnyFn
+          ).apply(classEngineStore, args)
+          : (store as any as StoreMeta<S>).$state[key];
+      }
+
+      return (store as any as StoreMeta<S>)[key as keyof StoreMeta<S>];
     },
-  } as ProxyHandler<S>);
+  } as ProxyHandler<ClassStoreType<S>>);
 
   return classEngineStore as ClassStoreType<S>;
 };

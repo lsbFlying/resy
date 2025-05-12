@@ -4,7 +4,7 @@ import type {
 } from "./types";
 import type { AnyFn, Callback, PrimitiveState, ValueOf } from "../types";
 import type { ListenerType, Unsubscribe } from "../subscribe/types";
-import type { ClassInstanceTypeOfConnectStore } from "../class-connect/types";
+import { ClassInstanceTypeOfConnectStore, ClassStoreType } from "../class-connect/types";
 import { optionsErrorProcessing, stateErrorProcessing, subscribeErrorProcessing } from "./errors";
 import { __COMPUTED_PREFIX__, __RESY_BRAND_KEY__ } from "./static";
 import { __CLASS_IS_MOUNTED_KEY__, __CLASS_STATE_REF_SET_KEY__ } from "../class-connect/static";
@@ -300,12 +300,15 @@ export default class StoreMeta<S extends PrimitiveState> {
     }
   };
 
-  #boundFnProcessing = (key: keyof S, value: AnyBoundFn) => {
-    const { store } = this;
+  _boundFnProcessing_ = (
+    key: keyof S,
+    value: AnyBoundFn,
+    thisArg: Store<S> | ClassStoreType<S> = this.store,
+  ) => {
     const state = this.$state;
 
     const boundFn = (
-      (...args: any[]) => (value as AnyFn).apply(store, args)
+      (...args: any[]) => (value as AnyFn).apply(thisArg, args)
     ) as AnyBoundFn;
 
     boundFn.__bound__ = true;
@@ -564,7 +567,7 @@ export default class StoreMeta<S extends PrimitiveState> {
           && sourceFrom$State
           && !(value as AnyBoundFn).__bound__
         ) {
-          return this.#boundFnProcessing(key, value);
+          return this._boundFnProcessing_(key, value);
         }
 
         return !sourceFromThis ? value : this[key as keyof StoreMeta<S>];
@@ -597,13 +600,6 @@ export default class StoreMeta<S extends PrimitiveState> {
   // Proxy of driver update re-render for useStore
   engineStore = new Proxy({} as MacroStore<S>, {
     get: (_: S, key: keyof S) => {
-      const {
-        _options_: {
-          namespace,
-          __enableMacros__,
-          enableMarcoActionStateful,
-        },
-      } = this;
       const state = this.$state;
 
       // Get the latest value
@@ -617,8 +613,8 @@ export default class StoreMeta<S extends PrimitiveState> {
           key,
           value,
           ...(
-            namespace
-              ? { namespace }
+            this._options_.namespace
+              ? { namespace: this._options_.namespace }
               : null
           ),
         });
@@ -628,9 +624,10 @@ export default class StoreMeta<S extends PrimitiveState> {
 
       if (!sourceFromThis && typeof value === "function") {
         // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
-        !(value as AnyBoundFn).__bound__ && this.#boundFnProcessing(key, value);
+        !(value as AnyBoundFn).__bound__ && this._boundFnProcessing_(key, value);
 
-        const fnStateful = !__enableMacros__ || enableMarcoActionStateful;
+        const fnStateful = !this._options_.__enableMacros__
+          || this._options_.enableMarcoActionStateful;
 
         const boundFnValue = state[key];
 
@@ -639,8 +636,8 @@ export default class StoreMeta<S extends PrimitiveState> {
           key,
           value: boundFnValue,
           ...(
-            namespace
-              ? { namespace }
+            this._options_.namespace
+              ? { namespace: this._options_.namespace }
               : null
           ),
         });

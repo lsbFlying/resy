@@ -532,9 +532,9 @@ export default class StoreMeta<S extends PrimitiveState> {
 
         sourceFrom$State && computedDeps.add(key);
 
-        const isCoreProp = hasOwnProperty.call(this, key);
+        const sourceFromThisProp = hasOwnProperty.call(this, key);
 
-        if (!isCoreProp && immutable && proxyable(value)) {
+        if (!sourceFromThisProp && immutable && proxyable(value)) {
           return this.#createProxy(
             value as object,
             target,
@@ -565,7 +565,7 @@ export default class StoreMeta<S extends PrimitiveState> {
          * so deeper nested functions are explicitly excluded from this processing.
          */
         if (
-          !isCoreProp
+          !sourceFromThisProp
           && typeof value === "function"
           && sourceFrom$State
           && !(value as AnyBoundFn).__bound__
@@ -573,7 +573,7 @@ export default class StoreMeta<S extends PrimitiveState> {
           return this.#boundFnProcessing(key, value);
         }
 
-        return !isCoreProp ? value : this[key as keyof StoreMeta<S>];
+        return !sourceFromThisProp ? value : this[key as keyof StoreMeta<S>];
       },
       set: (_: S, key: keyof S, value: ValueOf<S>) => this.#singleUpdate(
         key, value, false, target, firstLevelKey,
@@ -615,9 +615,9 @@ export default class StoreMeta<S extends PrimitiveState> {
       // Get the latest value
       const value = state[key];
 
-      const isCoreProp = hasOwnProperty.call(this, key);
+      const sourceFromThisProp = hasOwnProperty.call(this, key);
 
-      if (!isCoreProp && typeof value !== "function") {
+      if (!sourceFromThisProp && typeof value !== "function") {
         // eslint-disable-next-line react-hooks/rules-of-hooks
         __DEV__ && useDebugValue({
           key,
@@ -632,7 +632,7 @@ export default class StoreMeta<S extends PrimitiveState> {
         return this.#connectHook(key);
       }
 
-      if (!isCoreProp && typeof value === "function") {
+      if (!sourceFromThisProp && typeof value === "function") {
         // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
         !(value as AnyBoundFn).__bound__ && this.#boundFnProcessing(key, value);
 
@@ -795,11 +795,11 @@ export default class StoreMeta<S extends PrimitiveState> {
         // Compatible with scenarios where both hook components and class components are used together.
         if (key === "useStore") return () => classEngineStore;
 
-        const isCoreProp = hasOwnProperty.call(this, key);
+        const sourceFromThisProp = hasOwnProperty.call(this, key);
 
         const value = this.$state[key];
 
-        return !isCoreProp
+        return !sourceFromThisProp
           ? (
             typeof value !== "function"
               ? this.#connectClass(thisArg, key)

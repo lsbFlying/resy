@@ -29,7 +29,7 @@ export class ComponentWithStore<
 
   [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
 
-  connectStore = <S extends PrimitiveState>(store: Store<S>): ClassStoreType<S> => {
+  connectStore = <S extends PrimitiveState>(store: Store<S>) => {
     return connectStoreCore(this as any, store) as ClassStoreType<S>;
   };
 }
@@ -56,7 +56,7 @@ export class PureComponentWithStore<
 
   [__CLASS_THIS_POINTER_STORES_KEY__]: Set<Store<any>> = new Set();
 
-  connectStore = <S extends PrimitiveState>(store: Store<S>): ClassStoreType<S> => {
+  connectStore = <S extends PrimitiveState>(store: Store<S>) => {
     return connectStoreCore(this as any, store) as ClassStoreType<S>;
   };
 }

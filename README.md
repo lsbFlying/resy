@@ -386,30 +386,15 @@ function App() {
 <details>
 <summary>Using in class components</summary>
 
-##### ComponentWithStore、PureComponentWithStore
+##### ComponentWithStore
 ```tsx
-import { ComponentWithStore, PureComponentWithStore } from "resy";
+import { ComponentWithStore } from "resy";
 
 /**
- * @description ComponentWithStore is inherited from React Component,
- * PureComponentWithStore is inherited from React PureComponent;
+ * @description ComponentWithStore is inherited from React PureComponent,
  */
 class AppClass extends ComponentWithStore {
 
-  store = this.connectStore(store);
-
-  render() {
-    const { count } = this.store;
-    return (
-      <>
-        {count}
-        <button onClick={() => { store.count++; }}>button +</button>
-      </>
-    );
-  }
-}
-
-class PureAppClass extends PureComponentWithStore {
   store = this.connectStore(store);
 
   render() {

@@ -4,10 +4,10 @@ import type {
 } from "./types";
 import type { AnyFn, Callback, PrimitiveState, ValueOf } from "../types";
 import type { ListenerType, Unsubscribe } from "../subscribe/types";
-import { ClassInstanceTypeOfConnectStore, ClassStoreType } from "../class-connect/types";
+import type { ComponentWithStore } from "../class-connect";
+import { ClassStoreType } from "../class-connect/types";
 import { optionsErrorProcessing, stateErrorProcessing, subscribeErrorProcessing } from "./errors";
 import { __COMPUTED_PREFIX__, __RESY_BRAND_KEY__ } from "./static";
-import { __CLASS_IS_MOUNTED_KEY__, __CLASS_STATE_REF_SET_KEY__ } from "../class-connect/static";
 import { hasOwnProperty } from "../utils";
 import { __DEV__, batchUpdate } from "../static";
 import { effectStateInListenerKeys } from "./helpers";
@@ -84,6 +84,7 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   // Subscription listener stack
   readonly #listenerStack = new Set<ListenerType<S>>();
+  // TODO computedDeps waiting upgrade
   // Dependency Collection for computed
   computedDeps = new Set<keyof S>();
 
@@ -91,7 +92,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   readonly _engineStoreMeta_: EngineStoreMetaType<S> = new Map();
 
   // The storage stack of this instance for the class component
-  readonly _classInstanceStack_ = new Set<ClassInstanceTypeOfConnectStore<S>>();
+  readonly _classInstanceStack_ = new Set<ComponentWithStore<any, S>>();
   /** ============================== For core constant ready end ============================== */
 
   /** ============================== For core helpers start ============================== */
@@ -223,7 +224,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       value,
       () => {
         // State updates for class components
-        this.#classUpdater(key, value);
+        this._classUpdater_(key, value);
         /**
          * @description The decision not to execute the updates for class components within the following updater
          * is to preserve the simplicity of the update scheduling for both hook and class components.
@@ -370,7 +371,7 @@ export default class StoreMeta<S extends PrimitiveState> {
           const value = (stateTemp as S)[key];
           if (!Object.is(_state_[key], value)) {
             _state_[key] = value;
-            this.#classUpdater(key, value);
+            this._classUpdater_(key, value);
             this.#hookConnectStore(key).get(key)!.updater();
           }
         });
@@ -731,7 +732,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   /** ============================== For hook components end ============================== */
 
   /** ============================== For class components start ============================== */
-  #classUpdater = (key: keyof S, value: ValueOf<S>) => {
+  _classUpdater_ = (key: keyof S, value: ValueOf<S>) => {
     const classInstanceStack = this._classInstanceStack_;
     classInstanceStack.forEach(classInstanceItem => {
       /**
@@ -740,7 +741,7 @@ export default class StoreMeta<S extends PrimitiveState> {
        * If it is in "React.StrictMode" mode,
        * React will discard the first generated instance and the instance will not be mounted.
        */
-      classInstanceItem[__CLASS_IS_MOUNTED_KEY__]
+      classInstanceItem._$isMounted_
         /**
          * @description Determine whether the currently updated data property
          * is used in the class component, and if not, do not update it.
@@ -753,8 +754,8 @@ export default class StoreMeta<S extends PrimitiveState> {
          * 🌟 Adding "?.has" is to prevent some class components from making an empty connection,
          * that is, connecting to the store but not using it. Generally speaking, this is not done,
          */
-        ? classInstanceItem[__CLASS_STATE_REF_SET_KEY__]?.has(key)
-        && classInstanceItem.setState({ [key]: value } as State<S>)
+        ? classInstanceItem._$stateRecords_?.has(key)
+        && classInstanceItem.setState({ [key]: value } as any)
         : classInstanceStack.delete(classInstanceItem);
     });
   };

@@ -1,10 +1,10 @@
-export * from "./store";
-export * from "./store/hook";
-export * from "./store/macro";
+export { createStore } from "./store";
+export { useStore, useConciseState } from "./store/hook";
+export { defineStore } from "./store/macro";
 
-export * from "./subscribe";
+export { useSubscription } from "./subscribe";
 
-export * from "./class-connect";
+export { ComponentWithStore } from "./class-connect";
 
 export type {
   StoreOptions, InnerStoreOptions, StoreCoreUtils, StoreHookUtils, StoreUtils, Store,

@@ -1,6 +1,6 @@
 import type {
   AnyBoundFn, InitialState, InnerStoreOptions, State, StateCallback, StateFnType,
-  StateWithThisType, Store, EngineStoreMetaType, StoreOptions, MacroStore, UseMacroStore,
+  StateWithThisType, Store, StateMetaMapType, StoreOptions, MacroStore, UseMacroStore,
 } from "./types";
 import type { AnyFn, Callback, PrimitiveState, ValueOf } from "../types";
 import type { ListenerType, Unsubscribe } from "../subscribe/types";
@@ -88,8 +88,8 @@ export default class StoreMeta<S extends PrimitiveState> {
   // Dependency Collection for computed
   computedDeps = new Set<keyof S>();
 
-  // The core meta-structure of engineStore
-  readonly _engineStoreMeta_: EngineStoreMetaType<S> = new Map();
+  // The core map meta-structure of stateMeta
+  readonly _stateMetaMap_: StateMetaMapType<S> = new Map();
 
   // The storage stack of this instance for the class component
   readonly _classInstanceStack_ = new Set<ComponentWithStore<any, S>>();
@@ -149,7 +149,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   /**
    * @description In order to prevent the double rendering in React's StrictMode
    * from causing issues with the registration function returned in useEffect,
-   * it happens to be opportune for engineStoreMeta to release memory preemptively
+   * it happens to be opportune for stateMetaMap to release memory preemptively
    * during the first unmount execution.
    * (with memory release being performed in the callback).
    * This early release of memory removes the previous state-meta,
@@ -201,13 +201,13 @@ export default class StoreMeta<S extends PrimitiveState> {
   /** restore utils end */
 
   #hookConnectStore = (key: keyof S) => {
-    const { _engineStoreMeta_ } = this;
+    const { _stateMetaMap_ } = this;
     // Resolve the problem that the initialization attribute may be undefined
-    if (_engineStoreMeta_.has(key)) return _engineStoreMeta_;
+    if (_stateMetaMap_.has(key)) return _stateMetaMap_;
 
-    _engineStoreMeta_.set(key, new StateMeta<S>(key, this));
+    _stateMetaMap_.set(key, new StateMeta<S>(key, this));
 
-    return _engineStoreMeta_;
+    return _stateMetaMap_;
   };
 
   #pushTask = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {

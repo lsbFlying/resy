@@ -37,7 +37,7 @@ export default class StateMeta<S extends PrimitiveState> {
         () => {
           // Release memory if there are no component references
           if (!this.stateChangeQueue.size) {
-            this.storeMetaInstance._engineStoreMeta_.delete(this.key);
+            this.storeMetaInstance._stateMetaMap_.delete(this.key);
           }
         },
       );
@@ -49,12 +49,12 @@ export default class StateMeta<S extends PrimitiveState> {
   };
 
   useSyncExternalStore = () => {
-    const { storeMetaInstance: { _engineStoreMeta_ }, key } = this;
+    const { storeMetaInstance: { _stateMetaMap_ }, key } = this;
     // eslint-disable-next-line react-hooks/rules-of-hooks
     return useSyncExternalStoreCore(
-      _engineStoreMeta_.get(key)!.subscribe,
-      _engineStoreMeta_.get(key)!.getSnapshot,
-      _engineStoreMeta_.get(key)!.getSnapshot,
+      _stateMetaMap_.get(key)!.subscribe,
+      _stateMetaMap_.get(key)!.getSnapshot,
+      _stateMetaMap_.get(key)!.getSnapshot,
     );
   };
 

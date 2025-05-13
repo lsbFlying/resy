@@ -1222,54 +1222,6 @@ function App() {
 ```
 </details>
 
-<details>
-<summary>setOptions</summary>
-
-```tsx
-function App() {
-  return (
-    <button
-      onClick={() => {
-        // Use less scenes, use it with caution
-        // You can change the unmountRestore parameter setting of createStore
-        store.setOptions({ unmountRestore: false });
-      }}
-    >
-      btn
-    </button>
-  );
-}
-```
-</details>
-
-<details>
-<summary>getOptions</summary>
-
-```tsx
-function App() {
-  return (
-    <button
-      onClick={() => {
-        /**
-         * @description When executed in conjunction with "setOptions",
-         * it allows users to make different coding decisions based on various configurations,
-         * while being aware of the current settings.
-         * 🌟 Different from the considerations for the parameter types of "setOptions",
-         * "getOptions" returns a configuration object for all settings.
-         * This is because these read-only settings do not affect code security,
-         * and the parameters for "setOptions" are only aimed at the "unmountRestore" configuration item.
-         * Providing all configuration items may also be for the convenience of subsequent internal coding considerations.
-         */
-        const currentOptions = store.getOptions();
-      }}
-    >
-      btn
-    </button>
-  );
-}
-```
-</details>
-
 ### License
 [MIT License](https://github.com/lsbFlying/resy/blob/master/LICENSE) (c) [刘善保](https://github.com/lsbFlying)
 

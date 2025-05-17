@@ -1,23 +1,22 @@
 import type {
   AnyBoundFn, InitialState, InnerStoreOptions, State, StateCallback, StateFnType,
-  StateWithThisType, Store, StateMetaMapType, StoreOptions, MacroStore, UseMacroStore,
+  StateWithThisType, Store, StateMetaMapType, StoreOptions, MacroStore, UseMacroStore, UseSubscriptionType,
 } from "./types";
 import type { AnyFn, Callback, PrimitiveState, ValueOf } from "../types";
-import type { ListenerType, Unsubscribe } from "../subscribe/types";
 import type { ComponentWithStore } from "../class-connect";
 import { ClassStoreType } from "../class-connect/types";
-import { optionsErrorProcessing, stateErrorProcessing, subscribeErrorProcessing } from "./errors";
+import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
 import { __COMPUTED_PREFIX__, __RESY_BRAND__ } from "./static";
 import { hasOwnProperty } from "../utils";
 import { __DEV__, batchUpdate } from "../static";
-import { effectStateInListenerKeys } from "./helpers";
 import { createNewRefValue, proxyable, reduceChanged } from "../immutable/utils";
 import { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
 import { useDebugValue, useEffect, useState } from "react";
-import { useSubscription as useSubscriptionCore } from "../subscribe";
 import Scheduler from "../scheduler";
 import StateMeta from "./state";
+import Subscribers from "../subscribe";
+import { SubscribeType } from "../subscribe/types";
 
 /**
  * @description The core meta-structure of store
@@ -47,7 +46,10 @@ export default class StoreMeta<S extends PrimitiveState> {
     stateErrorProcessing({ state: reducerState, options: this._options_ });
 
     this.$state = Object.assign({}, reducerState);
-    this.#prevBatchState = Object.assign({}, reducerState);
+
+    this._subscribers_ = new Subscribers(reducerState, this);
+    this.subscribe = this._subscribers_.subscribe;
+    this.useSubscription = this._subscribers_.useSubscription;
 
     this.store = this.#createProxy();
   }
@@ -61,7 +63,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   // configuration
   _options_;
 
-  #scheduler = new Scheduler<S>();
+  _scheduler_ = new Scheduler<S>();
 
   // Tag counters for data references of store
   _stateRefCounter_ = 0;
@@ -79,11 +81,9 @@ export default class StoreMeta<S extends PrimitiveState> {
   // #freezing: boolean | undefined;
 
   $state: S;
-  // Data status of the previous update batch
-  #prevBatchState: S;
 
-  // Subscription listener stack
-  #listenerStack = new Set<ListenerType<S>>();
+  _subscribers_: Subscribers<S>;
+
   // TODO computedDeps waiting upgrade
   // Dependency Collection for computed
   computedDeps = new Set<keyof S>();
@@ -96,19 +96,6 @@ export default class StoreMeta<S extends PrimitiveState> {
   /** ============================== For core constant ready end ============================== */
 
   /** ============================== For core helpers start ============================== */
-  /**
-   * @description Pre-update processing
-   * records the prevState beforehand for later comparison
-   * when data changes trigger subscribers.
-   */
-  #willUpdatingProcessing = () => {
-    const scheduler = this.#scheduler;
-    if (this.#listenerStack.size > 0 && !scheduler.willUpdating) {
-      scheduler.willUpdating = true;
-      this.#prevBatchState = Object.assign({}, this.$state) as S;
-    }
-  };
-
   /**
    * Retrieve the reducerState
    * @description If the data is in the initialization state and returned by a function,
@@ -164,7 +151,7 @@ export default class StoreMeta<S extends PrimitiveState> {
    * a microtask can be used to postpone the unmount process.
    */
   _deferRestoreProcessing_ = (callback?: Callback) => {
-    const scheduler = this.#scheduler;
+    const scheduler = this._scheduler_;
     if (!scheduler.deferEffectDestructorExecutable) {
       scheduler.deferEffectDestructorExecutable = Promise.resolve().then(() => {
         scheduler.deferEffectDestructorExecutable = undefined;
@@ -219,7 +206,7 @@ export default class StoreMeta<S extends PrimitiveState> {
      */
     !isDelete ? (state[key] = value) : delete state[key];
 
-    this.#scheduler.pushTask(
+    this._scheduler_.pushTask(
       key,
       value,
       () => {
@@ -236,8 +223,8 @@ export default class StoreMeta<S extends PrimitiveState> {
   };
 
   #finallyBatchProcessing = () => {
-    const listenerStack = this.#listenerStack;
-    const scheduler = this.#scheduler;
+    const listenerStack = this._subscribers_.listenerStack;
+    const scheduler = this._scheduler_;
     const {
       taskData, taskQueue, callbackQueue,
     } = scheduler;
@@ -292,7 +279,7 @@ export default class StoreMeta<S extends PrimitiveState> {
               item({
                 effectState: effectStateTemp!,
                 nextState: this.$state,
-                prevState: this.#prevBatchState,
+                prevState: this._subscribers_.prevBatchState,
               });
             });
           }
@@ -328,7 +315,7 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   /** ============================== For core utils start ============================== */
   setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    this.#willUpdatingProcessing();
+    this._subscribers_.willUpdatingProcessing();
 
     const _state_ = this.$state;
 
@@ -348,7 +335,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       });
     }
 
-    this.#scheduler.pushCallbackStack(_state_, stateTemp as State<S>, callback);
+    this._scheduler_.pushCallbackStack(_state_, stateTemp as State<S>, callback);
 
     this.#finallyBatchProcessing();
   };
@@ -378,7 +365,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       });
     }
 
-    this.#scheduler.pushCallbackStack(_state_, stateTemp as State<S>, callback);
+    this._scheduler_.pushCallbackStack(_state_, stateTemp as State<S>, callback);
 
     this.#finallyBatchProcessing();
   };
@@ -387,7 +374,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   restore = (callback?: StateCallback<S>) => {
     const state = this.$state;
 
-    this.#willUpdatingProcessing();
+    this._subscribers_.willUpdatingProcessing();
 
     this.#retrieveReducerState();
 
@@ -422,27 +409,13 @@ export default class StoreMeta<S extends PrimitiveState> {
       && this.#pushTask(key, originValue, !hasOwnProperty.call(reducerState, key));
     });
 
-    this.#scheduler.pushCallbackStack({} as S, reducerState, callback);
+    this._scheduler_.pushCallbackStack({} as S, reducerState, callback);
 
     this.#finallyBatchProcessing();
   };
 
-  // Subscription function
-  subscribe = (listener: ListenerType<S>, stateKeys?: (keyof S)[]): Unsubscribe => {
-    const listenerStack = this.#listenerStack;
-
-    subscribeErrorProcessing(listener, stateKeys);
-
-    const listenerWrap: ListenerType<S> = data => {
-      effectStateInListenerKeys(data.effectState, stateKeys) && listener(data);
-    };
-
-    listenerStack.add(listenerWrap);
-
-    // Returns the unsubscribing function, which allows the user to choose whether or not to unsubscribe,
-    // because it is also possible that the user wants the subscription to remain in effect.
-    return () => listenerStack.delete(listenerWrap as ListenerType<S>);
-  };
+  subscribe: SubscribeType<S>["subscribe"];
+  useSubscription: UseSubscriptionType<S>["useSubscription"];
   /** ============================== For core utils end ============================== */
 
   /** ============================== For core render start ============================== */
@@ -495,7 +468,7 @@ export default class StoreMeta<S extends PrimitiveState> {
         : true;
     } else {
       if (!Object.is(value, state[key])) {
-        this.#willUpdatingProcessing();
+        this._subscribers_.willUpdatingProcessing();
         this.#pushTask(key, value, isDelete);
         this.#finallyBatchProcessing();
       }
@@ -599,7 +572,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   store: Store<S>;
 
   // Proxy of driver update re-render for useStore
-  engineStore = new Proxy({} as MacroStore<S>, {
+  $engineStore = new Proxy({} as MacroStore<S>, {
     get: (_: S, key: keyof S) => {
       const state = this.$state;
 
@@ -655,7 +628,7 @@ export default class StoreMeta<S extends PrimitiveState> {
           ? boundFnValue
           // TODO waiting upgrade optimize (暂时应该没有属性依赖记录收集销毁的逻辑问题)
           : () => {
-            const { computedDeps, subscribe } = this;
+            const { computedDeps } = this;
 
             const [{ result, stateKeys }, update] = useState(() => {
               // Clear the previous dirty dependencies before collecting them
@@ -667,7 +640,7 @@ export default class StoreMeta<S extends PrimitiveState> {
               };
             });
 
-            useEffect(() => subscribe(() => {
+            useEffect(() => this._subscribers_.subscribe(() => {
               /**
                * Perform dependency collection and processing again to
                * prevent dependency changes caused by conditional logic
@@ -711,24 +684,7 @@ export default class StoreMeta<S extends PrimitiveState> {
    * 🌟 The reason why it is not changed to store.useStore
    * is due to the consideration of the rules for the use of the hook function.
    */
-  useStore = (() => this.engineStore) as UseMacroStore<S>;
-
-  useSubscription = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
-    if (__DEV__) {
-      const { _options_: { namespace } } = this;
-      const store_namespace = namespace
-        ? { namespace }
-        : null;
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      useDebugValue({
-        listener,
-        stateKeys,
-        ...store_namespace,
-      });
-    }
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useSubscriptionCore(this as Store<S>, listener, stateKeys);
-  };
+  useStore = (() => this.$engineStore) as UseMacroStore<S>;
   /** ============================== For hook components end ============================== */
 
   /** ============================== For class components start ============================== */

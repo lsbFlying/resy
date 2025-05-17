@@ -1,67 +1,71 @@
 import type { PrimitiveState } from "../types";
-import type { ListenerType, SubscriptionRefType } from "./types";
-import type { Store } from "../store/types";
+import type { ListenerType, Unsubscribe } from "./types";
+import type StoreMeta from "../store/store";
 import { effectStateInListenerKeys } from "../store/helpers";
-import { useDebugValue, useEffect, useRef } from "react";
-import { storeErrorProcessing, subscribeErrorProcessing } from "../store/errors";
+import { subscribeErrorProcessing } from "../store/errors";
 import { __DEV__ } from "../static";
-import StoreMeta from "../store/store";
+import { useDebugValue } from "react";
+import { useSubscription as useSubscriptionCore } from "./hook";
+import type { Store } from "../store/types";
 
-/**
- * @description Hook of subscribe
- * It`s advantage is that you only need to consider the data you want to subscribe to,
- * rather than the psychological burden to consider whether the data reference inside the function can get the latest value.
- * UseSubscription will reduce your mental burden and allow you to use it normally.
- */
-export const useSubscription = <S extends PrimitiveState>(
-  store: Store<S>,
-  listener: ListenerType<S>,
-  stateKeys?: (keyof S)[],
-) => {
-  storeErrorProcessing(store, "useSubscription");
-  subscribeErrorProcessing(listener, stateKeys);
-
-  const ref = useRef<SubscriptionRefType<S> | null>(null);
-
-  /**
-   * The ref writing here essentially does not affect the rules of React pure functions.
-   * @description stateKeys is generally stable,
-   * and it is not recommended to use scenarios with changes in stateKeys,
-   * but the use of complex scenarios is still considered here
-   */
-  ref.current = {
-    listener,
-    stateKeys,
-  };
-
-  if (__DEV__) {
-    const namespace = (store as any as StoreMeta<S>)._options_.namespace;
-    const store_namespace = namespace
-      ? { namespace }
-      : null;
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useDebugValue({
-      listener,
-      stateKeys,
-      ...store_namespace,
-    });
+export default class Subscribers<S extends PrimitiveState> {
+  constructor(reducerState: S, storeMetaInstance: StoreMeta<S>) {
+    this.prevBatchState = Object.assign({}, reducerState);
+    this.storeMetaInstance = storeMetaInstance;
   }
 
-  useEffect(() => {
-    // Monitor the overall data changes of the store
-    return store.subscribe(data => {
-      /**
-       * @description First determine whether there is a change in execution,
-       * and if so, delay the execution in order to get the latest listening subscription function
-       * and the array of listening data attributes given by useMemo.
-       */
-      if (effectStateInListenerKeys(data.effectState, ref.current!.stateKeys)) {
-        // Delay execution in order to get the new listener function after re-rendering
-        Promise.resolve(data).then(res => {
-          ref.current!.listener(res);
-        });
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-};
+  storeMetaInstance: StoreMeta<S>;
+
+  // Data status of the previous update batch
+  prevBatchState: S;
+
+  // Subscription listener stack
+  listenerStack = new Set<ListenerType<S>>();
+
+  /**
+   * @description Pre-update processing
+   * records the prevState beforehand for later comparison
+   * when data changes trigger subscribers.
+   */
+  willUpdatingProcessing = () => {
+    const scheduler = this.storeMetaInstance._scheduler_;
+    if (this.listenerStack.size > 0 && !scheduler.willUpdating) {
+      scheduler.willUpdating = true;
+      this.prevBatchState = Object.assign({}, this.storeMetaInstance.$state) as S;
+    }
+  };
+
+  // Subscription function
+  subscribe = (listener: ListenerType<S>, stateKeys?: (keyof S)[]): Unsubscribe => {
+    const listenerStack = this.listenerStack;
+
+    subscribeErrorProcessing(listener, stateKeys);
+
+    const listenerWrap: ListenerType<S> = data => {
+      effectStateInListenerKeys(data.effectState, stateKeys) && listener(data);
+    };
+
+    listenerStack.add(listenerWrap);
+
+    // Returns the unsubscribing function, which allows the user to choose whether or not to unsubscribe,
+    // because it is also possible that the user wants the subscription to remain in effect.
+    return () => listenerStack.delete(listenerWrap as ListenerType<S>);
+  };
+
+  useSubscription = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
+    if (__DEV__) {
+      const { _options_: { namespace } } = this.storeMetaInstance;
+      const store_namespace = namespace
+        ? { namespace }
+        : null;
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      useDebugValue({
+        listener,
+        stateKeys,
+        ...store_namespace,
+      });
+    }
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useSubscriptionCore(this.storeMetaInstance as any as Store<S>, listener, stateKeys);
+  };
+}

@@ -61,7 +61,7 @@ export const defineStore = <S extends PrimitiveState>(
     {
       ...options,
       __enableMacros__: true,
-      __functionName__: defineStore.name,
+      __functionName__: "defineStore",
     } as InnerStoreOptions
   ).useStore;
 };

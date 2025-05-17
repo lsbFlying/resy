@@ -14,7 +14,7 @@ export const useStore = <S extends PrimitiveState>(
   store: Store<S>,
 ): ClassicStore<S> => {
   storeErrorProcessing(store, "useStore");
-  return store.engineStore;
+  return store.$engineStore;
 };
 
 /**
@@ -46,7 +46,7 @@ export const useConciseState = <S extends PrimitiveState>(
           __functionName__: useConciseState.name,
         } as InnerStoreOptions
       )
-    ).engineStore;
+    ).$engineStore;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 };

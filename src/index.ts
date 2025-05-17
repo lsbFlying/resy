@@ -2,7 +2,7 @@ export { createStore } from "./store";
 export { useStore, useConciseState } from "./store/hook";
 export { defineStore } from "./store/macro";
 
-export { useSubscription } from "./subscribe";
+export { useSubscription } from "./subscribe/hook";
 
 export { ComponentWithStore } from "./class-connect";
 

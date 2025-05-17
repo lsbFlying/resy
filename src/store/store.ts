@@ -7,7 +7,7 @@ import type { ListenerType, Unsubscribe } from "../subscribe/types";
 import type { ComponentWithStore } from "../class-connect";
 import { ClassStoreType } from "../class-connect/types";
 import { optionsErrorProcessing, stateErrorProcessing, subscribeErrorProcessing } from "./errors";
-import { __COMPUTED_PREFIX__, __RESY_BRAND_KEY__ } from "./static";
+import { __COMPUTED_PREFIX__, __RESY_BRAND__ } from "./static";
 import { hasOwnProperty } from "../utils";
 import { __DEV__, batchUpdate } from "../static";
 import { effectStateInListenerKeys } from "./helpers";
@@ -52,16 +52,16 @@ export default class StoreMeta<S extends PrimitiveState> {
     this.store = this.#createProxy();
   }
 
-  __RESY_BRAND_KEY__ = __RESY_BRAND_KEY__;
+  __RESY_BRAND__ = __RESY_BRAND__;
 
   /** ============================== For core constant ready start ============================== */
   readonly #initialState?: InitialState<S>;
   // Retrieve the reducerState
   #reducerState: S;
   // configuration
-  readonly _options_;
+  _options_;
 
-  readonly #scheduler = new Scheduler<S>();
+  #scheduler = new Scheduler<S>();
 
   // Tag counters for data references of store
   _stateRefCounter_ = 0;
@@ -83,16 +83,16 @@ export default class StoreMeta<S extends PrimitiveState> {
   #prevBatchState: S;
 
   // Subscription listener stack
-  readonly #listenerStack = new Set<ListenerType<S>>();
+  #listenerStack = new Set<ListenerType<S>>();
   // TODO computedDeps waiting upgrade
   // Dependency Collection for computed
   computedDeps = new Set<keyof S>();
 
   // The core map meta-structure of stateMeta
-  readonly _stateMetaMap_: StateMetaMapType<S> = new Map();
+  _stateMetaMap_: StateMetaMapType<S> = new Map();
 
   // The storage stack of this instance for the class component
-  readonly _classInstanceStack_ = new Set<ComponentWithStore<any, S>>();
+  _classInstanceStack_ = new Set<ComponentWithStore<any, S>>();
   /** ============================== For core constant ready end ============================== */
 
   /** ============================== For core helpers start ============================== */

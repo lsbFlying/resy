@@ -23,5 +23,7 @@ export const createStore = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
   options?: StoreOptions,
 ) => {
-  return (new StoreMeta(initialState, options)).store;
+  const storeMeta = new StoreMeta(initialState, options);
+  console.log(storeMeta);
+  return storeMeta.store;
 };

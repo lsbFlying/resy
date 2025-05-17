@@ -4,7 +4,7 @@ import type { ClassStoreType } from "./types";
 import { PureComponent } from "react";
 import { storeErrorProcessing } from "../store/errors";
 import { hasOwnProperty } from "../utils";
-import StoreMeta from "../store/store";
+import StoreMeta from "../store/core";
 
 /**
  * @class ComponentWithStore
@@ -88,7 +88,7 @@ export class ComponentWithStore<
              * and secondly, resetting the data to it`s initial state
              */
             (store as any as StoreMeta<S>)._classInstanceStack_.delete(this);
-            (store as any as StoreMeta<S>)._deferRestoreProcessing_();
+            (store as any as StoreMeta<S>)._restorer_.deferRestoreProcessing();
           });
         }
       });
@@ -105,7 +105,7 @@ export class ComponentWithStore<
 
   connectStore = <S extends PrimitiveState>(store: Store<S>) => {
     storeErrorProcessing(store, "connectStore");
-    (store as any as StoreMeta<S>)._initialStateRetrieve_();
+    (store as any as StoreMeta<S>)._restorer_.initialStateRetrieve();
     this.#stores.add(store as any);
 
     (store as any as StoreMeta<S>)._classInstanceStack_.add(this as any);

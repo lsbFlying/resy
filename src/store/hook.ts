@@ -2,7 +2,7 @@ import type { InitialState, InnerStoreOptions, Store, ClassicStore } from "./typ
 import type { PrimitiveState } from "../types";
 import { useMemo } from "react";
 import { storeErrorProcessing } from "./errors";
-import StoreMeta from "./store";
+import StoreMeta from "./core";
 
 /**
  * useStore api

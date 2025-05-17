@@ -1,17 +1,17 @@
 import type { PrimitiveState } from "../types";
 import type { ListenerType, Unsubscribe } from "./types";
-import type StoreMeta from "../store/store";
+import type StoreMeta from "../store/core";
+import type { Store } from "../store/types";
 import { effectStateInListenerKeys } from "../store/helpers";
 import { subscribeErrorProcessing } from "../store/errors";
 import { __DEV__ } from "../static";
 import { useDebugValue } from "react";
 import { useSubscription as useSubscriptionCore } from "./hook";
-import type { Store } from "../store/types";
 
 export default class Subscribers<S extends PrimitiveState> {
-  constructor(reducerState: S, storeMetaInstance: StoreMeta<S>) {
-    this.prevBatchState = Object.assign({}, reducerState);
+  constructor(storeMetaInstance: StoreMeta<S>) {
     this.storeMetaInstance = storeMetaInstance;
+    this.prevBatchState = Object.assign({}, storeMetaInstance._reducerState_);
   }
 
   storeMetaInstance: StoreMeta<S>;

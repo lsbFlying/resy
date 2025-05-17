@@ -1,5 +1,5 @@
 import type { Callback, PrimitiveState } from "../types";
-import type StoreMeta from "./store";
+import type StoreMeta from "../store/core";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 
 /**
@@ -16,8 +16,9 @@ export default class StateMeta<S extends PrimitiveState> {
     this.key = key;
     this.storeMetaInstance = storeMetaInstance;
   }
-  storeMetaInstance: StoreMeta<S>;
+
   key: keyof S;
+  storeMetaInstance: StoreMeta<S>;
 
   // The Set memory of the update function of a single attribute
   stateChangeQueue = new Set<Callback>();
@@ -33,7 +34,7 @@ export default class StateMeta<S extends PrimitiveState> {
       this.stateChangeQueue.delete(onStateChange);
       this.storeMetaInstance._stateRefCounter_--;
 
-      this.storeMetaInstance._deferRestoreProcessing_(
+      this.storeMetaInstance._restorer_.deferRestoreProcessing(
         () => {
           // Release memory if there are no component references
           if (!this.stateChangeQueue.size) {

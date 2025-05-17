@@ -1,7 +1,6 @@
 /**
  * @description prototype method proxies for map.
  */
-
 import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type {
   KeyChainsSourceItemType, ProxyableType, CreateProxyType,
@@ -21,7 +20,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
   firstLevelKey?: keyof S,
   keyLevel?: number,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
-  singleUpdate?: (
+  stateMetaUpdate?: (
     key: keyof S,
     value: ValueOf<S>,
     isDelete: boolean,
@@ -57,7 +56,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
         const firstLevelValue = state[firstLevelKey!];
         reduceChanged(value as ValueOf<S>, new Set(keyChains).add({ key, }), firstLevelValue);
 
-        singleUpdate!(
+        stateMetaUpdate!(
           firstLevelKey!,
           createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
@@ -74,7 +73,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
         const firstLevelValue = state[firstLevelKey!];
         reduceChanged(newValue as ValueOf<S>, new Set(keyChains).add({ key, }), firstLevelValue);
 
-        singleUpdate!(
+        stateMetaUpdate!(
           firstLevelKey!,
           createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
@@ -89,7 +88,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
         const firstLevelValue = state[firstLevelKey!];
         reduceChanged(new Map() as ValueOf<S>, keyChains!, firstLevelValue);
 
-        singleUpdate!(
+        stateMetaUpdate!(
           firstLevelKey!,
           createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,

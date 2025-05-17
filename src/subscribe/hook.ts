@@ -1,16 +1,17 @@
 import type { PrimitiveState } from "../types";
 import type { ListenerType, SubscriptionRefType } from "./types";
 import type { Store } from "../store/types";
+import type StoreMeta from "../store/core";
 import { effectStateInListenerKeys } from "../store/helpers";
 import { useDebugValue, useEffect, useRef } from "react";
 import { storeErrorProcessing, subscribeErrorProcessing } from "../store/errors";
 import { __DEV__ } from "../static";
-import StoreMeta from "../store/store";
 
 /**
  * @description Hook of subscribe
  * It`s advantage is that you only need to consider the data you want to subscribe to,
- * rather than the psychological burden to consider whether the data reference inside the function can get the latest value.
+ * rather than the psychological burden to consider whether the data reference
+ * inside the function can get the latest value.
  * UseSubscription will reduce your mental burden and allow you to use it normally.
  */
 export const useSubscription = <S extends PrimitiveState>(
@@ -49,7 +50,7 @@ export const useSubscription = <S extends PrimitiveState>(
 
   useEffect(() => {
     // Monitor the overall data changes of the store
-    return (store as any as StoreMeta<S>)._subscribers_.subscribe(data => {
+    return (store as any as StoreMeta<S>)._subscriber_.subscribe(data => {
       /**
        * @description First determine whether there is a change in execution,
        * and if so, delay the execution in order to get the latest listening subscription function

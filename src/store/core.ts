@@ -1,8 +1,8 @@
 import type {
   AnyBoundFn, InitialState, InnerStoreOptions, State, StateCallback, StateFnType,
-  StateWithThisType, Store, StateMetaMapType, StoreOptions, MacroStore, UseMacroStore, UseSubscriptionType,
+  StateWithThisType, Store, StateMetaMapType, StoreOptions, MacroStore, UseMacroStore,
 } from "./types";
-import type { AnyFn, Callback, PrimitiveState, ValueOf } from "../types";
+import type { AnyFn, PrimitiveState, ValueOf } from "../types";
 import type { ComponentWithStore } from "../class-connect";
 import { ClassStoreType } from "../class-connect/types";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
@@ -14,17 +14,17 @@ import { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/t
 import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
 import { useDebugValue, useEffect, useState } from "react";
 import Scheduler from "../scheduler";
-import StateMeta from "./state";
+import StateMeta from "../state";
 import Subscribers from "../subscribe";
-import { SubscribeType } from "../subscribe/types";
+import Restorer from "../restore";
 
 /**
  * @description The core meta-structure of store
  */
 export default class StoreMeta<S extends PrimitiveState> {
   constructor(initialState?: InitialState<S>, options?: StoreOptions) {
-    this.#initialState = initialState;
-    this.#reducerState = initialState === undefined
+    this._initialState_ = initialState;
+    this._reducerState_ = initialState === undefined
       ? ({} as StateWithThisType<S>)
       : typeof initialState === "function"
         ? initialState()
@@ -41,15 +41,11 @@ export default class StoreMeta<S extends PrimitiveState> {
       __functionName__: (options as InnerStoreOptions)?.__functionName__ ?? "createStore",
     };
 
-    const reducerState = this.#reducerState;
+    const reducerState = this._reducerState_;
 
     stateErrorProcessing({ state: reducerState, options: this._options_ });
 
     this.$state = Object.assign({}, reducerState);
-
-    this._subscribers_ = new Subscribers(reducerState, this);
-    this.subscribe = this._subscribers_.subscribe;
-    this.useSubscription = this._subscribers_.useSubscription;
 
     this.store = this.#createProxy();
   }
@@ -57,9 +53,9 @@ export default class StoreMeta<S extends PrimitiveState> {
   __RESY_BRAND__ = __RESY_BRAND__;
 
   /** ============================== For core constant ready start ============================== */
-  readonly #initialState?: InitialState<S>;
+  readonly _initialState_?: InitialState<S>;
   // Retrieve the reducerState
-  #reducerState: S;
+  _reducerState_: S;
   // configuration
   _options_;
 
@@ -69,20 +65,27 @@ export default class StoreMeta<S extends PrimitiveState> {
   _stateRefCounter_ = 0;
 
   /**
-   * @description Flag indicating that the _initialStateRetrieve_ function is executable.
+   * @description Flag indicating that the initialStateRetrieve function is executable.
    * If initialState is a function,
-   * you can get the execution flag in the _initialStateRetrieve_ handler of useStore.
+   * you can get the execution flag in the initialStateRetrieve handler of useStore.
    */
-  #initialFunctionExecutable: boolean | undefined;
+  _initialFunctionExecutable_: boolean | undefined;
 
-  // After unmount resetting the state (`#restoreProcessing` function has been executed),
+  // After unmount resetting the state (`restoreProcessing` function has been executed),
   // it is in a frozen state where updates are prohibited.
   // TODO waiting considering, the scenes it contains are a bit complex
   // #freezing: boolean | undefined;
 
   $state: S;
 
-  _subscribers_: Subscribers<S>;
+  // subscriber
+  _subscriber_ = new Subscribers(this);
+  subscribe = this._subscriber_.subscribe;
+  useSubscription = this._subscriber_.useSubscription;
+
+  // restorer
+  _restorer_ = new Restorer(this);
+  restore = this._restorer_.restore;
 
   // TODO computedDeps waiting upgrade
   // Dependency Collection for computed
@@ -95,99 +98,119 @@ export default class StoreMeta<S extends PrimitiveState> {
   _classInstanceStack_ = new Set<ComponentWithStore<any, S>>();
   /** ============================== For core constant ready end ============================== */
 
+  /** ============================== For core render start ============================== */
+  // A proxy object with the capabilities of updating and data tracking.
+  store: Store<S>;
+
+  // Proxy of driver update re-render for useStore
+  $engineStore = new Proxy({} as MacroStore<S>, {
+    get: (_: S, key: keyof S) => {
+      const state = this.$state;
+
+      // Get the latest value
+      const value = state[key];
+
+      const sourceFromThis = hasOwnProperty.call(this, key);
+
+      if (!sourceFromThis && typeof value !== "function") {
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        __DEV__ && useDebugValue({
+          key,
+          value,
+          ...(
+            this._options_.namespace
+              ? { namespace: this._options_.namespace }
+              : null
+          ),
+        });
+
+        return this.#getStateMeta(key);
+      }
+
+      if (!sourceFromThis && typeof value === "function") {
+        // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
+        !(value as AnyBoundFn).__bound__ && this._boundFnProcessing_(key, value);
+
+        const fnStateful = !this._options_.__enableMacros__
+          || this._options_.enableMarcoActionStateful;
+
+        const boundFnValue = state[key];
+
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        fnStateful && __DEV__ && useDebugValue({
+          key,
+          value: boundFnValue,
+          ...(
+            this._options_.namespace
+              ? { namespace: this._options_.namespace }
+              : null
+          ),
+        });
+
+        /**
+         * @description Enable function properties to have the ability to update rendering.
+         * Placing both the __bound__ and the state's set operation before the #getStateMeta
+         * can preemptively avoid the tearing synchronization handling inside useSyncExternalStore,
+         * resulting in twice the redundant rendering execution.
+         */
+        fnStateful && this.#getStateMeta(key);
+
+        return !key.toString().startsWith(__COMPUTED_PREFIX__)
+          ? boundFnValue
+          // TODO waiting upgrade optimize (暂时应该没有属性依赖记录收集销毁的逻辑问题)
+          : () => {
+            const { computedDeps } = this;
+
+            const [{ result, stateKeys }, update] = useState(() => {
+              // Clear the previous dirty dependencies before collecting them
+              computedDeps.clear();
+              const res = (boundFnValue as AnyFn)();
+              return {
+                result: res,
+                stateKeys: Array.from(computedDeps) as (keyof S)[],
+              };
+            });
+
+            useEffect(() => this._subscriber_.subscribe(() => {
+              /**
+               * Perform dependency collection and processing again to
+               * prevent dependency changes caused by conditional logic
+               * start
+               */
+              computedDeps.clear();
+
+              const res = (boundFnValue as AnyFn)();
+
+              const newDeps = Array.from(computedDeps);
+
+              (stateKeys.toString() !== newDeps.toString()) && update(prevState => ({
+                ...prevState,
+                stateKeys: newDeps,
+              }));
+              /**
+               * Perform dependency collection and processing again to
+               * prevent dependency changes caused by conditional logic
+               * end
+               */
+
+              update(prevState => ({
+                ...prevState,
+                result: res,
+              }));
+              // eslint-disable-next-line react-hooks/exhaustive-deps
+            }, stateKeys), [stateKeys]);
+
+            return result;
+          };
+      }
+
+      return this[key as keyof StoreMeta<S>];
+    },
+  } as ProxyHandler<MacroStore<S>>);
+  /** ============================== For core render end ============================== */
+
   /** ============================== For core helpers start ============================== */
-  /**
-   * Retrieve the reducerState
-   * @description If the data is in the initialization state and returned by a function,
-   * the initialization function must be executed again.
-   * This ensures that the retrieved internal initialization data aligns with the function's logic.
-   * For example, if the initialization function's return includes time in milliseconds,
-   * it is important to re-execute the function to acquire the most up-to-date initialization data.
-   * Such caution ensures the precision of data recovery.
-   */
-  #retrieveReducerState = () => {
-    typeof this.#initialState === "function" && (
-      this.#reducerState = this.#initialState() as S
-    );
-  };
-
-  // Logic of recovery processing
-  #restoreProcessing = () => {
-    this.#retrieveReducerState();
-
-    this.$state = Object.assign({}, this.#reducerState) as S;
-
-    // this.#freezing = true;
-  };
-
-  /** restore utils start */
-  // Retrieve recovery processing when initialState is a function
-  _initialStateRetrieve_ = () => {
-    // unfreeze for normal rendering updates
-    // this.#freezing = undefined;
-
-    // The relevant judgment logic is similar to unmountRestore.
-    if (this.#initialFunctionExecutable) {
-      this.#initialFunctionExecutable = undefined;
-      this.#restoreProcessing();
-    }
-  };
-
-  /**
-   * @description In order to prevent the double rendering in React's StrictMode
-   * from causing issues with the registration function returned in useEffect,
-   * it happens to be opportune for stateMetaMap to release memory preemptively
-   * during the first unmount execution.
-   * (with memory release being performed in the callback).
-   * This early release of memory removes the previous state-meta,
-   * and any subsequent updates or renderings will regenerate a new state-meta.
-   * However, this process leads to the updater function's stateChangeQueue
-   * within state-meta referencing the address of the previously outdated state-meta.
-   * Meanwhile, that old stateChangeQueue has already been deleted.
-   * and cleared with the early release of the state-meta's memory,
-   * leading to the updater function's incapability to make valid updates.
-   * Here, to ensure operations such as unmount, freeing memory,
-   * and unmountRestore run smoothly,
-   * a microtask can be used to postpone the unmount process.
-   */
-  _deferRestoreProcessing_ = (callback?: Callback) => {
-    const scheduler = this._scheduler_;
-    if (!scheduler.deferEffectDestructorExecutable) {
-      scheduler.deferEffectDestructorExecutable = Promise.resolve().then(() => {
-        scheduler.deferEffectDestructorExecutable = undefined;
-        const { _stateRefCounter_ } = this;
-        const classInstanceStack = this._classInstanceStack_;
-        if (!_stateRefCounter_ && !classInstanceStack.size) {
-          /**
-           * By using "stateRefCounter" and "classInstanceStack",
-           * we determine whether the store still has component references.
-           * As long as there is at least one component referencing,
-           * the data will not be reset since it is currently in use within the business logic
-           * and does not constitute a complete unmount.
-           * The complete unmount cycle corresponds to the entire usage cycle of the store.
-           */
-          const noRefFlag = !classInstanceStack.size && !_stateRefCounter_;
-          const initialState = this.#initialState;
-          /**
-           * When initialState is a function,
-           * it does not have to be executed at unmount time,
-           * because initialization time is sure to reset execution,
-           * thus optimizing code execution efficiency.
-           */
-          if (this._options_.unmountRestore && noRefFlag && typeof initialState !== "function") {
-            this.#restoreProcessing();
-          }
-          if (typeof initialState === "function" && noRefFlag) {
-            this.#initialFunctionExecutable = true;
-          }
-        }
-        callback?.();
-      });
-    }
-  };
-  /** restore utils end */
-
-  #hookConnectStore = (key: keyof S) => {
+  #createStateMeta = (key: keyof S) => {
     const { _stateMetaMap_ } = this;
     // Resolve the problem that the initialization attribute may be undefined
     if (_stateMetaMap_.has(key)) return _stateMetaMap_;
@@ -197,7 +220,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     return _stateMetaMap_;
   };
 
-  #pushTask = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
+  _pushTask_ = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
     const state = this.$state;
     /**
      * @description The pre-execution of the data changes accumulates
@@ -217,13 +240,13 @@ export default class StoreMeta<S extends PrimitiveState> {
          * is to preserve the simplicity of the update scheduling for both hook and class components.
          */
         // State updates for hook components
-        this.#hookConnectStore(key).get(key)!.updater();
+        this.#createStateMeta(key).get(key)!.updater();
       },
     );
   };
 
-  #finallyBatchProcessing = () => {
-    const listenerStack = this._subscribers_.listenerStack;
+  _finallyBatchProcessing_ = () => {
+    const listenerStack = this._subscriber_.listenerStack;
     const scheduler = this._scheduler_;
     const {
       taskData, taskQueue, callbackQueue,
@@ -279,7 +302,7 @@ export default class StoreMeta<S extends PrimitiveState> {
               item({
                 effectState: effectStateTemp!,
                 nextState: this.$state,
-                prevState: this._subscribers_.prevBatchState,
+                prevState: this._subscriber_.prevBatchState,
               });
             });
           }
@@ -306,16 +329,16 @@ export default class StoreMeta<S extends PrimitiveState> {
     return boundFn as ValueOf<S>;
   };
 
-  #connectHook = (key: keyof S) => {
+  #getStateMeta = (key: keyof S) => {
     // Perform refresh recovery logic if initialState is a function
-    this._initialStateRetrieve_();
-    return this.#hookConnectStore(key).get(key)!.useSyncExternalStore();
+    this._restorer_.initialStateRetrieve();
+    return this.#createStateMeta(key).get(key)!.useSyncExternalStore();
   };
   /** ============================== For core helpers end ============================== */
 
   /** ============================== For core utils start ============================== */
   setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    this._subscribers_.willUpdatingProcessing();
+    this._subscriber_.willUpdatingProcessing();
 
     const _state_ = this.$state;
 
@@ -330,14 +353,14 @@ export default class StoreMeta<S extends PrimitiveState> {
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         const value = (stateTemp as S)[key];
         if (!Object.is(value, _state_[key])) {
-          this.#pushTask(key, value);
+          this._pushTask_(key, value);
         }
       });
     }
 
     this._scheduler_.pushCallbackStack(_state_, stateTemp as State<S>, callback);
 
-    this.#finallyBatchProcessing();
+    this._finallyBatchProcessing_();
   };
 
   /**
@@ -359,7 +382,7 @@ export default class StoreMeta<S extends PrimitiveState> {
           if (!Object.is(_state_[key], value)) {
             _state_[key] = value;
             this._classUpdater_(key, value);
-            this.#hookConnectStore(key).get(key)!.updater();
+            this.#createStateMeta(key).get(key)!.updater();
           }
         });
       });
@@ -367,60 +390,11 @@ export default class StoreMeta<S extends PrimitiveState> {
 
     this._scheduler_.pushCallbackStack(_state_, stateTemp as State<S>, callback);
 
-    this.#finallyBatchProcessing();
+    this._finallyBatchProcessing_();
   };
 
-  // Reset recovery initialization state data
-  restore = (callback?: StateCallback<S>) => {
-    const state = this.$state;
-
-    this._subscribers_.willUpdatingProcessing();
-
-    this.#retrieveReducerState();
-
-    const reducerState = this.#reducerState;
-
-    /**
-     * @description Get all the properties
-     * Here we merge the data attributes of the current "$state" and the initial "reducerState"
-     * in order to count all the new or deleted attributes.
-     * It is convenient to use the hasOwnProperty method
-     * to check whether the 'reducerState' has a specific data attribute before restoring the data.。
-     * Thinking backwards,
-     * if we don't aggregate all the keys,
-     * then we can only perform the traversal of keys based on either 'reducerState' or '$state',
-     * and restore them based on whether they have properties confirmed by the hasOwnProperty method.
-     * If we choose reducerState, we will not be able to control the newly added key,
-     * and if we choose $state, we will not be able to delete the key.
-     * Neither of them is perfect, so we must merge both sets of results.
-     */
-    Array.from(
-      new Set(
-        (
-          Object.keys(reducerState) as (keyof S)[]
-        ).concat(
-          Object.keys(state)
-        )
-      )
-    ).forEach(key => {
-      const originValue = reducerState[key];
-
-      !Object.is(originValue, state[key])
-      && this.#pushTask(key, originValue, !hasOwnProperty.call(reducerState, key));
-    });
-
-    this._scheduler_.pushCallbackStack({} as S, reducerState, callback);
-
-    this.#finallyBatchProcessing();
-  };
-
-  subscribe: SubscribeType<S>["subscribe"];
-  useSubscription: UseSubscriptionType<S>["useSubscription"];
-  /** ============================== For core utils end ============================== */
-
-  /** ============================== For core render start ============================== */
-  // Data updates for a single attribute
-  #singleUpdate = (
+  // Data updates for a single attribute (state-meta)
+  #stateMetaUpdate = (
     key: keyof S,
     value: ValueOf<S>,
     isDelete = false,
@@ -449,7 +423,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       changed && reduceChanged(value, keyChains!, firstLevelValue);
 
       return changed
-        ? this.#singleUpdate(
+        ? this.#stateMetaUpdate(
           firstLevelKey!,
           /**
            * @description When performing updates on the first-level attributes here,
@@ -468,9 +442,9 @@ export default class StoreMeta<S extends PrimitiveState> {
         : true;
     } else {
       if (!Object.is(value, state[key])) {
-        this._subscribers_.willUpdatingProcessing();
-        this.#pushTask(key, value, isDelete);
-        this.#finallyBatchProcessing();
+        this._subscriber_.willUpdatingProcessing();
+        this._pushTask_(key, value, isDelete);
+        this._finallyBatchProcessing_();
       }
       return true;
     }
@@ -546,12 +520,12 @@ export default class StoreMeta<S extends PrimitiveState> {
 
         return !sourceFromThis ? value : this[key as keyof StoreMeta<S>];
       },
-      set: (_: S, key: keyof S, value: ValueOf<S>) => this.#singleUpdate(
+      set: (_: S, key: keyof S, value: ValueOf<S>) => this.#stateMetaUpdate(
         key, value, false, target, firstLevelKey,
         new Set(keyChains).add({ key }), applyOriginFunction,
       ),
       // Delete will also play an updating role
-      deleteProperty: (_: S, key: keyof S) => this.#singleUpdate(
+      deleteProperty: (_: S, key: keyof S) => this.#stateMetaUpdate(
         key, undefined as ValueOf<S>, true, target, firstLevelKey,
         new Set(keyChains).add({ key }), applyOriginFunction,
       ),
@@ -560,123 +534,14 @@ export default class StoreMeta<S extends PrimitiveState> {
       apply: (applyOriginFunction: any, thisArg: any, argArray: any[]) => Reflect.apply(
         __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
           applyOriginFunction, thisArg, this.$state, parentTarget as any,
-          this.#createProxy, firstLevelKey, keyLevel, keyChains, this.#singleUpdate,
+          this.#createProxy, firstLevelKey, keyLevel, keyChains, this.#stateMetaUpdate,
         ),
         thisArg,
         argArray,
       ),
     } as ProxyHandler<S>) as Store<S>;
   };
-
-  // A proxy object with the capabilities of updating and data tracking.
-  store: Store<S>;
-
-  // Proxy of driver update re-render for useStore
-  $engineStore = new Proxy({} as MacroStore<S>, {
-    get: (_: S, key: keyof S) => {
-      const state = this.$state;
-
-      // Get the latest value
-      const value = state[key];
-
-      const sourceFromThis = hasOwnProperty.call(this, key);
-
-      if (!sourceFromThis && typeof value !== "function") {
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        __DEV__ && useDebugValue({
-          key,
-          value,
-          ...(
-            this._options_.namespace
-              ? { namespace: this._options_.namespace }
-              : null
-          ),
-        });
-
-        return this.#connectHook(key);
-      }
-
-      if (!sourceFromThis && typeof value === "function") {
-        // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
-        !(value as AnyBoundFn).__bound__ && this._boundFnProcessing_(key, value);
-
-        const fnStateful = !this._options_.__enableMacros__
-          || this._options_.enableMarcoActionStateful;
-
-        const boundFnValue = state[key];
-
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        fnStateful && __DEV__ && useDebugValue({
-          key,
-          value: boundFnValue,
-          ...(
-            this._options_.namespace
-              ? { namespace: this._options_.namespace }
-              : null
-          ),
-        });
-
-        /**
-         * @description Enable function properties to have the ability to update rendering.
-         * Placing both the __bound__ and the state's set operation before the #connectHook
-         * can preemptively avoid the tearing synchronization handling inside useSyncExternalStore,
-         * resulting in twice the redundant rendering execution.
-         */
-        fnStateful && this.#connectHook(key);
-
-        return !key.toString().startsWith(__COMPUTED_PREFIX__)
-          ? boundFnValue
-          // TODO waiting upgrade optimize (暂时应该没有属性依赖记录收集销毁的逻辑问题)
-          : () => {
-            const { computedDeps } = this;
-
-            const [{ result, stateKeys }, update] = useState(() => {
-              // Clear the previous dirty dependencies before collecting them
-              computedDeps.clear();
-              const res = (boundFnValue as AnyFn)();
-              return {
-                result: res,
-                stateKeys: Array.from(computedDeps) as (keyof S)[],
-              };
-            });
-
-            useEffect(() => this._subscribers_.subscribe(() => {
-              /**
-               * Perform dependency collection and processing again to
-               * prevent dependency changes caused by conditional logic
-               * start
-               */
-              computedDeps.clear();
-
-              const res = (boundFnValue as AnyFn)();
-
-              const newDeps = Array.from(computedDeps);
-
-              (stateKeys.toString() !== newDeps.toString()) && update(prevState => ({
-                ...prevState,
-                stateKeys: newDeps,
-              }));
-              /**
-               * Perform dependency collection and processing again to
-               * prevent dependency changes caused by conditional logic
-               * end
-               */
-
-              update(prevState => ({
-                ...prevState,
-                result: res,
-              }));
-              // eslint-disable-next-line react-hooks/exhaustive-deps
-            }, stateKeys), [stateKeys]);
-
-            return result;
-          };
-      }
-
-      return this[key as keyof StoreMeta<S>];
-    },
-  } as ProxyHandler<MacroStore<S>>);
-  /** ============================== For core render end ============================== */
+  /** ============================== For core utils end ============================== */
 
   /** ============================== For hook components start ============================== */
   /**

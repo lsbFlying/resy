@@ -1,6 +1,7 @@
 import type { PrimitiveState, AnyFn } from "../types";
-import type { ListenerType, SubscribeType } from "../subscribe/types";
-import type StateMeta from "./state";
+import type { SubscribeType, UseSubscriptionType } from "../subscribe/types";
+import type { RestoreType } from "../restore/types";
+import type StateMeta from "../state";
 
 /**
  * @description The second parameter configuration item of createStore
@@ -132,19 +133,6 @@ export type SyncUpdateType<S extends PrimitiveState> = {
   ): void;
 };
 
-/** Type of restore */
-export type RestoreType<S extends PrimitiveState> = {
-  /**
-   * @param callback
-   * @description The reason for not naming it reset is due to
-   * the consideration of scenarios where the createStore parameter might be a function.
-   * In such cases, logically speaking, it's not so much about resetting but rather about restoring.
-   * As for what state it restores to depends on the result returned by the execution of the initialization function.
-   * Hence, the choice of the name restore instead of reset.
-   */
-  restore(callback?: StateCallback<S>): void;
-};
-
 /** type of useStore */
 export type UseStoreType<S extends PrimitiveState> = {
   useStore(): ClassicStore<S>;
@@ -162,16 +150,6 @@ export type MacroStore<S extends PrimitiveState> = ClassicStore<S> & StoreType<S
 
 /** The function type returned by definiteStore */
 export type UseMacroStore<S extends PrimitiveState> = () => MacroStore<S>;
-
-/**
- * type of useSubscription
- * @description It`s advantage is that you only need to consider the data you want to subscribe to,
- * rather than the psychological burden to consider whether the data reference inside the function can get the latest value.
- * UseSubscription will reduce your mental burden and allow you to use it normally.
- */
-export interface UseSubscriptionType<S extends PrimitiveState> {
-  useSubscription(listener: ListenerType<S>, stateKeys?: (keyof S)[]): void;
-}
 
 /** Type of key disabled in the initialization parameters */
 export type InitialStateForbiddenKeys = keyof StoreUtils<PrimitiveState> | "store";

@@ -1,6 +1,6 @@
 import type { InitialState, InnerStoreOptions, StoreOptions } from "./types";
 import type { PrimitiveState } from "../types";
-import StoreMeta from "./store";
+import StoreMeta from "./core";
 
 /**
  * @description Define the preprocessed store type for the createStore macro,

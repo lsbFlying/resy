@@ -37,3 +37,13 @@ export type SubscriptionRefType<S extends PrimitiveState> = {
   listener: ListenerType<S>;
   stateKeys?: (keyof S)[];
 };
+
+/**
+ * type of useSubscription
+ * @description It`s advantage is that you only need to consider the data you want to subscribe to,
+ * rather than the psychological burden to consider whether the data reference inside the function can get the latest value.
+ * UseSubscription will reduce your mental burden and allow you to use it normally.
+ */
+export interface UseSubscriptionType<S extends PrimitiveState> {
+  useSubscription(listener: ListenerType<S>, stateKeys?: (keyof S)[]): void;
+}

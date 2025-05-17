@@ -59,11 +59,6 @@ export default class StoreMeta<S extends PrimitiveState> {
   // configuration
   _options_;
 
-  _scheduler_ = new Scheduler<S>();
-
-  // Tag counters for data references of store
-  _stateRefCounter_ = 0;
-
   /**
    * @description Flag indicating that the initialStateRetrieve function is executable.
    * If initialState is a function,
@@ -71,21 +66,7 @@ export default class StoreMeta<S extends PrimitiveState> {
    */
   _initialFunctionExecutable_: boolean | undefined;
 
-  // After unmount resetting the state (`restoreProcessing` function has been executed),
-  // it is in a frozen state where updates are prohibited.
-  // TODO waiting considering, the scenes it contains are a bit complex
-  // #freezing: boolean | undefined;
-
   $state: S;
-
-  // subscriber
-  _subscriber_ = new Subscribers(this);
-  subscribe = this._subscriber_.subscribe;
-  useSubscription = this._subscriber_.useSubscription;
-
-  // restorer
-  _restorer_ = new Restorer(this);
-  restore = this._restorer_.restore;
 
   // TODO computedDeps waiting upgrade
   // Dependency Collection for computed
@@ -97,6 +78,28 @@ export default class StoreMeta<S extends PrimitiveState> {
   // The storage stack of this instance for the class component
   _classInstanceStack_ = new Set<ComponentWithStore<any, S>>();
   /** ============================== For core constant ready end ============================== */
+
+  /** ============================== For core `Component Element` start ============================== */
+  // scheduler
+  _scheduler_ = new Scheduler<S>();
+
+  // subscriber
+  _subscriber_ = new Subscribers(this);
+  subscribe = this._subscriber_.subscribe;
+  useSubscription = this._subscriber_.useSubscription;
+
+  // Tag counters for data references of store
+  _stateRefCounter_ = 0;
+
+  // restorer
+  _restorer_ = new Restorer(this);
+  restore = this._restorer_.restore;
+
+  // After unmount resetting the state (`restoreProcessing` function has been executed),
+  // it is in a frozen state where updates are prohibited.
+  // TODO waiting considering, the scenes it contains are a bit complex
+  // #freezing: boolean | undefined;
+  /** ============================== For core `Component Element` end ============================== */
 
   /** ============================== For core render start ============================== */
   // A proxy object with the capabilities of updating and data tracking.

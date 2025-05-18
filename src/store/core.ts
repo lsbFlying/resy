@@ -79,7 +79,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   _classInstanceStack_ = new Set<ComponentWithStore<any, S>>();
   /** ============================== For core constant ready end ============================== */
 
-  /** ============================== For core `Component Element` start ============================== */
+  /** ============================== For `Reconciler` —— ( Scheduler、Subscriber、Restorer) start ============================== */
   // scheduler
   _scheduler_ = new Scheduler<S>();
 
@@ -88,18 +88,16 @@ export default class StoreMeta<S extends PrimitiveState> {
   subscribe = this._subscriber_.subscribe;
   useSubscription = this._subscriber_.useSubscription;
 
-  // Tag counters for data references of store
-  _stateRefCounter_ = 0;
-
   // restorer
   _restorer_ = new Restorer(this);
   restore = this._restorer_.restore;
-
+  // Tag counters for data references of store
+  _stateRefCounter_ = 0;
   // After unmount resetting the state (`restoreProcessing` function has been executed),
   // it is in a frozen state where updates are prohibited.
   // TODO waiting considering, the scenes it contains are a bit complex
   // #freezing: boolean | undefined;
-  /** ============================== For core `Component Element` end ============================== */
+  /** ============================== For `Reconciler` —— ( Scheduler、Subscriber、Restorer)  end ============================== */
 
   /** ============================== For core render start ============================== */
   // A proxy object with the capabilities of updating and data tracking.

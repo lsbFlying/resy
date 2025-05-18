@@ -8,7 +8,7 @@ import { __DEV__ } from "../static";
 import { useDebugValue } from "react";
 import { useSubscription as useSubscriptionCore } from "./hook";
 
-export default class Subscribers<S extends PrimitiveState> {
+export default class Subscriber<S extends PrimitiveState> {
   constructor(storeMetaInstance: StoreMeta<S>) {
     this.storeMetaInstance = storeMetaInstance;
     this.prevBatchState = Object.assign({}, storeMetaInstance._reducerState_);
@@ -25,7 +25,7 @@ export default class Subscribers<S extends PrimitiveState> {
   /**
    * @description Pre-update processing
    * records the prevState beforehand for later comparison
-   * when data changes trigger subscribers.
+   * when data changes trigger Subscriber.
    */
   willUpdatingProcessing = () => {
     const scheduler = this.storeMetaInstance._scheduler_;

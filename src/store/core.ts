@@ -15,7 +15,7 @@ import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
 import { useDebugValue, useEffect, useState } from "react";
 import Scheduler from "../scheduler";
 import StateMeta from "../state";
-import Subscribers from "../subscribe";
+import Subscriber from "../subscribe";
 import Restorer from "../restore";
 
 /**
@@ -84,7 +84,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   _scheduler_ = new Scheduler<S>();
 
   // subscriber
-  _subscriber_ = new Subscribers(this);
+  _subscriber_ = new Subscriber(this);
   subscribe = this._subscriber_.subscribe;
   useSubscription = this._subscriber_.useSubscription;
 

@@ -335,7 +335,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   #getStateMeta = (key: keyof S) => {
     // Perform refresh recovery logic if initialState is a function
     this._restorer_.initialStateRetrieve();
-    return this.#createStateMeta(key).get(key)!.useSyncExternalStore();
+    return this.#createStateMeta(key).get(key)!.useStateMeta();
   };
   /** ============================== For core helpers end ============================== */
 

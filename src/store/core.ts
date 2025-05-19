@@ -24,22 +24,14 @@ import Restorer from "../restore";
 export default class StoreMeta<S extends PrimitiveState> {
   constructor(initialState?: InitialState<S>, options?: StoreOptions) {
     this._initialState_ = initialState;
-    this._reducerState_ = initialState === undefined
-      ? ({} as StateWithThisType<S>)
-      : typeof initialState === "function"
-        ? initialState()
-        : initialState;
+    this._reducerState_ = typeof initialState === "function"
+      ? initialState()
+      : initialState ?? ({} as StateWithThisType<S>);
 
     optionsErrorProcessing(options);
-    this._options_ = {
-      unmountRestore: options?.unmountRestore ?? true,
-      namespace: options?.namespace ?? undefined,
-      immutable: options?.immutable ?? undefined,
-      enableMarcoActionStateful: options?.enableMarcoActionStateful ?? undefined,
-      __useConciseState__: (options as InnerStoreOptions)?.__useConciseState__ ?? undefined,
-      __enableMacros__: (options as InnerStoreOptions)?.__enableMacros__ ?? undefined,
-      __functionName__: (options as InnerStoreOptions)?.__functionName__ ?? "createStore",
-    };
+    this._options_ = options
+      ? Object.assign({}, StoreMeta.#DEFAULT_OPTIONS, options)
+      : StoreMeta.#DEFAULT_OPTIONS;
 
     const reducerState = this._reducerState_;
 
@@ -51,6 +43,16 @@ export default class StoreMeta<S extends PrimitiveState> {
   }
 
   __RESY_BRAND__ = __RESY_BRAND__;
+
+  static #DEFAULT_OPTIONS: InnerStoreOptions = {
+    unmountRestore: true,
+    namespace: undefined,
+    immutable: undefined,
+    enableMarcoActionStateful: undefined,
+    __useConciseState__: undefined,
+    __enableMacros__: undefined,
+    __functionName__: "createStore",
+  };
 
   /** ============================== For core constant ready start ============================== */
   readonly _initialState_?: InitialState<S>;

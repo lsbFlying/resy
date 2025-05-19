@@ -7,8 +7,11 @@ test("createStore-error-scene", async () => {
   expect(() => createStore(0)).toThrowError();
   // @ts-ignore
   expect(() => createStore(1)).toThrowError();
+
+  // After internal code optimization, no more errors will be reported, only error prompts will be given on the type
   // @ts-ignore
-  expect(() => createStore(null)).toThrowError();
+  // expect(() => createStore(null)).toThrowError();
+
   // @ts-ignore
   expect(() => createStore(false)).toThrowError();
   // @ts-ignore

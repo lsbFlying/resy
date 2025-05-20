@@ -3,7 +3,7 @@ import type {
   StateWithThisType, Store, StateMetaMapType, StoreOptions, MacroStore, UseMacroStore,
 } from "./types";
 import type { AnyFn, PrimitiveState, ValueOf } from "../types";
-import type { ComponentWithStore } from "../class-connect";
+import type ComponentWithStore from "../class-connect";
 import { ClassStoreType } from "../class-connect/types";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
 import { __COMPUTED_PREFIX__, __RESY_BRAND__ } from "./static";
@@ -454,6 +454,36 @@ export default class StoreMeta<S extends PrimitiveState> {
     }
   };
 
+  /** ============================== For class components start ============================== */
+  _classUpdater_ = (key: keyof S, value: ValueOf<S>) => {
+    const classInstanceStack = this._classInstanceStack_;
+    classInstanceStack.forEach(classInstanceItem => {
+      /**
+       * There is an "updater" attribute on the internal this pointer of react's class,
+       * and an "isMounted" method is mounted on it to determine whether the component has been loaded.
+       * If it is in "React.StrictMode" mode,
+       * React will discard the first generated instance and the instance will not be mounted.
+       */
+      classInstanceItem._$isMounted_
+        /**
+         * @description Determine whether the currently updated data property
+         * is used in the class component, and if not, do not update it.
+         * 🌟 Don't worry about the use of hidden attributes caused by operations such as ternary operators.
+         * Even the use of hidden attributes here will not cause rendering problems,
+         * because the state attribute reference of the class component does not have a hook rule.
+         * At the same time, when a hidden attribute is discovered by a new rendering,
+         * it will immediately generate a new state attribute reference.
+         * Therefore, this is always safe, and it can avoid unnecessary re-renders.
+         * 🌟 Adding "?.has" is to prevent some class components from making an empty connection,
+         * that is, connecting to the store but not using it. Generally speaking, this is not done,
+         */
+        ? classInstanceItem._$stateRecords_?.has(key)
+        && classInstanceItem.setState({ [key]: value } as any)
+        : classInstanceStack.delete(classInstanceItem);
+    });
+  };
+  /** ============================== For class components end ============================== */
+
   #createProxy = (
     target: object = this.$state,
     parentTarget: any = this.$state,
@@ -555,34 +585,4 @@ export default class StoreMeta<S extends PrimitiveState> {
    */
   useStore = (() => this.$engineStore) as UseMacroStore<S>;
   /** ============================== For hook components end ============================== */
-
-  /** ============================== For class components start ============================== */
-  _classUpdater_ = (key: keyof S, value: ValueOf<S>) => {
-    const classInstanceStack = this._classInstanceStack_;
-    classInstanceStack.forEach(classInstanceItem => {
-      /**
-       * There is an "updater" attribute on the internal this pointer of react's class,
-       * and an "isMounted" method is mounted on it to determine whether the component has been loaded.
-       * If it is in "React.StrictMode" mode,
-       * React will discard the first generated instance and the instance will not be mounted.
-       */
-      classInstanceItem._$isMounted_
-        /**
-         * @description Determine whether the currently updated data property
-         * is used in the class component, and if not, do not update it.
-         * 🌟 Don't worry about the use of hidden attributes caused by operations such as ternary operators.
-         * Even the use of hidden attributes here will not cause rendering problems,
-         * because the state attribute reference of the class component does not have a hook rule.
-         * At the same time, when a hidden attribute is discovered by a new rendering,
-         * it will immediately generate a new state attribute reference.
-         * Therefore, this is always safe, and it can avoid unnecessary re-renders.
-         * 🌟 Adding "?.has" is to prevent some class components from making an empty connection,
-         * that is, connecting to the store but not using it. Generally speaking, this is not done,
-         */
-        ? classInstanceItem._$stateRecords_?.has(key)
-        && classInstanceItem.setState({ [key]: value } as any)
-        : classInstanceStack.delete(classInstanceItem);
-    });
-  };
-  /** ============================== For class components end ============================== */
 }

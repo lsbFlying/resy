@@ -192,8 +192,7 @@ export default class StoreMeta<S extends PrimitiveState> {
               }));
               /**
                * Perform dependency collection and processing again to
-               * prevent dependency changes caused by conditional logic
-               * end
+               * prevent dependency changes caused by conditional logic.
                */
 
               update(prevState => ({

@@ -5,6 +5,9 @@ import { ComponentWithStore, createStore } from "../../src";
 
 /** Basic usage of class components */
 test("classConnect-I", async () => {
+
+  expect(() => new ComponentWithStore({})).toThrowError();
+
   type Store = {
     count: number;
   };

@@ -4,6 +4,7 @@ import type { ClassStoreType } from "./types";
 import { PureComponent } from "react";
 import { storeErrorProcessing } from "../store/errors";
 import { hasOwnProperty } from "../utils";
+import { __DEV__ } from "../static";
 import StoreMeta from "../store/core";
 
 /**
@@ -17,6 +18,9 @@ export class ComponentWithStore<
 > extends PureComponent<P, S, SS> {
   constructor(props: P) {
     super(props);
+    if (__DEV__ && new.target === ComponentWithStore) {
+      throw new Error("This class cannot be instantiated.");
+    }
     this.#constructorProcessing();
   }
 

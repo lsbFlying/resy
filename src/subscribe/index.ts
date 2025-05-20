@@ -19,8 +19,8 @@ export default class Subscriber<S extends PrimitiveState> {
   // Data status of the previous update batch
   prevBatchState: S;
 
-  // Subscription listener stack
-  listenerStack = new Set<ListenerType<S>>();
+  // Subscription listener queue
+  listenerQueue = new Set<ListenerType<S>>();
 
   /**
    * @description Pre-update processing
@@ -29,7 +29,7 @@ export default class Subscriber<S extends PrimitiveState> {
    */
   willUpdatingProcessing = () => {
     const scheduler = this.storeMetaInstance._scheduler_;
-    if (this.listenerStack.size > 0 && !scheduler.willUpdating) {
+    if (this.listenerQueue.size > 0 && !scheduler.willUpdating) {
       scheduler.willUpdating = true;
       this.prevBatchState = Object.assign({}, this.storeMetaInstance.$state) as S;
     }
@@ -37,7 +37,7 @@ export default class Subscriber<S extends PrimitiveState> {
 
   // Subscription function
   subscribe = (listener: ListenerType<S>, stateKeys?: (keyof S)[]): Unsubscribe => {
-    const listenerStack = this.listenerStack;
+    const listenerQueue = this.listenerQueue;
 
     subscribeErrorProcessing(listener, stateKeys);
 
@@ -45,11 +45,11 @@ export default class Subscriber<S extends PrimitiveState> {
       effectStateInListenerKeys(data.effectState, stateKeys) && listener(data);
     };
 
-    listenerStack.add(listenerWrap);
+    listenerQueue.add(listenerWrap);
 
     // Returns the unsubscribing function, which allows the user to choose whether or not to unsubscribe,
     // because it is also possible that the user wants the subscription to remain in effect.
-    return () => listenerStack.delete(listenerWrap as ListenerType<S>);
+    return () => listenerQueue.delete(listenerWrap as ListenerType<S>);
   };
 
   useSubscription = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {

@@ -249,7 +249,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   };
 
   _finallyBatchProcessing_ = () => {
-    const listenerStack = this._subscriber_.listenerStack;
+    const listenerQueue = this._subscriber_.listenerQueue;
     const scheduler = this._scheduler_;
     const {
       taskData, taskQueue, callbackQueue,
@@ -273,7 +273,7 @@ export default class StoreMeta<S extends PrimitiveState> {
 
           // Make a shallow clone of the "taskDataMap" data for the "effectState" of "subscribe",
           // Perform a shallowClone before executing flushTask, otherwise, it might become impossible to retrieve `taskDataMap`.
-          const effectStateTemp = listenerStack.size > 0
+          const effectStateTemp = listenerQueue.size > 0
             ? Object.assign({}, taskData)
             : undefined;
 
@@ -298,8 +298,8 @@ export default class StoreMeta<S extends PrimitiveState> {
           // 🌟 As logically, the listener in subscribe needs to be executed after the callback has been executed.
 
           // Trigger the execution of subscription snooping
-          if (listenerStack.size > 0) {
-            listenerStack.forEach(item => {
+          if (listenerQueue.size > 0) {
+            listenerQueue.forEach(item => {
               // the clone returned by mapToObject ensures that the externally subscribed data
               // maintains it`s purity and security as much as possible in terms of usage.
               item({
@@ -361,7 +361,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       });
     }
 
-    this._scheduler_.pushCallbackStack(_state_, stateTemp as State<S>, callback);
+    this._scheduler_.pushCallback(_state_, stateTemp as State<S>, callback);
 
     this._finallyBatchProcessing_();
   };
@@ -391,7 +391,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       });
     }
 
-    this._scheduler_.pushCallbackStack(_state_, stateTemp as State<S>, callback);
+    this._scheduler_.pushCallback(_state_, stateTemp as State<S>, callback);
 
     this._finallyBatchProcessing_();
   };

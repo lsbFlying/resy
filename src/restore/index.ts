@@ -145,7 +145,7 @@ export default class Restorer<S extends PrimitiveState> {
       && _pushTask_(key, originValue, !hasOwnProperty.call(reducerState, key));
     });
 
-    _scheduler_.pushCallbackStack({} as S, reducerState, callback);
+    _scheduler_.pushCallback({} as S, reducerState, callback);
 
     _finallyBatchProcessing_();
   };

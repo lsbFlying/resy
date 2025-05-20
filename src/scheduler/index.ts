@@ -20,14 +20,14 @@ export default class Scheduler<S extends PrimitiveState> {
   // Flag to delay the execution of the return registration function in useEffect
   deferEffectDestructorExecutable?: Promise<void>;
 
-  // Push both the updated data (in key/value pairs) and the update task queue into the stack
+  // Push both the updated data (in key/value pairs) and the update task queue
   pushTask = (key: keyof S, value: ValueOf<S>, task: Callback) => {
     this.taskData[key] = value;
     this.taskQueue.set(key, task);
   };
 
-  // Push the callback onto the stack and wait for subsequent execution
-  pushCallbackStack = ($state: S, state: State<S>, callback?: StateCallback<S>) => {
+  // Push the callback and wait for subsequent execution
+  pushCallback = ($state: S, state: State<S>, callback?: StateCallback<S>) => {
     if (callback !== undefined) {
       stateCallbackErrorProcessing(callback);
       const nextState: S = Object.assign({}, $state, state);

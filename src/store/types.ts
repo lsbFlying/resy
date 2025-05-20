@@ -115,7 +115,7 @@ export type SetStateType<S extends PrimitiveState> = {
  */
 export type StateCallback<S extends PrimitiveState> = (nextState: Readonly<S>) => void;
 
-// Element types of setState, syncUpdate, restore callback execution stack
+// Element types of setState, syncUpdate, restore callback execution
 export type StateCallbackItem<S extends PrimitiveState> = {
   nextState: S;
   callback: StateCallback<S>;

@@ -476,7 +476,7 @@ export default class StoreMeta<S extends PrimitiveState> {
          * 🌟 Adding "?.has" is to prevent some class components from making an empty connection,
          * that is, connecting to the store but not using it. Generally speaking, this is not done,
          */
-        ? classInstanceItem._$stateRecords_?.has(key)
+        ? classInstanceItem._$stateRefs_?.has(key)
         && classInstanceItem.setState({ [key]: value } as any)
         : classInstanceStack.delete(classInstanceItem);
     });

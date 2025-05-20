@@ -21,22 +21,12 @@ export class ComponentWithStore<
     if (__DEV__ && new.target === ComponentWithStore) {
       throw new Error("This class cannot be instantiated.");
     }
-    this.#constructorProcessing();
-  }
 
-  static displayName?: string;
+    Object.defineProperty(this, "connectStore", {
+      value: this.connectStore,
+      writable: false,
+    });
 
-  _$isMounted_ = false;
-
-  _$stateRecords_ = new Set<keyof S>();
-
-  /**
-   * @description Class components may use multiple different stores.
-   * These store references are collected into `#stores` for subsequent use.
-   */
-  #stores: Set<Store<S>> = new Set();
-
-  #constructorProcessing = () => {
     const instanceMounted = this.componentDidMount;
 
     this.componentDidMount = () => {
@@ -81,7 +71,7 @@ export class ComponentWithStore<
       Promise.resolve().then(() => {
         if (!this._$isMounted_) {
           // Clear the data references used by the class component in rendering
-          this._$stateRecords_.clear();
+          this._$stateRefs_.clear();
           // References to these data are recorded and added through “#connectClass”
           this.#stores.forEach((store: Store<S>) => {
             /**
@@ -97,13 +87,25 @@ export class ComponentWithStore<
         }
       });
     };
-  };
+  }
 
-  #connectClass = <S extends PrimitiveState>(
+  static displayName?: string;
+
+  _$isMounted_ = false;
+
+  _$stateRefs_ = new Set<keyof S>();
+
+  /**
+   * @description Class components may use multiple different stores.
+   * These store references are collected into `#stores` for subsequent use.
+   */
+  #stores: Set<Store<S>> = new Set();
+
+  #getState = <S extends PrimitiveState>(
     key: keyof S,
     store: StoreMeta<S>,
   ) => {
-    this._$stateRecords_.add(key as (string | number));
+    this._$stateRefs_.add(key as (string | number));
     return store.$state[key];
   };
 
@@ -132,7 +134,7 @@ export class ComponentWithStore<
         const value = (store as any as StoreMeta<S>).$state[key];
 
         if (!sourceFromThis && typeof value !== "function") {
-          return this.#connectClass(key, store as any as StoreMeta<S>);
+          return this.#getState(key, store as any as StoreMeta<S>);
         }
 
         if (!sourceFromThis && typeof value === "function") {
@@ -142,7 +144,7 @@ export class ComponentWithStore<
           // TODO waiting upgrade about memo-function
           return (!__enableMacros__ || enableMarcoActionStateful)
             ? (...args: any[]) => (
-              this.#connectClass(key, store as any as StoreMeta<S>) as AnyFn
+              this.#getState(key, store as any as StoreMeta<S>) as AnyFn
             ).apply(classEngineStore, args)
             : (store as any as StoreMeta<S>).$state[key];
         }

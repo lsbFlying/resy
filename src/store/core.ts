@@ -213,7 +213,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   /** ============================== For core render end ============================== */
 
   /** ============================== For core helpers start ============================== */
-  #createStateMeta = (key: keyof S) => {
+  #getStateMeta = (key: keyof S) => {
     const { _stateMetaMap_ } = this;
     // Resolve the problem that the initialization attribute may be undefined
     if (_stateMetaMap_.has(key)) return _stateMetaMap_.get(key);
@@ -244,7 +244,7 @@ export default class StoreMeta<S extends PrimitiveState> {
          * is to preserve the simplicity of the update scheduling for both hook and class components.
          */
         // State updates for hook components
-        this.#createStateMeta(key)!.updater();
+        this.#getStateMeta(key)!.updater();
       },
     );
   };
@@ -336,7 +336,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   #useStateMeta = (key: keyof S) => {
     // Perform refresh recovery logic if initialState is a function
     this._restorer_.initialStateRetrieve();
-    return this.#createStateMeta(key)!.useStateMeta();
+    return this.#getStateMeta(key)!.useStateMeta();
   };
   /** ============================== For core helpers end ============================== */
 
@@ -386,7 +386,7 @@ export default class StoreMeta<S extends PrimitiveState> {
           if (!Object.is(_state_[key], value)) {
             _state_[key] = value;
             this._classUpdater_(key, value);
-            this.#createStateMeta(key)!.updater();
+            this.#getStateMeta(key)!.updater();
           }
         });
       });

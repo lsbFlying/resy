@@ -9,7 +9,7 @@ export type {
   StateThis, PrimateForbiddenType, StateWithThisType, InitialState,
 } from "./store/types";
 
-export * from "./class-connect";
+export { ComponentWithStore } from "./class-connect";
 export type { ClassStoreType } from "./class-connect/types";
 
 export { useSubscription } from "./subscribe/hook";

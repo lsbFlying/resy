@@ -11,7 +11,7 @@ import StoreMeta from "../store/core";
  * @class ComponentWithStore
  * @classdesc The public base class can connect to the store
  */
-export default class ComponentWithStore<
+export class ComponentWithStore<
   P extends PrimitiveState = {},
   S extends PrimitiveState = {},
   SS = any,

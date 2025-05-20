@@ -3,7 +3,7 @@ import type {
   StateWithThisType, Store, StateMetaMapType, StoreOptions, MacroStore, UseMacroStore,
 } from "./types";
 import type { AnyFn, PrimitiveState, ValueOf } from "../types";
-import type ComponentWithStore from "../class-connect";
+import type { ComponentWithStore } from "../class-connect";
 import { ClassStoreType } from "../class-connect/types";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
 import { __COMPUTED_PREFIX__, __RESY_BRAND__ } from "./static";

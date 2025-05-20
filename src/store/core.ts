@@ -127,7 +127,7 @@ export default class StoreMeta<S extends PrimitiveState> {
           ),
         });
 
-        return this.#getStateMeta(key);
+        return this.#useStateMeta(key);
       }
 
       if (!sourceFromThis && typeof value === "function") {
@@ -152,11 +152,11 @@ export default class StoreMeta<S extends PrimitiveState> {
 
         /**
          * @description Enable function properties to have the ability to update rendering.
-         * Placing both the __bound__ and the state's set operation before the #getStateMeta
+         * Placing both the __bound__ and the state's set operation before the #useStateMeta
          * can preemptively avoid the tearing synchronization handling inside useSyncExternalStore,
          * resulting in twice the redundant rendering execution.
          */
-        fnStateful && this.#getStateMeta(key);
+        fnStateful && this.#useStateMeta(key);
 
         return !key.toString().startsWith(__COMPUTED_PREFIX__)
           ? boundFnValue
@@ -216,11 +216,12 @@ export default class StoreMeta<S extends PrimitiveState> {
   #createStateMeta = (key: keyof S) => {
     const { _stateMetaMap_ } = this;
     // Resolve the problem that the initialization attribute may be undefined
-    if (_stateMetaMap_.has(key)) return _stateMetaMap_;
+    if (_stateMetaMap_.has(key)) return _stateMetaMap_.get(key);
 
-    _stateMetaMap_.set(key, new StateMeta<S>(key, this));
+    const stateMetaInstance = new StateMeta<S>(key, this);
+    _stateMetaMap_.set(key, stateMetaInstance);
 
-    return _stateMetaMap_;
+    return stateMetaInstance;
   };
 
   _pushTask_ = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
@@ -243,7 +244,7 @@ export default class StoreMeta<S extends PrimitiveState> {
          * is to preserve the simplicity of the update scheduling for both hook and class components.
          */
         // State updates for hook components
-        this.#createStateMeta(key).get(key)!.updater();
+        this.#createStateMeta(key)!.updater();
       },
     );
   };
@@ -332,10 +333,10 @@ export default class StoreMeta<S extends PrimitiveState> {
     return boundFn as ValueOf<S>;
   };
 
-  #getStateMeta = (key: keyof S) => {
+  #useStateMeta = (key: keyof S) => {
     // Perform refresh recovery logic if initialState is a function
     this._restorer_.initialStateRetrieve();
-    return this.#createStateMeta(key).get(key)!.useStateMeta();
+    return this.#createStateMeta(key)!.useStateMeta();
   };
   /** ============================== For core helpers end ============================== */
 
@@ -385,7 +386,7 @@ export default class StoreMeta<S extends PrimitiveState> {
           if (!Object.is(_state_[key], value)) {
             _state_[key] = value;
             this._classUpdater_(key, value);
-            this.#createStateMeta(key).get(key)!.updater();
+            this.#createStateMeta(key)!.updater();
           }
         });
       });

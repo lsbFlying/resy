@@ -12,13 +12,8 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * @description The core meta-structure of state
  */
 export default class StateMeta<S extends PrimitiveState> {
-  constructor(key: keyof S, storeMetaInstance: StoreMeta<S>) {
-    this.key = key;
-    this.storeMetaInstance = storeMetaInstance;
-  }
-
-  key: keyof S;
-  storeMetaInstance: StoreMeta<S>;
+  // eslint-disable-next-line no-empty-function
+  constructor(public key: keyof S, public storeMetaInstance: StoreMeta<S>) {}
 
   // The Set memory of the update function of a single attribute
   stateChangeQueue = new Set<Callback>();

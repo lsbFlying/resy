@@ -9,12 +9,9 @@ import { useDebugValue } from "react";
 import { useSubscription as useSubscriptionCore } from "./hook";
 
 export default class Subscriber<S extends PrimitiveState> {
-  constructor(storeMetaInstance: StoreMeta<S>) {
-    this.storeMetaInstance = storeMetaInstance;
+  constructor(public storeMetaInstance: StoreMeta<S>) {
     this.prevBatchState = Object.assign({}, storeMetaInstance._reducerState_);
   }
-
-  storeMetaInstance: StoreMeta<S>;
 
   // Data status of the previous update batch
   prevBatchState: S;

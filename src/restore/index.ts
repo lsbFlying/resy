@@ -4,11 +4,8 @@ import { StateCallback } from "../store/types";
 import { hasOwnProperty } from "../utils";
 
 export default class Restorer<S extends PrimitiveState> {
-  constructor(storeMetaInstance: StoreMeta<S>) {
-    this.storeMetaInstance = storeMetaInstance;
-  }
-
-  storeMetaInstance: StoreMeta<S>;
+  // eslint-disable-next-line no-empty-function
+  constructor(public storeMetaInstance: StoreMeta<S>) {}
 
   /**
    * Retrieve the reducerState

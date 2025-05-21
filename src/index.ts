@@ -13,7 +13,7 @@ export { ComponentWithStore } from "./class-connect";
 export type { ClassStoreType } from "./class-connect/types";
 
 export { useSubscription } from "./subscribe/hook";
-export type { UseSubscriptionType } from "./subscribe/types";
+export type { UseSubscriptionType, Unsubscribe } from "./subscribe/types";
 
 export type { RestoreType } from "./restore/types";
 

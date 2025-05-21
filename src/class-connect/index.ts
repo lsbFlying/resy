@@ -22,12 +22,6 @@ export class ComponentWithStore<
       throw new Error("This class cannot be instantiated.");
     }
 
-    Object.defineProperty(this, "connectStore", {
-      value: this.connectStore,
-      writable: false,
-      configurable: false,
-    });
-
     const instanceMounted = this.componentDidMount;
 
     this.componentDidMount = () => {

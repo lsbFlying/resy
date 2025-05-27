@@ -1,13 +1,10 @@
 import typescript from "@rollup/plugin-typescript";
-import { dts } from "rollup-plugin-dts";
 import replace from "@rollup/plugin-replace";
 import autoExternal from "rollup-plugin-auto-external";
 import terser from "@rollup/plugin-terser";
+import { dts } from "rollup-plugin-dts";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
-import {
-  babel,
-  // getBabelOutputPlugin,
-} from "@rollup/plugin-babel";
+import { babel } from "@rollup/plugin-babel";
 
 const input = "src/index.ts";
 
@@ -74,7 +71,6 @@ function createModuleBuildConfig(format: "cjs" | "esm", isTerser?: boolean) {
       "react",
       platforms,
       "use-sync-external-store/shim",
-      // /@babel\/runtime/,
     ],
     plugins: [
       replace({
@@ -84,45 +80,11 @@ function createModuleBuildConfig(format: "cjs" | "esm", isTerser?: boolean) {
       autoExternal(),
       nodeResolve(),
       babel({
-        /**
-         * @description I forgot which version of "@ rollup/plugin label" requires the display
-         * of configuration extensions for compiling TS settings,
-         * and the settings to be displayed are @babel/presets-env
-         */
         extensions: [".js", ".jsx", ".ts", ".tsx"],
-        presets: ["@babel/preset-env"],
         exclude: "node_modules/**",
-        // babelHelpers: "runtime",
         babelHelpers: "bundled",
+        presets: ["@babel/preset-env"],
       }),
-      /**
-       * @description "getBabelOutputPlugin" plugin and "runtime" settings are combined
-       * with "@babel/plugin-transform-runtime", "@babel/runtime-corejs3" and "@babel/runtime",
-       * "@babel/runtime-corejs3" and "@babel/runtime" these two packs need to be placed in "dependencies"
-       * And "@babel/plugin-transform-runtime" pack are placed in "devDependencies".
-       * At the same time, the babel.config.js configuration in the root directory is as follows:
-       * module.exports = api => {
-       *   api.cache(true);
-       *   return {
-       *     presets: [
-       *       "@babel/preset-env"
-       *     ],
-       *     plugins: [
-       *       [
-       *         "@babel/plugin-transform-runtime",
-       *         {
-       *           corejs: 3
-       *         }
-       *       ]
-       *     ]
-       *   };
-       * };
-       * it`s to make the code compatible. However, there is no overall polyfill for the current library.
-       * Instead, it is left to the developer to handle the overall system involved in the construction to do polyfill.
-       */
-      // getBabelOutputPlugin({
-      //   configFile: "./babel.config.js",
-      // }),
       typescript({
         tsconfig: "./tsconfig.json",
       }),
@@ -132,13 +94,18 @@ function createModuleBuildConfig(format: "cjs" | "esm", isTerser?: boolean) {
 }
 
 export default [
+  // ts-d.ts
+  createTsDeclareFileBuildConfig(),
+
+  // cjs
   createPlatformsBuildConfig("dom", "cjs"),
   createPlatformsBuildConfig("native", "cjs"),
-  createPlatformsBuildConfig("dom", "esm"),
-  createPlatformsBuildConfig("native", "esm"),
-  createTsDeclareFileBuildConfig(),
   createModuleBuildConfig("cjs"),
   createModuleBuildConfig("cjs", true),
+
+  // esm
+  createPlatformsBuildConfig("dom", "esm"),
+  createPlatformsBuildConfig("native", "esm"),
   createModuleBuildConfig("esm"),
   createModuleBuildConfig("esm", true),
 ];

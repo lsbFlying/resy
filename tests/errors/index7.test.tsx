@@ -6,6 +6,7 @@ import { ComponentWithStore, createStore } from "../../src";
 /** Basic usage of class components */
 test("classConnect-I", async () => {
 
+  // @ts-ignore
   expect(() => new ComponentWithStore({})).toThrowError();
 
   type Store = {

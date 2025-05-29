@@ -36,17 +36,11 @@ export const useStore = <S extends PrimitiveState>(
  */
 export const useConciseState = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
-) => {
-  return useMemo(() => {
-    return (
-      new StoreMeta<S>(
-        initialState,
-        {
-          __useConciseState__: true,
-          __functionName__: useConciseState.name,
-        } as InnerStoreOptions
-      )
-    ).$engineStore;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-};
+) => useMemo(() => new StoreMeta<S>(
+  initialState,
+  {
+    __useConciseState__: true,
+    __functionName__: useConciseState.name,
+  } as InnerStoreOptions
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+).$engineStore, []);

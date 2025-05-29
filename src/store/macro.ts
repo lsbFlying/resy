@@ -55,8 +55,7 @@ import StoreMeta from "./core";
 export const defineStore = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
   options?: StoreOptions,
-) => {
-  return new StoreMeta(
+) => new StoreMeta(
     initialState,
     {
       ...options,
@@ -64,4 +63,3 @@ export const defineStore = <S extends PrimitiveState>(
       __functionName__: "defineStore",
     } as InnerStoreOptions
   ).useStore;
-};

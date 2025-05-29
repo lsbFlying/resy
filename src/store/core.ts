@@ -212,6 +212,24 @@ export default class StoreMeta<S extends PrimitiveState> {
   /** ============================== For core render end ============================== */
 
   /** ============================== For core helpers start ============================== */
+  _boundFnProcessing_ = (
+    key: keyof S,
+    value: AnyBoundFn,
+    thisArg: Store<S> | ClassStoreType<S> = this.store,
+  ) => {
+    const state = this.$state;
+
+    const boundFn = (
+      (...args: any[]) => (value as AnyFn).apply(thisArg, args)
+    ) as AnyBoundFn;
+
+    boundFn.__bound__ = true;
+
+    state[key] = boundFn as ValueOf<S>;
+
+    return boundFn as ValueOf<S>;
+  };
+
   #getStateMeta = (key: keyof S) => {
     const { _stateMetaMap_ } = this;
     // Resolve the problem that the initialization attribute may be undefined
@@ -221,6 +239,12 @@ export default class StoreMeta<S extends PrimitiveState> {
     _stateMetaMap_.set(key, stateMetaInstance);
 
     return stateMetaInstance;
+  };
+
+  #useStateMeta = (key: keyof S) => {
+    // Perform refresh recovery logic if initialState is a function
+    this._restorer_.initialStateRetrieve();
+    return this.#getStateMeta(key)!.useStateMeta();
   };
 
   _pushTask_ = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
@@ -312,30 +336,6 @@ export default class StoreMeta<S extends PrimitiveState> {
         });
       });
     }
-  };
-
-  _boundFnProcessing_ = (
-    key: keyof S,
-    value: AnyBoundFn,
-    thisArg: Store<S> | ClassStoreType<S> = this.store,
-  ) => {
-    const state = this.$state;
-
-    const boundFn = (
-      (...args: any[]) => (value as AnyFn).apply(thisArg, args)
-    ) as AnyBoundFn;
-
-    boundFn.__bound__ = true;
-
-    state[key] = boundFn as ValueOf<S>;
-
-    return boundFn as ValueOf<S>;
-  };
-
-  #useStateMeta = (key: keyof S) => {
-    // Perform refresh recovery logic if initialState is a function
-    this._restorer_.initialStateRetrieve();
-    return this.#getStateMeta(key)!.useStateMeta();
   };
   /** ============================== For core helpers end ============================== */
 
@@ -453,7 +453,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     }
   };
 
-  /** ============================== For class components start ============================== */
+  // For class components
   _classUpdater_ = (key: keyof S, value: ValueOf<S>) => {
     const classInstanceStack = this._classInstanceStack_;
     classInstanceStack.forEach(classInstanceItem => {
@@ -481,7 +481,6 @@ export default class StoreMeta<S extends PrimitiveState> {
         : classInstanceStack.delete(classInstanceItem);
     });
   };
-  /** ============================== For class components end ============================== */
 
   #createProxy = (
     target: object = this.$state,
@@ -576,12 +575,5 @@ export default class StoreMeta<S extends PrimitiveState> {
   };
   /** ============================== For core utils end ============================== */
 
-  /** ============================== For hook components start ============================== */
-  /**
-   * It is convenient for store.useStore() to call directly
-   * 🌟 The reason why it is not changed to store.useStore
-   * is due to the consideration of the rules for the use of the hook function.
-   */
   useStore = (() => this.$engineStore) as UseMacroStore<S>;
-  /** ============================== For hook components end ============================== */
 }

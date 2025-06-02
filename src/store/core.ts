@@ -61,13 +61,6 @@ export default class StoreMeta<S extends PrimitiveState> {
   // configuration
   _options_;
 
-  /**
-   * @description Flag indicating that the initialStateRetrieve function is executable.
-   * If initialState is a function,
-   * you can get the execution flag in the initialStateRetrieve handler of useStore.
-   */
-  _initialFunctionExecutable_: boolean | undefined;
-
   $state: S;
 
   // TODO computedDeps waiting upgrade
@@ -81,7 +74,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   _classInstanceStack_ = new Set<ComponentWithStore<{}, S>>();
   /** ============================== For core constant ready end ============================== */
 
-  /** ============================== For `Reconciler` —— ( Scheduler、Subscriber、Restorer) start ============================== */
+  /** ============================== For Scheduler、Subscriber、Restorer start ============================== */
   // scheduler
   _scheduler_ = new Scheduler<S>();
 
@@ -93,13 +86,12 @@ export default class StoreMeta<S extends PrimitiveState> {
   // restorer
   _restorer_ = new Restorer(this);
   restore = this._restorer_.restore;
-  // Tag counters for data references of store
-  _stateRefCounter_ = 0;
+
   // After unmount resetting the state (`restoreProcessing` function has been executed),
   // it is in a frozen state where updates are prohibited.
   // TODO waiting considering, the scenes it contains are a bit complex
   // #freezing: boolean | undefined;
-  /** ============================== For `Reconciler` —— ( Scheduler、Subscriber、Restorer)  end ============================== */
+  /** ============================== For Scheduler、Subscriber、Restorer  end ============================== */
 
   /** ============================== For core render start ============================== */
   // A proxy object with the capabilities of updating and data tracking.
@@ -127,7 +119,7 @@ export default class StoreMeta<S extends PrimitiveState> {
           ),
         });
 
-        return this.#useStateMeta(key);
+        return this.#getStateMeta(key)!.useStateMeta();
       }
 
       if (!sourceFromThis && typeof value === "function") {
@@ -152,11 +144,11 @@ export default class StoreMeta<S extends PrimitiveState> {
 
         /**
          * @description Enable function properties to have the ability to update rendering.
-         * Placing both the __bound__ and the state's set operation before the #useStateMeta
+         * Placing both the __bound__ and the state's set operation before the useStateMeta
          * can preemptively avoid the tearing synchronization handling inside useSyncExternalStore,
          * resulting in twice the redundant rendering execution.
          */
-        fnStateful && this.#useStateMeta(key);
+        fnStateful && this.#getStateMeta(key)!.useStateMeta();
 
         return !key.toString().startsWith(__COMPUTED_PREFIX__)
           ? boundFnValue
@@ -239,12 +231,6 @@ export default class StoreMeta<S extends PrimitiveState> {
     _stateMetaMap_.set(key, stateMetaInstance);
 
     return stateMetaInstance;
-  };
-
-  #useStateMeta = (key: keyof S) => {
-    // Perform refresh recovery logic if initialState is a function
-    this._restorer_.initialStateRetrieve();
-    return this.#getStateMeta(key)!.useStateMeta();
   };
 
   _pushTask_ = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {

@@ -23,11 +23,11 @@ export default class StateMeta<S extends PrimitiveState> {
     this.stateChangeQueue.add(onStateChange);
 
     // Increment the reference count by 1 if the component is referenced
-    this.storeMetaInstance._stateRefCounter_++;
+    this.storeMetaInstance._restorer_._stateMetaRefCounter_++;
 
     return () => {
       this.stateChangeQueue.delete(onStateChange);
-      this.storeMetaInstance._stateRefCounter_--;
+      this.storeMetaInstance._restorer_._stateMetaRefCounter_--;
 
       this.storeMetaInstance._restorer_.deferRestoreProcessing(
         () => {
@@ -45,7 +45,15 @@ export default class StateMeta<S extends PrimitiveState> {
   };
 
   useStateMeta = () => {
-    const { storeMetaInstance: { _stateMetaMap_ }, key } = this;
+    const {
+      key, storeMetaInstance: {
+        _stateMetaMap_, _restorer_,
+      },
+    } = this;
+
+    // Perform refresh recovery logic if initialState is a function
+    _restorer_.initialStateRetrieve();
+
     // eslint-disable-next-line react-hooks/rules-of-hooks
     return useSyncExternalStore(
       _stateMetaMap_.get(key)!.subscribe,

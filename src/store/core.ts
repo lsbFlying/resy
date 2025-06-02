@@ -2,9 +2,9 @@ import type {
   AnyBoundFn, InitialState, InnerStoreOptions, State, StateCallback, StateFnType,
   StateWithThisType, Store, StateMetaMapType, StoreOptions, MacroStore, UseMacroStore,
 } from "./types";
-import type { AnyFn, PrimitiveState, ValueOf } from "../types";
+import type { AnyFn, MapType, PrimitiveState, ValueOf } from "../types";
 import type { ComponentWithStore } from "../class-connect";
-import { ClassStoreType } from "../class-connect/types";
+import type { ClassStoreType } from "../class-connect/types";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
 import { __COMPUTED_PREFIX__, __RESY_BRAND__ } from "./static";
 import { hasOwnProperty } from "../utils";
@@ -78,7 +78,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   _stateMetaMap_: StateMetaMapType<S> = new Map();
 
   // The storage stack of this instance for the class component
-  _classInstanceStack_ = new Set<ComponentWithStore<any, S>>();
+  _classInstanceStack_ = new Set<ComponentWithStore<{}, S>>();
   /** ============================== For core constant ready end ============================== */
 
   /** ============================== For `Reconciler` —— ( Scheduler、Subscriber、Restorer) start ============================== */
@@ -220,7 +220,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     const state = this.$state;
 
     const boundFn = (
-      (...args: any[]) => (value as AnyFn).apply(thisArg, args)
+      (...args: unknown[]) => (value as AnyFn).apply(thisArg, args)
     ) as AnyBoundFn;
 
     boundFn.__bound__ = true;
@@ -477,14 +477,14 @@ export default class StoreMeta<S extends PrimitiveState> {
          * that is, connecting to the store but not using it. Generally speaking, this is not done,
          */
         ? classInstanceItem._$stateRefs_?.has(key)
-        && classInstanceItem.setState({ [key]: value } as any)
+        && classInstanceItem.setState({ [key]: value } as Pick<S, keyof S>)
         : classInstanceStack.delete(classInstanceItem);
     });
   };
 
   #createProxy = (
     target: object = this.$state,
-    parentTarget: any = this.$state,
+    parentTarget: object = this.$state,
     firstLevelKey?: keyof S,
     keyLevel?: number,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
@@ -565,7 +565,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       // that are applicable to proxyable types such as `Map`, and `Set`.
       apply: (applyOriginFunction: any, thisArg: any, argArray: any[]) => Reflect.apply(
         __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
-          applyOriginFunction, thisArg, this.$state, parentTarget as any,
+          applyOriginFunction, thisArg, this.$state, parentTarget as (MapType<S> & Set<S>),
           this.#createProxy, firstLevelKey, keyLevel, keyChains, this.#stateMetaUpdate,
         ),
         thisArg,

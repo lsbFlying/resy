@@ -383,7 +383,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   };
 
   // Data updates for a single attribute (state-meta)
-  #stateMetaUpdate = (
+  #updateStateMeta = (
     key: keyof S,
     value: ValueOf<S>,
     isDelete = false,
@@ -412,7 +412,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       changed && reduceChanged(value, keyChains!, firstLevelValue);
 
       return changed
-        ? this.#stateMetaUpdate(
+        ? this.#updateStateMeta(
           firstLevelKey!,
           /**
            * @description When performing updates on the first-level attributes here,
@@ -538,12 +538,12 @@ export default class StoreMeta<S extends PrimitiveState> {
 
         return !sourceFromThis ? value : this[key as keyof StoreMeta<S>];
       },
-      set: (_: S, key: keyof S, value: ValueOf<S>) => this.#stateMetaUpdate(
+      set: (_: S, key: keyof S, value: ValueOf<S>) => this.#updateStateMeta(
         key, value, false, target, firstLevelKey,
         new Set(keyChains).add({ key }), applyOriginFunction,
       ),
       // Delete will also play an updating role
-      deleteProperty: (_: S, key: keyof S) => this.#stateMetaUpdate(
+      deleteProperty: (_: S, key: keyof S) => this.#updateStateMeta(
         key, undefined as ValueOf<S>, true, target, firstLevelKey,
         new Set(keyChains).add({ key }), applyOriginFunction,
       ),
@@ -552,7 +552,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       apply: (applyOriginFunction: any, thisArg: any, argArray: any[]) => Reflect.apply(
         __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
           applyOriginFunction, thisArg, this.$state, parentTarget as (MapType<S> & Set<S>),
-          this.#createProxy, firstLevelKey, keyLevel, keyChains, this.#stateMetaUpdate,
+          this.#createProxy, firstLevelKey, keyLevel, keyChains, this.#updateStateMeta,
         ),
         thisArg,
         argArray,

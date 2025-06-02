@@ -50,7 +50,7 @@ export const useSubscription = <S extends PrimitiveState>(
 
   useEffect(() => {
     // Monitor the overall data changes of the store
-    return (store as any as StoreMeta<S>)._subscriber_.subscribe(data => {
+    return (store as any as StoreMeta<S>).subscribe(data => {
       /**
        * @description First determine whether there is a change in execution,
        * and if so, delay the execution in order to get the latest listening subscription function

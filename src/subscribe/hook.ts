@@ -2,7 +2,6 @@ import type { PrimitiveState } from "../types";
 import type { ListenerType, SubscriptionRefType } from "./types";
 import type { Store } from "../store/types";
 import type StoreMeta from "../store/core";
-import { effectStateInListenerKeys } from "../store/helpers";
 import { useDebugValue, useEffect, useRef } from "react";
 import { storeErrorProcessing, subscribeErrorProcessing } from "../store/errors";
 import { __DEV__ } from "../static";
@@ -56,13 +55,13 @@ export const useSubscription = <S extends PrimitiveState>(
        * and if so, delay the execution in order to get the latest listening subscription function
        * and the array of listening data attributes given by useMemo.
        */
-      if (effectStateInListenerKeys(data.effectState, ref.current!.stateKeys)) {
+      if ((store as any as StoreMeta<S>)._subscriber_.effectStateInListenerKeys(data.effectState, ref.current!.stateKeys)) {
         // Delay execution in order to get the new listener function after re-rendering
         Promise.resolve(data).then(res => {
           ref.current!.listener(res);
         });
       }
-    });
+    }); // TODO 这里也许可以使用实际的ref.current!.stateKeys进行优化，而不是全局订阅依靠内部判断执行
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 };

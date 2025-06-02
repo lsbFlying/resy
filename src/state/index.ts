@@ -19,17 +19,19 @@ export default class StateMeta<S extends PrimitiveState> {
   stateChangeQueue = new Set<Callback>();
 
   subscribe = (onStateChange: Callback) => {
+    const { _restorer_ } = this.storeMetaInstance;
+
     // If a component references the data, the update function will be added to stateChangeSet
     this.stateChangeQueue.add(onStateChange);
 
     // Increment the reference count by 1 if the component is referenced
-    this.storeMetaInstance._restorer_._stateMetaRefCounter_++;
+    _restorer_._stateMetaRefCounter_++;
 
     return () => {
       this.stateChangeQueue.delete(onStateChange);
-      this.storeMetaInstance._restorer_._stateMetaRefCounter_--;
+      _restorer_._stateMetaRefCounter_--;
 
-      this.storeMetaInstance._restorer_.deferRestoreProcessing(
+      _restorer_.deferRestoreProcessing(
         () => {
           // Release memory if there are no component references
           if (!this.stateChangeQueue.size) {

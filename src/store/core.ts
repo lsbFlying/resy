@@ -53,13 +53,13 @@ export default class StoreMeta<S extends PrimitiveState> {
     __enableMacros__: undefined,
     __functionName__: "createStore",
   };
+  // configuration
+  readonly _options_;
 
   /** ============================== For core constant ready start ============================== */
   readonly _initialState_?: InitialState<S>;
   // Retrieve the reducerState
   _reducerState_: S;
-  // configuration
-  _options_;
 
   $state: S;
 
@@ -68,23 +68,23 @@ export default class StoreMeta<S extends PrimitiveState> {
   computedDeps = new Set<keyof S>();
 
   // The core map meta-structure of stateMeta
-  _stateMetaMap_: StateMetaMapType<S> = new Map();
+  readonly _stateMetaMap_: StateMetaMapType<S> = new Map();
 
   // The storage stack of this instance for the class component
-  _classInstanceStack_ = new Set<ComponentWithStore<{}, S>>();
+  readonly _classInstanceStack_ = new Set<ComponentWithStore<{}, S>>();
   /** ============================== For core constant ready end ============================== */
 
   /** ============================== For Scheduler、Subscriber、Restorer start ============================== */
   // scheduler
-  _scheduler_ = new Scheduler<S>();
+  readonly _scheduler_ = new Scheduler<S>();
 
   // subscriber
-  _subscriber_ = new Subscriber(this);
+  readonly _subscriber_ = new Subscriber(this);
   subscribe = this._subscriber_.subscribe;
   useSubscription = this._subscriber_.useSubscription;
 
   // restorer
-  _restorer_ = new Restorer(this);
+  readonly _restorer_ = new Restorer(this);
   restore = this._restorer_.restore;
 
   // After unmount resetting the state (`restoreProcessing` function has been executed),
@@ -95,10 +95,10 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   /** ============================== For core render start ============================== */
   // A proxy object with the capabilities of updating and data tracking.
-  store: Store<S>;
+  readonly store: Store<S>;
 
   // Proxy of driver update re-render for useStore
-  $engineStore = new Proxy({} as MacroStore<S>, {
+  readonly $engineStore = new Proxy({} as MacroStore<S>, {
     get: (_: S, key: keyof S) => {
       const state = this.$state;
 

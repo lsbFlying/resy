@@ -2,7 +2,6 @@ import type { PrimitiveState } from "../types";
 import type { ListenerType, Unsubscribe } from "./types";
 import type StoreMeta from "../store/core";
 import type { Store } from "../store/types";
-import { effectStateInListenerKeys } from "../store/helpers";
 import { subscribeErrorProcessing } from "../store/errors";
 import { __DEV__ } from "../static";
 import { useDebugValue } from "react";
@@ -32,6 +31,33 @@ export default class Subscriber<S extends PrimitiveState> {
     }
   };
 
+  /**
+   * @description Determine whether the current change data is within the monitoring range of stateKeys
+   * @return boolean
+   */
+  effectStateInListenerKeys = <S extends PrimitiveState>(
+    effectState: Readonly<Partial<S>>,
+    stateKeys?: (keyof S)[],
+  ) => {
+    let effectExecFlag = false;
+    const listenerKeysExist = stateKeys && stateKeys?.length > 0;
+    /**
+     * @description In fact, when the final subscription is triggered,
+     * each of these outer layer listenerWraps subscribed is activated.
+     * It's just that here, the execution of the inner listener is contingent upon a data change check,
+     * which then determines whether the listener in subscribe should be executed.
+     */
+    if (
+      (
+        listenerKeysExist
+        && Object.keys(effectState).some(key => stateKeys.includes(key))
+      ) || !listenerKeysExist
+    ) {
+      effectExecFlag = true;
+    }
+    return effectExecFlag;
+  };
+
   // Subscription function
   subscribe = (listener: ListenerType<S>, stateKeys?: (keyof S)[]): Unsubscribe => {
     const listenerQueue = this.listenerQueue;
@@ -39,7 +65,7 @@ export default class Subscriber<S extends PrimitiveState> {
     subscribeErrorProcessing(listener, stateKeys);
 
     const listenerWrap: ListenerType<S> = data => {
-      effectStateInListenerKeys(data.effectState, stateKeys) && listener(data);
+      this.effectStateInListenerKeys(data.effectState, stateKeys) && listener(data);
     };
 
     listenerQueue.add(listenerWrap);

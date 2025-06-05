@@ -1,5 +1,5 @@
 import type { PrimitiveState, ValueOf } from "../types";
-import type { State, StateCallback, StateFnType } from "../store/types";
+import type { State, StateCallback, StateFnType } from "./types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import type { ComponentWithStore } from "../class-connect";
 import type StoreMeta from "../store/core";

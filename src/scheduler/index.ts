@@ -1,5 +1,5 @@
 import type { PrimitiveState, Callback, ValueOf } from "../types";
-import type { StateCallbackItem, State, StateCallback } from "../store/types";
+import type { StateCallbackItem, State, StateCallback } from "../updater/types";
 import { stateCallbackErrorProcessing } from "../store/errors";
 
 /**

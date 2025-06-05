@@ -1,5 +1,6 @@
 import type { PrimitiveState } from "../types";
-import type { StateCallback, InnerStoreOptions } from "./types";
+import type { InnerStoreOptions } from "./types";
+import type { StateCallback } from "../updater/types";
 import type StoreMeta from "./core";
 import { __DEV__ } from "../static";
 import { whatsType } from "../utils";

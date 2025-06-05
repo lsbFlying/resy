@@ -1,7 +1,7 @@
 import type { PrimitiveState } from "../types";
 import type { ListenerType, Unsubscribe } from "./types";
-import type StoreMeta from "../store/core";
 import type { Store } from "../store/types";
+import type StoreMeta from "../store/core";
 import { subscribeErrorProcessing } from "../store/errors";
 import { __DEV__ } from "../static";
 import { useDebugValue } from "react";

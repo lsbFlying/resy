@@ -1,4 +1,4 @@
-import type { StateCallback } from "../store/types";
+import type { StateCallback } from "../updater/types";
 import type { PrimitiveState } from "../types";
 
 /** Type of restore */

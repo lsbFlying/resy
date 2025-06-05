@@ -1,6 +1,6 @@
 import type StoreMeta from "../store/core";
 import type { Callback, PrimitiveState } from "../types";
-import { StateCallback } from "../store/types";
+import type { StateCallback } from "../updater/types";
 import { hasOwnProperty } from "../utils";
 
 export default class Restorer<S extends PrimitiveState> {

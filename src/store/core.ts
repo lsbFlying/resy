@@ -1,6 +1,6 @@
 import type {
-  AnyBoundFn, InitialState, InnerStoreOptions, State, StateCallback, StateFnType,
-  StateWithThisType, Store, StateMetaMapType, StoreOptions, MacroStore, UseMacroStore,
+  AnyBoundFn, InitialState, InnerStoreOptions, StateWithThisType,
+  Store, StateMetaMapType, StoreOptions, MacroStore, UseMacroStore,
 } from "./types";
 import type { AnyFn, MapType, PrimitiveState, ValueOf } from "../types";
 import type { ComponentWithStore } from "../class-connect";
@@ -8,13 +8,14 @@ import type { ClassStoreType } from "../class-connect/types";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
 import { __COMPUTED_PREFIX__, __RESY_BRAND__ } from "./static";
 import { hasOwnProperty } from "../utils";
-import { __DEV__, batchUpdate } from "../static";
-import { createNewRefValue, proxyable, reduceChanged } from "../immutable/utils";
+import { __DEV__ } from "../static";
+import { proxyable } from "../immutable/utils";
 import { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
 import { useDebugValue, useEffect, useState } from "react";
-import Scheduler from "../scheduler";
 import StateMeta from "../state";
+import Scheduler from "../scheduler";
+import Updater from "../updater";
 import Subscriber from "../subscribe";
 import Restorer from "../restore";
 
@@ -78,6 +79,11 @@ export default class StoreMeta<S extends PrimitiveState> {
   // scheduler
   readonly _scheduler_ = new Scheduler<S>();
 
+  // updater
+  readonly _updater_ = new Updater(this);
+  setState = this._updater_.setState;
+  syncUpdate = this._updater_.syncUpdate;
+
   // subscriber
   readonly _subscriber_ = new Subscriber(this);
   subscribe = this._subscriber_.subscribe;
@@ -119,7 +125,7 @@ export default class StoreMeta<S extends PrimitiveState> {
           ),
         });
 
-        return this.#getStateMeta(key)!.useStateMeta();
+        return this._getStateMeta_(key)!.useStateMeta();
       }
 
       if (!sourceFromThis && typeof value === "function") {
@@ -148,7 +154,7 @@ export default class StoreMeta<S extends PrimitiveState> {
          * can preemptively avoid the tearing synchronization handling inside useSyncExternalStore,
          * resulting in twice the redundant rendering execution.
          */
-        fnStateful && this.#getStateMeta(key)!.useStateMeta();
+        fnStateful && this._getStateMeta_(key)!.useStateMeta();
 
         return !key.toString().startsWith(__COMPUTED_PREFIX__)
           ? boundFnValue
@@ -203,7 +209,6 @@ export default class StoreMeta<S extends PrimitiveState> {
   } as ProxyHandler<MacroStore<S>>);
   /** ============================== For core render end ============================== */
 
-  /** ============================== For core helpers start ============================== */
   _boundFnProcessing_ = (
     key: keyof S,
     value: AnyBoundFn,
@@ -222,7 +227,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     return boundFn as ValueOf<S>;
   };
 
-  #getStateMeta = (key: keyof S) => {
+  _getStateMeta_ = (key: keyof S) => {
     const { _stateMetaMap_ } = this;
     // Resolve the problem that the initialization attribute may be undefined
     if (_stateMetaMap_.has(key)) return _stateMetaMap_.get(key);
@@ -231,241 +236,6 @@ export default class StoreMeta<S extends PrimitiveState> {
     _stateMetaMap_.set(key, stateMetaInstance);
 
     return stateMetaInstance;
-  };
-
-  _pushTask_ = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
-    const state = this.$state;
-    /**
-     * @description The pre-execution of the data changes accumulates
-     * the logic of the correct execution of the final update,
-     * which lays the foundation for subsequent batch updates.
-     */
-    !isDelete ? (state[key] = value) : delete state[key];
-
-    this._scheduler_.pushTask(
-      key,
-      value,
-      () => {
-        // State updates for class components
-        this._classUpdater_(key, value);
-        /**
-         * @description The decision not to execute the updates for class components within the following updater
-         * is to preserve the simplicity of the update scheduling for both hook and class components.
-         */
-        // State updates for hook components
-        this.#getStateMeta(key)!.updater();
-      },
-    );
-  };
-
-  _finallyBatchProcessing_ = () => {
-    const listenerQueue = this._subscriber_.listenerQueue;
-    const scheduler = this._scheduler_;
-    const {
-      taskData, taskQueue, callbackQueue,
-    } = scheduler;
-
-    if ((taskQueue.size > 0 || callbackQueue.size > 0) && !scheduler.isUpdating) {
-      // Reduce the generation of redundant microtasks through the isUpdating flag
-      scheduler.isUpdating = Promise.resolve().then(() => {
-        /**
-         * @description Reset the isUpdating and willUpdating flags
-         * to ensure that each subsequent round of update batching can proceed and operate normally.
-         */
-        scheduler.isUpdating = undefined;
-        scheduler.willUpdating = undefined;
-
-        batchUpdate(() => {
-          // Perform update task
-          taskQueue.forEach(task => {
-            task();
-          });
-
-          // Make a shallow clone of the "taskDataMap" data for the "effectState" of "subscribe",
-          // Perform a shallowClone before executing flushTask, otherwise, it might become impossible to retrieve `taskDataMap`.
-          const effectStateTemp = listenerQueue.size > 0
-            ? Object.assign({}, taskData)
-            : undefined;
-
-          /**
-           * @description So far, the task of this round of data updates is complete.
-           * The task data and task queue are immediately flushed and cleared,
-           * freeing up space in preparation for the next round of data updates.
-           */
-          scheduler.flushTask();
-
-          // 🌟 The execution of subscribe and callback needs to be placed after flush,
-          // otherwise their own update queues will be emptied in advance, affecting their own internal execution.
-
-          // Trigger the execution of the callback function
-          if (callbackQueue.size > 0) {
-            callbackQueue.forEach(({ callback, nextState }) => {
-              callback(nextState);
-            });
-            callbackQueue.clear();
-          }
-
-          // 🌟 As logically, the listener in subscribe needs to be executed after the callback has been executed.
-
-          // Trigger the execution of subscription snooping
-          if (listenerQueue.size > 0) {
-            listenerQueue.forEach(item => {
-              // the clone returned by mapToObject ensures that the externally subscribed data
-              // maintains it`s purity and security as much as possible in terms of usage.
-              item({
-                effectState: effectStateTemp!,
-                nextState: this.$state,
-                prevState: this._subscriber_.prevBatchState,
-              });
-            });
-          }
-        });
-      });
-    }
-  };
-  /** ============================== For core helpers end ============================== */
-
-  /** ============================== For core utils start ============================== */
-  setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    this._subscriber_.willUpdatingProcessing();
-
-    const _state_ = this.$state;
-
-    let stateTemp = state;
-
-    // processing of prevState
-    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(Object.assign({}, _state_)));
-
-    if (stateTemp !== null) {
-      stateErrorProcessing({ state: stateTemp, fnName: "setState" });
-      // The update of hook is an independent update dispatch action, and traversal processing is needed to unify the stack.
-      Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
-        const value = (stateTemp as S)[key];
-        if (!Object.is(value, _state_[key])) {
-          this._pushTask_(key, value);
-        }
-      });
-    }
-
-    this._scheduler_.pushCallback(_state_, stateTemp as State<S>, callback);
-
-    this._finallyBatchProcessing_();
-  };
-
-  /**
-   * @description syncUpdate primarily exists to address issues with normal text input.
-   * to meet the needs of normal text input, it synchronizes React's update scheduling.
-   */
-  syncUpdate = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    const _state_ = this.$state;
-
-    let stateTemp = state;
-
-    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(Object.assign({}, _state_)));
-
-    if (stateTemp !== null) {
-      stateErrorProcessing({ state: stateTemp, fnName: "syncUpdate" });
-      batchUpdate(() => {
-        Object.keys(stateTemp as NonNullable<State<S>>).forEach((key: keyof S) => {
-          const value = (stateTemp as S)[key];
-          if (!Object.is(_state_[key], value)) {
-            _state_[key] = value;
-            this._classUpdater_(key, value);
-            this.#getStateMeta(key)!.updater();
-          }
-        });
-      });
-    }
-
-    this._scheduler_.pushCallback(_state_, stateTemp as State<S>, callback);
-
-    this._finallyBatchProcessing_();
-  };
-
-  // Data updates for a single attribute (state-meta)
-  #updateStateMeta = (
-    key: keyof S,
-    value: ValueOf<S>,
-    isDelete = false,
-    target: object | S = this.$state,
-    firstLevelKey?: keyof S,
-    keyChains?: Set<KeyChainsSourceItemType<S>>,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _applyOriginFunction?: ApplyOriginFunctionType,
-  ): boolean => {
-    // if (this.#freezing) return true;
-
-    const state = this.$state;
-
-    // mutate chain update
-    if (firstLevelKey) {
-      // During each update, the target here is the latest target object obtained by the previous agent,
-      // so the PrevValue here is also the latest data before the update.
-      const prevValue = (target as S)[key];
-
-      // Directly compare the PrevValue with the current value to be updated
-      // to see if the data needs to be updated and processed.
-      const changed = !Object.is(prevValue, value);
-
-      const firstLevelValue = state[firstLevelKey!];
-
-      changed && reduceChanged(value, keyChains!, firstLevelValue);
-
-      return changed
-        ? this.#updateStateMeta(
-          firstLevelKey!,
-          /**
-           * @description When performing updates on the first-level attributes here,
-           * a reference update is required. Without a reference update,
-           * the incremental processing of `noneFirstLevelKeyChains` and `firstLevelValue` in the preceding `reduce` function
-           * will result in no actual change to the references.
-           * Consequently, when reaching the "else" branch
-           * and executing the logic of `if (!Object.is(value, $state[key]))`,
-           * it will show that the previous and current values are equal,
-           * ultimately leading to the update being skipped.
-           */
-          createNewRefValue(firstLevelValue) as ValueOf<S>,
-          isDelete,
-          state,
-        )
-        : true;
-    } else {
-      if (!Object.is(value, state[key])) {
-        this._subscriber_.willUpdatingProcessing();
-        this._pushTask_(key, value, isDelete);
-        this._finallyBatchProcessing_();
-      }
-      return true;
-    }
-  };
-
-  // For class components
-  _classUpdater_ = (key: keyof S, value: ValueOf<S>) => {
-    const classInstanceStack = this._classInstanceStack_;
-    classInstanceStack.forEach(classInstanceItem => {
-      /**
-       * There is an "updater" attribute on the internal this pointer of react's class,
-       * and an "isMounted" method is mounted on it to determine whether the component has been loaded.
-       * If it is in "React.StrictMode" mode,
-       * React will discard the first generated instance and the instance will not be mounted.
-       */
-      classInstanceItem._$isMounted_
-        /**
-         * @description Determine whether the currently updated data property
-         * is used in the class component, and if not, do not update it.
-         * 🌟 Don't worry about the use of hidden attributes caused by operations such as ternary operators.
-         * Even the use of hidden attributes here will not cause rendering problems,
-         * because the state attribute reference of the class component does not have a hook rule.
-         * At the same time, when a hidden attribute is discovered by a new rendering,
-         * it will immediately generate a new state attribute reference.
-         * Therefore, this is always safe, and it can avoid unnecessary re-renders.
-         * 🌟 Adding "?.has" is to prevent some class components from making an empty connection,
-         * that is, connecting to the store but not using it. Generally speaking, this is not done,
-         */
-        ? classInstanceItem._$stateRefs_?.has(key)
-        && classInstanceItem.setState({ [key]: value } as Pick<S, keyof S>)
-        : classInstanceStack.delete(classInstanceItem);
-    });
   };
 
   #createProxy = (
@@ -538,12 +308,12 @@ export default class StoreMeta<S extends PrimitiveState> {
 
         return !sourceFromThis ? value : this[key as keyof StoreMeta<S>];
       },
-      set: (_: S, key: keyof S, value: ValueOf<S>) => this.#updateStateMeta(
+      set: (_: S, key: keyof S, value: ValueOf<S>) => this._updater_.updateStateMeta(
         key, value, false, target, firstLevelKey,
         new Set(keyChains).add({ key }), applyOriginFunction,
       ),
       // Delete will also play an updating role
-      deleteProperty: (_: S, key: keyof S) => this.#updateStateMeta(
+      deleteProperty: (_: S, key: keyof S) => this._updater_.updateStateMeta(
         key, undefined as ValueOf<S>, true, target, firstLevelKey,
         new Set(keyChains).add({ key }), applyOriginFunction,
       ),
@@ -552,7 +322,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       apply: (applyOriginFunction: any, thisArg: any, argArray: any[]) => Reflect.apply(
         __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
           applyOriginFunction, thisArg, this.$state, parentTarget as (MapType<S> & Set<S>),
-          this.#createProxy, firstLevelKey, keyLevel, keyChains, this.#updateStateMeta,
+          this.#createProxy, firstLevelKey, keyLevel, keyChains, this._updater_.updateStateMeta,
         ),
         thisArg,
         argArray,

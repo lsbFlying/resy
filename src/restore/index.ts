@@ -112,8 +112,8 @@ export default class Restorer<S extends PrimitiveState> {
   // Reset recovery initialization state data
   restore = (callback?: StateCallback<S>) => {
     const {
-      $state, _subscriber_, _reducerState_, _pushTask_,
-      _scheduler_, _finallyBatchProcessing_,
+      $state, _subscriber_, _reducerState_, _scheduler_,
+      _updater_: { pushTask, finallyBatchProcessing },
     } = this.storeMetaInstance;
     const state = $state;
 
@@ -149,11 +149,11 @@ export default class Restorer<S extends PrimitiveState> {
       const originValue = reducerState[key];
 
       !Object.is(originValue, state[key])
-      && _pushTask_(key, originValue, !hasOwnProperty.call(reducerState, key));
+      && pushTask(key, originValue, !hasOwnProperty.call(reducerState, key));
     });
 
     _scheduler_.pushCallback({} as S, reducerState, callback);
 
-    _finallyBatchProcessing_();
+    finallyBatchProcessing();
   };
 }

@@ -149,7 +149,7 @@ export abstract class ComponentWithStore<
       // TODO classEngineStore可能需要递归代理生成proxy，像StoreMeta的createProxy方法那样，以便于链式更新
       set: (_: ClassStoreType<S>, key: keyof S, value: ValueOf<S>): boolean => {
         !Object.is((store as any as StoreMeta<S>).$state[key], value)
-        && (store as any as StoreMeta<S>)._classUpdater_(key, value);
+        && (store as any as StoreMeta<S>)._updater_.classUpdater(key, value);
         return true;
       },
     } as ProxyHandler<ClassStoreType<S>>);

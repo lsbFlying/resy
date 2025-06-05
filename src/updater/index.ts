@@ -1,7 +1,7 @@
 import type { PrimitiveState, ValueOf } from "../types";
-import type StoreMeta from "../store/core";
 import type { State, StateCallback, StateFnType } from "../store/types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
+import type StoreMeta from "../store/core";
 import { batchUpdate } from "../static";
 import { stateErrorProcessing } from "../store/errors";
 import { createNewRefValue, reduceChanged } from "../immutable/utils";

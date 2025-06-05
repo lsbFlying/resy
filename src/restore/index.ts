@@ -78,7 +78,7 @@ export default class Restorer<S extends PrimitiveState> {
       scheduler.deferEffectDestructorExecutable = Promise.resolve().then(() => {
         scheduler.deferEffectDestructorExecutable = undefined;
         const { _stateMetaRefCounter_ } = this;
-        const classInstanceStack = this.storeMetaInstance._classInstanceStack_;
+        const classInstanceStack = this.storeMetaInstance._updater_._classInstanceStack_;
         if (!_stateMetaRefCounter_ && !classInstanceStack.size) {
           /**
            * By using "stateRefCounter" and "classInstanceStack",

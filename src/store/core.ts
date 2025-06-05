@@ -3,12 +3,11 @@ import type {
   Store, StateMetaMapType, StoreOptions, MacroStore, UseMacroStore,
 } from "./types";
 import type { AnyFn, MapType, PrimitiveState, ValueOf } from "../types";
-import type { ComponentWithStore } from "../class-connect";
 import type { ClassStoreType } from "../class-connect/types";
+import { __DEV__ } from "../static";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
 import { __COMPUTED_PREFIX__, __RESY_BRAND__ } from "./static";
 import { hasOwnProperty } from "../utils";
-import { __DEV__ } from "../static";
 import { proxyable } from "../immutable/utils";
 import { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
@@ -43,7 +42,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     this.store = this.#createProxy();
   }
 
-  __RESY_BRAND__ = __RESY_BRAND__;
+  readonly __RESY_BRAND__ = __RESY_BRAND__;
 
   static #DEFAULT_OPTIONS: InnerStoreOptions = {
     unmountRestore: true,
@@ -56,26 +55,11 @@ export default class StoreMeta<S extends PrimitiveState> {
   };
   // configuration
   readonly _options_;
-
-  /** ============================== For core constant ready start ============================== */
   readonly _initialState_?: InitialState<S>;
   // Retrieve the reducerState
   _reducerState_: S;
 
-  $state: S;
-
-  // TODO computedDeps waiting upgrade
-  // Dependency Collection for computed
-  computedDeps = new Set<keyof S>();
-
-  // The core map meta-structure of stateMeta
-  readonly _stateMetaMap_: StateMetaMapType<S> = new Map();
-
-  // The storage stack of this instance for the class component
-  readonly _classInstanceStack_ = new Set<ComponentWithStore<{}, S>>();
-  /** ============================== For core constant ready end ============================== */
-
-  /** ============================== For Scheduler、Subscriber、Restorer start ============================== */
+  /** ============================== For Core Element start ============================== */
   // scheduler
   readonly _scheduler_ = new Scheduler<S>();
 
@@ -97,9 +81,17 @@ export default class StoreMeta<S extends PrimitiveState> {
   // it is in a frozen state where updates are prohibited.
   // TODO waiting considering, the scenes it contains are a bit complex
   // #freezing: boolean | undefined;
-  /** ============================== For Scheduler、Subscriber、Restorer  end ============================== */
+  /** ============================== For Core Element  end ============================== */
 
-  /** ============================== For core render start ============================== */
+  /** ============================== For Core Render Element start ============================== */
+  $state: S;
+  // TODO computedDeps waiting upgrade
+  // Dependency Collection for computed
+  computedDeps = new Set<keyof S>();
+
+  // The core map meta-structure of stateMeta
+  readonly _stateMetaMap_: StateMetaMapType<S> = new Map();
+
   // A proxy object with the capabilities of updating and data tracking.
   readonly store: Store<S>;
 
@@ -207,8 +199,11 @@ export default class StoreMeta<S extends PrimitiveState> {
       return this[key as keyof StoreMeta<S>];
     },
   } as ProxyHandler<MacroStore<S>>);
-  /** ============================== For core render end ============================== */
 
+  useStore = (() => this.$engineStore) as UseMacroStore<S>;
+  /** ============================== For Core Render Element end ============================== */
+
+  /** Helper function for binding function properties  */
   _boundFnProcessing_ = (
     key: keyof S,
     value: AnyBoundFn,
@@ -227,6 +222,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     return boundFn as ValueOf<S>;
   };
 
+  /** Create and generate 'state meta' */
   _getStateMeta_ = (key: keyof S) => {
     const { _stateMetaMap_ } = this;
     // Resolve the problem that the initialization attribute may be undefined
@@ -238,6 +234,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     return stateMetaInstance;
   };
 
+  /** Create Store Proxy */
   #createProxy = (
     target: object = this.$state,
     parentTarget: object = this.$state,
@@ -329,7 +326,4 @@ export default class StoreMeta<S extends PrimitiveState> {
       ),
     } as ProxyHandler<S>) as Store<S>;
   };
-  /** ============================== For core utils end ============================== */
-
-  useStore = (() => this.$engineStore) as UseMacroStore<S>;
 }

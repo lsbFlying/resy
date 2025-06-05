@@ -76,7 +76,7 @@ export abstract class ComponentWithStore<
              * firstly, removing this proxy instance of class from the internal classInstanceStack of the store,
              * and secondly, resetting the data to it`s initial state
              */
-            (store as any as StoreMeta<S>)._classInstanceStack_.delete(this);
+            (store as any as StoreMeta<S>)._updater_._classInstanceStack_.delete(this);
             (store as any as StoreMeta<S>)._restorer_.deferRestoreProcessing();
           });
         }
@@ -109,7 +109,7 @@ export abstract class ComponentWithStore<
     (store as any as StoreMeta<S>)._restorer_.initialStateRetrieve();
     this.#stores.add(store as any);
 
-    (store as any as StoreMeta<S>)._classInstanceStack_.add(this as any);
+    (store as any as StoreMeta<S>)._updater_._classInstanceStack_.add(this as any);
 
     const {
       _options_: {

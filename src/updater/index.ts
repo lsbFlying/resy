@@ -1,6 +1,7 @@
 import type { PrimitiveState, ValueOf } from "../types";
 import type { State, StateCallback, StateFnType } from "../store/types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
+import type { ComponentWithStore } from "../class-connect";
 import type StoreMeta from "../store/core";
 import { batchUpdate } from "../static";
 import { stateErrorProcessing } from "../store/errors";
@@ -12,6 +13,9 @@ import { createNewRefValue, reduceChanged } from "../immutable/utils";
 export default class Updater<S extends PrimitiveState> {
   // eslint-disable-next-line no-empty-function
   constructor(public storeMetaInstance: StoreMeta<S>) {}
+
+  // The storage stack of this instance for the class component
+  readonly _classInstanceStack_ = new Set<ComponentWithStore<{}, S>>();
 
   pushTask = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
     const state = this.storeMetaInstance.$state;
@@ -219,7 +223,7 @@ export default class Updater<S extends PrimitiveState> {
 
   // For class components
   classUpdater = (key: keyof S, value: ValueOf<S>) => {
-    const classInstanceStack = this.storeMetaInstance._classInstanceStack_;
+    const classInstanceStack = this._classInstanceStack_;
     classInstanceStack.forEach(classInstanceItem => {
       /**
        * There is an "updater" attribute on the internal this pointer of react's class,

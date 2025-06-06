@@ -13,13 +13,13 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  */
 export default class StateMeta<S extends PrimitiveState> {
   // eslint-disable-next-line no-empty-function
-  constructor(public key: keyof S, public storeMetaInstance: StoreMeta<S>) {}
+  constructor(public key: keyof S, public $storeMeta: StoreMeta<S>) {}
 
   // The Set memory of the update function of a single attribute
-  stateChangeQueue = new Set<Callback>();
+  readonly stateChangeQueue = new Set<Callback>();
 
   subscribe = (onStateChange: Callback) => {
-    const { _restorer_ } = this.storeMetaInstance;
+    const { _restorer_ } = this.$storeMeta;
 
     // If a component references the data, the update function will be added to stateChangeSet
     this.stateChangeQueue.add(onStateChange);
@@ -35,7 +35,7 @@ export default class StateMeta<S extends PrimitiveState> {
         () => {
           // Release memory if there are no component references
           if (!this.stateChangeQueue.size) {
-            this.storeMetaInstance._stateMetaMap_.delete(this.key);
+            this.$storeMeta._stateMetaMap_.delete(this.key);
           }
         },
       );
@@ -43,12 +43,12 @@ export default class StateMeta<S extends PrimitiveState> {
   };
 
   getSnapshot = () => {
-    return this.storeMetaInstance.$state[this.key];
+    return this.$storeMeta.$state[this.key];
   };
 
   useStateMeta = () => {
     const {
-      key, storeMetaInstance: {
+      key, $storeMeta: {
         _stateMetaMap_, _restorer_,
       },
     } = this;

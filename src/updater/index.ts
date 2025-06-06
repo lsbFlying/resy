@@ -12,13 +12,13 @@ import { createNewRefValue, reduceChanged } from "../immutable/utils";
  */
 export default class Updater<S extends PrimitiveState> {
   // eslint-disable-next-line no-empty-function
-  constructor(public storeMetaInstance: StoreMeta<S>) {}
+  constructor(public $storeMeta: StoreMeta<S>) {}
 
   // The storage stack of this instance for the class component
-  readonly _classInstanceStack_ = new Set<ComponentWithStore<{}, S>>();
+  readonly classInstanceStack = new Set<ComponentWithStore<{}, S>>();
 
   pushTask = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
-    const state = this.storeMetaInstance.$state;
+    const state = this.$storeMeta.$state;
     /**
      * @description The pre-execution of the data changes accumulates
      * the logic of the correct execution of the final update,
@@ -26,7 +26,7 @@ export default class Updater<S extends PrimitiveState> {
      */
     !isDelete ? (state[key] = value) : delete state[key];
 
-    this.storeMetaInstance._scheduler_.pushTask(
+    this.$storeMeta._scheduler_.pushTask(
       key,
       value,
       () => {
@@ -37,14 +37,14 @@ export default class Updater<S extends PrimitiveState> {
          * is to preserve the simplicity of the update scheduling for both hook and class components.
          */
         // State updates for hook components
-        this.storeMetaInstance._getStateMeta_(key)!.updater();
+        this.$storeMeta._getStateMeta_(key)!.updater();
       },
     );
   };
 
   finallyBatchProcessing = () => {
-    const listenerQueue = this.storeMetaInstance._subscriber_.listenerQueue;
-    const scheduler = this.storeMetaInstance._scheduler_;
+    const listenerQueue = this.$storeMeta._subscriber_.listenerQueue;
+    const scheduler = this.$storeMeta._scheduler_;
     const {
       taskData, taskQueue, callbackQueue,
     } = scheduler;
@@ -98,8 +98,8 @@ export default class Updater<S extends PrimitiveState> {
               // maintains it`s purity and security as much as possible in terms of usage.
               item({
                 effectState: effectStateTemp!,
-                nextState: this.storeMetaInstance.$state,
-                prevState: this.storeMetaInstance._subscriber_.prevBatchState,
+                nextState: this.$storeMeta.$state,
+                prevState: this.$storeMeta._subscriber_.prevBatchState,
               });
             });
           }
@@ -109,9 +109,9 @@ export default class Updater<S extends PrimitiveState> {
   };
 
   setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    this.storeMetaInstance._subscriber_.willUpdatingProcessing();
+    this.$storeMeta._subscriber_.willUpdatingProcessing();
 
-    const _state_ = this.storeMetaInstance.$state;
+    const _state_ = this.$storeMeta.$state;
 
     let stateTemp = state;
 
@@ -129,7 +129,7 @@ export default class Updater<S extends PrimitiveState> {
       });
     }
 
-    this.storeMetaInstance._scheduler_.pushCallback(_state_, stateTemp as State<S>, callback);
+    this.$storeMeta._scheduler_.pushCallback(_state_, stateTemp as State<S>, callback);
 
     this.finallyBatchProcessing();
   };
@@ -139,7 +139,7 @@ export default class Updater<S extends PrimitiveState> {
    * to meet the needs of normal text input, it synchronizes React's update scheduling.
    */
   syncUpdate = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    const _state_ = this.storeMetaInstance.$state;
+    const _state_ = this.$storeMeta.$state;
 
     let stateTemp = state;
 
@@ -153,13 +153,13 @@ export default class Updater<S extends PrimitiveState> {
           if (!Object.is(_state_[key], value)) {
             _state_[key] = value;
             this.classUpdater(key, value);
-            this.storeMetaInstance._getStateMeta_(key)!.updater();
+            this.$storeMeta._getStateMeta_(key)!.updater();
           }
         });
       });
     }
 
-    this.storeMetaInstance._scheduler_.pushCallback(_state_, stateTemp as State<S>, callback);
+    this.$storeMeta._scheduler_.pushCallback(_state_, stateTemp as State<S>, callback);
 
     this.finallyBatchProcessing();
   };
@@ -169,7 +169,7 @@ export default class Updater<S extends PrimitiveState> {
     key: keyof S,
     value: ValueOf<S>,
     isDelete = false,
-    target: object | S = this.storeMetaInstance.$state,
+    target: object | S = this.$storeMeta.$state,
     firstLevelKey?: keyof S,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -177,7 +177,7 @@ export default class Updater<S extends PrimitiveState> {
   ): boolean => {
     // if (this.#freezing) return true;
 
-    const state = this.storeMetaInstance.$state;
+    const state = this.$storeMeta.$state;
 
     // mutate chain update
     if (firstLevelKey) {
@@ -213,7 +213,7 @@ export default class Updater<S extends PrimitiveState> {
         : true;
     } else {
       if (!Object.is(value, state[key])) {
-        this.storeMetaInstance._subscriber_.willUpdatingProcessing();
+        this.$storeMeta._subscriber_.willUpdatingProcessing();
         this.pushTask(key, value, isDelete);
         this.finallyBatchProcessing();
       }
@@ -223,7 +223,7 @@ export default class Updater<S extends PrimitiveState> {
 
   // For class components
   classUpdater = (key: keyof S, value: ValueOf<S>) => {
-    const classInstanceStack = this._classInstanceStack_;
+    const classInstanceStack = this.classInstanceStack;
     classInstanceStack.forEach(classInstanceItem => {
       /**
        * There is an "updater" attribute on the internal this pointer of react's class,

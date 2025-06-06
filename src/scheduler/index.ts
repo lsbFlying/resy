@@ -9,9 +9,9 @@ export default class Scheduler<S extends PrimitiveState> {
   // task data of updated
   taskData = {} as S;
   // task queue of updated
-  taskQueue: Map<keyof S, Callback> = new Map();
+  readonly taskQueue: Map<keyof S, Callback> = new Map();
   // Callback function queue
-  callbackQueue = new Set<StateCallbackItem<S>>();
+  readonly callbackQueue = new Set<StateCallbackItem<S>>();
 
   // Flag for ongoing update
   isUpdating?: Promise<void>;

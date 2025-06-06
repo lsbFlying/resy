@@ -5,7 +5,7 @@ import { hasOwnProperty } from "../utils";
 
 export default class Restorer<S extends PrimitiveState> {
   // eslint-disable-next-line no-empty-function
-  constructor(public storeMetaInstance: StoreMeta<S>) {}
+  constructor(public $storeMeta: StoreMeta<S>) {}
 
   // Tag counters for data references of store
   stateMetaRefCounter = 0;
@@ -27,9 +27,9 @@ export default class Restorer<S extends PrimitiveState> {
    * Such caution ensures the precision of data recovery.
    */
   retrieveReducerState = () => {
-    const { _initialState_ } = this.storeMetaInstance;
+    const { _initialState_ } = this.$storeMeta;
     typeof _initialState_ === "function" && (
-      this.storeMetaInstance._reducerState_ = _initialState_() as S
+      this.$storeMeta._reducerState_ = _initialState_() as S
     );
   };
 
@@ -37,7 +37,7 @@ export default class Restorer<S extends PrimitiveState> {
   restoreProcessing = () => {
     this.retrieveReducerState();
 
-    this.storeMetaInstance.$state = Object.assign({}, this.storeMetaInstance._reducerState_) as S;
+    this.$storeMeta.$state = Object.assign({}, this.$storeMeta._reducerState_) as S;
 
     // this.#freezing = true;
   };
@@ -73,12 +73,12 @@ export default class Restorer<S extends PrimitiveState> {
    * a microtask can be used to postpone the unmount process.
    */
   deferRestoreProcessing = (callback?: Callback) => {
-    const scheduler = this.storeMetaInstance._scheduler_;
+    const scheduler = this.$storeMeta._scheduler_;
     if (!scheduler.deferEffectDestructorExecutable) {
       scheduler.deferEffectDestructorExecutable = Promise.resolve().then(() => {
         scheduler.deferEffectDestructorExecutable = undefined;
         const { stateMetaRefCounter } = this;
-        const classInstanceStack = this.storeMetaInstance._updater_._classInstanceStack_;
+        const classInstanceStack = this.$storeMeta._updater_.classInstanceStack;
         if (!stateMetaRefCounter && !classInstanceStack.size) {
           /**
            * By using "stateRefCounter" and "classInstanceStack",
@@ -89,14 +89,14 @@ export default class Restorer<S extends PrimitiveState> {
            * The complete unmount cycle corresponds to the entire usage cycle of the store.
            */
           const noRefFlag = !classInstanceStack.size && !stateMetaRefCounter;
-          const initialState = this.storeMetaInstance._initialState_;
+          const initialState = this.$storeMeta._initialState_;
           /**
            * When initialState is a function,
            * it does not have to be executed at unmount time,
            * because initialization time is sure to reset execution,
            * thus optimizing code execution efficiency.
            */
-          if (this.storeMetaInstance._options_.unmountRestore && noRefFlag && typeof initialState !== "function") {
+          if (this.$storeMeta._options_.unmountRestore && noRefFlag && typeof initialState !== "function") {
             this.restoreProcessing();
           }
           if (typeof initialState === "function" && noRefFlag) {
@@ -114,7 +114,7 @@ export default class Restorer<S extends PrimitiveState> {
     const {
       $state, _subscriber_, _reducerState_, _scheduler_,
       _updater_: { pushTask, finallyBatchProcessing },
-    } = this.storeMetaInstance;
+    } = this.$storeMeta;
     const state = $state;
 
     _subscriber_.willUpdatingProcessing();

@@ -8,15 +8,15 @@ import { useDebugValue } from "react";
 import { useSubscription as useSubscriptionCore } from "./hook";
 
 export default class Subscriber<S extends PrimitiveState> {
-  constructor(public storeMetaInstance: StoreMeta<S>) {
-    this.prevBatchState = Object.assign({}, storeMetaInstance._reducerState_);
+  constructor(public $storeMeta: StoreMeta<S>) {
+    this.prevBatchState = Object.assign({}, $storeMeta._reducerState_);
   }
 
   // Data status of the previous update batch
   prevBatchState: S;
 
   // Subscription listener queue
-  listenerQueue = new Set<ListenerType<S>>();
+  readonly listenerQueue = new Set<ListenerType<S>>();
 
   /**
    * @description Pre-update processing
@@ -24,10 +24,10 @@ export default class Subscriber<S extends PrimitiveState> {
    * when data changes trigger Subscriber.
    */
   willUpdatingProcessing = () => {
-    const scheduler = this.storeMetaInstance._scheduler_;
+    const scheduler = this.$storeMeta._scheduler_;
     if (this.listenerQueue.size > 0 && !scheduler.willUpdating) {
       scheduler.willUpdating = true;
-      this.prevBatchState = Object.assign({}, this.storeMetaInstance.$state) as S;
+      this.prevBatchState = Object.assign({}, this.$storeMeta.$state) as S;
     }
   };
 
@@ -77,7 +77,7 @@ export default class Subscriber<S extends PrimitiveState> {
 
   useSubscription = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
     if (__DEV__) {
-      const { _options_: { namespace } } = this.storeMetaInstance;
+      const { _options_: { namespace } } = this.$storeMeta;
       const store_namespace = namespace
         ? { namespace }
         : null;
@@ -89,6 +89,6 @@ export default class Subscriber<S extends PrimitiveState> {
       });
     }
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useSubscriptionCore(this.storeMetaInstance as any as Store<S>, listener, stateKeys);
+    useSubscriptionCore(this.$storeMeta as any as Store<S>, listener, stateKeys);
   };
 }

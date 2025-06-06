@@ -25,11 +25,11 @@ export default class StateMeta<S extends PrimitiveState> {
     this.stateChangeQueue.add(onStateChange);
 
     // Increment the reference count by 1 if the component is referenced
-    _restorer_._stateMetaRefCounter_++;
+    _restorer_.stateMetaRefCounter++;
 
     return () => {
       this.stateChangeQueue.delete(onStateChange);
-      _restorer_._stateMetaRefCounter_--;
+      _restorer_.stateMetaRefCounter--;
 
       _restorer_.deferRestoreProcessing(
         () => {

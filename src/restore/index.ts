@@ -8,14 +8,14 @@ export default class Restorer<S extends PrimitiveState> {
   constructor(public storeMetaInstance: StoreMeta<S>) {}
 
   // Tag counters for data references of store
-  _stateMetaRefCounter_ = 0;
+  stateMetaRefCounter = 0;
 
   /**
    * @description Flag indicating that the initialStateRetrieve function is executable.
    * If initialState is a function,
    * you can get the execution flag in the initialStateRetrieve handler of useStore.
    */
-  _initialFunctionExecutable_?: boolean;
+  initialFunctionExecutable?: boolean;
 
   /**
    * Retrieve the reducerState
@@ -49,8 +49,8 @@ export default class Restorer<S extends PrimitiveState> {
     // this.#freezing = undefined;
 
     // The relevant judgment logic is similar to unmountRestore.
-    if (this._initialFunctionExecutable_) {
-      this._initialFunctionExecutable_ = undefined;
+    if (this.initialFunctionExecutable) {
+      this.initialFunctionExecutable = undefined;
       this.restoreProcessing();
     }
   };
@@ -77,9 +77,9 @@ export default class Restorer<S extends PrimitiveState> {
     if (!scheduler.deferEffectDestructorExecutable) {
       scheduler.deferEffectDestructorExecutable = Promise.resolve().then(() => {
         scheduler.deferEffectDestructorExecutable = undefined;
-        const { _stateMetaRefCounter_ } = this;
+        const { stateMetaRefCounter } = this;
         const classInstanceStack = this.storeMetaInstance._updater_._classInstanceStack_;
-        if (!_stateMetaRefCounter_ && !classInstanceStack.size) {
+        if (!stateMetaRefCounter && !classInstanceStack.size) {
           /**
            * By using "stateRefCounter" and "classInstanceStack",
            * we determine whether the store still has component references.
@@ -88,7 +88,7 @@ export default class Restorer<S extends PrimitiveState> {
            * and does not constitute a complete unmount.
            * The complete unmount cycle corresponds to the entire usage cycle of the store.
            */
-          const noRefFlag = !classInstanceStack.size && !_stateMetaRefCounter_;
+          const noRefFlag = !classInstanceStack.size && !stateMetaRefCounter;
           const initialState = this.storeMetaInstance._initialState_;
           /**
            * When initialState is a function,
@@ -100,7 +100,7 @@ export default class Restorer<S extends PrimitiveState> {
             this.restoreProcessing();
           }
           if (typeof initialState === "function" && noRefFlag) {
-            this._initialFunctionExecutable_ = true;
+            this.initialFunctionExecutable = true;
           }
         }
         callback?.();

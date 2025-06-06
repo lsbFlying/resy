@@ -173,7 +173,7 @@ export default class Updater<S extends PrimitiveState> {
     firstLevelKey?: keyof S,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _applyOriginFunction?: ApplyOriginFunctionType,
+    _applyOriginFunction?: ApplyOriginFunctionType, // TODO waiting develop
   ): boolean => {
     // if (this.#freezing) return true;
 
@@ -245,7 +245,7 @@ export default class Updater<S extends PrimitiveState> {
          * that is, connecting to the store but not using it. Generally speaking, this is not done,
          */
         ? classInstanceItem._$stateRefs_?.has(key)
-        && classInstanceItem.setState({ [key]: value } as Pick<S, keyof S>)
+          && classInstanceItem.setState({ [key]: value } as Pick<S, keyof S>)
         : classInstanceStack.delete(classInstanceItem);
     });
   };

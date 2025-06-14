@@ -53,27 +53,28 @@ export default class StoreMeta<S extends PrimitiveState> {
     __enableMacros__: undefined,
     __functionName__: "createStore",
   };
-  // configuration
+  // Configuration
   readonly _options_;
+  // Initialize the incoming state
   readonly _initialState_?: InitialState<S>;
   // Retrieve the reducerState
   _reducerState_: S;
 
   /** ============================== For Core Element start ============================== */
-  // scheduler
+  // Scheduler
   readonly _scheduler_ = new Scheduler<S>();
 
-  // updater
+  // Updater
   readonly _updater_ = new Updater(this);
   setState = this._updater_.setState;
   syncUpdate = this._updater_.syncUpdate;
 
-  // subscriber
+  // Subscriber
   readonly _subscriber_ = new Subscriber(this);
   subscribe = this._subscriber_.subscribe;
   useSubscription = this._subscriber_.useSubscription;
 
-  // restorer
+  // Restorer
   readonly _restorer_ = new Restorer(this);
   restore = this._restorer_.restore;
 
@@ -85,9 +86,9 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   /** ============================== For Core Render Element start ============================== */
   _$state_: S;
-  // TODO computedDeps waiting upgrade
+  // TODO _computedDeps_ waiting upgrade
   // Dependency Collection for computed
-  computedDeps = new Set<keyof S>();
+  _computedDeps_ = new Set<keyof S>();
 
   // The core map meta-structure of stateMeta
   readonly _stateMetaMap_: StateMetaMapType<S> = new Map();
@@ -152,15 +153,15 @@ export default class StoreMeta<S extends PrimitiveState> {
           ? boundFnValue
           // TODO waiting upgrade optimize (暂时应该没有属性依赖记录收集销毁的逻辑问题)
           : () => {
-            const { computedDeps } = this;
+            const { _computedDeps_ } = this;
 
             const [{ result, stateKeys }, update] = useState(() => {
               // Clear the previous dirty dependencies before collecting them
-              computedDeps.clear();
+              _computedDeps_.clear();
               const res = (boundFnValue as AnyFn)();
               return {
                 result: res,
-                stateKeys: Array.from(computedDeps) as (keyof S)[],
+                stateKeys: Array.from(_computedDeps_) as (keyof S)[],
               };
             });
 
@@ -170,11 +171,11 @@ export default class StoreMeta<S extends PrimitiveState> {
                * prevent dependency changes caused by conditional logic
                * start
                */
-              computedDeps.clear();
+              _computedDeps_.clear();
 
               const res = (boundFnValue as AnyFn)();
 
-              const newDeps = Array.from(computedDeps);
+              const newDeps = Array.from(_computedDeps_);
 
               (stateKeys.toString() !== newDeps.toString()) && update(prevState => ({
                 ...prevState,
@@ -243,7 +244,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ApplyOriginFunctionType,
   ) => {
-    const { computedDeps, _options_: { immutable } } = this;
+    const { _computedDeps_, _options_: { immutable } } = this;
     return new Proxy(target, {
       get: (_: S, key: keyof S) => {
 
@@ -260,7 +261,7 @@ export default class StoreMeta<S extends PrimitiveState> {
          */
         const value = sourceFrom$State ? this._$state_[key] : (target as S)[key];
 
-        sourceFrom$State && computedDeps.add(key);
+        sourceFrom$State && _computedDeps_.add(key);
 
         const sourceFromThis = hasOwnProperty.call(this, key);
 

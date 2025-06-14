@@ -101,7 +101,7 @@ export abstract class ComponentWithStore<
     store: StoreMeta<S>,
   ) => {
     this._$stateRefs_.add(key as (string | number));
-    return store.$state[key];
+    return store._$state_[key];
   };
 
   connectStore = <S extends PrimitiveState>(store: Store<S>) => {
@@ -126,7 +126,7 @@ export abstract class ComponentWithStore<
 
         const sourceFromThis = hasOwnProperty.call(StoreMeta, key);
 
-        const value = (store as any as StoreMeta<S>).$state[key];
+        const value = (store as any as StoreMeta<S>)._$state_[key];
 
         if (!sourceFromThis && typeof value !== "function") {
           return this.#getState(key, store as any as StoreMeta<S>);
@@ -141,14 +141,14 @@ export abstract class ComponentWithStore<
             ? (...args: any[]) => (
               this.#getState(key, store as any as StoreMeta<S>) as AnyFn
             ).apply(classEngineStore, args)
-            : (store as any as StoreMeta<S>).$state[key];
+            : (store as any as StoreMeta<S>)._$state_[key];
         }
 
         return (store as any as StoreMeta<S>)[key as keyof StoreMeta<S>];
       },
       // TODO classEngineStore可能需要递归代理生成proxy，像StoreMeta的createProxy方法那样，以便于链式更新
       set: (_: ClassStoreType<S>, key: keyof S, value: ValueOf<S>): boolean => {
-        !Object.is((store as any as StoreMeta<S>).$state[key], value)
+        !Object.is((store as any as StoreMeta<S>)._$state_[key], value)
         && (store as any as StoreMeta<S>)._updater_.classUpdater(key, value);
         return true;
       },

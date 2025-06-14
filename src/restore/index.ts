@@ -37,7 +37,7 @@ export default class Restorer<S extends PrimitiveState> {
   restoreProcessing = () => {
     this.retrieveReducerState();
 
-    this.$storeMeta.$state = Object.assign({}, this.$storeMeta._reducerState_) as S;
+    this.$storeMeta._$state_ = Object.assign({}, this.$storeMeta._reducerState_) as S;
 
     // this.#freezing = true;
   };
@@ -112,10 +112,9 @@ export default class Restorer<S extends PrimitiveState> {
   // Reset recovery initialization state data
   restore = (callback?: StateCallback<S>) => {
     const {
-      $state, _subscriber_, _reducerState_, _scheduler_,
+      _$state_, _subscriber_, _reducerState_, _scheduler_,
       _updater_: { pushTask, finallyBatchProcessing },
     } = this.$storeMeta;
-    const state = $state;
 
     _subscriber_.willUpdatingProcessing();
 
@@ -142,13 +141,13 @@ export default class Restorer<S extends PrimitiveState> {
         (
           Object.keys(reducerState) as (keyof S)[]
         ).concat(
-          Object.keys(state)
+          Object.keys(_$state_)
         )
       )
     ).forEach(key => {
       const originValue = reducerState[key];
 
-      !Object.is(originValue, state[key])
+      !Object.is(originValue, _$state_[key])
       && pushTask(key, originValue, !hasOwnProperty.call(reducerState, key));
     });
 

@@ -43,7 +43,7 @@ export default class StateMeta<S extends PrimitiveState> {
   };
 
   getSnapshot = () => {
-    return this.$storeMeta.$state[this.key];
+    return this.$storeMeta._$state_[this.key];
   };
 
   useStateMeta = () => {

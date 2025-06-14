@@ -37,7 +37,7 @@ export default class StoreMeta<S extends PrimitiveState> {
 
     stateErrorProcessing({ state: reducerState, options: this._options_ });
 
-    this.$state = Object.assign({}, reducerState);
+    this._$state_ = Object.assign({}, reducerState);
 
     this.store = this.#createProxy();
   }
@@ -84,7 +84,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   /** ============================== For Core Element  end ============================== */
 
   /** ============================== For Core Render Element start ============================== */
-  $state: S;
+  _$state_: S;
   // TODO computedDeps waiting upgrade
   // Dependency Collection for computed
   computedDeps = new Set<keyof S>();
@@ -96,9 +96,9 @@ export default class StoreMeta<S extends PrimitiveState> {
   readonly store: Store<S>;
 
   // Proxy of driver update re-render for useStore
-  readonly $engineStore = new Proxy({} as MacroStore<S>, {
+  readonly _$engineStore_ = new Proxy({} as MacroStore<S>, {
     get: (_: S, key: keyof S) => {
-      const state = this.$state;
+      const state = this._$state_;
 
       // Get the latest value
       const value = state[key];
@@ -200,7 +200,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     },
   } as ProxyHandler<MacroStore<S>>);
 
-  useStore = (() => this.$engineStore) as UseMacroStore<S>;
+  useStore = (() => this._$engineStore_) as UseMacroStore<S>;
   /** ============================== For Core Render Element end ============================== */
 
   /** Helper function for binding function properties  */
@@ -209,7 +209,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     value: AnyBoundFn,
     thisArg: Store<S> | ClassStoreType<S> = this.store,
   ) => {
-    const state = this.$state;
+    const state = this._$state_;
 
     const boundFn = (
       (...args: unknown[]) => (value as AnyFn).apply(thisArg, args)
@@ -236,8 +236,8 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   /** Create Store Proxy */
   #createProxy = (
-    target: object = this.$state,
-    parentTarget: object = this.$state,
+    target: object = this._$state_,
+    parentTarget: object = this._$state_,
     firstLevelKey?: keyof S,
     keyLevel?: number,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
@@ -258,7 +258,7 @@ export default class StoreMeta<S extends PrimitiveState> {
          * between the initially referenced address and the updated reference address
          * of `this.$state` after modifications.
          */
-        const value = sourceFrom$State ? this.$state[key] : (target as S)[key];
+        const value = sourceFrom$State ? this._$state_[key] : (target as S)[key];
 
         sourceFrom$State && computedDeps.add(key);
 
@@ -318,7 +318,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       // that are applicable to proxyable types such as `Map`, and `Set`.
       apply: (applyOriginFunction: any, thisArg: any, argArray: any[]) => Reflect.apply(
         __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
-          applyOriginFunction, thisArg, this.$state, parentTarget as (MapType<S> & Set<S>),
+          applyOriginFunction, thisArg, this._$state_, parentTarget as (MapType<S> & Set<S>),
           this.#createProxy, firstLevelKey, keyLevel, keyChains, this._updater_.updateStateMeta,
         ),
         thisArg,

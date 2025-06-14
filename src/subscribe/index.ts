@@ -27,7 +27,7 @@ export default class Subscriber<S extends PrimitiveState> {
     const scheduler = this.$storeMeta._scheduler_;
     if (this.listenerQueue.size > 0 && !scheduler.willUpdating) {
       scheduler.willUpdating = true;
-      this.prevBatchState = Object.assign({}, this.$storeMeta.$state) as S;
+      this.prevBatchState = Object.assign({}, this.$storeMeta._$state_) as S;
     }
   };
 

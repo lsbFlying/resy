@@ -8,7 +8,7 @@ import { stateErrorProcessing } from "../store/errors";
 import { createNewRefValue, reduceChanged } from "../immutable/utils";
 
 /**
- * @description Update mechanism class
+ * @description Update mechanism of `state-meta`
  */
 export default class Updater<S extends PrimitiveState> {
   // eslint-disable-next-line no-empty-function
@@ -18,7 +18,7 @@ export default class Updater<S extends PrimitiveState> {
   readonly classInstanceStack = new Set<ComponentWithStore<{}, S>>();
 
   pushTask = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
-    const state = this.$storeMeta.$state;
+    const state = this.$storeMeta._$state_;
     /**
      * @description The pre-execution of the data changes accumulates
      * the logic of the correct execution of the final update,
@@ -98,7 +98,7 @@ export default class Updater<S extends PrimitiveState> {
               // maintains it`s purity and security as much as possible in terms of usage.
               item({
                 effectState: effectStateTemp!,
-                nextState: this.$storeMeta.$state,
+                nextState: this.$storeMeta._$state_,
                 prevState: this.$storeMeta._subscriber_.prevBatchState,
               });
             });
@@ -111,7 +111,7 @@ export default class Updater<S extends PrimitiveState> {
   setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
     this.$storeMeta._subscriber_.willUpdatingProcessing();
 
-    const _state_ = this.$storeMeta.$state;
+    const _state_ = this.$storeMeta._$state_;
 
     let stateTemp = state;
 
@@ -139,7 +139,7 @@ export default class Updater<S extends PrimitiveState> {
    * to meet the needs of normal text input, it synchronizes React's update scheduling.
    */
   syncUpdate = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    const _state_ = this.$storeMeta.$state;
+    const _state_ = this.$storeMeta._$state_;
 
     let stateTemp = state;
 
@@ -169,7 +169,7 @@ export default class Updater<S extends PrimitiveState> {
     key: keyof S,
     value: ValueOf<S>,
     isDelete = false,
-    target: object | S = this.$storeMeta.$state,
+    target: object | S = this.$storeMeta._$state_,
     firstLevelKey?: keyof S,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -177,7 +177,7 @@ export default class Updater<S extends PrimitiveState> {
   ): boolean => {
     // if (this.#freezing) return true;
 
-    const state = this.$storeMeta.$state;
+    const state = this.$storeMeta._$state_;
 
     // mutate chain update
     if (firstLevelKey) {

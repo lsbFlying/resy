@@ -105,12 +105,12 @@ export default class Restorer<S extends PrimitiveState> {
            * because initialization time is sure to reset execution,
            * thus optimizing code execution efficiency.
            */
-          if (this.$storeMeta._options_.unmountRestore && noRefFlag && typeof initialState !== "function") {
-            this.restoreProcessing();
-          }
-          if (typeof initialState === "function" && noRefFlag) {
-            this.initialFunctionExecutable = true;
-          }
+          this.$storeMeta._options_.unmountRestore
+          && noRefFlag
+          && typeof initialState !== "function"
+          && this.restoreProcessing();
+
+          typeof initialState === "function" && noRefFlag && (this.initialFunctionExecutable = true);
         }
         callback?.();
       });

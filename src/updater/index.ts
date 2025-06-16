@@ -2,7 +2,10 @@ import type { PrimitiveState, ValueOf } from "../types";
 import type { State, StateCallback, StateFnType } from "./types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import type { ComponentWithStore } from "../class-connect";
+import type { GetStateMetaType } from "../state/types";
 import type StoreMeta from "../store/core";
+import type Scheduler from "../scheduler";
+import type Subscriber from "../subscribe";
 import { batchUpdate } from "../static";
 import { stateErrorProcessing } from "../store/errors";
 import { createNewRefValue, reduceChanged } from "../immutable/utils";
@@ -11,7 +14,12 @@ import { createNewRefValue, reduceChanged } from "../immutable/utils";
  * @description Update mechanism of `state-meta`
  */
 export default class Updater<S extends PrimitiveState> {
-  constructor(public $storeMeta: StoreMeta<S>) {
+  constructor(
+    public $storeMeta: StoreMeta<S>,
+    public $scheduler: Scheduler<S>,
+    public $subscriber: Subscriber<S>,
+    public $getStateMeta: GetStateMetaType<S>,
+  ) {
     this.$storeMeta.setState = this.setState;
     this.$storeMeta.syncUpdate = this.syncUpdate;
   }
@@ -28,7 +36,7 @@ export default class Updater<S extends PrimitiveState> {
      */
     !isDelete ? (state[key] = value) : delete state[key];
 
-    this.$storeMeta._scheduler_.pushTask(
+    this.$scheduler.pushTask(
       key,
       value,
       () => {
@@ -39,14 +47,14 @@ export default class Updater<S extends PrimitiveState> {
          * is to preserve the simplicity of the update scheduling for both hook and class components.
          */
         // State updates for hook components
-        this.$storeMeta._getStateMeta_(key)!.updater();
+        this.$getStateMeta(key)!.updater();
       },
     );
   };
 
   finallyBatchProcessing = () => {
-    const listenerQueue = this.$storeMeta._subscriber_.listenerQueue;
-    const scheduler = this.$storeMeta._scheduler_;
+    const listenerQueue = this.$subscriber.listenerQueue;
+    const scheduler = this.$scheduler;
     const {
       taskData, taskQueue, callbackQueue,
     } = scheduler;
@@ -101,7 +109,7 @@ export default class Updater<S extends PrimitiveState> {
               item({
                 effectState: effectStateTemp!,
                 nextState: this.$storeMeta._$state_,
-                prevState: this.$storeMeta._subscriber_.prevBatchState,
+                prevState: this.$subscriber.prevBatchState,
               });
             });
           }
@@ -111,7 +119,7 @@ export default class Updater<S extends PrimitiveState> {
   };
 
   setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    this.$storeMeta._subscriber_.willUpdatingProcessing();
+    this.$subscriber.willUpdatingProcessing();
 
     const _state_ = this.$storeMeta._$state_;
 
@@ -131,7 +139,7 @@ export default class Updater<S extends PrimitiveState> {
       });
     }
 
-    this.$storeMeta._scheduler_.pushCallback(_state_, stateTemp as State<S>, callback);
+    this.$scheduler.pushCallback(_state_, stateTemp as State<S>, callback);
 
     this.finallyBatchProcessing();
   };
@@ -155,13 +163,13 @@ export default class Updater<S extends PrimitiveState> {
           if (!Object.is(_state_[key], value)) {
             _state_[key] = value;
             this.classUpdater(key, value);
-            this.$storeMeta._getStateMeta_(key)!.updater();
+            this.$getStateMeta(key)!.updater();
           }
         });
       });
     }
 
-    this.$storeMeta._scheduler_.pushCallback(_state_, stateTemp as State<S>, callback);
+    this.$scheduler.pushCallback(_state_, stateTemp as State<S>, callback);
 
     this.finallyBatchProcessing();
   };
@@ -215,7 +223,7 @@ export default class Updater<S extends PrimitiveState> {
         : true;
     } else {
       if (!Object.is(value, state[key])) {
-        this.$storeMeta._subscriber_.willUpdatingProcessing();
+        this.$subscriber.willUpdatingProcessing();
         this.pushTask(key, value, isDelete);
         this.finallyBatchProcessing();
       }

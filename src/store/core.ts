@@ -17,8 +17,8 @@ import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
 import { useDebugValue, useEffect, useState } from "react";
 import StateMeta from "../state";
 import Scheduler from "../scheduler";
-import Updater from "../updater";
 import Subscriber from "../subscribe";
+import Updater from "../updater";
 import Restorer from "../restore";
 
 /**
@@ -69,17 +69,35 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   setState?: SetStateType<S>["setState"];
   syncUpdate?: SyncUpdateType<S>["syncUpdate"];
-  // Updater
-  readonly _updater_ = new Updater(this);
 
   subscribe?: SubscribeType<S>["subscribe"];
   useSubscription?: UseSubscriptionType<S>["useSubscription"];
+
   // Subscriber
-  readonly _subscriber_ = new Subscriber(this);
+  readonly _subscriber_ = new Subscriber(this, this._scheduler_);
+
+  /** Create and generate 'state meta' */
+  _getStateMeta_ = (key: keyof S) => {
+    const { _stateMetaMap_ } = this;
+    // Resolve the problem that the initialization attribute may be undefined
+    if (_stateMetaMap_.has(key)) return _stateMetaMap_.get(key)!;
+
+    const stateMetaInstance = new StateMeta<S>(key, this);
+    _stateMetaMap_.set(key, stateMetaInstance);
+
+    return stateMetaInstance;
+  };
+
+  // Updater
+  readonly _updater_ = new Updater(
+    this, this._scheduler_, this._subscriber_, this._getStateMeta_,
+  );
 
   restore?: RestoreType<S>["restore"];
   // Restorer
-  readonly _restorer_ = new Restorer(this);
+  readonly _restorer_ = new Restorer(
+    this, this._scheduler_, this._subscriber_, this._updater_,
+  );
 
   // After unmount resetting the state (`restoreProcessing` function has been executed),
   // it is in a frozen state where updates are prohibited.
@@ -224,18 +242,6 @@ export default class StoreMeta<S extends PrimitiveState> {
     state[key] = boundFn as ValueOf<S>;
 
     return boundFn as ValueOf<S>;
-  };
-
-  /** Create and generate 'state meta' */
-  _getStateMeta_ = (key: keyof S) => {
-    const { _stateMetaMap_ } = this;
-    // Resolve the problem that the initialization attribute may be undefined
-    if (_stateMetaMap_.has(key)) return _stateMetaMap_.get(key);
-
-    const stateMetaInstance = new StateMeta<S>(key, this);
-    _stateMetaMap_.set(key, stateMetaInstance);
-
-    return stateMetaInstance;
   };
 
   /** Create Store Proxy */

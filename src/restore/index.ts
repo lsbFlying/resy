@@ -1,10 +1,18 @@
-import type StoreMeta from "../store/core";
 import type { Callback, PrimitiveState } from "../types";
 import type { StateCallback } from "../updater/types";
+import type StoreMeta from "../store/core";
+import type Scheduler from "../scheduler";
+import type Subscriber from "../subscribe";
+import type Updater from "../updater";
 import { hasOwnProperty } from "../utils";
 
 export default class Restorer<S extends PrimitiveState> {
-  constructor(public $storeMeta: StoreMeta<S>) {
+  constructor(
+    public $storeMeta: StoreMeta<S>,
+    public $scheduler: Scheduler<S>,
+    public $subscriber: Subscriber<S>,
+    public $updater: Updater<S>,
+  ) {
     this.$storeMeta.restore = this.restore;
   }
 
@@ -74,12 +82,12 @@ export default class Restorer<S extends PrimitiveState> {
    * a microtask can be used to postpone the unmount process.
    */
   deferRestoreProcessing = (callback?: Callback) => {
-    const scheduler = this.$storeMeta._scheduler_;
+    const scheduler = this.$scheduler;
     if (!scheduler.deferEffectDestructorExecutable) {
       scheduler.deferEffectDestructorExecutable = Promise.resolve().then(() => {
         scheduler.deferEffectDestructorExecutable = undefined;
         const { stateMetaRefCounter } = this;
-        const classInstanceStack = this.$storeMeta._updater_.classInstanceStack;
+        const classInstanceStack = this.$updater.classInstanceStack;
         if (!stateMetaRefCounter && !classInstanceStack.size) {
           /**
            * By using "stateRefCounter" and "classInstanceStack",
@@ -112,12 +120,10 @@ export default class Restorer<S extends PrimitiveState> {
 
   // Reset recovery initialization state data
   restore = (callback?: StateCallback<S>) => {
-    const {
-      _$state_, _subscriber_, _reducerState_, _scheduler_,
-      _updater_: { pushTask, finallyBatchProcessing },
-    } = this.$storeMeta;
+    const { _$state_, _reducerState_ } = this.$storeMeta;
+    const { pushTask, finallyBatchProcessing } = this.$updater;
 
-    _subscriber_.willUpdatingProcessing();
+    this.$subscriber.willUpdatingProcessing();
 
     this.retrieveReducerState();
 
@@ -152,7 +158,7 @@ export default class Restorer<S extends PrimitiveState> {
       && pushTask(key, originValue, !hasOwnProperty.call(reducerState, key));
     });
 
-    _scheduler_.pushCallback({} as S, reducerState, callback);
+    this.$scheduler.pushCallback({} as S, reducerState, callback);
 
     finallyBatchProcessing();
   };

@@ -2,13 +2,17 @@ import type { PrimitiveState } from "../types";
 import type { ListenerType, Unsubscribe } from "./types";
 import type { Store } from "../store/types";
 import type StoreMeta from "../store/core";
+import type Scheduler from "../scheduler";
 import { __DEV__ } from "../static";
 import { subscribeErrorProcessing } from "../store/errors";
 import { useDebugValue } from "react";
 import { useSubscription as useSubscriptionCore } from "./hook";
 
 export default class Subscriber<S extends PrimitiveState> {
-  constructor(public $storeMeta: StoreMeta<S>) {
+  constructor(
+    public $storeMeta: StoreMeta<S>,
+    public $scheduler: Scheduler<S>,
+  ) {
     this.prevBatchState = Object.assign({}, $storeMeta._reducerState_);
     this.$storeMeta.subscribe = this.subscribe;
     this.$storeMeta.useSubscription = this.useSubscription;
@@ -26,7 +30,7 @@ export default class Subscriber<S extends PrimitiveState> {
    * when data changes trigger Subscriber.
    */
   willUpdatingProcessing = () => {
-    const scheduler = this.$storeMeta._scheduler_;
+    const scheduler = this.$scheduler;
     if (this.listenerQueue.size > 0 && !scheduler.willUpdating) {
       scheduler.willUpdating = true;
       this.prevBatchState = Object.assign({}, this.$storeMeta._$state_) as S;

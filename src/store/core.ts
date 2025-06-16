@@ -4,6 +4,9 @@ import type {
 } from "./types";
 import type { AnyFn, MapType, PrimitiveState, ValueOf } from "../types";
 import type { ClassStoreType } from "../class-connect/types";
+import type { SetStateType, SyncUpdateType } from "../updater/types";
+import type { SubscribeType, UseSubscriptionType } from "../subscribe/types";
+import type { RestoreType } from "../restore/types";
 import { __DEV__ } from "../static";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
 import { __COMPUTED_PREFIX__, __RESY_BRAND__ } from "./static";
@@ -64,19 +67,19 @@ export default class StoreMeta<S extends PrimitiveState> {
   // Scheduler
   readonly _scheduler_ = new Scheduler<S>();
 
+  setState?: SetStateType<S>["setState"];
+  syncUpdate?: SyncUpdateType<S>["syncUpdate"];
   // Updater
   readonly _updater_ = new Updater(this);
-  setState = this._updater_.setState;
-  syncUpdate = this._updater_.syncUpdate;
 
+  subscribe?: SubscribeType<S>["subscribe"];
+  useSubscription?: UseSubscriptionType<S>["useSubscription"];
   // Subscriber
   readonly _subscriber_ = new Subscriber(this);
-  subscribe = this._subscriber_.subscribe;
-  useSubscription = this._subscriber_.useSubscription;
 
+  restore?: RestoreType<S>["restore"];
   // Restorer
   readonly _restorer_ = new Restorer(this);
-  restore = this._restorer_.restore;
 
   // After unmount resetting the state (`restoreProcessing` function has been executed),
   // it is in a frozen state where updates are prohibited.
@@ -201,7 +204,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     },
   } as ProxyHandler<MacroStore<S>>);
 
-  useStore = (() => this._$engineStore_) as UseMacroStore<S>;
+  useStore: UseMacroStore<S> = () => this._$engineStore_;
   /** ============================== For Core Render Element end ============================== */
 
   /** Helper function for binding function properties  */

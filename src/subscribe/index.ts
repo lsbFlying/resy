@@ -10,6 +10,8 @@ import { useSubscription as useSubscriptionCore } from "./hook";
 export default class Subscriber<S extends PrimitiveState> {
   constructor(public $storeMeta: StoreMeta<S>) {
     this.prevBatchState = Object.assign({}, $storeMeta._reducerState_);
+    this.$storeMeta.subscribe = this.subscribe;
+    this.$storeMeta.useSubscription = this.useSubscription;
   }
 
   // Data status of the previous update batch

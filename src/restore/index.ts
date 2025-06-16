@@ -4,8 +4,9 @@ import type { StateCallback } from "../updater/types";
 import { hasOwnProperty } from "../utils";
 
 export default class Restorer<S extends PrimitiveState> {
-  // eslint-disable-next-line no-empty-function
-  constructor(public $storeMeta: StoreMeta<S>) {}
+  constructor(public $storeMeta: StoreMeta<S>) {
+    this.$storeMeta.restore = this.restore;
+  }
 
   // Tag counters for data references of store
   stateMetaRefCounter = 0;

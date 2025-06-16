@@ -11,8 +11,10 @@ import { createNewRefValue, reduceChanged } from "../immutable/utils";
  * @description Update mechanism of `state-meta`
  */
 export default class Updater<S extends PrimitiveState> {
-  // eslint-disable-next-line no-empty-function
-  constructor(public $storeMeta: StoreMeta<S>) {}
+  constructor(public $storeMeta: StoreMeta<S>) {
+    this.$storeMeta.setState = this.setState;
+    this.$storeMeta.syncUpdate = this.syncUpdate;
+  }
 
   // The storage stack of this instance for the class component
   readonly classInstanceStack = new Set<ComponentWithStore<{}, S>>();

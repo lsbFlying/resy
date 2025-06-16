@@ -68,15 +68,13 @@ export default class StoreMeta<S extends PrimitiveState> {
   // Scheduler
   readonly _scheduler_ = new Scheduler<S>();
 
-  setState?: SetStateType<S>["setState"];
-  syncUpdate?: SyncUpdateType<S>["syncUpdate"];
-
   subscribe?: SubscribeType<S>["subscribe"];
   useSubscription?: UseSubscriptionType<S>["useSubscription"];
-
   // Subscriber
   readonly _subscriber_ = new Subscriber(this, this._scheduler_);
 
+  setState?: SetStateType<S>["setState"];
+  syncUpdate?: SyncUpdateType<S>["syncUpdate"];
   // Updater
   readonly _updater_ = new Updater(this, this._scheduler_, this._subscriber_);
 

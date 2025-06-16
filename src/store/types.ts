@@ -2,7 +2,6 @@ import type { PrimitiveState, AnyFn } from "../types";
 import type { SubscribeType, UseSubscriptionType } from "../subscribe/types";
 import type { RestoreType } from "../restore/types";
 import type { SetStateType, SyncUpdateType } from "../updater/types";
-import type StateMeta from "../state";
 
 /**
  * @description The second parameter configuration item of createStore
@@ -80,9 +79,6 @@ export type Store<S extends PrimitiveState> = S & StoreUtils<S>;
 export interface StoreType<S extends PrimitiveState> {
   readonly store: Store<S>;
 }
-
-// Type of stateMetaMap
-export type StateMetaMapType<S extends PrimitiveState> = Map<keyof S, StateMeta<S>>;
 
 /** type of useStore */
 export type UseStoreType<S extends PrimitiveState> = {

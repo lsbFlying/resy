@@ -2,7 +2,6 @@ import type { PrimitiveState, ValueOf } from "../types";
 import type { State, StateCallback, StateFnType } from "./types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import type { ComponentWithStore } from "../class-connect";
-import type { GetStateMetaType } from "../state/types";
 import type StoreMeta from "../store/core";
 import type Scheduler from "../scheduler";
 import type Subscriber from "../subscribe";
@@ -18,7 +17,6 @@ export default class Updater<S extends PrimitiveState> {
     public $storeMeta: StoreMeta<S>,
     public $scheduler: Scheduler<S>,
     public $subscriber: Subscriber<S>,
-    public $getStateMeta: GetStateMetaType<S>,
   ) {
     this.$storeMeta.setState = this.setState;
     this.$storeMeta.syncUpdate = this.syncUpdate;
@@ -28,13 +26,13 @@ export default class Updater<S extends PrimitiveState> {
   readonly classInstanceStack = new Set<ComponentWithStore<{}, S>>();
 
   pushTask = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
-    const state = this.$storeMeta._$state_;
+    const { _getStateMeta_, _$state_ } = this.$storeMeta;
     /**
      * @description The pre-execution of the data changes accumulates
      * the logic of the correct execution of the final update,
      * which lays the foundation for subsequent batch updates.
      */
-    !isDelete ? (state[key] = value) : delete state[key];
+    !isDelete ? (_$state_[key] = value) : delete _$state_[key];
 
     this.$scheduler.pushTask(
       key,
@@ -47,7 +45,7 @@ export default class Updater<S extends PrimitiveState> {
          * is to preserve the simplicity of the update scheduling for both hook and class components.
          */
         // State updates for hook components
-        this.$getStateMeta(key)!.updater();
+        _getStateMeta_(key)!.updater();
       },
     );
   };
@@ -149,27 +147,29 @@ export default class Updater<S extends PrimitiveState> {
    * to meet the needs of normal text input, it synchronizes React's update scheduling.
    */
   syncUpdate = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    const _state_ = this.$storeMeta._$state_;
+    const { _getStateMeta_, _$state_ } = this.$storeMeta;
 
     let stateTemp = state;
 
-    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(Object.assign({}, _state_)));
+    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(
+      Object.assign({}, _$state_)
+    ));
 
     if (stateTemp !== null) {
       stateErrorProcessing({ state: stateTemp, fnName: "syncUpdate" });
       batchUpdate(() => {
         Object.keys(stateTemp as NonNullable<State<S>>).forEach((key: keyof S) => {
           const value = (stateTemp as S)[key];
-          if (!Object.is(_state_[key], value)) {
-            _state_[key] = value;
+          if (!Object.is(_$state_[key], value)) {
+            _$state_[key] = value;
             this.classUpdater(key, value);
-            this.$getStateMeta(key)!.updater();
+            _getStateMeta_(key)!.updater();
           }
         });
       });
     }
 
-    this.$scheduler.pushCallback(_state_, stateTemp as State<S>, callback);
+    this.$scheduler.pushCallback(_$state_, stateTemp as State<S>, callback);
 
     this.finallyBatchProcessing();
   };

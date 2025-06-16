@@ -1,4 +1,5 @@
 import type { PrimitiveState } from "../types";
-import StateMeta from "./index";
+import type StateMeta from "./index";
 
-export type GetStateMetaType<S extends PrimitiveState> = (key: keyof S) => StateMeta<S>;
+// Type of stateMetaMap
+export type StateMetaMapType<S extends PrimitiveState> = Map<keyof S, StateMeta<S>>;

@@ -1,12 +1,13 @@
 import type {
   AnyBoundFn, InitialState, InnerStoreOptions, StateWithThisType,
-  Store, StateMetaMapType, StoreOptions, MacroStore, UseMacroStore,
+  Store, StoreOptions, MacroStore, UseMacroStore,
 } from "./types";
 import type { AnyFn, MapType, PrimitiveState, ValueOf } from "../types";
 import type { ClassStoreType } from "../class-connect/types";
 import type { SetStateType, SyncUpdateType } from "../updater/types";
 import type { SubscribeType, UseSubscriptionType } from "../subscribe/types";
 import type { RestoreType } from "../restore/types";
+import type { StateMetaMapType } from "../state/types";
 import { __DEV__ } from "../static";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
 import { __COMPUTED_PREFIX__, __RESY_BRAND__ } from "./static";
@@ -76,22 +77,8 @@ export default class StoreMeta<S extends PrimitiveState> {
   // Subscriber
   readonly _subscriber_ = new Subscriber(this, this._scheduler_);
 
-  /** Create and generate 'state meta' */
-  _getStateMeta_ = (key: keyof S) => {
-    const { _stateMetaMap_ } = this;
-    // Resolve the problem that the initialization attribute may be undefined
-    if (_stateMetaMap_.has(key)) return _stateMetaMap_.get(key)!;
-
-    const stateMetaInstance = new StateMeta<S>(key, this);
-    _stateMetaMap_.set(key, stateMetaInstance);
-
-    return stateMetaInstance;
-  };
-
   // Updater
-  readonly _updater_ = new Updater(
-    this, this._scheduler_, this._subscriber_, this._getStateMeta_,
-  );
+  readonly _updater_ = new Updater(this, this._scheduler_, this._subscriber_);
 
   restore?: RestoreType<S>["restore"];
   // Restorer
@@ -116,6 +103,20 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   // A proxy object with the capabilities of updating and data tracking.
   readonly store: Store<S>;
+
+  /** Create and generate 'state meta' */
+  _getStateMeta_ = (key: keyof S) => {
+    const { _stateMetaMap_ } = this;
+    // Resolve the problem that the initialization attribute may be undefined
+    if (_stateMetaMap_.has(key)) return _stateMetaMap_.get(key)!;
+
+    const stateMetaInstance = new StateMeta<S>(
+      key, this, this._stateMetaMap_, this._restorer_,
+    );
+    _stateMetaMap_.set(key, stateMetaInstance);
+
+    return stateMetaInstance;
+  };
 
   // Proxy of driver update re-render for useStore
   readonly _$engineStore_ = new Proxy({} as MacroStore<S>, {

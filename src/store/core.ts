@@ -264,7 +264,9 @@ export default class StoreMeta<S extends PrimitiveState> {
          */
         const value = sourceFrom$State ? this._$state_[key] : (target as S)[key];
 
-        sourceFrom$State && _computedDeps_.add(key);
+        const isFn = typeof value === "function";
+
+        isFn && sourceFrom$State && _computedDeps_.add(key);
 
         const sourceFromThis = hasOwnProperty.call(this, key);
 
@@ -300,7 +302,7 @@ export default class StoreMeta<S extends PrimitiveState> {
          */
         if (
           !sourceFromThis
-          && typeof value === "function"
+          && isFn
           && sourceFrom$State
           && !(value as AnyBoundFn).__bound__
         ) {

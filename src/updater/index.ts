@@ -18,8 +18,8 @@ export default class Updater<S extends PrimitiveState> {
     public $scheduler: Scheduler<S>,
     public $subscriber: Subscriber<S>,
   ) {
-    this.$storeMeta.setState = this.setState;
-    this.$storeMeta.syncUpdate = this.syncUpdate;
+    $storeMeta.setState = this.setState;
+    $storeMeta.syncUpdate = this.syncUpdate;
   }
 
   // The storage stack of this instance for the class component

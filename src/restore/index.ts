@@ -13,7 +13,7 @@ export default class Restorer<S extends PrimitiveState> {
     public $subscriber: Subscriber<S>,
     public $updater: Updater<S>,
   ) {
-    this.$storeMeta.restore = this.restore;
+    $storeMeta.restore = this.restore;
   }
 
   // Tag counters for data references of store

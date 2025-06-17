@@ -14,8 +14,8 @@ export default class Subscriber<S extends PrimitiveState> {
     public $scheduler: Scheduler<S>,
   ) {
     this.prevBatchState = Object.assign({}, $storeMeta._reducerState_);
-    this.$storeMeta.subscribe = this.subscribe;
-    this.$storeMeta.useSubscription = this.useSubscription;
+    $storeMeta.subscribe = this.subscribe;
+    $storeMeta.useSubscription = this.useSubscription;
   }
 
   // Data status of the previous update batch

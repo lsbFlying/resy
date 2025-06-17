@@ -28,18 +28,19 @@ import Restorer from "../restore";
 export default class StoreMeta<S extends PrimitiveState> {
   constructor(initialState?: InitialState<S>, options?: StoreOptions) {
     this._initialState_ = initialState;
-    this._reducerState_ = typeof initialState === "function"
+
+    const reducerState = typeof initialState === "function"
       ? initialState()
       : (initialState ?? ({} as StateWithThisType<S>));
+    this._reducerState_ = reducerState;
 
     optionsErrorProcessing(options);
-    this._options_ = options
+    const opts = options
       ? Object.assign({}, StoreMeta.#DEFAULT_OPTIONS, options)
       : StoreMeta.#DEFAULT_OPTIONS;
+    this._options_ = opts;
 
-    const reducerState = this._reducerState_;
-
-    stateErrorProcessing({ state: reducerState, options: this._options_ });
+    stateErrorProcessing({ state: reducerState, options: opts });
 
     this._$state_ = Object.assign({}, reducerState);
 

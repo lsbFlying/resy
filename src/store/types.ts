@@ -108,20 +108,16 @@ export type StateThis<S extends PrimitiveState> = {
 
 /** Parameter types disabled for initialization of InitialState */
 export type PrimateForbiddenType =
-  | number
-  | string
-  | null
-  | symbol
-  | boolean
-  | Set<any>
-  | Map<any, any>
-  | Array<any>
-  | WeakSet<any>
-  | WeakMap<any, any>
-  | WeakRef<any>
-  | RegExp
-  | bigint
-  | Date;
+  | number | string | null | symbol | boolean
+  | Set<any> | Map<any, any> | Array<any>
+  | WeakSet<any> | WeakMap<any, any> | WeakRef<any>
+  | RegExp | bigint | Date
+  | ArrayIterator<any> | SetIterator<any> | MapIterator<any>
+  | Promise<any> | FormData | Blob | File | Error | CustomEvent | Storage
+  | WebSocket | ArrayBuffer | DataView
+  | Uint8Array | Int8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array
+  | Uint32Array | Float32Array | Float64Array | BigInt64Array | BigUint64Array
+  | XMLHttpRequest | Headers | Request | Response | Window;
 
 /** Parameter types with this type pointing to identification */
 export type StateWithThisType<S extends PrimitiveState> = S extends PrimateForbiddenType

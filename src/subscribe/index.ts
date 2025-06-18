@@ -13,13 +13,12 @@ export default class Subscriber<S extends PrimitiveState> {
     public $storeMeta: StoreMeta<S>,
     public $scheduler: Scheduler<S>,
   ) {
-    this.prevBatchState = Object.assign({}, $storeMeta._reducerState_);
     $storeMeta.subscribe = this.subscribe;
     $storeMeta.useSubscription = this.useSubscription;
   }
 
-  // Data status of the previous update batch
-  prevBatchState: S;
+  // Data status of the previous update batch for subscriber
+  prevBatchState?: S;
 
   // Subscription listener queue
   readonly listenerQueue = new Set<ListenerType<S>>();

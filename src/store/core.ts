@@ -56,7 +56,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   // Retrieve the reducerState
   _reducerState_: S;
 
-  /** ============================== For Core Element start ============================== */
+  /** ============================== For Core Component Element start ============================== */
   // Scheduler
   readonly _scheduler_ = new Scheduler<S>();
 
@@ -80,7 +80,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   // it is in a frozen state where updates are prohibited.
   // TODO waiting considering, the scenes it contains are a bit complex
   // #freezing: boolean | undefined;
-  /** ============================== For Core Element  end ============================== */
+  /** ============================== For Core Component Element  end ============================== */
 
   /** ============================== For Core Render Element start ============================== */
   _$state_: S;

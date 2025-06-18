@@ -18,7 +18,7 @@ export default class Subscriber<S extends PrimitiveState> {
   }
 
   // Data status of the previous update batch for subscriber
-  prevBatchState?: S;
+  prevBatchState!: S;
 
   // Subscription listener queue
   readonly listenerQueue = new Set<ListenerType<S>>();

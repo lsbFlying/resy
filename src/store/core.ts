@@ -1,5 +1,5 @@
 import type {
-  AnyBoundFn, InitialState, InnerStoreOptions, StateWithThisType,
+  AnyBoundFn, InitialState, StateWithThisType,
   Store, StoreOptions, MacroStore, UseMacroStore,
 } from "./types";
 import type { AnyFn, MapType, PrimitiveState, ValueOf } from "../types";
@@ -10,7 +10,7 @@ import type { RestoreType } from "../restore/types";
 import type { StateMetaMapType } from "../state/types";
 import { __DEV__ } from "../static";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
-import { __COMPUTED_PREFIX__, __RESY_BRAND__ } from "./static";
+import { __COMPUTED_PREFIX__, __RESY_BRAND__, DEFAULT_OPTIONS } from "./static";
 import { hasOwnProperty } from "../utils";
 import { proxyable } from "../immutable/utils";
 import { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
@@ -36,8 +36,8 @@ export default class StoreMeta<S extends PrimitiveState> {
 
     optionsErrorProcessing(options);
     const opts = options
-      ? Object.assign({}, StoreMeta.#DEFAULT_OPTIONS, options)
-      : StoreMeta.#DEFAULT_OPTIONS;
+      ? Object.assign({}, DEFAULT_OPTIONS, options)
+      : DEFAULT_OPTIONS;
     this._options_ = opts;
 
     stateErrorProcessing({ state: reducerState, options: opts });
@@ -49,15 +49,6 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   readonly __RESY_BRAND__ = __RESY_BRAND__;
 
-  static #DEFAULT_OPTIONS: InnerStoreOptions = {
-    unmountRestore: true,
-    namespace: undefined,
-    immutable: undefined,
-    enableMarcoActionStateful: undefined,
-    __useConciseState__: undefined,
-    __enableMacros__: undefined,
-    __functionName__: "createStore",
-  };
   // Configuration
   readonly _options_;
   // Initialize the incoming state

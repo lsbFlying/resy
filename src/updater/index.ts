@@ -124,11 +124,14 @@ export default class Updater<S extends PrimitiveState> {
     let stateTemp = state;
 
     // processing of prevState
-    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(Object.assign({}, _state_)));
+    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(
+      Object.assign({}, _state_))
+    );
 
     if (stateTemp !== null) {
       stateErrorProcessing({ state: stateTemp, fnName: "setState" });
-      // The update of hook is an independent update dispatch action, and traversal processing is needed to unify the stack.
+      // The update of hook is an independent update dispatch action,
+      // and traversal processing is needed to unify the stack.
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         const value = (stateTemp as S)[key];
         if (!Object.is(value, _state_[key])) {

@@ -95,7 +95,7 @@ export default class Restorer<S extends PrimitiveState> {
            * and does not constitute a complete unmount.
            * The complete unmount cycle corresponds to the entire usage cycle of the store.
            */
-          const noRefFlag = !classInstanceStack.size && !stateMetaRefCounter;
+          const noRef = !classInstanceStack.size && !stateMetaRefCounter;
           const initialState = this.$storeMeta._initialState_;
           /**
            * When initialState is a function,
@@ -104,11 +104,11 @@ export default class Restorer<S extends PrimitiveState> {
            * thus optimizing code execution efficiency.
            */
           this.$storeMeta._options_.unmountRestore
-          && noRefFlag
+          && noRef
           && typeof initialState !== "function"
           && this.restoreProcessing();
 
-          typeof initialState === "function" && noRefFlag && (this.initialFunctionExecutable = true);
+          typeof initialState === "function" && noRef && (this.initialFunctionExecutable = true);
         }
         callback?.();
       });

@@ -32,7 +32,6 @@ export default class StoreMeta<S extends PrimitiveState> {
     const reducerState = typeof initialState === "function"
       ? initialState()
       : (initialState ?? ({} as StateWithThisType<S>));
-    this._reducerState_ = reducerState;
 
     optionsErrorProcessing(options);
     const opts = options
@@ -53,8 +52,6 @@ export default class StoreMeta<S extends PrimitiveState> {
   readonly _options_;
   // Initialize the incoming state
   readonly _initialState_?: InitialState<S>;
-  // Retrieve the reducerState
-  _reducerState_: S;
 
   /** ============================== For Core Component Element start ============================== */
   // Scheduler

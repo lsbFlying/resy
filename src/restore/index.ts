@@ -37,16 +37,14 @@ export default class Restorer<S extends PrimitiveState> {
    */
   retrieveReducerState = () => {
     const { _initialState_ } = this.$storeMeta;
-    typeof _initialState_ === "function" && (
-      this.$storeMeta._reducerState_ = _initialState_() as S
-    );
+    return typeof _initialState_ === "function"
+      ? (_initialState_() as S)
+      : (_initialState_ ?? ({} as S));
   };
 
   // Logic of recovery processing
   restoreProcessing = () => {
-    this.retrieveReducerState();
-
-    this.$storeMeta._$state_ = Object.assign({}, this.$storeMeta._reducerState_) as S;
+    this.$storeMeta._$state_ = Object.assign({}, this.retrieveReducerState()) as S;
 
     // this.#freezing = true;
   };
@@ -120,14 +118,13 @@ export default class Restorer<S extends PrimitiveState> {
 
   // Reset recovery initialization state data
   restore = (callback?: StateCallback<S>) => {
-    const { _$state_, _reducerState_ } = this.$storeMeta;
+    const { _$state_ } = this.$storeMeta;
     const { pushTask, finallyBatchProcessing } = this.$updater;
 
     this.$subscriber.willUpdatingProcessing();
 
-    this.retrieveReducerState();
-
-    const reducerState = _reducerState_;
+    const reducerState = this.retrieveReducerState();
+    console.log("reducerState:", reducerState);
 
     /**
      * @description Get all the properties

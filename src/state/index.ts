@@ -42,7 +42,7 @@ export default class StateMeta<S extends PrimitiveState> {
         () => {
           // Release memory if there are no component references
           if (!this.stateChangeQueue.size) {
-            this.$stateMetaMap.delete(this.key);
+            delete this.$stateMetaMap[this.key];
           }
         },
       );
@@ -62,9 +62,9 @@ export default class StateMeta<S extends PrimitiveState> {
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     return useSyncExternalStore(
-      $stateMetaMap.get(key)!.subscribe,
-      $stateMetaMap.get(key)!.getSnapshot,
-      $stateMetaMap.get(key)!.getSnapshot,
+      $stateMetaMap[key]!.subscribe,
+      $stateMetaMap[key]!.getSnapshot,
+      $stateMetaMap[key]!.getSnapshot,
     );
   };
 

@@ -86,23 +86,17 @@ export default class StoreMeta<S extends PrimitiveState> {
   _computedDeps_ = new Set<keyof S>();
 
   // The core map meta-structure of stateMeta
-  readonly _stateMetaMap_: StateMetaMapType<S> = new Map();
+  readonly _stateMetaMap_ = {} as StateMetaMapType<S>;
 
   // A proxy object with the capabilities of updating and data tracking.
   readonly store: Store<S>;
 
   /** Create and generate 'state meta' */
   _getStateMeta_ = (key: keyof S) => {
-    const { _stateMetaMap_ } = this;
     // Resolve the problem that the initialization attribute may be undefined
-    if (_stateMetaMap_.has(key)) return _stateMetaMap_.get(key)!;
-
-    const stateMetaInstance = new StateMeta<S>(
+    return this._stateMetaMap_[key] ??= new StateMeta<S>(
       key, this, this._stateMetaMap_, this._restorer_,
     );
-    _stateMetaMap_.set(key, stateMetaInstance);
-
-    return stateMetaInstance;
   };
 
   // Proxy of driver update re-render for useStore

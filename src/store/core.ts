@@ -1,6 +1,6 @@
 import type {
   AnyBoundFn, InitialState, StateWithThisType,
-  Store, StoreOptions, MacroStore, UseMacroStore,
+  Store, StoreOptions, MacroStore, UseMacroStore, InnerStoreOptions,
 } from "./types";
 import type { AnyFn, MapType, PrimitiveState, ValueOf } from "../types";
 import type { ClassStoreType } from "../class-connect/types";
@@ -37,11 +37,11 @@ export default class StoreMeta<S extends PrimitiveState> {
     const opts = options
       ? Object.assign({}, DEFAULT_OPTIONS, options)
       : DEFAULT_OPTIONS;
-    this._options_ = opts;
+    this._options_ = opts satisfies InnerStoreOptions;
 
     stateErrorProcessing({ state: reducerState, options: opts });
 
-    this._$state_ = Object.assign({}, reducerState);
+    this._$state_ = reducerState;
 
     this.store = this.#createProxy();
   }

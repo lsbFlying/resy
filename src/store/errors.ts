@@ -27,11 +27,9 @@ export const stateErrorProcessing = (params: {
   const { state, fnName, options } = params;
   const stateType = whatsType(state);
   if (__DEV__ && stateType !== "Object") {
-    const fnNameTemp = fnName ?? options?.__functionName__;
-
     throw new Error(
-      `resy's ${fnNameTemp}(...): takes an object of state variables to update or`
-      + " a function which returns an object of state variables."
+      `resy's ${fnName ?? options?.__functionName__}(...): takes an object of state to update or`
+      + " a function which returns an object of state."
       + ` Instead received: ${stateType.toLocaleLowerCase()}`
     );
   }
@@ -49,23 +47,23 @@ export const optionsErrorProcessing = (
 ) => {
   const optionsType = whatsType(options);
   const optsExist = optionsType !== "Undefined";
-  const urType = whatsType(options?.unmountRestore);
-  const ucsType = whatsType(options?.__useConciseState__);
-  const nsType = whatsType(options?.namespace);
-  const emType = whatsType(options?.__enableMacros__);
-  const emasType = whatsType(options?.enableMarcoActionStateful);
+  const urType = typeof options?.unmountRestore;
+  const ucsType = typeof options?.__useConciseState__;
+  const nsType = typeof options?.namespace;
+  const emType = typeof options?.__enableMacros__;
+  const emasType = typeof options?.enableMarcoActionStateful;
 
   if (
     __DEV__ && (
       (
         optsExist && optionsType !== "Object"
       ) || (
-        optsExist && optionsType === "Object" && (
-          (urType !== "Boolean" && urType !== "Undefined")
-          || (ucsType !== "Boolean" && ucsType !== "Undefined")
-          || (nsType !== "String" && nsType !== "Undefined")
-          || (emType !== "Boolean" && emType !== "Undefined")
-          || (emasType !== "Boolean" && emasType !== "Undefined")
+        optionsType === "Object" && (
+          (urType !== "boolean" && urType !== "undefined")
+          || (ucsType !== "boolean" && ucsType !== "undefined")
+          || (nsType !== "string" && nsType !== "undefined")
+          || (emType !== "boolean" && emType !== "undefined")
+          || (emasType !== "boolean" && emasType !== "undefined")
         )
       )
     )

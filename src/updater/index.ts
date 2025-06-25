@@ -5,6 +5,7 @@ import type { ComponentWithStore } from "../class-connect";
 import type StoreMeta from "../store/core";
 import type Scheduler from "../scheduler";
 import type Subscriber from "../subscribe";
+import type { StateMetaMapType } from "../state/types";
 import { batchUpdate } from "../static";
 import { stateErrorProcessing } from "../store/errors";
 import { createNewRefValue, reduceChanged } from "../immutable/utils";
@@ -17,6 +18,7 @@ export default class Updater<S extends PrimitiveState> {
     public $storeMeta: StoreMeta<S>,
     public $scheduler: Scheduler<S>,
     public $subscriber: Subscriber<S>,
+    public $stateMetaMap: StateMetaMapType<S>,
   ) {
     $storeMeta.setState = this.setState;
     $storeMeta.syncUpdate = this.syncUpdate;
@@ -26,7 +28,7 @@ export default class Updater<S extends PrimitiveState> {
   readonly classInstanceStack = new Set<ComponentWithStore<{}, S>>();
 
   pushTask = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
-    const { _getStateMeta_, _$state_ } = this.$storeMeta;
+    const { _$state_ } = this.$storeMeta;
     /**
      * @description The pre-execution of the data changes accumulates
      * the logic of the correct execution of the final update,
@@ -45,7 +47,7 @@ export default class Updater<S extends PrimitiveState> {
          * is to preserve the simplicity of the update scheduling for both hook and class components.
          */
         // State updates for hook components
-        _getStateMeta_(key)!.updater();
+        this.$stateMetaMap[key]?.updater();
       },
     );
   };
@@ -150,7 +152,7 @@ export default class Updater<S extends PrimitiveState> {
    * to meet the needs of normal text input, it synchronizes React's update scheduling.
    */
   syncUpdate = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    const { _getStateMeta_, _$state_ } = this.$storeMeta;
+    const { _$state_ } = this.$storeMeta;
 
     let stateTemp = state;
 
@@ -166,7 +168,7 @@ export default class Updater<S extends PrimitiveState> {
           if (!Object.is(_$state_[key], value)) {
             _$state_[key] = value;
             this.classUpdater(key, value);
-            _getStateMeta_(key)!.updater();
+            this.$stateMetaMap[key]?.updater();
           }
         });
       });

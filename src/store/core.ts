@@ -8,12 +8,12 @@ import type { SetStateType, SyncUpdateType } from "../updater/types";
 import type { SubscribeType, UseSubscriptionType } from "../subscribe/types";
 import type { RestoreType } from "../restore/types";
 import type { StateMetaMapType } from "../state/types";
+import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import { __DEV__ } from "../static";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
 import { __COMPUTED_PREFIX__, __RESY_BRAND__, DEFAULT_OPTIONS } from "./static";
 import { hasOwnProperty } from "../utils";
 import { proxyable } from "../immutable/utils";
-import { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
 import { useDebugValue, useEffect, useState } from "react";
 import StateMeta from "../state";
@@ -62,10 +62,15 @@ export default class StoreMeta<S extends PrimitiveState> {
   // Subscriber
   readonly _subscriber_ = new Subscriber(this, this._scheduler_);
 
+  // The core map meta-structure of stateMeta
+  readonly _stateMetaMap_ = {} as StateMetaMapType<S>;
+
   setState!: SetStateType<S>["setState"];
   syncUpdate!: SyncUpdateType<S>["syncUpdate"];
   // Updater
-  readonly _updater_ = new Updater(this, this._scheduler_, this._subscriber_);
+  readonly _updater_ = new Updater(
+    this, this._scheduler_, this._subscriber_, this._stateMetaMap_,
+  );
 
   restore!: RestoreType<S>["restore"];
   // Restorer
@@ -85,19 +90,8 @@ export default class StoreMeta<S extends PrimitiveState> {
   // Dependency Collection for computed
   _computedDeps_ = new Set<keyof S>();
 
-  // The core map meta-structure of stateMeta
-  readonly _stateMetaMap_ = {} as StateMetaMapType<S>;
-
   // A proxy object with the capabilities of updating and data tracking.
   readonly store: Store<S>;
-
-  /** Create and generate 'state meta' */
-  _getStateMeta_ = (key: keyof S) => {
-    // Resolve the problem that the initialization attribute may be undefined
-    return this._stateMetaMap_[key] ??= new StateMeta<S>(
-      key, this, this._stateMetaMap_, this._restorer_,
-    );
-  };
 
   // Proxy of driver update re-render for useStore
   readonly _$engineStore_ = new Proxy({} as MacroStore<S>, {
@@ -121,7 +115,11 @@ export default class StoreMeta<S extends PrimitiveState> {
           ),
         });
 
-        return this._getStateMeta_(key)!.useStateMeta();
+        return (
+          this._stateMetaMap_[key] ??= new StateMeta<S>(
+            key, this, this._stateMetaMap_, this._restorer_,
+          )
+        ).useStateMeta();
       }
 
       if (!sourceFromThis && typeof value === "function") {
@@ -150,7 +148,11 @@ export default class StoreMeta<S extends PrimitiveState> {
          * can preemptively avoid the tearing synchronization handling inside useSyncExternalStore,
          * resulting in twice the redundant rendering execution.
          */
-        fnStateful && this._getStateMeta_(key)!.useStateMeta();
+        fnStateful && (
+          this._stateMetaMap_[key] ??= new StateMeta<S>(
+            key, this, this._stateMetaMap_, this._restorer_,
+          )
+        ).useStateMeta();
 
         return !key.toString().startsWith(__COMPUTED_PREFIX__)
           ? boundFnValue

@@ -16,8 +16,8 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
 export default class StateMeta<S extends PrimitiveState> {
   constructor(
     public key: keyof S,
-    public $storeMeta: StoreMeta<S>,
     public $stateMetaMap: StateMetaMapType<S>,
+    public $storeMeta: StoreMeta<S>,
     public $restorer: Restorer<S>,
     // eslint-disable-next-line no-empty-function
   ) {}

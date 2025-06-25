@@ -117,7 +117,7 @@ export default class StoreMeta<S extends PrimitiveState> {
 
         return (
           this._stateMetaMap_[key] ??= new StateMeta<S>(
-            key, this, this._stateMetaMap_, this._restorer_,
+            key, this._stateMetaMap_, this, this._restorer_,
           )
         ).useStateMeta();
       }
@@ -150,7 +150,7 @@ export default class StoreMeta<S extends PrimitiveState> {
          */
         fnStateful && (
           this._stateMetaMap_[key] ??= new StateMeta<S>(
-            key, this, this._stateMetaMap_, this._restorer_,
+            key, this._stateMetaMap_, this, this._restorer_,
           )
         ).useStateMeta();
 

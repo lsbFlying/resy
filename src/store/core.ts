@@ -34,13 +34,10 @@ export default class StoreMeta<S extends PrimitiveState> {
       : (initialState ?? ({} as StateWithThisType<S>));
 
     optionsErrorProcessing(options);
-    const opts = options
-      ? Object.assign({}, DEFAULT_OPTIONS, options)
-      : DEFAULT_OPTIONS;
+    const opts = Object.assign({}, DEFAULT_OPTIONS, options ?? {});
     this._options_ = opts satisfies InnerStoreOptions;
 
     stateErrorProcessing({ state: reducerState, options: opts });
-
     this._$state_ = reducerState;
 
     this.store = this.#createProxy();

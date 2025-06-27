@@ -85,7 +85,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   _$state_: S;
   // TODO _computedDeps_ waiting upgrade
   // Dependency Collection for computed
-  _computedDeps_ = new Set<keyof S>();
+  readonly _computedDeps_ = new Set<keyof S>();
 
   // A proxy object with the capabilities of updating and data tracking.
   readonly store: Store<S>;

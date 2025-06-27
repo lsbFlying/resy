@@ -19,8 +19,10 @@ export default class StateMeta<S extends PrimitiveState> {
     public $stateMetaMap: StateMetaMapType<S>,
     public $storeMeta: StoreMeta<S>,
     public $restorer: Restorer<S>,
-    // eslint-disable-next-line no-empty-function
-  ) {}
+  ) {
+    // Perform refresh recovery logic if initialState is a function
+    $restorer.initialStateRetrieve();
+  }
 
   // The Set memory of the update function of a single attribute
   readonly stateChangeQueue = new Set<Callback>();
@@ -56,9 +58,6 @@ export default class StateMeta<S extends PrimitiveState> {
   useStateMeta = () => {
     const { key } = this;
     const $stateMetaMap = this.$stateMetaMap;
-
-    // Perform refresh recovery logic if initialState is a function
-    this.$restorer.initialStateRetrieve();
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     return useSyncExternalStore(

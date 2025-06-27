@@ -44,7 +44,7 @@ export default class Restorer<S extends PrimitiveState> {
 
   // Logic of recovery processing
   restoreProcessing = () => {
-    this.$storeMeta._$state_ = Object.assign({}, this.retrieveReducerState()) as S;
+    this.$storeMeta._$state_ = { ...this.retrieveReducerState() } as S;
 
     // this.#freezing = true;
   };

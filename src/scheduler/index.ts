@@ -30,8 +30,7 @@ export default class Scheduler<S extends PrimitiveState> {
   pushCallback = ($state: S, state: State<S>, callback?: StateCallback<S>) => {
     if (callback !== undefined) {
       stateCallbackErrorProcessing(callback);
-      const nextState: S = Object.assign({}, $state, state);
-      this.callbackQueue.add({ nextState, callback });
+      this.callbackQueue.add({ nextState: { ...$state, ...state }, callback });
     }
   };
 

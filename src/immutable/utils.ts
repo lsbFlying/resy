@@ -40,7 +40,7 @@ export const createNewRefValue = <T>(value: T): T => {
   const type = typeString.call(value);
   switch (type) {
     case "[object Object]":
-      return Object.assign({}, value);
+      return { ...value };
     case "[object Array]":
       return slice.call(value as unknown[]) as T;
     case "[object Map]":

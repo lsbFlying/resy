@@ -78,7 +78,7 @@ export default class Updater<S extends PrimitiveState> {
           // Make a shallow clone of the "taskDataMap" data for the "effectState" of "subscribe",
           // Perform a shallowClone before executing flushTask, otherwise, it might become impossible to retrieve `taskDataMap`.
           const effectStateTemp = listenerQueue.size > 0
-            ? Object.assign({}, taskData)
+            ? { ...taskData }
             : undefined;
 
           /**
@@ -126,9 +126,7 @@ export default class Updater<S extends PrimitiveState> {
     let stateTemp = state;
 
     // processing of prevState
-    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(
-      Object.assign({}, _state_))
-    );
+    typeof state === "function" && (stateTemp = (state as StateFnType<S>)({ ..._state_ }));
 
     if (stateTemp !== null) {
       stateErrorProcessing({ state: stateTemp, fnName: "setState" });
@@ -156,9 +154,7 @@ export default class Updater<S extends PrimitiveState> {
 
     let stateTemp = state;
 
-    typeof state === "function" && (stateTemp = (state as StateFnType<S>)(
-      Object.assign({}, _$state_)
-    ));
+    typeof state === "function" && (stateTemp = (state as StateFnType<S>)({ ..._$state_ }));
 
     if (stateTemp !== null) {
       stateErrorProcessing({ state: stateTemp, fnName: "syncUpdate" });

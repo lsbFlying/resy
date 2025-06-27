@@ -29,9 +29,9 @@ export default class StoreMeta<S extends PrimitiveState> {
   constructor(initialState?: InitialState<S>, options?: StoreOptions) {
     this._initialState_ = initialState;
 
-    const reducerState = typeof initialState === "function"
-      ? initialState()
-      : (initialState ?? ({} as StateWithThisType<S>));
+    const reducerState = typeof initialState !== "function"
+      ? (initialState ?? ({} as StateWithThisType<S>))
+      : initialState();
 
     optionsErrorProcessing(options);
     const opts = Object.assign({}, DEFAULT_OPTIONS, options ?? {});

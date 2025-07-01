@@ -80,7 +80,7 @@ function createPlatformsBuildConfig(
   };
 }
 
-function createModuleBuildConfig(format: FormatType, env: EnvType) {
+function createMainBuildConfig(format: FormatType, env: EnvType) {
   const isProd = env === "prod";
   const platforms = `./platform.${format}${isProd ? ".prod" : ""}`;
 
@@ -139,12 +139,6 @@ export default [
   // ts-d.ts
   createTsDeclareFileBuildConfig(),
 
-  ...FORMATS.map(format => {
-    return ENVS.map(env => {
-      return createModuleBuildConfig(format, env);
-    });
-  }).flat(),
-
   ...PLATFORMS.map(platform => {
     return FORMATS.map(format => {
       return ENVS.map(env => {
@@ -156,4 +150,10 @@ export default [
       });
     });
   }).flat(Infinity),
+
+  ...FORMATS.map(format => {
+    return ENVS.map(env => {
+      return createMainBuildConfig(format, env);
+    });
+  }).flat(),
 ];

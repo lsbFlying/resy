@@ -9,7 +9,6 @@ import type { SubscribeType, UseSubscriptionType } from "../subscribe/types";
 import type { RestoreType } from "../restore/types";
 import type { StateMetaMapType } from "../state/types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
-import { __DEV__ } from "../static";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
 import { __COMPUTED_PREFIX__, __RESY_BRAND__, DEFAULT_OPTIONS } from "./static";
 import { hasOwnProperty } from "../utils";

@@ -15,6 +15,7 @@ export default tsEslint.config(
     languageOptions: {
       globals: {
         globalThis: "readonly",
+        __DEV__: "readonly",
         ...globals.browser,
         ...globals.node,
       },

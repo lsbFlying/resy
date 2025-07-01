@@ -3,7 +3,6 @@ import type { ListenerType, Unsubscribe } from "./types";
 import type { Store } from "../store/types";
 import type StoreMeta from "../store/core";
 import type Scheduler from "../scheduler";
-import { __DEV__ } from "../static";
 import { subscribeErrorProcessing } from "../store/errors";
 import { useDebugValue } from "react";
 import { useSubscription as useSubscriptionCore } from "./hook";

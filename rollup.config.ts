@@ -52,14 +52,27 @@ function createTsDeclareFileBuildConfig() {
   };
 }
 
-function createModuleBuildConfig(format: "cjs" | "esm", isTerser?: boolean) {
+function createModuleBuildConfig(format: "cjs" | "esm", production?: boolean) {
   const platforms = `./platform.${format}`;
-  const terserOpts = isTerser ? [terser()] : [];
+
+  // Compress files in a production environment.
+  const terserOpts = production ? [terser()] : [];
+  const replaceOpts = production
+    ? {
+      values: {
+        // Assist in tree-shaking packaging processing of production files.
+        __DEV__: "false",
+        "react-platform": platforms,
+      },
+    }
+    : {
+      "react-platform": platforms,
+    };
 
   return {
     input,
     output: {
-      file: `dist/resy.${format}.${isTerser ? "prod." : ""}js`,
+      file: `dist/resy.${format}.${production ? "prod." : ""}js`,
       format,
     },
     /**
@@ -74,8 +87,8 @@ function createModuleBuildConfig(format: "cjs" | "esm", isTerser?: boolean) {
     ],
     plugins: [
       replace({
-        "react-platform": platforms,
         preventAssignment: true,
+        ...replaceOpts,
       }),
       autoExternal(),
       nodeResolve(),

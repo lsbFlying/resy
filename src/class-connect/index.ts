@@ -4,7 +4,6 @@ import type { ClassStoreType } from "./types";
 import { PureComponent } from "react";
 import { storeErrorProcessing } from "../store/errors";
 import { hasOwnProperty } from "../utils";
-import { __DEV__ } from "../static";
 import StoreMeta from "../store/core";
 
 /**

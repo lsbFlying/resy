@@ -4,7 +4,6 @@ import type { Store } from "../store/types";
 import type StoreMeta from "../store/core";
 import { useDebugValue, useEffect, useRef } from "react";
 import { storeErrorProcessing, subscribeErrorProcessing } from "../store/errors";
-import { __DEV__ } from "../static";
 
 /**
  * @description Hook of subscribe

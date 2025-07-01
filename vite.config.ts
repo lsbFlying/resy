@@ -7,6 +7,9 @@ export default defineConfig({
     port: 3000,
     host: "localhost",
   },
+  define: {
+    __DEV__: "true",
+  },
   resolve: {
     alias: {
       // for dev

@@ -25,6 +25,7 @@ const ENVS: EnvType[] = [
 
 const input = "src/index.ts";
 
+// create resy.d.ts declaration file
 function createTsDeclareFileBuildConfig() {
   const curDate = new Date();
   const curDay = curDate.getDate();
@@ -136,7 +137,6 @@ function createMainBuildConfig(format: FormatType, env: EnvType) {
 }
 
 export default [
-  // ts-d.ts
   createTsDeclareFileBuildConfig(),
 
   ...PLATFORMS.map(platform => {

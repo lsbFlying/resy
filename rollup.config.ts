@@ -96,6 +96,8 @@ function createMainBuildConfig(format: FormatType, env: EnvType) {
       },
     }
     : {
+      // preserve to be handled by bundlers
+      __DEV__: "!!(process.env.NODE_ENV !== 'production')",
       "react-platform": platforms,
     };
 

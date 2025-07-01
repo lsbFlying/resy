@@ -21,6 +21,72 @@ import Subscriber from "../subscribe";
 import Updater from "../updater";
 import Restorer from "../restore";
 
+let hasWarned = false;
+
+export const useDebugState = <S extends PrimitiveState>(
+  key: keyof S,
+  value: ValueOf<S>,
+  opts: StoreOptions,
+) => {
+  /**
+   * 提示开发者正确 alias 配置
+   * @desc 多产物+alias+环境变量替换（推荐）
+   * 步骤
+   * 发布多份产物
+   * 比如 resy.esm.js（开发）、resy.esm.prod.js（生产）
+   * 文档中建议用户配置 alias
+   * 让用户在 Vite/Webpack 配置 alias，根据环境变量切换产物
+   * Vite 示例：
+   * ```js
+   *    // vite.config.ts
+   *    import { defineConfig } from 'vite';
+   *    export default defineConfig({
+   *      resolve: {
+   *        alias: {
+   *          'resy': process.env.NODE_ENV === 'production'
+   *            ? 'resy/dist/resy.esm.prod.js'
+   *            : 'resy/dist/resy.esm.js'
+   *        }
+   *      }
+   *    });
+   * ```
+   * Webpack 示例：
+   * ```js
+   *    // webpack.config.js
+   *    resolve: {
+   *      alias: {
+   *        'resy': process.env.NODE_ENV === 'production'
+   *          ? 'resy/dist/resy.esm.prod.js'
+   *          : 'resy/dist/resy.esm.js'
+   *      }
+   *    }
+   * ```
+   */
+  if (__DEV__ && !hasWarned) {
+    hasWarned = true;
+    console.warn(
+      "[resy] useDebugState is only valid in the development environment." +
+      " If you need to remove debugging related code in a production environment," +
+      " please ensure that your packaging tool is configured with define" +
+      " (such as Vite's define: { 'process.env.NODE_ENV': '\"production\"' }），" +
+      " Or refer to the documentation to configure alias to point to the production build product."
+    );
+  }
+
+  const { namespace } = opts;
+
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  __DEV__ && useDebugValue({
+    key,
+    value,
+    ...(
+      namespace
+        ? { namespace }
+        : null
+    ),
+  });
+};
+
 /**
  * @description The core meta-structure of store
  */
@@ -104,15 +170,7 @@ export default class StoreMeta<S extends PrimitiveState> {
 
       if (!sourceFromThis && typeof value !== "function") {
         // eslint-disable-next-line react-hooks/rules-of-hooks
-        __DEV__ && useDebugValue({
-          key,
-          value,
-          ...(
-            this._options_.namespace
-              ? { namespace: this._options_.namespace }
-              : null
-          ),
-        });
+        useDebugState(key, value, this._options_);
 
         return (
           this._stateMetaMap_[key] ??= new StateMeta<S>(
@@ -131,15 +189,7 @@ export default class StoreMeta<S extends PrimitiveState> {
         const boundFnValue = state[key];
 
         // eslint-disable-next-line react-hooks/rules-of-hooks
-        fnStateful && __DEV__ && useDebugValue({
-          key,
-          value: boundFnValue,
-          ...(
-            this._options_.namespace
-              ? { namespace: this._options_.namespace }
-              : null
-          ),
-        });
+        fnStateful && useDebugState(key, boundFnValue, this._options_);
 
         /**
          * @description Enable function properties to have the ability to update rendering.

@@ -81,7 +81,10 @@ function createPlatformsBuildConfig(
   };
 }
 
-function createMainBuildConfig(format: FormatType, env: EnvType) {
+function createMainBuildConfig(
+  format: FormatType,
+  env: EnvType,
+) {
   const isProd = env === "prod";
   const platforms = `./platform.${format}${isProd ? ".prod" : ""}`;
 

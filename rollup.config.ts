@@ -1,24 +1,29 @@
+import { dts } from "rollup-plugin-dts";
+import { nodeResolve } from "@rollup/plugin-node-resolve";
+import { babel } from "@rollup/plugin-babel";
 import typescript from "@rollup/plugin-typescript";
 import replace from "@rollup/plugin-replace";
 import autoExternal from "rollup-plugin-auto-external";
 import terser from "@rollup/plugin-terser";
-import { dts } from "rollup-plugin-dts";
-import { nodeResolve } from "@rollup/plugin-node-resolve";
-import { babel } from "@rollup/plugin-babel";
+
+type FormatType = "cjs" | "esm";
+type EnvType = "dev" | "prod";
+type PlatformType = "dom" | "native";
+
+const FORMATS = [
+  "cjs",
+  "esm"
+];
+const PLATFORMS = [
+  "dom",
+  "native"
+];
+const ENVS = [
+  "dev",
+  "prod"
+];
 
 const input = "src/index.ts";
-
-function createPlatformsBuildConfig(platform: "dom" | "native", format: "cjs" | "esm") {
-  return {
-    input: `src/platforms/${platform}.ts`,
-    external: [`react-${platform}`],
-    output: [{
-      format,
-      dir: "dist",
-      entryFileNames: `platform.${format}${platform === "dom" ? "" : ".native"}.js`,
-    }],
-  };
-}
 
 function createTsDeclareFileBuildConfig() {
   const curDate = new Date();
@@ -52,12 +57,36 @@ function createTsDeclareFileBuildConfig() {
   };
 }
 
-function createModuleBuildConfig(format: "cjs" | "esm", production?: boolean) {
-  const platforms = `./platform.${format}`;
+function createPlatformsBuildConfig(
+  platform: PlatformType,
+  format: FormatType,
+  env: EnvType,
+) {
+  const isProd = env === "prod";
+  const terserPluginsOpts = isProd
+    ? {
+      plugins: [terser()],
+    }
+    : null;
+
+  return {
+    input: `src/platforms/${platform}.ts`,
+    external: [`react-${platform}`],
+    output: {
+      format,
+      file: `dist/platform.${format}${isProd ? ".prod" : ""}${platform === "dom" ? "" : ".native"}.js`,
+    },
+    ...terserPluginsOpts,
+  };
+}
+
+function createModuleBuildConfig(format: FormatType, env: EnvType) {
+  const isProd = env === "prod";
+  const platforms = `./platform.${format}${isProd ? ".prod" : ""}`;
 
   // Compress files in a production environment.
-  const terserOpts = production ? [terser()] : [];
-  const replaceOpts = production
+  const terserOpts = isProd ? [terser()] : [];
+  const replaceOpts = isProd
     ? {
       values: {
         // Assist in tree-shaking packaging processing of production files.
@@ -72,7 +101,7 @@ function createModuleBuildConfig(format: "cjs" | "esm", production?: boolean) {
   return {
     input,
     output: {
-      file: `dist/resy.${format}.${production ? "prod." : ""}js`,
+      file: `dist/resy.${format}.${isProd ? "prod." : ""}js`,
       format,
     },
     /**
@@ -110,15 +139,21 @@ export default [
   // ts-d.ts
   createTsDeclareFileBuildConfig(),
 
-  // cjs
-  createPlatformsBuildConfig("dom", "cjs"),
-  createPlatformsBuildConfig("native", "cjs"),
-  createModuleBuildConfig("cjs"),
-  createModuleBuildConfig("cjs", true),
+  ...FORMATS.map(format => {
+    return ENVS.map(env => {
+      return createModuleBuildConfig(format as FormatType, env as EnvType);
+    });
+  }).flat(),
 
-  // esm
-  createPlatformsBuildConfig("dom", "esm"),
-  createPlatformsBuildConfig("native", "esm"),
-  createModuleBuildConfig("esm"),
-  createModuleBuildConfig("esm", true),
+  ...PLATFORMS.map(platform => {
+    return FORMATS.map(format => {
+      return ENVS.map(env => {
+        return createPlatformsBuildConfig(
+          platform as PlatformType,
+          format as FormatType,
+          env as EnvType,
+        );
+      });
+    });
+  }).flat(Infinity),
 ];

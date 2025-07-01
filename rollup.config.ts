@@ -7,18 +7,18 @@ import autoExternal from "rollup-plugin-auto-external";
 import terser from "@rollup/plugin-terser";
 
 type FormatType = "cjs" | "esm";
-type EnvType = "dev" | "prod";
 type PlatformType = "dom" | "native";
+type EnvType = "dev" | "prod";
 
-const FORMATS = [
+const FORMATS: FormatType[] = [
   "cjs",
   "esm"
 ];
-const PLATFORMS = [
+const PLATFORMS: PlatformType[] = [
   "dom",
   "native"
 ];
-const ENVS = [
+const ENVS: EnvType[] = [
   "dev",
   "prod"
 ];
@@ -141,7 +141,7 @@ export default [
 
   ...FORMATS.map(format => {
     return ENVS.map(env => {
-      return createModuleBuildConfig(format as FormatType, env as EnvType);
+      return createModuleBuildConfig(format, env);
     });
   }).flat(),
 
@@ -149,9 +149,9 @@ export default [
     return FORMATS.map(format => {
       return ENVS.map(env => {
         return createPlatformsBuildConfig(
-          platform as PlatformType,
-          format as FormatType,
-          env as EnvType,
+          platform,
+          format,
+          env,
         );
       });
     });

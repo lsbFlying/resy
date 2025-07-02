@@ -33,7 +33,7 @@ function createTsDeclareFileBuildConfig() {
   const banner =
     "/**\n" +
     " * resy\n" +
-    " * An easy-to-use React data state manager\n" +
+    " * An easy-to-use React state manager\n" +
     " * created by liushanbao <1262300490@qq.com>\n" +
     ` * (c) 2020-05-05-${curDate.getFullYear()}-${curDate.getMonth() + 1}-${curDay < 10 ? `0${curDay}` : curDay}\n` +
     " * Released under the MIT License.\n" +

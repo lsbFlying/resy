@@ -21,8 +21,6 @@ import Subscriber from "../subscribe";
 import Updater from "../updater";
 import Restorer from "../restore";
 
-let hasWarned = false;
-
 /**
  * @description The core meta-structure of store
  */
@@ -97,17 +95,6 @@ export default class StoreMeta<S extends PrimitiveState> {
   // Proxy of driver update re-render for useStore
   readonly _$engineStore_ = new Proxy({} as MacroStore<S>, {
     get: (_: S, key: keyof S) => {
-      if (__DEV__ && !hasWarned) {
-        hasWarned = true;
-        console.warn(
-          "[resy] useDebugState is only valid in the development environment." +
-          " If you need to remove debugging related code in a production environment," +
-          " please ensure that your packaging tool is configured with define" +
-          " (such as Vite's define: { 'process.env.NODE_ENV': '\"production\"' })," +
-          " Or refer to the documentation to configure alias to point to the production build product."
-        );
-      }
-
       const state = this._$state_;
 
       // Get the latest value

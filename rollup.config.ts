@@ -69,13 +69,19 @@ function createPlatformsBuildConfig(
       plugins: [terser()],
     }
     : null;
+  /**
+   * @desc React-Native (Metro Bundle) has a platform file priority parsing mechanism
+   * that automatically prioritizes loading files
+   * with suffixes `.native.js`, `.ios.js`, and `.android.js`.
+   */
+  const platformSuffix = platform === "dom" ? "" : ".native";
 
   return {
     input: `src/platforms/${platform}.ts`,
     external: [`react-${platform}`],
     output: {
       format,
-      file: `dist/platform.${format}${isProd ? ".prod" : ""}${platform === "dom" ? "" : ".native"}.js`,
+      file: `dist/platform.${format}${isProd ? ".prod" : ""}${platformSuffix}.js`,
     },
     ...terserPluginsOpts,
   };
@@ -90,19 +96,6 @@ function createMainBuildConfig(
 
   // Compress files in a production environment.
   const terserOpts = isProd ? [terser()] : [];
-  const replaceOpts = isProd
-    ? {
-      values: {
-        // Assist in tree-shaking packaging processing of production files.
-        __DEV__: "false",
-        "react-platform": platforms,
-      },
-    }
-    : {
-      // preserve to be handled by bundlers
-      __DEV__: "!!(process.env.NODE_ENV !== 'production')",
-      "react-platform": platforms,
-    };
 
   return {
     input,
@@ -123,7 +116,12 @@ function createMainBuildConfig(
     plugins: [
       replace({
         preventAssignment: true,
-        ...replaceOpts,
+        "react-platform": platforms,
+        __DEV__: isProd
+          // Assist in tree-shaking packaging processing of production files.
+          ? "false"
+          // preserve to be handled by bundlers
+          : "!!(process.env.NODE_ENV !== 'production')",
       }),
       autoExternal(),
       nodeResolve(),

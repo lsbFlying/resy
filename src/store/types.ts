@@ -101,10 +101,13 @@ export type UseMacroStore<S extends PrimitiveState> = () => MacroStore<S>;
 /** Type of key disabled in the initialization parameters */
 export type InitialStateForbiddenKeys = keyof StoreUtils<PrimitiveState> | "store";
 
-/** The type of this context in function properties (actions) within initialState. */
-export type StateThis<S extends PrimitiveState> = {
+// Safer type restrictions
+type SecureState<S extends PrimitiveState> = {
   [K in keyof S]: K extends InitialStateForbiddenKeys ? never : S[K];
-} & Store<S>;
+};
+
+/** The type of this context in function properties (actions) within initialState. */
+export type StateThis<S extends PrimitiveState> = SecureState<S> & Store<S>;
 
 /** Parameter types disabled for initialization of InitialState */
 export type PrimateForbiddenType =
@@ -122,11 +125,7 @@ export type PrimateForbiddenType =
 /** Parameter types with this type pointing to identification */
 export type StateWithThisType<S extends PrimitiveState> = S extends PrimateForbiddenType
   ? never
-  : S & {
-    [K in keyof S]: K extends InitialStateForbiddenKeys
-      ? never
-      : S[K];
-  } & ThisType<StateThis<S>>;
+  : S & SecureState<S> & ThisType<StateThis<S>>;
 
 /** Type of initialize data */
 export type InitialState<S extends PrimitiveState> = (() => StateWithThisType<S>) | StateWithThisType<S>;

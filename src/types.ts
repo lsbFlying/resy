@@ -2,7 +2,7 @@ export type Callback = () => void;
 
 export type PrimitiveState = Record<number | string, any>;
 
-export type AnyFn = (...args: unknown[]) => unknown;
+export type AnyFn = (...args: any[]) => any;
 
 export type ValueOf<S extends PrimitiveState> = S[keyof S];
 

@@ -80,17 +80,17 @@ export interface StoreType<S extends PrimitiveState> {
   readonly store: Store<S>;
 }
 
-/** type of useStore */
-export type UseStoreType<S extends PrimitiveState> = {
-  useStore(): ClassicStore<S>;
-};
-
 /**
  * @description The store returned by `createStore`,
  * which then calls the result returned by `useStore`,
  * is referred to as the classical type of store.
  */
 export type ClassicStore<S extends PrimitiveState> = Omit<Store<S>, "useStore">;
+
+/** type of useStore */
+export type UseStoreType<S extends PrimitiveState> = {
+  useStore(): ClassicStore<S>;
+};
 
 /** A preprocessed store that is ready for immediate rendering  */
 export type MacroStore<S extends PrimitiveState> = ClassicStore<S> & StoreType<S>;
@@ -101,9 +101,19 @@ export type UseMacroStore<S extends PrimitiveState> = () => MacroStore<S>;
 /** Type of key disabled in the initialization parameters */
 export type InitialStateForbiddenKeys = keyof StoreUtils<PrimitiveState> | "store";
 
+type ComputedPrefix = `$${string}`;
+
+export type Computed<T extends AnyFn> = T & {
+  __computed__?: ReturnType<T>;
+};
+
 // Safer type restrictions
 type SecureState<S extends PrimitiveState> = {
-  [K in keyof S]: K extends InitialStateForbiddenKeys ? never : S[K];
+  [K in keyof S]: K extends InitialStateForbiddenKeys
+    ? never
+    : K extends ComputedPrefix
+      ? Computed<S[K]>
+      : S[K];
 };
 
 /** The type of this context in function properties (actions) within initialState. */

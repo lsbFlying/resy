@@ -1,6 +1,6 @@
 import type {
-  AnyBoundFn, InitialState, StateWithThisType,
-  Store, StoreOptions, MacroStore, UseMacroStore, InnerStoreOptions,
+  AnyBoundFn, InitialState, StateWithThisType, Store, StoreOptions,
+  MacroStore, UseMacroStore, InnerStoreOptions, Computed,
 } from "./types";
 import type { AnyFn, MapType, PrimitiveState, ValueOf } from "../types";
 import type { ClassStoreType } from "../class-connect/types";
@@ -85,9 +85,61 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   /** ============================== For Core Render Element start ============================== */
   _$state_: S;
+
   // TODO _computedDeps_ waiting upgrade
+  // TODO 考虑_computedDeps_是否要移除全局设置，是否要从每一个computedFn上面进行挂在，
+  //  考虑全局的共同依赖是否会对不同的computed的依赖收集逻辑有影响
   // Dependency Collection for computed
   readonly _computedDeps_ = new Set<keyof S>();
+
+  // TODO waiting upgrade optimize (暂时应该没有属性依赖记录收集销毁的逻辑问题)
+  // TODO args对比未完成
+  useComputed = (computed: Computed<AnyFn>, ...args: any[]) => {
+    const { _computedDeps_ } = this;
+
+    const [
+      { result, stateKeys }, update,
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+    ] = useState(() => {
+      // Clear the previous dirty dependencies before collecting them
+      _computedDeps_.clear();
+      const res = computed(...args);
+      return {
+        result: res,
+        stateKeys: Array.from(_computedDeps_) as (keyof S)[],
+      };
+    });
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => this.subscribe(() => {
+      /**
+       * Perform dependency collection and processing again to
+       * prevent dependency changes caused by conditional logic
+       * start
+       */
+      _computedDeps_.clear();
+
+      const newDeps = Array.from(_computedDeps_);
+
+      /**
+       * Perform dependency collection and processing again to
+       * prevent dependency changes caused by conditional logic.
+       */
+      // update computed deps
+      (stateKeys.toString() !== newDeps.toString()) && update(prevState => ({
+        ...prevState,
+        stateKeys: newDeps,
+      }));
+      // update computed result
+      update(prevState => ({
+        ...prevState,
+        result: computed(...args),
+      }));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, stateKeys), [stateKeys]);
+
+    return result;
+  };
 
   // A proxy object with the capabilities of updating and data tracking.
   readonly store: Store<S>;
@@ -157,50 +209,8 @@ export default class StoreMeta<S extends PrimitiveState> {
 
         return !key.toString().startsWith(__COMPUTED_PREFIX__)
           ? boundFnValue
-          // TODO waiting upgrade optimize (暂时应该没有属性依赖记录收集销毁的逻辑问题)
-          : () => {
-            const { _computedDeps_ } = this;
-
-            const [{ result, stateKeys }, update] = useState(() => {
-              // Clear the previous dirty dependencies before collecting them
-              _computedDeps_.clear();
-              const res = (boundFnValue as AnyFn)();
-              return {
-                result: res,
-                stateKeys: Array.from(_computedDeps_) as (keyof S)[],
-              };
-            });
-
-            useEffect(() => this._subscriber_.subscribe(() => {
-              /**
-               * Perform dependency collection and processing again to
-               * prevent dependency changes caused by conditional logic
-               * start
-               */
-              _computedDeps_.clear();
-
-              const res = (boundFnValue as AnyFn)();
-
-              const newDeps = Array.from(_computedDeps_);
-
-              (stateKeys.toString() !== newDeps.toString()) && update(prevState => ({
-                ...prevState,
-                stateKeys: newDeps,
-              }));
-              /**
-               * Perform dependency collection and processing again to
-               * prevent dependency changes caused by conditional logic.
-               */
-
-              update(prevState => ({
-                ...prevState,
-                result: res,
-              }));
-              // eslint-disable-next-line react-hooks/exhaustive-deps
-            }, stateKeys), [stateKeys]);
-
-            return result;
-          };
+          // TODO bind产生新的引用，待优化
+          : this.useComputed.bind(null, boundFnValue);
       }
 
       return this[key as keyof StoreMeta<S>];

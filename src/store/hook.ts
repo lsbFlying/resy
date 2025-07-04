@@ -12,9 +12,9 @@ import StoreMeta from "./core";
  */
 export const useStore = <S extends PrimitiveState>(
   store: Store<S>,
-): ClassicStore<S> => {
+) => {
   storeErrorProcessing(store, "useStore");
-  return store._$engineStore_;
+  return store._$engineStore_ as ClassicStore<S>;
 };
 
 /**
@@ -44,5 +44,5 @@ export const useConciseState = <S extends PrimitiveState>(
       __functionName__: useConciseState.name,
     } as InnerStoreOptions
   ));
-  return storeMeta._$engineStore_;
+  return storeMeta._$engineStore_ as ClassicStore<S>;
 };

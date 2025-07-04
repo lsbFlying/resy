@@ -1,4 +1,4 @@
-import type { InitialState, InnerStoreOptions, StoreOptions } from "./types";
+import type { InitialState, InnerStoreOptions, StoreOptions, UseMacroStore } from "./types";
 import type { PrimitiveState } from "../types";
 import StoreMeta from "./core";
 
@@ -56,10 +56,10 @@ export const defineStore = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
   options?: StoreOptions,
 ) => new StoreMeta(
-    initialState,
+  initialState,
     {
       ...options,
       __enableMacros__: true,
       __functionName__: "defineStore",
     } as InnerStoreOptions
-  ).useStore;
+).useStore as UseMacroStore<S>;

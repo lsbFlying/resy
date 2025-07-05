@@ -19,6 +19,7 @@ export default class Subscriber<S extends PrimitiveState> {
   // Data status of the previous update batch for subscriber
   prevBatchState!: S;
 
+  // TODO 订阅器需要用订阅发布模式或者观察者模式改造优化，目前的模式虽然简单但是当订阅事件多了会变得越来越慢
   // Subscription listener queue
   readonly listenerQueue = new Set<ListenerType<S>>();
 

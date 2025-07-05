@@ -76,12 +76,6 @@ export default class Updater<S extends PrimitiveState> {
             task();
           });
 
-          // Make a shallow clone of the "taskDataMap" data for the "effectState" of "subscribe",
-          // Perform a shallowClone before executing flushTask, otherwise, it might become impossible to retrieve `taskDataMap`.
-          const effectStateTemp = listenerQueue.size > 0
-            ? { ...taskData }
-            : undefined;
-
           /**
            * @description So far, the task of this round of data updates is complete.
            * The task data and task queue are immediately flushed and cleared,
@@ -110,7 +104,12 @@ export default class Updater<S extends PrimitiveState> {
           if (listenerQueue.size > 0) {
             listenerQueue.forEach(item => {
               item({
-                effectState: effectStateTemp!,
+                /**
+                 * @desc Even if 'scheduler. flushTask()' clears taskData,
+                 * it directly assigns new values to taskData within the scheduler,
+                 * making it easier to trace the old taskData as a snapshot variable.
+                 */
+                effectState: taskData,
                 nextState: this.$storeMeta._$state_,
                 prevState: this.$subscriber.prevBatchState,
               });

@@ -53,7 +53,6 @@ export default class Updater<S extends PrimitiveState> {
   };
 
   finallyBatchProcessing = () => {
-    const listenerQueue = this.$subscriber.listenerQueue;
     const scheduler = this.$scheduler;
     const {
       taskData, taskQueue, callbackQueue,
@@ -62,6 +61,8 @@ export default class Updater<S extends PrimitiveState> {
     if ((taskQueue.size > 0 || callbackQueue.size > 0) && !scheduler.isUpdating) {
       // Reduce the generation of redundant microtasks through the isUpdating flag
       scheduler.isUpdating = Promise.resolve().then(() => {
+        const listenerQueue = this.$subscriber.listenerQueue;
+
         /**
          * @description Reset the isUpdating and willUpdating flags
          * to ensure that each subsequent round of update batching can proceed and operate normally.
@@ -85,11 +86,13 @@ export default class Updater<S extends PrimitiveState> {
            * @description So far, the task of this round of data updates is complete.
            * The task data and task queue are immediately flushed and cleared,
            * freeing up space in preparation for the next round of data updates.
+           * 🌟 And there may be a next round of status updates in callbacks and subscriptions,
+           * so 'flushTask' needs to be executed before callbacks and subscriptions
+           * 🌟 The execution of subscribe and callback needs to be placed after flush,
+           * otherwise their own update queues will be emptied in advance,
+           * affecting their own internal execution.
            */
           scheduler.flushTask();
-
-          // 🌟 The execution of subscribe and callback needs to be placed after flush,
-          // otherwise their own update queues will be emptied in advance, affecting their own internal execution.
 
           // Trigger the execution of the callback function
           if (callbackQueue.size > 0) {
@@ -99,13 +102,13 @@ export default class Updater<S extends PrimitiveState> {
             callbackQueue.clear();
           }
 
-          // 🌟 As logically, the listener in subscribe needs to be executed after the callback has been executed.
-
-          // Trigger the execution of subscription snooping
+          /**
+           * @desc 🌟 As logically,
+           * the listener in subscribe needs to be executed after the callback has been executed.
+           * Trigger the execution of subscription snooping
+           */
           if (listenerQueue.size > 0) {
             listenerQueue.forEach(item => {
-              // the clone returned by mapToObject ensures that the externally subscribed data
-              // maintains it`s purity and security as much as possible in terms of usage.
               item({
                 effectState: effectStateTemp!,
                 nextState: this.$storeMeta._$state_,

@@ -19,7 +19,6 @@ export default class Subscriber<S extends PrimitiveState> {
   // Data status of the previous update batch for subscriber
   prevBatchState!: S;
 
-  // TODO 订阅器需要用订阅发布模式或者观察者模式改造优化，目前的模式虽然简单但是当订阅事件多了会变得越来越慢
   // Subscription listener queue
   readonly listenerQueue = new Set<ListenerType<S>>();
 
@@ -36,51 +35,52 @@ export default class Subscriber<S extends PrimitiveState> {
     }
   };
 
-  /**
-   * @description Determine whether the current change data is within the monitoring range of stateKeys
-   * @return boolean
-   */
-  effectStateInListenerKeys = <S extends PrimitiveState>(
-    effectState: Readonly<Partial<S>>,
-    stateKeys?: (keyof S)[],
-  ) => {
-    let effectExecFlag = false;
-    const listenerKeysExist = stateKeys && stateKeys?.length > 0;
-    /**
-     * @description In fact, when the final subscription is triggered,
-     * each of these outer layer listenerWraps subscribed is activated.
-     * It's just that here, the execution of the inner listener is contingent upon a data change check,
-     * which then determines whether the listener in subscribe should be executed.
-     */
-    if (
-      (
-        listenerKeysExist
-        && Object.keys(effectState).some(key => stateKeys.includes(key))
-      ) || !listenerKeysExist
-    ) {
-      effectExecFlag = true;
-    }
-    return effectExecFlag;
-  };
-
   // Subscription function
-  subscribe = (listener: ListenerType<S>, stateKeys?: (keyof S)[]): Unsubscribe => {
+  subscribe = (
+    listener: ListenerType<S>,
+    stateKeys?: (keyof S)[],
+    immediate?: boolean,
+  ): Unsubscribe => {
+    if (immediate) {
+      const nextState = this.$storeMeta._$state_;
+      const effectState = {} as Partial<S>;
+      stateKeys?.forEach(key => {
+        effectState[key] = nextState[key];
+      });
+      listener({
+        effectState,
+        nextState,
+        prevState: this.prevBatchState,
+      });
+    }
     const listenerQueue = this.listenerQueue;
 
     subscribeErrorProcessing(listener, stateKeys);
 
     const listenerWrap: ListenerType<S> = data => {
-      this.effectStateInListenerKeys(data.effectState, stateKeys) && listener(data);
+      Object.keys(data.effectState).some(key => stateKeys!.includes(key)) && listener(data);
     };
 
-    listenerQueue.add(listenerWrap);
+    const hasListenerKeys = !stateKeys?.length;
+
+    hasListenerKeys
+      ? listenerQueue.add(listener)
+      : listenerQueue.add(listenerWrap);
 
     // Returns the unsubscribing function, which allows the user to choose whether or not to unsubscribe,
     // because it is also possible that the user wants the subscription to remain in effect.
-    return () => listenerQueue.delete(listenerWrap as ListenerType<S>);
+    return () => {
+      hasListenerKeys
+        ? listenerQueue.delete(listener)
+        : listenerQueue.delete(listenerWrap);
+    };
   };
 
-  useSubscription = (listener: ListenerType<S>, stateKeys?: (keyof S)[]) => {
+  useSubscription = (
+    listener: ListenerType<S>,
+    stateKeys?: (keyof S)[],
+    immediate?: boolean,
+  ) => {
     if (__DEV__) {
       const { _options_: { namespace } } = this.$storeMeta;
       const store_namespace = namespace
@@ -94,6 +94,6 @@ export default class Subscriber<S extends PrimitiveState> {
       });
     }
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useSubscriptionCore(this.$storeMeta as any as Store<S>, listener, stateKeys);
+    useSubscriptionCore(this.$storeMeta as any as Store<S>, listener, stateKeys, immediate);
   };
 }

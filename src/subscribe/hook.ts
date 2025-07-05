@@ -2,7 +2,7 @@ import type { PrimitiveState } from "../types";
 import type { ListenerType, SubscriptionRefType } from "./types";
 import type { Store } from "../store/types";
 import type StoreMeta from "../store/core";
-import { useDebugValue, useEffect, useRef } from "react";
+import { useDebugValue, useEffect, useRef, useState } from "react";
 import { storeErrorProcessing, subscribeErrorProcessing } from "../store/errors";
 
 /**
@@ -11,11 +11,17 @@ import { storeErrorProcessing, subscribeErrorProcessing } from "../store/errors"
  * rather than the psychological burden to consider whether the data reference
  * inside the function can get the latest value.
  * UseSubscription will reduce your mental burden and allow you to use it normally.
+ * @param store Subscription Store Object
+ * @param listener Subscription function callback
+ * @param stateKeys Subscription dependent data attribute array
+ * @param immediate Should callback be executed immediately upon subscription establishment
  */
 export const useSubscription = <S extends PrimitiveState>(
   store: Store<S>,
   listener: ListenerType<S>,
   stateKeys?: (keyof S)[],
+  /** @default undefined */
+  immediate?: boolean,
 ) => {
   storeErrorProcessing(store, "useSubscription");
   subscribeErrorProcessing(listener, stateKeys);
@@ -33,6 +39,12 @@ export const useSubscription = <S extends PrimitiveState>(
     stateKeys,
   };
 
+  const [deps, updateDeps] = useState(() => stateKeys);
+  useEffect(() => () => {
+    updateDeps(ref.current?.stateKeys);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, stateKeys);
+
   if (__DEV__) {
     const namespace = (store as any as StoreMeta<S>)._options_.namespace;
     const store_namespace = namespace
@@ -47,20 +59,18 @@ export const useSubscription = <S extends PrimitiveState>(
   }
 
   useEffect(() => {
-    // Monitor the overall data changes of the store
     return (store as any as StoreMeta<S>).subscribe(data => {
       /**
-       * @description First determine whether there is a change in execution,
-       * and if so, delay the execution in order to get the latest listening subscription function
-       * and the array of listening data attributes given by useMemo.
+       * @desc Delay execution in order to get the new listener function after re-rendering.
+       * Because the new rendering may result in the listener
+       * using new closure variables from within the component,
+       * this allows the listener to obtain the latest variable values
+       * and execute the correct data logic internally.
        */
-      if ((store as any as StoreMeta<S>)._subscriber_.effectStateInListenerKeys(data.effectState, ref.current!.stateKeys)) {
-        // Delay execution in order to get the new listener function after re-rendering
-        Promise.resolve(data).then(res => {
-          ref.current!.listener(res);
-        });
-      }
-    }); // TODO 这里也许可以使用实际的ref.current!.stateKeys进行优化，而不是全局订阅依靠内部判断执行
+      Promise.resolve().then(() => {
+        ref.current!.listener(data);
+      });
+    }, deps, immediate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [deps]);
 };

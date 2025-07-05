@@ -19,6 +19,10 @@ export default defineConfig({
     },
     // reporters: ["html"],
   },
+  define: {
+    // for test
+    __DEV__: "true",
+  },
   resolve: {
     alias: {
       // for test

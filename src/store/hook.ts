@@ -8,7 +8,7 @@ import StoreMeta from "./core";
  * useStore api
  * @description useStore(store) === store.useStore()
  * @param store
- * @return store
+ * @return ClassicStore<S>
  */
 export const useStore = <S extends PrimitiveState>(
   store: Store<S>,

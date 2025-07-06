@@ -1,6 +1,6 @@
 import type {
-  AnyBoundFn, InitialState, StateWithThisType, Store, StoreOptions,
-  MacroStore, UseMacroStore, InnerStoreOptions, Computed,
+  AnyBoundFn, InitialState, StateWithThisType, Store,
+  StoreOptions, MacroStore, UseMacroStore, InnerStoreOptions,
 } from "./types";
 import type { AnyFn, MapType, PrimitiveState, ValueOf } from "../types";
 import type { ClassStoreType } from "../class-connect/types";
@@ -94,7 +94,9 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   // TODO waiting upgrade optimize (暂时应该没有属性依赖记录收集销毁的逻辑问题)
   // TODO args对比未完成
-  useComputed = (computed: Computed<AnyFn>, ...args: any[]) => {
+  useComputed = (key: keyof S, ...args: any[]) => {
+    const computed = this._$state_[key];
+
     const { _computedDeps_ } = this;
 
     const [
@@ -108,6 +110,11 @@ export default class StoreMeta<S extends PrimitiveState> {
         result: res,
         stateKeys: Array.from(_computedDeps_) as (keyof S)[],
       };
+    });
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    __DEV__ && useDebugValue({
+      [key]: result,
     });
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -210,7 +217,7 @@ export default class StoreMeta<S extends PrimitiveState> {
         return !key.toString().startsWith(__COMPUTED_PREFIX__)
           ? boundFnValue
           // TODO bind产生新的引用，待优化
-          : this.useComputed.bind(null, boundFnValue);
+          : this.useComputed.bind(null, key);
       }
 
       return this[key as keyof StoreMeta<S>];

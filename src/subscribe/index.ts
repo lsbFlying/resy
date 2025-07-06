@@ -1,11 +1,9 @@
 import type { PrimitiveState } from "../types";
-import type { ListenerType, Unsubscribe } from "./types";
-import type { Store } from "../store/types";
+import type { ListenerType, SubscriptionRefType, Unsubscribe } from "./types";
 import type StoreMeta from "../store/core";
 import type Scheduler from "../scheduler";
 import { subscribeErrorProcessing } from "../store/errors";
-import { useDebugValue } from "react";
-import { useSubscription as useSubscriptionCore } from "./hook";
+import { useDebugValue, useEffect, useRef, useState } from "react";
 
 export default class Subscriber<S extends PrimitiveState> {
   constructor(
@@ -76,13 +74,25 @@ export default class Subscriber<S extends PrimitiveState> {
     };
   };
 
+  /**
+   * @description Hook of subscribe
+   * @param listener Subscription function callback
+   *
+   * @param stateKeys Subscription dependent data attribute array
+   * @default undefined
+   *
+   * @param immediate Should callback be executed immediately upon subscription establishment
+   * @default undefined
+   */
   useSubscription = (
     listener: ListenerType<S>,
     stateKeys?: (keyof S)[],
     immediate?: boolean,
   ) => {
+    subscribeErrorProcessing(listener, stateKeys);
+
     if (__DEV__) {
-      const { _options_: { namespace } } = this.$storeMeta;
+      const namespace = this.$storeMeta._options_.namespace;
       const store_namespace = namespace
         ? { namespace }
         : null;
@@ -93,7 +103,45 @@ export default class Subscriber<S extends PrimitiveState> {
         ...store_namespace,
       });
     }
+
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useSubscriptionCore(this.$storeMeta as any as Store<S>, listener, stateKeys, immediate);
+    const ref = useRef<SubscriptionRefType<S> | null>(null);
+
+    /**
+     * The ref writing here essentially does not affect the rules of React pure functions.
+     * @description stateKeys is generally stable,
+     * and it is not recommended to use scenarios with changes in stateKeys,
+     * but the use of complex scenarios is still considered here
+     */
+    ref.current = {
+      listener,
+      stateKeys,
+    };
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const [deps, updateDeps] = useState(() => stateKeys);
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => () => {
+      updateDeps(ref.current?.stateKeys);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, stateKeys);
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      return this.subscribe(data => {
+        /**
+         * @desc Delay execution in order to get the new listener function after re-rendering.
+         * Because the new rendering may result in the listener
+         * using new closure variables from within the component,
+         * this allows the listener to obtain the latest variable values
+         * and execute the correct data logic internally.
+         */
+        Promise.resolve().then(() => {
+          ref.current!.listener(data);
+        });
+      }, deps, immediate);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [deps]);
   };
 }

@@ -114,6 +114,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       // Clear the previous dirty dependencies before collecting them
       _computedDeps_.clear();
 
+      // Execute the computed function body to obtain the result and collect dependencies
       const res = computed(...params);
 
       return {
@@ -122,9 +123,15 @@ export default class StoreMeta<S extends PrimitiveState> {
       };
     });
 
+    const { namespace } = this._options_;
     // eslint-disable-next-line react-hooks/rules-of-hooks
     __DEV__ && useDebugValue({
       [key]: result,
+      ...(
+        namespace
+          ? { namespace }
+          : null
+      ),
     });
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -172,12 +179,12 @@ export default class StoreMeta<S extends PrimitiveState> {
 
       const sourceFromThis = hasOwnProperty.call(this, key);
 
+      const { namespace } = this._options_;
+
       if (!sourceFromThis && typeof value !== "function") {
-        const { namespace } = this._options_;
         // eslint-disable-next-line react-hooks/rules-of-hooks
         __DEV__ && useDebugValue({
-          key,
-          value,
+          [key]: value,
           ...(
             namespace
               ? { namespace }
@@ -201,11 +208,9 @@ export default class StoreMeta<S extends PrimitiveState> {
 
         const boundFnValue = state[key];
 
-        const { namespace } = this._options_;
         // eslint-disable-next-line react-hooks/rules-of-hooks
         fnStateful && __DEV__ && useDebugValue({
-          key,
-          value: boundFnValue,
+          [key]: boundFnValue,
           ...(
             namespace
               ? { namespace }

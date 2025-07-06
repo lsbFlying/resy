@@ -169,75 +169,78 @@ export default class StoreMeta<S extends PrimitiveState> {
   // A proxy object with the capabilities of updating and data tracking.
   readonly store: Store<S>;
 
+  /** State attribute rendering get interception */
+  engineGetter = (_: S, key: keyof S) => {
+    const state = this._$state_;
+
+    // Get the latest value
+    const value = state[key];
+
+    const sourceFromThis = hasOwnProperty.call(this, key);
+
+    const { namespace } = this._options_;
+
+    if (!sourceFromThis && typeof value !== "function") {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      __DEV__ && useDebugValue({
+        [key]: value,
+        ...(
+          namespace
+            ? { namespace }
+            : null
+        ),
+      });
+
+      return (
+        this._stateMetaMap_[key] ??= new StateMeta<S>(
+          key, this._stateMetaMap_, this, this._restorer_,
+        )
+      ).useStateMeta();
+    }
+
+    if (!sourceFromThis && typeof value === "function") {
+      // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
+      !(value as AnyBoundFn).__bound__ && this._boundFnProcessing_(key, value);
+
+      const fnStateful = !this._options_.__enableMacros__
+        || this._options_.enableMarcoActionStateful;
+
+      const boundFnValue = state[key];
+
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      fnStateful && __DEV__ && useDebugValue({
+        [key]: boundFnValue,
+        ...(
+          namespace
+            ? { namespace }
+            : null
+        ),
+      });
+
+      /**
+       * @description Enable function properties to have the ability to update rendering.
+       * Placing both the __bound__ and the state's set operation before the useStateMeta
+       * can preemptively avoid the tearing synchronization handling inside useSyncExternalStore,
+       * resulting in twice the redundant rendering execution.
+       */
+      fnStateful && (
+        this._stateMetaMap_[key] ??= new StateMeta<S>(
+          key, this._stateMetaMap_, this, this._restorer_,
+        )
+      ).useStateMeta();
+
+      return !key.toString().startsWith(__COMPUTED_PREFIX__)
+        ? boundFnValue
+        // TODO bind产生新的引用，待优化
+        : this.useComputed.bind(null, key);
+    }
+
+    return this[key as keyof StoreMeta<S>];
+  };
+
   // Proxy of driver update re-render for useStore
   readonly _$engineStore_ = new Proxy({} as MacroStore<S>, {
-    get: (_: S, key: keyof S) => {
-      const state = this._$state_;
-
-      // Get the latest value
-      const value = state[key];
-
-      const sourceFromThis = hasOwnProperty.call(this, key);
-
-      const { namespace } = this._options_;
-
-      if (!sourceFromThis && typeof value !== "function") {
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        __DEV__ && useDebugValue({
-          [key]: value,
-          ...(
-            namespace
-              ? { namespace }
-              : null
-          ),
-        });
-
-        return (
-          this._stateMetaMap_[key] ??= new StateMeta<S>(
-            key, this._stateMetaMap_, this, this._restorer_,
-          )
-        ).useStateMeta();
-      }
-
-      if (!sourceFromThis && typeof value === "function") {
-        // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
-        !(value as AnyBoundFn).__bound__ && this._boundFnProcessing_(key, value);
-
-        const fnStateful = !this._options_.__enableMacros__
-          || this._options_.enableMarcoActionStateful;
-
-        const boundFnValue = state[key];
-
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        fnStateful && __DEV__ && useDebugValue({
-          [key]: boundFnValue,
-          ...(
-            namespace
-              ? { namespace }
-              : null
-          ),
-        });
-
-        /**
-         * @description Enable function properties to have the ability to update rendering.
-         * Placing both the __bound__ and the state's set operation before the useStateMeta
-         * can preemptively avoid the tearing synchronization handling inside useSyncExternalStore,
-         * resulting in twice the redundant rendering execution.
-         */
-        fnStateful && (
-          this._stateMetaMap_[key] ??= new StateMeta<S>(
-            key, this._stateMetaMap_, this, this._restorer_,
-          )
-        ).useStateMeta();
-
-        return !key.toString().startsWith(__COMPUTED_PREFIX__)
-          ? boundFnValue
-          // TODO bind产生新的引用，待优化
-          : this.useComputed.bind(null, key);
-      }
-
-      return this[key as keyof StoreMeta<S>];
-    },
+    get: this.engineGetter,
   } as ProxyHandler<MacroStore<S>>);
 
   useStore: UseMacroStore<S> = () => this._$engineStore_;

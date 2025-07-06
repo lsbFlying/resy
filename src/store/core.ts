@@ -93,11 +93,19 @@ export default class StoreMeta<S extends PrimitiveState> {
   readonly _computedDeps_ = new Set<keyof S>();
 
   // TODO waiting upgrade optimize (暂时应该没有属性依赖记录收集销毁的逻辑问题)
-  // TODO args对比未完成
-  useComputed = (key: keyof S, ...args: any[]) => {
+  useComputed = <A = any>(key: keyof S, ...args: A[]) => {
     const computed = this._$state_[key];
 
     const { _computedDeps_ } = this;
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const [params, updateParams] = useState(() => args);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      // Update params by using shallow contrast of args elements within useEffect
+      updateParams(args);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, args);
 
     const [
       { result, stateKeys }, update,
@@ -105,7 +113,9 @@ export default class StoreMeta<S extends PrimitiveState> {
     ] = useState(() => {
       // Clear the previous dirty dependencies before collecting them
       _computedDeps_.clear();
-      const res = computed(...args);
+
+      const res = computed(...params);
+
       return {
         result: res,
         stateKeys: Array.from(_computedDeps_) as (keyof S)[],
@@ -140,10 +150,11 @@ export default class StoreMeta<S extends PrimitiveState> {
       // update computed result
       update(prevState => ({
         ...prevState,
-        result: computed(...args),
+        result: computed(...params),
       }));
+
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, stateKeys), [stateKeys]);
+    }, stateKeys), [stateKeys, params]);
 
     return result;
   };
@@ -260,6 +271,8 @@ export default class StoreMeta<S extends PrimitiveState> {
       get: (_: S, key: keyof S) => {
         const sourceFrom$State = !firstLevelKey;
 
+        sourceFrom$State && _computedDeps_.add(key);
+
         /**
          * @description `this.$state` is writable, so we need to check here,
          * if the data originates from `$state`,
@@ -270,10 +283,6 @@ export default class StoreMeta<S extends PrimitiveState> {
          * of `this.$state` after modifications.
          */
         const value = sourceFrom$State ? this._$state_[key] : (target as S)[key];
-
-        const isFn = typeof value === "function";
-
-        isFn && sourceFrom$State && _computedDeps_.add(key);
 
         const sourceFromThis = hasOwnProperty.call(this, key);
 
@@ -309,7 +318,7 @@ export default class StoreMeta<S extends PrimitiveState> {
          */
         if (
           !sourceFromThis
-          && isFn
+          && typeof value === "function"
           && sourceFrom$State
           && !(value as AnyBoundFn).__bound__
         ) {

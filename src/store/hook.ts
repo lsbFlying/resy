@@ -42,7 +42,7 @@ export const useConciseState = <S extends PrimitiveState>(
   const [storeMeta] = useState(() => new StoreMeta<S>(
     initialState,
     {
-      __functionName__: useConciseState.name,
+      __functionName__: "useConciseState",
     } as InnerStoreOptions
   ));
   return storeMeta._$engineStore_ as MacroStore<S>;

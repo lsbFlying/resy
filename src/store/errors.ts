@@ -48,7 +48,6 @@ export const optionsErrorProcessing = (
   const optsExist = optionsType !== "Undefined";
   const urType = typeof options?.unmountRestore;
   const nsType = typeof options?.namespace;
-  const emType = typeof options?.__enableMacros__;
 
   if (
     __DEV__ && (
@@ -58,7 +57,6 @@ export const optionsErrorProcessing = (
         optionsType === "Object" && (
           (urType !== "boolean" && urType !== "undefined")
           || (nsType !== "string" && nsType !== "undefined")
-          || (emType !== "boolean" && emType !== "undefined")
         )
       )
     )

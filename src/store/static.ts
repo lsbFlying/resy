@@ -10,6 +10,5 @@ export const DEFAULT_OPTIONS: InnerStoreOptions = {
   unmountRestore: true,
   namespace: undefined,
   immutable: undefined,
-  __enableMacros__: undefined,
   __callerName__: "createStore",
 };

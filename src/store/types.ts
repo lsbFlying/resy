@@ -32,12 +32,6 @@ export interface StoreOptions {
 
 export interface InnerStoreOptions extends StoreOptions {
   /**
-   * @description This feature is designed to be used with the defineStore function.
-   * It enables and optimizes various usage scenarios for stores defined using the defineStore macro.
-   * @default undefined
-   */
-  readonly __enableMacros__?: boolean;
-  /**
    * @description Call name of function, used for internal processing of error message prompts.
    * @default "createStore"
    */
@@ -127,13 +121,7 @@ export type StateWithThisType<S extends PrimitiveState> = S extends PrimateForbi
 /** Type of initialize data */
 export type InitialState<S extends PrimitiveState> = (() => StateWithThisType<S>) | StateWithThisType<S>;
 
-export type StatefulType = {
-  __stateful__?: boolean;
-};
-
-export type StatefulFn = AnyFn & StatefulType;
-
-export type AnyBoundFn = StatefulFn & {
+export type AnyBoundFn = AnyFn & {
   /**
    * @description The flag attribute bound to the internal processing function attribute.
    */

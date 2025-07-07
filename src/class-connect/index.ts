@@ -1,4 +1,4 @@
-import type { AnyFn, PrimitiveState, ValueOf } from "../types";
+import type { PrimitiveState, ValueOf } from "../types";
 import type { AnyBoundFn, Store } from "../store/types";
 import type { ClassStoreType } from "./types";
 import { PureComponent } from "react";
@@ -110,8 +110,6 @@ export abstract class ComponentWithStore<
 
     (store as any as StoreMeta<S>)._updater_.classInstanceStack.add(this as any);
 
-    const { _options_: { __enableMacros__ } } = (store as any as StoreMeta<S>);
-
     // Data agents for use by class components
     const classEngineStore = new Proxy({} as ClassStoreType<S>, {
       get: (_: S, key: keyof S) => {
@@ -131,12 +129,7 @@ export abstract class ComponentWithStore<
           !(value as AnyBoundFn).__bound__
           && (store as any as StoreMeta<S>)._boundFnProcessing_(key, value, classEngineStore);
 
-          // TODO waiting upgrade about memo-function
-          return (!__enableMacros__ || (state[key] as AnyBoundFn).__stateful__)
-            ? (...args: any[]) => (
-              this.#getState(key, store as any as StoreMeta<S>) as AnyFn
-            ).apply(classEngineStore, args)
-            : state[key];
+          return state[key];
         }
 
         return (store as any as StoreMeta<S>)[key as keyof StoreMeta<S>];

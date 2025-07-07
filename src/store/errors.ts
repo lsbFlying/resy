@@ -49,7 +49,6 @@ export const optionsErrorProcessing = (
   const urType = typeof options?.unmountRestore;
   const nsType = typeof options?.namespace;
   const emType = typeof options?.__enableMacros__;
-  const emasType = typeof options?.enableMarcoActionStateful;
 
   if (
     __DEV__ && (
@@ -60,7 +59,6 @@ export const optionsErrorProcessing = (
           (urType !== "boolean" && urType !== "undefined")
           || (nsType !== "string" && nsType !== "undefined")
           || (emType !== "boolean" && emType !== "undefined")
-          || (emasType !== "boolean" && emasType !== "undefined")
         )
       )
     )

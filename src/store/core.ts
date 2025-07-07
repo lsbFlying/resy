@@ -202,10 +202,10 @@ export default class StoreMeta<S extends PrimitiveState> {
       // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
       !(value as AnyBoundFn).__bound__ && this._boundFnProcessing_(key, value);
 
-      const fnStateful = !this._options_.__enableMacros__
-        || this._options_.enableMarcoActionStateful;
-
       const boundFnValue = state[key];
+
+      const fnStateful = !this._options_.__enableMacros__
+        || (boundFnValue as AnyBoundFn).__stateful__;
 
       // eslint-disable-next-line react-hooks/rules-of-hooks
       fnStateful && __DEV__ && useDebugValue({
@@ -259,6 +259,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     ) as AnyBoundFn;
 
     boundFn.__bound__ = true;
+    boundFn.__stateful__ = value.__stateful__;
 
     state[key] = boundFn as ValueOf<S>;
 

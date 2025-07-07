@@ -7,6 +7,7 @@ export type {
   Store, StoreType, UseStoreType, ClassicStore, MacroStore, InitialStateForbiddenKeys,
   StateThis, PrimateForbiddenType, StateWithThisType, InitialState,
 } from "./store/types";
+export { fnStateful } from "./store/utils";
 
 export type {
   State, StateFnType, SetStateAction, SetStateType, StateCallback, SyncUpdateType,

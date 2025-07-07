@@ -12,7 +12,7 @@ import StoreMeta from "./core";
  * 🌟 `defineStore` will render the functions within the store incapable of updating,
  * unlike `createStore`, and they will merely serve as actions.
  * If you have a specific reason to enable function properties with the capability to update rendering,
- * you can turn it on through the configuration option "enableMarcoActionStateful".
+ * you can make it on through the helper function `fnStateful`.
  *
  * 🌟 In the future, `defineStore` will gradually replace `createStore` as the norm for usage,
  * and it possesses more rationality.

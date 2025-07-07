@@ -110,12 +110,7 @@ export abstract class ComponentWithStore<
 
     (store as any as StoreMeta<S>)._updater_.classInstanceStack.add(this as any);
 
-    const {
-      _options_: {
-        __enableMacros__,
-        enableMarcoActionStateful,
-      },
-    } = (store as any as StoreMeta<S>);
+    const { _options_: { __enableMacros__ } } = (store as any as StoreMeta<S>);
 
     // Data agents for use by class components
     const classEngineStore = new Proxy({} as ClassStoreType<S>, {
@@ -124,8 +119,9 @@ export abstract class ComponentWithStore<
         if (key === "useStore") return () => classEngineStore;
 
         const sourceFromThis = hasOwnProperty.call(StoreMeta, key);
+        const state = (store as any as StoreMeta<S>)._$state_;
 
-        const value = (store as any as StoreMeta<S>)._$state_[key];
+        const value = state[key];
 
         if (!sourceFromThis && typeof value !== "function") {
           return this.#getState(key, store as any as StoreMeta<S>);
@@ -136,11 +132,11 @@ export abstract class ComponentWithStore<
           && (store as any as StoreMeta<S>)._boundFnProcessing_(key, value, classEngineStore);
 
           // TODO waiting upgrade about memo-function
-          return (!__enableMacros__ || enableMarcoActionStateful)
+          return (!__enableMacros__ || (state[key] as AnyBoundFn).__stateful__)
             ? (...args: any[]) => (
               this.#getState(key, store as any as StoreMeta<S>) as AnyFn
             ).apply(classEngineStore, args)
-            : (store as any as StoreMeta<S>)._$state_[key];
+            : state[key];
         }
 
         return (store as any as StoreMeta<S>)[key as keyof StoreMeta<S>];

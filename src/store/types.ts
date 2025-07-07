@@ -28,14 +28,6 @@ export interface StoreOptions {
    * @default undefined
    */
   readonly immutable?: boolean;
-  /**
-   * @description For the configuration options of defineStore,
-   * the function properties of defineStore can possess the capability to update and render state data.
-   * This configuration is not commonly used;
-   * it aims to maintain a certain level of openness and flexibility in its application.
-   * @default undefined
-   */
-  readonly enableMarcoActionStateful?: boolean;
 }
 
 export interface InnerStoreOptions extends StoreOptions {
@@ -135,7 +127,13 @@ export type StateWithThisType<S extends PrimitiveState> = S extends PrimateForbi
 /** Type of initialize data */
 export type InitialState<S extends PrimitiveState> = (() => StateWithThisType<S>) | StateWithThisType<S>;
 
-export type AnyBoundFn = AnyFn & {
+export type StatefulType = {
+  __stateful__?: boolean;
+};
+
+export type StatefulFn = AnyFn & StatefulType;
+
+export type AnyBoundFn = StatefulFn & {
   /**
    * @description The flag attribute bound to the internal processing function attribute.
    */

@@ -93,6 +93,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   readonly _computedDeps_ = new Set<keyof S>();
 
   // TODO waiting upgrade optimize (暂时应该没有属性依赖记录收集销毁的逻辑问题)
+  // TODO class组件可以在ComponentWithStore的内部实现一个computed方法方便组件通过继承的this.computed进行处理调用
   useComputed = <A = any>(key: keyof S, ...args: A[]) => {
     const computed = this._$state_[key];
 

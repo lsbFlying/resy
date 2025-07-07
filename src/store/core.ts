@@ -94,9 +94,7 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   // TODO waiting upgrade optimize (暂时应该没有属性依赖记录收集销毁的逻辑问题)
   // TODO class组件可以在ComponentWithStore的内部实现一个computed方法方便组件通过继承的this.computed进行处理调用
-  useComputed = <A = any>(key: keyof S, ...args: A[]) => {
-    const computed = this._$state_[key];
-
+  useComputed = <A = any>(computed: AnyBoundFn, ...args: A[]) => {
     const { _computedDeps_ } = this;
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -127,7 +125,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     const { namespace } = this._options_;
     // eslint-disable-next-line react-hooks/rules-of-hooks
     __DEV__ && useDebugValue({
-      [key]: result,
+      [computed.__name__!]: result,
       ...(
         namespace
           ? { namespace }
@@ -143,6 +141,12 @@ export default class StoreMeta<S extends PrimitiveState> {
        */
       _computedDeps_.clear();
 
+      /**
+       * @desc This needs to be executed immediately after
+       * clearing the dependency collector in order to obtain new dependencies.
+       */
+      const res = computed(...params);
+
       const newDeps = Array.from(_computedDeps_);
 
       /**
@@ -154,10 +158,11 @@ export default class StoreMeta<S extends PrimitiveState> {
         ...prevState,
         stateKeys: newDeps,
       }));
+
       // update computed result
       update(prevState => ({
         ...prevState,
-        result: computed(...params),
+        result: res,
       }));
 
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -208,7 +213,7 @@ export default class StoreMeta<S extends PrimitiveState> {
         return !key.toString().startsWith(__COMPUTED_PREFIX__)
           ? boundFnValue
           // TODO bind产生新的引用，待优化
-          : this.useComputed.bind(null, key);
+          : this.useComputed.bind(null, boundFnValue);
       }
 
       return this[key as keyof StoreMeta<S>];
@@ -231,6 +236,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     ) as AnyBoundFn;
 
     boundFn.__bound__ = true;
+    boundFn.__name__ = value.name;
 
     state[key] = boundFn as ValueOf<S>;
 

@@ -49,6 +49,7 @@ export type StoreCoreUtils<S extends PrimitiveState> = Readonly<
 export type StoreHookUtils<S extends PrimitiveState> = Readonly<
   & UseStoreType<S>
   & UseSubscriptionType<S>
+  & UseComputedType
 >;
 
 /** Tool method type of store */
@@ -71,6 +72,10 @@ export type ClassicStore<S extends PrimitiveState> = Omit<Store<S>, "useStore">;
 /** type of useStore */
 export type UseStoreType<S extends PrimitiveState> = {
   useStore(): ClassicStore<S>;
+};
+
+export type UseComputedType = {
+  useComputed<T extends AnyFn, A = any>(computed: T, ...args: A[]): ReturnType<T>;
 };
 
 /** A preprocessed store that is ready for immediate rendering  */
@@ -126,4 +131,6 @@ export type AnyBoundFn = AnyFn & {
    * @description The flag attribute bound to the internal processing function attribute.
    */
   __bound__?: boolean;
+  /** The bound function name */
+  __name__?: string;
 };

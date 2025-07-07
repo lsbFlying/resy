@@ -27,7 +27,7 @@ export const stateErrorProcessing = (params: {
   const stateType = whatsType(state);
   if (__DEV__ && stateType !== "Object") {
     throw new Error(
-      `resy's ${fnName ?? options?.__functionName__}(...): takes an object of state to update or`
+      `resy's ${fnName ?? options?.__callerName__}(...): takes an object of state to update or`
       + " a function which returns an object of state."
       + ` Instead received: ${stateType.toLocaleLowerCase()}`
     );

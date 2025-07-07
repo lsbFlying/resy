@@ -49,7 +49,7 @@ export interface InnerStoreOptions extends StoreOptions {
    * @description Call name of function, used for internal processing of error message prompts.
    * @default "createStore"
    */
-  readonly __functionName__?: string;
+  readonly __callerName__?: string;
 }
 
 /** Some of the core tool method types of store */

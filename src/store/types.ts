@@ -40,11 +40,6 @@ export interface StoreOptions {
 
 export interface InnerStoreOptions extends StoreOptions {
   /**
-   * @description Configuration for useConciseState hooks (Internal use, do not use externally)
-   * @default undefined
-   */
-  readonly __useConciseState__?: boolean;
-  /**
    * @description This feature is designed to be used with the defineStore function.
    * It enables and optimizes various usage scenarios for stores defined using the defineStore macro.
    * @default undefined

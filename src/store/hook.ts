@@ -1,4 +1,6 @@
-import type { InitialState, InnerStoreOptions, Store, ClassicStore } from "./types";
+import type {
+  InitialState, InnerStoreOptions, Store, ClassicStore, MacroStore,
+} from "./types";
 import type { PrimitiveState } from "../types";
 import { useState } from "react";
 import { storeErrorProcessing } from "./errors";
@@ -40,9 +42,8 @@ export const useConciseState = <S extends PrimitiveState>(
   const [storeMeta] = useState(() => new StoreMeta<S>(
     initialState,
     {
-      __useConciseState__: true,
       __functionName__: useConciseState.name,
     } as InnerStoreOptions
   ));
-  return storeMeta._$engineStore_ as ClassicStore<S>;
+  return storeMeta._$engineStore_ as MacroStore<S>;
 };

@@ -47,7 +47,6 @@ export const optionsErrorProcessing = (
   const optionsType = whatsType(options);
   const optsExist = optionsType !== "Undefined";
   const urType = typeof options?.unmountRestore;
-  const ucsType = typeof options?.__useConciseState__;
   const nsType = typeof options?.namespace;
   const emType = typeof options?.__enableMacros__;
   const emasType = typeof options?.enableMarcoActionStateful;
@@ -59,7 +58,6 @@ export const optionsErrorProcessing = (
       ) || (
         optionsType === "Object" && (
           (urType !== "boolean" && urType !== "undefined")
-          || (ucsType !== "boolean" && ucsType !== "undefined")
           || (nsType !== "string" && nsType !== "undefined")
           || (emType !== "boolean" && emType !== "undefined")
           || (emasType !== "boolean" && emasType !== "undefined")

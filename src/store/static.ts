@@ -11,7 +11,6 @@ export const DEFAULT_OPTIONS: InnerStoreOptions = {
   namespace: undefined,
   immutable: undefined,
   enableMarcoActionStateful: undefined,
-  __useConciseState__: undefined,
   __enableMacros__: undefined,
   __functionName__: "createStore",
 };

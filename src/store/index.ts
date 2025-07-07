@@ -18,6 +18,7 @@ import StoreMeta from "./core";
  * @param initialState
  * @param options
  * @return Store<S>
+ * @deprecated Suggest using `definiteStore` !!!
  */
 export const createStore = <S extends PrimitiveState>(
   initialState?: InitialState<S>,

@@ -170,7 +170,7 @@ export default class StoreMeta<S extends PrimitiveState> {
   readonly store: Store<S>;
 
   /** State attribute rendering get interception */
-  engineGetter = (_: S, key: keyof S) => {
+  #engineGetter = (_: S, key: keyof S) => {
     const state = this._$state_;
 
     // Get the latest value
@@ -240,7 +240,7 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   // Proxy of driver update re-render for useStore
   readonly _$engineStore_ = new Proxy({} as MacroStore<S>, {
-    get: this.engineGetter,
+    get: this.#engineGetter,
   } as ProxyHandler<MacroStore<S>>);
 
   useStore: UseMacroStore<S> = () => this._$engineStore_;

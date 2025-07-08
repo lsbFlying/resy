@@ -99,9 +99,7 @@ export default class StoreMeta<S extends PrimitiveState> {
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const computedRef = useRef<{ computed: AnyBoundFn }>(null);
-    computedRef.current = {
-      computed,
-    };
+    computedRef.current = { computed };
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const [params, updateParams] = useState(() => args);

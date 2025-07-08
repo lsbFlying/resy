@@ -1,5 +1,5 @@
 export { createStore } from "./store";
-export { useStore, useConciseState } from "./store/hook";
+export * from "./store/hook";
 export { defineStore } from "./store/macro";
 
 export type {

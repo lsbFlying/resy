@@ -14,7 +14,7 @@ import { __COMPUTED_PREFIX__, __RESY_BRAND__, DEFAULT_OPTIONS } from "./static";
 import { hasOwnProperty } from "../utils";
 import { proxyable } from "../immutable/utils";
 import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
-import { useDebugValue, useEffect, useState } from "react";
+import { useDebugValue, useEffect, useRef, useState } from "react";
 import StateMeta from "../state";
 import Scheduler from "../scheduler";
 import Subscriber from "../subscribe";
@@ -98,6 +98,12 @@ export default class StoreMeta<S extends PrimitiveState> {
     const { _computedDeps_ } = this;
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
+    const computedRef = useRef<{ computed: AnyBoundFn }>(null);
+    computedRef.current = {
+      computed,
+    };
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const [params, updateParams] = useState(() => args);
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
@@ -114,7 +120,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       _computedDeps_.clear();
 
       // Execute the computed function body to obtain the result and collect dependencies
-      const res = computed(...params);
+      const res = computedRef.current!.computed(...params);
 
       return {
         result: res,
@@ -145,7 +151,7 @@ export default class StoreMeta<S extends PrimitiveState> {
        * @desc This needs to be executed immediately after
        * clearing the dependency collector in order to obtain new dependencies.
        */
-      const res = computed(...params);
+      const res = computedRef.current!.computed(...params);
 
       const newDeps = Array.from(_computedDeps_);
 

@@ -75,7 +75,7 @@ export type UseStoreType<S extends PrimitiveState> = {
 };
 
 export type UseComputedType = {
-  useComputed<T extends AnyFn, A = any>(computed: T, ...args: A[]): ReturnType<T>;
+  useComputed<T extends AnyFn>(computed: T): ReturnType<T>;
 };
 
 /** A preprocessed store that is ready for immediate rendering  */

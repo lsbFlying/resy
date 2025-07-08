@@ -129,6 +129,7 @@ export abstract class ComponentWithStore<
           !(value as AnyBoundFn).__bound__
           && (store as any as StoreMeta<S>)._boundFnProcessing_(key, value, classEngineStore);
 
+          // TODO computed of class waiting develop
           return state[key];
         }
 
@@ -140,6 +141,7 @@ export abstract class ComponentWithStore<
         && (store as any as StoreMeta<S>)._updater_.classUpdater(key, value);
         return true;
       },
+      // TODO delete methods waiting upgrade
     } as ProxyHandler<ClassStoreType<S>>);
 
     return classEngineStore;

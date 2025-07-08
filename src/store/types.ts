@@ -1,5 +1,5 @@
 import type { PrimitiveState, AnyFn } from "../types";
-import type { SubscribeType, UseSubscriptionType } from "../subscribe/types";
+import type { SubscribeType, Unsubscribe, UseSubscriptionType } from "../subscribe/types";
 import type { RestoreType } from "../restore/types";
 import type { SetStateType, SyncUpdateType } from "../updater/types";
 
@@ -138,4 +138,6 @@ export type AnyBoundFn = AnyFn & {
   __bound__?: boolean;
   /** The bound function name */
   __name__?: string;
+  /** Unsubscribe computed class components */
+  __unsubscribe__?: Unsubscribe;
 };

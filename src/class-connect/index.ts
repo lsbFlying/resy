@@ -65,8 +65,15 @@ export abstract class ComponentWithStore<
        */
       Promise.resolve().then(() => {
         if (!this._$isMounted_) {
+          // Clear the computed subscription for class
+          this.#computedSet.forEach(abf => {
+            abf.__unsubscribe__?.();
+          });
+          this.#computedSet.clear();
+
           // Clear the data references used by the class component in rendering
           this._$stateRefs_.clear();
+
           // References to these data are recorded and added through “#connectClass”
           this.#stores.forEach((store: Store<S>) => {
             /**
@@ -89,6 +96,8 @@ export abstract class ComponentWithStore<
   _$isMounted_ = false;
 
   _$stateRefs_ = new Set<keyof S>();
+
+  #computedSet = new Set<AnyBoundFn>();
 
   /**
    * @description Class components may use multiple different stores.
@@ -132,8 +141,13 @@ export abstract class ComponentWithStore<
 
           const boundFnValue = state[key];
 
+          const isComputed = key.toString().startsWith(__COMPUTED_PREFIX__);
+          if (isComputed) {
+            this.#computedSet.add(boundFnValue);
+          }
+
           // TODO computed of class waiting develop
-          return !key.toString().startsWith(__COMPUTED_PREFIX__)
+          return !isComputed
             ? boundFnValue
             : (store as any as StoreMeta<S>).computed.bind(null, boundFnValue);
         }

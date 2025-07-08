@@ -17,21 +17,34 @@ export default class Computer<S extends PrimitiveState> {
   // The identifier indicating that the property function body is performing calculations.
   computing = false;
 
-  // TODO computedHookDeps waiting upgrade
-  // TODO 考虑computedHookDeps是否要移除全局设置，是否要从每一个computedFn上面进行挂在，
+  // TODO computedDeps waiting upgrade
+  // TODO 考虑computedDeps是否要移除全局设置，是否要从每一个computedFn上面进行挂在，
   //  考虑全局的共同依赖是否会对不同的computed的依赖收集逻辑有影响
   // Dependency Collection for useComputed of computed hook api
-  readonly computedHookDeps = new Set<keyof S>();
+  readonly computedDeps = new Set<keyof S>();
 
   readonly computedClassMap = new Map<AnyBoundFn, any>();
 
-  // TODO waiting develop
+  // TODO waiting upgrade
   computed = <A = any>(fn: AnyBoundFn, ...args: A[]) => {
     if (this.computedClassMap.has(fn)) {
       return this.computedClassMap.get(fn);
     }
 
+    fn.__unsubscribe__?.();
+
+    const { computedDeps } = this;
+    computedDeps.clear();
+
+    this.computing = true;
     const res = fn(...args);
+    this.computing = false;
+
+    const stateKeys = Array.from(computedDeps);
+
+    fn.__unsubscribe__ =  this.$subscriber.subscribe(() => {
+      this.computedClassMap.delete(fn);
+    }, stateKeys);
 
     this.computedClassMap.set(fn, res);
 
@@ -40,7 +53,7 @@ export default class Computer<S extends PrimitiveState> {
 
   // TODO waiting upgrade optimize (暂时应该没有属性依赖记录收集销毁的逻辑问题)
   useComputed = <A = any>(fn: AnyBoundFn, ...args: A[]) => {
-    const { computedHookDeps } = this;
+    const { computedDeps } = this;
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const computedRef = useRef<{ fn: AnyBoundFn }>(null);
@@ -60,7 +73,7 @@ export default class Computer<S extends PrimitiveState> {
       // eslint-disable-next-line react-hooks/rules-of-hooks
     ] = useState(() => {
       // Clear the previous dirty dependencies before collecting them
-      computedHookDeps.clear();
+      computedDeps.clear();
 
       this.computing = true;
       // Execute the computed function body to obtain the result and collect dependencies
@@ -69,7 +82,7 @@ export default class Computer<S extends PrimitiveState> {
 
       return {
         result: res,
-        stateKeys: Array.from(computedHookDeps) as (keyof S)[],
+        stateKeys: Array.from(computedDeps) as (keyof S)[],
       };
     });
 
@@ -90,7 +103,7 @@ export default class Computer<S extends PrimitiveState> {
        * Perform dependency collection and processing again to
        * prevent dependency changes caused by conditional logic
        */
-      computedHookDeps.clear();
+      computedDeps.clear();
 
       this.computing = true;
       /**
@@ -100,7 +113,7 @@ export default class Computer<S extends PrimitiveState> {
       const res = computedRef.current!.fn(...params);
       this.computing = false;
 
-      const newDeps = Array.from(computedHookDeps);
+      const newDeps = Array.from(computedDeps);
 
       /**
        * Perform dependency collection and processing again to

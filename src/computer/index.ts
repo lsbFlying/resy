@@ -44,6 +44,18 @@ export default class Computer<S extends PrimitiveState> {
     const stateKeys = Array.from(computedDeps);
 
     fn.__unsubscribe__ =  this.$subscriber.subscribe(() => {
+      /**
+       * @desc Since the `fn` function is already bound to the `this` instance of the class component,
+       * and the state rendering of class components does not have
+       * the same top-level Hook rules restriction as Hook components,
+       * we can directly remove `fn` from `computedClassMap` here.
+       * This allows the new computed property result to be recalculated
+       * in the `render` function upon state updates.
+       * Otherwise, it will continue using the initially cached result from `computedClassMap`.
+       * Precisely because class components are not constrained
+       * by the top-level Hook rules like Hook components,
+       * their implementation of computed properties is much simpler.
+       */
       this.computedClassMap.delete(fn);
     }, stateKeys);
 

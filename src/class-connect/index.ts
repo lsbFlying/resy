@@ -119,12 +119,19 @@ export abstract class ComponentWithStore<
     this.#stores.add(store as any);
 
     const updater = (store as any as StoreMeta<S>)._updater_;
-
     updater.classInstanceStack.add(this as any);
+
+    const computer = (store as any as StoreMeta<S>)._computer_;
+    const { computed, computedDeps } = computer;
 
     // Data agents for use by class components
     const classEngineStore = new Proxy({} as ClassStoreType<S>, {
       get: (_: S, key: keyof S) => {
+        // const sourceFrom$State = !firstLevelKey;
+        // computer.computing && sourceFrom$State && computedDeps.add(key);
+        // TODO waiting upgrade
+        computer.computing && computedDeps.add(key);
+
         const sourceFromThis = hasOwnProperty.call(StoreMeta, key);
         const state = (store as any as StoreMeta<S>)._$state_;
 
@@ -147,7 +154,7 @@ export abstract class ComponentWithStore<
 
           return !isComputed
             ? boundFnValue
-            : (store as any as StoreMeta<S>).computed.bind(null, boundFnValue);
+            : computed.bind(null, boundFnValue);
         }
 
         return (store as any as StoreMeta<S>)[key as keyof StoreMeta<S>];

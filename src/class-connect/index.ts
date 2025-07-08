@@ -123,9 +123,6 @@ export abstract class ComponentWithStore<
     // Data agents for use by class components
     const classEngineStore = new Proxy({} as ClassStoreType<S>, {
       get: (_: S, key: keyof S) => {
-        // Compatible with scenarios where both hook components and class components are used together.
-        if (key === "useStore") return () => classEngineStore;
-
         const sourceFromThis = hasOwnProperty.call(StoreMeta, key);
         const state = (store as any as StoreMeta<S>)._$state_;
 
@@ -146,7 +143,6 @@ export abstract class ComponentWithStore<
             this.#computedSet.add(boundFnValue);
           }
 
-          // TODO computed of class waiting develop
           return !isComputed
             ? boundFnValue
             : (store as any as StoreMeta<S>).computed.bind(null, boundFnValue);

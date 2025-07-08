@@ -1,6 +1,6 @@
 import type {
-  AnyBoundFn, InitialState, StateWithThisType, Store,
-  StoreOptions, MacroStore, UseMacroStore, InnerStoreOptions,
+  AnyBoundFn, InitialState, StateWithThisType, Store, StoreOptions,
+  MacroStore, UseMacroStore, InnerStoreOptions, UseComputedType, ComputedType,
 } from "./types";
 import type { AnyFn, MapType, PrimitiveState, ValueOf } from "../types";
 import type { ClassStoreType } from "../class-connect/types";
@@ -14,12 +14,13 @@ import { __COMPUTED_PREFIX__, __RESY_BRAND__, DEFAULT_OPTIONS } from "./static";
 import { hasOwnProperty } from "../utils";
 import { proxyable } from "../immutable/utils";
 import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
-import { useDebugValue, useEffect, useRef, useState } from "react";
+import { useDebugValue } from "react";
 import StateMeta from "../state";
 import Scheduler from "../scheduler";
 import Subscriber from "../subscribe";
 import Updater from "../updater";
 import Restorer from "../restore";
+import Computer from "../computer";
 
 /**
  * @description The core meta-structure of store
@@ -77,6 +78,11 @@ export default class StoreMeta<S extends PrimitiveState> {
     this, this._scheduler_, this._subscriber_, this._updater_,
   );
 
+  useComputed!: UseComputedType["useComputed"];
+  computed!: ComputedType["computed"];
+  // Computer
+  readonly _computer_ = new Computer(this, this._subscriber_);
+
   // After unmount resetting the state (`restoreProcessing` function has been executed),
   // it is in a frozen state where updates are prohibited.
   // TODO waiting considering, the scenes it contains are a bit complex
@@ -85,95 +91,6 @@ export default class StoreMeta<S extends PrimitiveState> {
 
   /** ============================== For Core Render Element start ============================== */
   _$state_: S;
-
-  // TODO _computedDeps_ waiting upgrade
-  // TODO 考虑_computedDeps_是否要移除全局设置，是否要从每一个computedFn上面进行挂在，
-  //  考虑全局的共同依赖是否会对不同的computed的依赖收集逻辑有影响
-  // Dependency Collection for computed
-  readonly _computedDeps_ = new Set<keyof S>();
-
-  // TODO waiting upgrade optimize (暂时应该没有属性依赖记录收集销毁的逻辑问题)
-  // TODO class组件可以在ComponentWithStore的内部实现一个computed方法方便组件通过继承的this.computed进行处理调用
-  useComputed = <A = any>(computed: AnyBoundFn, ...args: A[]) => {
-    const { _computedDeps_ } = this;
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const computedRef = useRef<{ computed: AnyBoundFn }>(null);
-    computedRef.current = { computed };
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const [params, updateParams] = useState(() => args);
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useEffect(() => {
-      // Update params by using shallow contrast of args elements within useEffect
-      updateParams(args);
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, args);
-
-    const [
-      { result, stateKeys }, update,
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-    ] = useState(() => {
-      // Clear the previous dirty dependencies before collecting them
-      _computedDeps_.clear();
-
-      // Execute the computed function body to obtain the result and collect dependencies
-      const res = computedRef.current!.computed(...params);
-
-      return {
-        result: res,
-        stateKeys: Array.from(_computedDeps_) as (keyof S)[],
-      };
-    });
-
-    const { namespace } = this._options_;
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    __DEV__ && useDebugValue({
-      [computed.__name__!]: result,
-      ...(
-        namespace
-          ? { namespace }
-          : null
-      ),
-    });
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useEffect(() => this.subscribe(() => {
-      /**
-       * Perform dependency collection and processing again to
-       * prevent dependency changes caused by conditional logic
-       */
-      _computedDeps_.clear();
-
-      /**
-       * @desc This needs to be executed immediately after
-       * clearing the dependency collector in order to obtain new dependencies.
-       */
-      const res = computedRef.current!.computed(...params);
-
-      const newDeps = Array.from(_computedDeps_);
-
-      /**
-       * Perform dependency collection and processing again to
-       * prevent dependency changes caused by conditional logic.
-       */
-      // update computed deps
-      (stateKeys.toString() !== newDeps.toString()) && update(prevState => ({
-        ...prevState,
-        stateKeys: newDeps,
-      }));
-
-      // update computed result
-      update(prevState => ({
-        ...prevState,
-        result: res,
-      }));
-
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, stateKeys), [stateKeys, params]);
-
-    return result;
-  };
 
   // A proxy object with the capabilities of updating and data tracking.
   readonly store: Store<S>;
@@ -256,12 +173,15 @@ export default class StoreMeta<S extends PrimitiveState> {
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ApplyOriginFunctionType,
   ) => {
-    const { _computedDeps_, _options_: { immutable } } = this;
+    const {
+      _computer_: { computing, computedHookDeps },
+      _options_: { immutable },
+    } = this;
     return new Proxy(target, {
       get: (_: S, key: keyof S) => {
         const sourceFrom$State = !firstLevelKey;
 
-        sourceFrom$State && _computedDeps_.add(key);
+        computing && sourceFrom$State && computedHookDeps.add(key);
 
         /**
          * @description `this.$state` is writable, so we need to check here,

@@ -4,6 +4,7 @@ import type { ClassStoreType } from "./types";
 import { PureComponent } from "react";
 import { storeErrorProcessing } from "../store/errors";
 import { hasOwnProperty } from "../utils";
+import { __COMPUTED_PREFIX__ } from "../store/static";
 import StoreMeta from "../store/core";
 
 /**
@@ -129,8 +130,12 @@ export abstract class ComponentWithStore<
           !(value as AnyBoundFn).__bound__
           && (store as any as StoreMeta<S>)._boundFnProcessing_(key, value, classEngineStore);
 
+          const boundFnValue = state[key];
+
           // TODO computed of class waiting develop
-          return state[key];
+          return !key.toString().startsWith(__COMPUTED_PREFIX__)
+            ? boundFnValue
+            : (store as any as StoreMeta<S>).computed.bind(null, boundFnValue);
         }
 
         return (store as any as StoreMeta<S>)[key as keyof StoreMeta<S>];

@@ -75,7 +75,11 @@ export type UseStoreType<S extends PrimitiveState> = {
 };
 
 export type UseComputedType = {
-  useComputed<T extends AnyFn>(computed: T): ReturnType<T>;
+  useComputed<T extends AnyFn>(fn: T): ReturnType<T>;
+};
+
+export type ComputedType = {
+  computed<T extends AnyFn>(fn: T): ReturnType<T>;
 };
 
 /** A preprocessed store that is ready for immediate rendering  */
@@ -89,6 +93,7 @@ export type InitialStateForbiddenKeys = keyof StoreUtils<PrimitiveState> | "stor
 
 type ComputedPrefix = `$${string}`;
 
+// TODO considering removed ？
 export type Computed<T extends AnyFn> = T & {
   __computed__?: ReturnType<T>;
 };

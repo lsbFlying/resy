@@ -37,6 +37,7 @@ export default class Computer<S extends PrimitiveState> {
     computedDeps.clear();
 
     this.computing = true;
+    // TODO args的变化未完善
     const res = fn(...args);
     this.computing = false;
 

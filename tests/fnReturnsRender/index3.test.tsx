@@ -17,7 +17,7 @@ test("fnReturnsRender-III", async () => {
   const store = createStore<Store>({
     count: 0,
     doubleCount() {
-      const { count } = this.useStore();
+      const { count } = this;
       return count * 2;
     },
     text: "ok",

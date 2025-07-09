@@ -1,6 +1,5 @@
 import { expect, test } from "vitest";
 import { createStore } from "../../src";
-import type { InnerStoreOptions } from "../../src";
 
 test("createStore-error-scene", async () => {
   // @ts-ignore
@@ -149,39 +148,4 @@ test("createStore-error-scene", async () => {
   expect(() => createStore({}, { unmountRestore: BigInt("8723648264864355") })).toThrowError();
   // @ts-ignore
   expect(() => createStore({}, { unmountRestore: window })).toThrowError();
-
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: 0 } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: 1 } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: null } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: NaN } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: "" } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: "hello" } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: [] } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: Symbol("empty-symbol") } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: new Set() } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: new Map() } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: new WeakSet() } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: new WeakMap() } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: new WeakRef({}) } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: new Date() } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: new RegExp() } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: BigInt("8723648264864355") } as InnerStoreOptions)).toThrowError();
-  // @ts-ignore
-  expect(() => createStore({}, { __useConciseState__: window } as InnerStoreOptions)).toThrowError();
 });

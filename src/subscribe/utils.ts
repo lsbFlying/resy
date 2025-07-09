@@ -1,6 +1,6 @@
 import type { PrimitiveState } from "../types";
 import type { Store } from "../store/types";
-import type { ListenerType } from "./types";
+import type { ListenerType, Unsubscribe } from "./types";
 import { storeErrorProcessing } from "../store/errors";
 
 export const subscribe = <S extends PrimitiveState>(
@@ -10,5 +10,5 @@ export const subscribe = <S extends PrimitiveState>(
   immediate?: boolean,
 ) => {
   storeErrorProcessing(store, "subscribe");
-  store.subscribe(listener, stateKeys, immediate);
+  return store.subscribe(listener, stateKeys, immediate) as Unsubscribe;
 };

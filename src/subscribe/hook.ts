@@ -11,5 +11,5 @@ export const useSubscription = <S extends PrimitiveState>(
   immediate?: boolean,
 ) => {
   storeErrorProcessing(store, "useSubscription");
-  return store.useSubscription(listener, stateKeys, immediate);
+  store.useSubscription(listener, stateKeys, immediate);
 };

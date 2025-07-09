@@ -48,10 +48,11 @@ export const useConciseState = <S extends PrimitiveState>(
   return storeMeta._$engineStore_ as MacroStore<S>;
 };
 
+// computed hook
 export const useComputed = <S extends PrimitiveState, T extends AnyFn>(
   store: Store<S>,
   computed: T,
 ) => {
   storeErrorProcessing(store, "useComputed");
-  return store.useComputed(computed as T);
+  return store.useComputed(computed as T) as ReturnType<T>;
 };

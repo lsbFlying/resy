@@ -1,6 +1,6 @@
 import type {
-  AnyBoundFn, InitialState, StateWithThisType, Store, StoreOptions,
-  MacroStore, UseMacroStore, InnerStoreOptions, UseComputedType, ComputedType,
+  AnyBoundFn, InitialState, StateWithThisType, Store,
+  StoreOptions, MacroStore, UseMacroStore, InnerStoreOptions,
 } from "./types";
 import type { AnyFn, MapType, PrimitiveState, ValueOf } from "../types";
 import type { ClassStoreType } from "../class-connect/types";
@@ -9,6 +9,7 @@ import type { SubscribeType, UseSubscriptionType } from "../subscribe/types";
 import type { RestoreType } from "../restore/types";
 import type { StateMetaMapType } from "../state/types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
+import type { UseComputedType, ComputedType } from "../computer/types";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
 import { __COMPUTED_PREFIX__, __RESY_BRAND__, DEFAULT_OPTIONS } from "./static";
 import { hasOwnProperty } from "../utils";

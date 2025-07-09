@@ -2,6 +2,7 @@ import type { PrimitiveState, AnyFn } from "../types";
 import type { SubscribeType, Unsubscribe, UseSubscriptionType } from "../subscribe/types";
 import type { RestoreType } from "../restore/types";
 import type { SetStateType, SyncUpdateType } from "../updater/types";
+import type { UseComputedType } from "../computer/types";
 
 /**
  * @description The second parameter configuration item of createStore
@@ -74,14 +75,6 @@ export type UseStoreType<S extends PrimitiveState> = {
   useStore(): ClassicStore<S>;
 };
 
-export type UseComputedType = {
-  useComputed<T extends AnyFn>(fn: T): ReturnType<T>;
-};
-
-export type ComputedType = {
-  computed<T extends AnyFn>(fn: T): ReturnType<T>;
-};
-
 /** A preprocessed store that is ready for immediate rendering  */
 export type MacroStore<S extends PrimitiveState> = ClassicStore<S> & StoreType<S>;
 
@@ -91,20 +84,11 @@ export type UseMacroStore<S extends PrimitiveState> = () => MacroStore<S>;
 /** Type of key disabled in the initialization parameters */
 export type InitialStateForbiddenKeys = keyof StoreUtils<PrimitiveState> | "store";
 
-type ComputedPrefix = `$${string}`;
-
-// TODO considering removed ？
-export type Computed<T extends AnyFn> = T & {
-  __computed__?: ReturnType<T>;
-};
-
 // Safer type restrictions
 type SecureState<S extends PrimitiveState> = {
   [K in keyof S]: K extends InitialStateForbiddenKeys
     ? never
-    : K extends ComputedPrefix
-      ? Computed<S[K]>
-      : S[K];
+    : S[K];
 };
 
 /** The type of this context in function properties (actions) within initialState. */

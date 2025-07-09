@@ -20,7 +20,7 @@ export default class Computer<S extends PrimitiveState> {
   // TODO computedDeps waiting upgrade
   // TODO 考虑computedDeps是否要移除全局设置，是否要从每一个computedFn上面进行挂在，
   //  考虑全局的共同依赖是否会对不同的computed的依赖收集逻辑有影响
-  // Dependency Collection for useComputed of computed hook api
+  // StateKeys of computed internal subscribers, which are subscription attribute dependencies
   readonly computedDeps = new Set<keyof S>();
 
   // Storage mapping for computed class components

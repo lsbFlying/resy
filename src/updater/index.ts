@@ -254,9 +254,9 @@ export default class Updater<S extends PrimitiveState> {
          * At the same time, when a hidden attribute is discovered by a new rendering,
          * it will immediately generate a new state attribute reference.
          * Therefore, this is always safe, and it can avoid unnecessary re-renders.
-         * 🌟 `?.has()` for granular updates - skips re-renders for unused state.
+         * 🌟 `.has()` for granular updates - skips re-renders for unused state.
          */
-        ? classInstanceItem._$stateRefs_?.has(key)
+        ? classInstanceItem._$stateRefs_.has(key)
           && classInstanceItem.setState({ [key]: value } as Pick<S, keyof S>)
         : classInstanceStack.delete(classInstanceItem);
     });

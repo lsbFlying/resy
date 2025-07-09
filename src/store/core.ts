@@ -123,7 +123,7 @@ export default class StoreMeta<S extends PrimitiveState> {
           this._stateMetaMap_[key] ??= new StateMeta<S>(
             key, this._stateMetaMap_, this, this._restorer_,
           )
-        ).useStateMeta();
+        ).useStateMeta(key, this._stateMetaMap_);
       }
 
       if (!sourceFromThis && typeof value === "function") {
@@ -171,14 +171,14 @@ export default class StoreMeta<S extends PrimitiveState> {
   };
 
   /** Create Store Proxy */
-  #createProxy = (
+  #createProxy(
     target: object = this._$state_,
     parentTarget: object = this._$state_,
     firstLevelKey?: keyof S,
     keyLevel?: number,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     applyOriginFunction?: ApplyOriginFunctionType,
-  ) => {
+  ) {
     const {
       _computer_: computer,
       _options_: { immutable },
@@ -266,5 +266,5 @@ export default class StoreMeta<S extends PrimitiveState> {
         argArray,
       ),
     } as ProxyHandler<S>) as Store<S>;
-  };
+  }
 }

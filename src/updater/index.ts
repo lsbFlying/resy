@@ -41,7 +41,7 @@ export default class Updater<S extends PrimitiveState> {
       value,
       () => {
         // State updates for class components
-        this.classUpdater(key, value);
+        this.classUpdater(key, value, this.classInstanceStack);
         /**
          * @description The decision not to execute the updates for class components within the following updater
          * is to preserve the simplicity of the update scheduling for both hook and class components.
@@ -165,7 +165,7 @@ export default class Updater<S extends PrimitiveState> {
           const value = (stateTemp as S)[key];
           if (!Object.is(_$state_[key], value)) {
             _$state_[key] = value;
-            this.classUpdater(key, value);
+            this.classUpdater(key, value, this.classInstanceStack);
             this.$stateMetaMap[key]?.updater();
           }
         });
@@ -235,8 +235,7 @@ export default class Updater<S extends PrimitiveState> {
   };
 
   // For class components
-  classUpdater = (key: keyof S, value: ValueOf<S>) => {
-    const classInstanceStack = this.classInstanceStack;
+  classUpdater(key: keyof S, value: ValueOf<S>, classInstanceStack: Set<ComponentWithStore<{}, S>>) {
     classInstanceStack.forEach(classInstanceItem => {
       /**
        * There is an "updater" attribute on the internal this pointer of react's class,

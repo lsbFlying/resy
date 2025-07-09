@@ -27,7 +27,7 @@ export default class Scheduler<S extends PrimitiveState> {
   };
 
   // Push the callback and wait for subsequent execution
-  pushCallback = ($state: S, state: State<S>, callback?: StateCallback<S>) => {
+  pushCallback($state: S, state: State<S>, callback?: StateCallback<S>) {
     if (callback !== undefined) {
       stateCallbackErrorProcessing(callback);
       this.callbackQueue.add({ nextState: { ...$state, ...state }, callback });
@@ -35,7 +35,7 @@ export default class Scheduler<S extends PrimitiveState> {
   };
 
   // Flush and clear the task data and task queue
-  flushTask = () => {
+  flushTask() {
     this.taskData = {} as S;
     this.taskQueue.clear();
   };

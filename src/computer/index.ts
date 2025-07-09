@@ -17,9 +17,6 @@ export default class Computer<S extends PrimitiveState> {
   // The identifier indicating that the property function body is performing calculations.
   computing = false;
 
-  // TODO computedDeps waiting upgrade
-  // TODO 考虑computedDeps是否要移除全局设置，是否要从每一个computedFn上面进行挂在，
-  //  考虑全局的共同依赖是否会对不同的computed的依赖收集逻辑有影响
   // StateKeys of computed internal subscribers, which are subscription attribute dependencies
   readonly computedDeps = new Set<keyof S>();
 
@@ -41,7 +38,6 @@ export default class Computer<S extends PrimitiveState> {
     return false;
   };
 
-  // TODO waiting upgrade
   computed = <A = any>(fn: AnyBoundFn, ...args: A[]) => {
     if (!this.computedArgs) {
       this.computedArgs = args;
@@ -89,7 +85,6 @@ export default class Computer<S extends PrimitiveState> {
     return res;
   };
 
-  // TODO waiting upgrade optimize (暂时应该没有属性依赖记录收集销毁的逻辑问题)
   /**
    * @desc This hook-based state update design prevents rendering issues
    * where computed properties might use hook component states

@@ -66,10 +66,10 @@ export abstract class ComponentWithStore<
       Promise.resolve().then(() => {
         if (!this._$isMounted_) {
           // Clear the computed subscription for class
-          this.#computedSet.forEach(abf => {
+          this.#computedSubscribers.forEach(abf => {
             abf.__unsubscribe__?.();
           });
-          this.#computedSet.clear();
+          this.#computedSubscribers.clear();
 
           // Clear the data references used by the class component in rendering
           this._$stateRefs_.clear();
@@ -93,11 +93,17 @@ export abstract class ComponentWithStore<
 
   static displayName?: string;
 
+  /**
+   * @desc The identification of whether the class component has been uninstalled
+   * is mainly aimed at the dual rendering problem in strict mode.
+   */
   _$isMounted_ = false;
 
+  // Collection of records referenced by the state of class components
   _$stateRefs_ = new Set<keyof S>();
 
-  #computedSet = new Set<AnyBoundFn>();
+  // The collection of internal subscribers for the computed of class
+  #computedSubscribers = new Set<AnyBoundFn>();
 
   /**
    * @description Class components may use multiple different stores.
@@ -150,7 +156,7 @@ export abstract class ComponentWithStore<
 
           const isComputed = key.toString().startsWith(__COMPUTED_PREFIX__);
           if (isComputed) {
-            this.#computedSet.add(boundFnValue);
+            this.#computedSubscribers.add(boundFnValue);
           }
 
           return !isComputed

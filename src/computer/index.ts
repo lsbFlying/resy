@@ -23,8 +23,8 @@ export default class Computer<S extends PrimitiveState> {
   // StateKeys of computed internal subscribers, which are subscription attribute dependencies
   readonly computedDeps = new Set<keyof S>();
 
-  // Storage mapping for computed class components
-  readonly computedMap = new Map<AnyBoundFn, any>();
+  // cache for computed class components
+  computedCache = null;
   // computed function args for computed class components
   computedArgs: any[] | null = null;
 
@@ -36,20 +36,20 @@ export default class Computer<S extends PrimitiveState> {
       // Compare old and new args
       if (args.length !== this.computedArgs.length) {
         this.computedArgs = args;
-        this.computedMap.delete(fn);
+        this.computedCache = null;
       } else {
         for (let i = 0; i < args.length; i++) {
           if (!Object.is(args[i], this.computedArgs[i])) {
             this.computedArgs = args;
-            this.computedMap.delete(fn);
+            this.computedCache = null;
             break;
           }
         }
       }
     }
 
-    if (this.computedMap.has(fn)) {
-      return this.computedMap.get(fn);
+    if (this.computedCache) {
+      return this.computedCache;
     }
 
     fn.__unsubscribe__?.();
@@ -68,18 +68,18 @@ export default class Computer<S extends PrimitiveState> {
        * @desc Since the `fn` function is already bound to the `this` instance of the class component,
        * and the state rendering of class components does not have
        * the same top-level Hook rules restriction as Hook components,
-       * we can directly remove `fn` from `computedMap` here.
+       * we can directly remove `fn` from `computedCache` here.
        * This allows the new computed property result to be recalculated
        * in the `render` function upon state updates.
-       * Otherwise, it will continue using the initially cached result from `computedMap`.
+       * Otherwise, it will continue using the initially cached result from `computedCache`.
        * Precisely because class components are not constrained
        * by the top-level Hook rules like Hook components,
        * their implementation of computed properties is much simpler.
        */
-      this.computedMap.delete(fn);
+      this.computedCache = null;
     }, stateKeys);
 
-    this.computedMap.set(fn, res);
+    this.computedCache = res;
 
     return res;
   };

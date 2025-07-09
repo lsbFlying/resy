@@ -180,16 +180,17 @@ export default class StoreMeta<S extends PrimitiveState> {
     applyOriginFunction?: ApplyOriginFunctionType,
   ) => {
     const {
-      _computer_: { computing, computedDeps },
+      _computer_: computer,
       _options_: { immutable },
       _updater_: { updateStateMeta },
       _boundFnProcessing_,
     } = this;
+    const { computedDeps } = computer;
     return new Proxy(target, {
       get: (_: S, key: keyof S) => {
         const sourceFrom$State = !firstLevelKey;
 
-        computing && sourceFrom$State && computedDeps.add(key);
+        computer.computing && sourceFrom$State && computedDeps.add(key);
 
         /**
          * @description `this.$state` is writable, so we need to check here,

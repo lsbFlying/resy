@@ -92,7 +92,7 @@ export abstract class ComponentWithStore<
 
   static displayName?: string;
 
-  _store_!: ClassStoreType<any>;
+  _$store_!: ClassStoreType<any>;
 
   /**
    * @desc The identification of whether the class component has been uninstalled
@@ -201,7 +201,7 @@ export abstract class ComponentWithStore<
       // TODO delete methods waiting upgrade
     } as ProxyHandler<ClassStoreType<S>>);
 
-    this._store_ = classEngineStore;
+    this._$store_ = classEngineStore;
 
     return classEngineStore;
   };

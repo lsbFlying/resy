@@ -12,5 +12,5 @@ export const computed = <T extends AnyFn, S extends PrimitiveState>(
   if (__DEV__ && !thisArg.connectStore) {
     throw new Error("The this pointer must reference an instance inheriting from ComponentWithStore!");
   }
-  return thisArg._store_.computed(fn) as ReturnType<T>;
+  return thisArg._$store_.computed(fn) as ReturnType<T>;
 };

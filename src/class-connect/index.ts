@@ -3,7 +3,6 @@ import type { AnyBoundFn, Store } from "../store/types";
 import type { ClassStoreType } from "./types";
 import { PureComponent } from "react";
 import { storeErrorProcessing } from "../store/errors";
-import { hasOwnProperty } from "../utils";
 import { __COMPUTED_PREFIX__ } from "../store/static";
 import StoreMeta from "../store/core";
 
@@ -124,11 +123,14 @@ export abstract class ComponentWithStore<
     (store as any as StoreMeta<S>)._restorer_.initialStateRetrieve();
     this.#stores.add(store as any);
 
-    const updater = (store as any as StoreMeta<S>)._updater_;
+    const {
+      _updater_: updater, _computer_: computer,
+      hasOwnKey, _boundFnProcessing_,
+    } = store as any as StoreMeta<S>;
+
     const { updateStateMeta, classInstanceStack } = updater;
     classInstanceStack.add(this as any as ComponentWithStore<P, S, SS>);
 
-    const computer = (store as any as StoreMeta<S>)._computer_;
     const { computed, computedDeps } = computer;
 
     // Data agents for use by class components
@@ -139,7 +141,7 @@ export abstract class ComponentWithStore<
         // computer.computing && sourceFrom$State && computedDeps.add(key);
         computer.computing && computedDeps.add(key);
 
-        const sourceFromThis = hasOwnProperty.call(StoreMeta, key);
+        const sourceFromThis = hasOwnKey(key);
         const state = (store as any as StoreMeta<S>)._$state_;
 
         const value = state[key];
@@ -150,7 +152,7 @@ export abstract class ComponentWithStore<
 
         if (!sourceFromThis && typeof value === "function") {
           !(value as AnyBoundFn).__bound__
-          && (store as any as StoreMeta<S>)._boundFnProcessing_(key, value, classEngineStore);
+          && _boundFnProcessing_(key, value, classEngineStore);
 
           const boundFnValue = state[key];
 

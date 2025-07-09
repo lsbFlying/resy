@@ -165,6 +165,11 @@ export default class StoreMeta<S extends PrimitiveState> {
     return boundFn as ValueOf<S>;
   };
 
+  // for class classEngineStore getter internal judgment
+  hasOwnKey = (key: PropertyKey) => {
+    return hasOwnProperty.call(this, key);
+  };
+
   /** Create Store Proxy */
   #createProxy = (
     target: object = this._$state_,
@@ -177,6 +182,8 @@ export default class StoreMeta<S extends PrimitiveState> {
     const {
       _computer_: { computing, computedDeps },
       _options_: { immutable },
+      _updater_: { updateStateMeta },
+      _boundFnProcessing_,
     } = this;
     return new Proxy(target, {
       get: (_: S, key: keyof S) => {
@@ -233,17 +240,17 @@ export default class StoreMeta<S extends PrimitiveState> {
           && sourceFrom$State
           && !(value as AnyBoundFn).__bound__
         ) {
-          return this._boundFnProcessing_(key, value);
+          return _boundFnProcessing_(key, value);
         }
 
         return !sourceFromThis ? value : this[key as keyof StoreMeta<S>];
       },
-      set: (_: S, key: keyof S, value: ValueOf<S>) => this._updater_.updateStateMeta(
+      set: (_: S, key: keyof S, value: ValueOf<S>) => updateStateMeta(
         key, value, false, target, firstLevelKey,
         new Set(keyChains).add({ key }), applyOriginFunction,
       ),
       // Delete will also play an updating role
-      deleteProperty: (_: S, key: keyof S) => this._updater_.updateStateMeta(
+      deleteProperty: (_: S, key: keyof S) => updateStateMeta(
         key, undefined as ValueOf<S>, true, target, firstLevelKey,
         new Set(keyChains).add({ key }), applyOriginFunction,
       ),
@@ -252,7 +259,7 @@ export default class StoreMeta<S extends PrimitiveState> {
       apply: (applyOriginFunction: any, thisArg: any, argArray: any[]) => Reflect.apply(
         __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
           applyOriginFunction, thisArg, this._$state_, parentTarget as (MapType<S> & Set<S>),
-          this.#createProxy, firstLevelKey, keyLevel, keyChains, this._updater_.updateStateMeta,
+          this.#createProxy, firstLevelKey, keyLevel, keyChains, updateStateMeta,
         ),
         thisArg,
         argArray,

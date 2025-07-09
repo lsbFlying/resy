@@ -70,6 +70,9 @@ export abstract class ComponentWithStore<
           });
           this.#computedSubscribers.clear();
 
+          // Clear the data references used by the class component in rendering
+          this._$stateRefs_.clear();
+
           // References to these data are recorded and added through “#connectClass”
           this.#stores.forEach((store: Store<S>) => {
             /**
@@ -95,6 +98,9 @@ export abstract class ComponentWithStore<
    */
   _$isMounted_ = false;
 
+  // Collection of records referenced by the state of class components
+  _$stateRefs_ = new Set<keyof S>();
+
   // The collection of internal subscribers for the computed of class
   #computedSubscribers = new Set<AnyBoundFn>();
 
@@ -103,6 +109,11 @@ export abstract class ComponentWithStore<
    * These store references are collected into `#stores` for subsequent use.
    */
   #stores: Set<Store<S>> = new Set();
+
+  #getState<S extends PrimitiveState>(key: keyof S, store: StoreMeta<S>) {
+    this._$stateRefs_.add(key as (string | number));
+    return store._$state_[key];
+  };
 
   connectStore<S extends PrimitiveState>(store: Store<S>) {
     storeErrorProcessing(store, "connectStore");
@@ -125,14 +136,34 @@ export abstract class ComponentWithStore<
         // TODO waiting upgrade
         // const sourceFrom$State = !firstLevelKey;
         // computer.computing && sourceFrom$State && computedDeps.add(key);
-        computer.computing && computedDeps.add(key);
+        if (computer.computing) {
+          computedDeps.add(key);
+          /**
+           * @desc This ensures that even if a class component doesn't
+           * directly use the state needed in computed, a state reference is tracked,
+           * allowing the classUpdater to trigger proper re-renders.
+           * 🌟 This implementation accounts for cases where the computed method
+           * within the class could potentially read data through this.store:
+           * @example
+           * const { count, text } = this.store;
+           * const countPro = computed(store, () => {
+           *   console.log("computed");
+           *   // The variable testCount is not destructured from this.store
+           *   // in the assignment const { count, text } = this.store;
+           *   return this.store.testCount * 2;
+           * });
+           */
+          this._$stateRefs_.add(key as (string | number));
+        }
 
         const sourceFromThis = hasOwnKey(key);
         const state = (store as any as StoreMeta<S>)._$state_;
 
         const value = state[key];
 
-        if (!sourceFromThis && typeof value !== "function") return store._$state_[key];
+        if (!sourceFromThis && typeof value !== "function") {
+          return this.#getState(key, store as any as StoreMeta<S>);
+        }
 
         if (!sourceFromThis && typeof value === "function") {
           !(value as AnyBoundFn).__bound__

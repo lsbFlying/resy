@@ -21,7 +21,7 @@ export default class Scheduler<S extends PrimitiveState> {
   deferEffectDestructorExecutable?: Promise<void>;
 
   // Push both the updated data (in key/value pairs) and the update task queue
-  pushTask = (key: keyof S, value: ValueOf<S>, task: Callback) => {
+  pushTask(key: keyof S, value: ValueOf<S>, task: Callback) {
     this.taskData[key] = value;
     this.taskQueue.set(key, task);
   };

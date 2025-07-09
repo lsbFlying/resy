@@ -104,7 +104,7 @@ export abstract class ComponentWithStore<
    */
   #stores: Set<Store<S>> = new Set();
 
-  connectStore = <S extends PrimitiveState>(store: Store<S>) => {
+  connectStore<S extends PrimitiveState>(store: Store<S>) {
     storeErrorProcessing(store, "connectStore");
     (store as any as StoreMeta<S>)._restorer_.initialStateRetrieve();
     this.#stores.add(store as any);

@@ -128,9 +128,9 @@ export abstract class ComponentWithStore<
     // Data agents for use by class components
     const classEngineStore = new Proxy({} as ClassStoreType<S>, {
       get: (_, key: keyof S) => {
+        // TODO waiting upgrade
         // const sourceFrom$State = !firstLevelKey;
         // computer.computing && sourceFrom$State && computedDeps.add(key);
-        // TODO waiting upgrade
         computer.computing && computedDeps.add(key);
 
         const sourceFromThis = hasOwnProperty.call(StoreMeta, key);

@@ -156,16 +156,16 @@ export abstract class ComponentWithStore<
           this._$stateRefs_.add(key as (string | number));
         }
 
-        const sourceFromThis = hasOwnKey(key);
+        const sourceFromStore = hasOwnKey(key);
         const state = (store as any as StoreMeta<S>)._$state_;
 
         const value = state[key];
 
-        if (!sourceFromThis && typeof value !== "function") {
+        if (!sourceFromStore && typeof value !== "function") {
           return this.#getState(key, store as any as StoreMeta<S>);
         }
 
-        if (!sourceFromThis && typeof value === "function") {
+        if (!sourceFromStore && typeof value === "function") {
           !(value as AnyBoundFn).__bound__
           && _boundFnProcessing_(key, value, classEngineStore);
 

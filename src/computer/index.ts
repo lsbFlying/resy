@@ -28,23 +28,28 @@ export default class Computer<S extends PrimitiveState> {
   // computed function args for computed class components
   computedArgs: any[] | null = null;
 
+  shallowArrayNotEqual(array1: any[], array2: any[]) {
+    if (array1.length !== array2.length) {
+      return true;
+    } else {
+      for (let i = 0; i < array1.length; i++) {
+        if (!Object.is(array1[i], array2[i])) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
   // TODO waiting upgrade
   computed = <A = any>(fn: AnyBoundFn, ...args: A[]) => {
     if (!this.computedArgs) {
       this.computedArgs = args;
     } else {
       // Compare old and new args
-      if (args.length !== this.computedArgs.length) {
+      if (this.shallowArrayNotEqual(args, this.computedArgs)) {
         this.computedArgs = args;
         this.computedCache = null;
-      } else {
-        for (let i = 0; i < args.length; i++) {
-          if (!Object.is(args[i], this.computedArgs[i])) {
-            this.computedArgs = args;
-            this.computedCache = null;
-            break;
-          }
-        }
       }
     }
 
@@ -153,7 +158,7 @@ export default class Computer<S extends PrimitiveState> {
        * prevent dependency changes caused by conditional logic.
        */
       // update computed deps
-      (stateKeys.toString() !== newDeps.toString()) && update(prevState => ({
+      (this.shallowArrayNotEqual(stateKeys, newDeps)) && update(prevState => ({
         ...prevState,
         stateKeys: newDeps,
       }));

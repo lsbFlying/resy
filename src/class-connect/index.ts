@@ -92,6 +92,8 @@ export abstract class ComponentWithStore<
 
   static displayName?: string;
 
+  _store_!: ClassStoreType<any>;
+
   /**
    * @desc The identification of whether the class component has been uninstalled
    * is mainly aimed at the dual rendering problem in strict mode.
@@ -180,6 +182,15 @@ export abstract class ComponentWithStore<
           return boundFnValue;
         }
 
+        // Handle cases where computed properties in class components
+        // may reference state attributes not destructured from `this.store`.
+        key === "computed" && !computer.stateRefsHook
+        && (computer.stateRefsHook = deps => {
+          deps.forEach(key => {
+            this._$stateRefs_.add(key as (string | number));
+          });
+        });
+
         return (store as any as StoreMeta<S>)[key as keyof StoreMeta<S>];
       },
       // TODO classEngineStore可能需要递归代理生成proxy，像StoreMeta的createProxy方法那样，以便于链式更新
@@ -189,6 +200,8 @@ export abstract class ComponentWithStore<
       ),
       // TODO delete methods waiting upgrade
     } as ProxyHandler<ClassStoreType<S>>);
+
+    this._store_ = classEngineStore;
 
     return classEngineStore;
   };

@@ -24,6 +24,7 @@ export default class Computer<S extends PrimitiveState> {
   computedCache = null;
   // computed function args for computed class components
   computedArgs: any[] | null = null;
+  stateRefsHook?(deps: Set<PropertyKey>): void;
 
   shallowArrayNotEqual(array1: any[], array2: any[]) {
     if (array1.length !== array2.length) {
@@ -61,6 +62,7 @@ export default class Computer<S extends PrimitiveState> {
     this.computing = true;
     const res = fn(...args);
     this.computing = false;
+    this.stateRefsHook?.(computedDeps);
 
     const stateKeys = Array.from(computedDeps);
 

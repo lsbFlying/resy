@@ -35,7 +35,7 @@ export default class Restorer<S extends PrimitiveState> {
    * it is important to re-execute the function to acquire the most up-to-date initialization data.
    * Such caution ensures the precision of data recovery.
    */
-  retrieveReducerState = (st: StoreMeta<S>) => {
+  retrieveReducerState(st: StoreMeta<S>) {
     const { _initialState_ } = st;
     return typeof _initialState_ === "function"
       ? (_initialState_() as S)

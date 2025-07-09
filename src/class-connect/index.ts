@@ -151,7 +151,9 @@ export abstract class ComponentWithStore<
            * const { count, text } = this.store;
            * const countPro = computed(store, () => {
            *   console.log("computed");
-           *   return this.store.testComputedCount * 2;
+           *   // The variable testCount is not destructured from this.store
+           *   // in the assignment const { count, text } = this.store;
+           *   return this.store.testCount * 2;
            * });
            */
           this._$stateRefs_.add(key as (string | number));

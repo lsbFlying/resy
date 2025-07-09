@@ -23,12 +23,33 @@ export default class Computer<S extends PrimitiveState> {
   // Dependency Collection for useComputed of computed hook api
   readonly computedDeps = new Set<keyof S>();
 
-  readonly computedClassMap = new Map<AnyBoundFn, any>();
+  // Storage mapping for computed class components
+  readonly computedMap = new Map<AnyBoundFn, any>();
+  // computed function args for computed class components
+  computedArgs: any[] | null = null;
 
   // TODO waiting upgrade
   computed = <A = any>(fn: AnyBoundFn, ...args: A[]) => {
-    if (this.computedClassMap.has(fn)) {
-      return this.computedClassMap.get(fn);
+    if (!this.computedArgs) {
+      this.computedArgs = args;
+    } else {
+      // Compare old and new args
+      if (args.length !== this.computedArgs.length) {
+        this.computedArgs = args;
+        this.computedMap.delete(fn);
+      } else {
+        for (let i = 0; i < args.length; i++) {
+          if (!Object.is(args[i], this.computedArgs[i])) {
+            this.computedArgs = args;
+            this.computedMap.delete(fn);
+            break;
+          }
+        }
+      }
+    }
+
+    if (this.computedMap.has(fn)) {
+      return this.computedMap.get(fn);
     }
 
     fn.__unsubscribe__?.();
@@ -37,7 +58,6 @@ export default class Computer<S extends PrimitiveState> {
     computedDeps.clear();
 
     this.computing = true;
-    // TODO args的变化未完善
     const res = fn(...args);
     this.computing = false;
 
@@ -48,18 +68,18 @@ export default class Computer<S extends PrimitiveState> {
        * @desc Since the `fn` function is already bound to the `this` instance of the class component,
        * and the state rendering of class components does not have
        * the same top-level Hook rules restriction as Hook components,
-       * we can directly remove `fn` from `computedClassMap` here.
+       * we can directly remove `fn` from `computedMap` here.
        * This allows the new computed property result to be recalculated
        * in the `render` function upon state updates.
-       * Otherwise, it will continue using the initially cached result from `computedClassMap`.
+       * Otherwise, it will continue using the initially cached result from `computedMap`.
        * Precisely because class components are not constrained
        * by the top-level Hook rules like Hook components,
        * their implementation of computed properties is much simpler.
        */
-      this.computedClassMap.delete(fn);
+      this.computedMap.delete(fn);
     }, stateKeys);
 
-    this.computedClassMap.set(fn, res);
+    this.computedMap.set(fn, res);
 
     return res;
   };

@@ -2,7 +2,7 @@ import type { PrimitiveState, AnyFn } from "../types";
 import type { SubscribeType, Unsubscribe, UseSubscriptionType } from "../subscribe/types";
 import type { RestoreType } from "../restore/types";
 import type { SetStateType, SyncUpdateType } from "../updater/types";
-import type { UseComputedType } from "../computer/types";
+import type { ComputedType, UseComputedType } from "../computer/types";
 
 /**
  * @description The second parameter configuration item of createStore
@@ -45,6 +45,7 @@ export type StoreCoreUtils<S extends PrimitiveState> = Readonly<
   & SyncUpdateType<S>
   & RestoreType<S>
   & SubscribeType<S>
+  & ComputedType
 >;
 
 export type StoreHookUtils<S extends PrimitiveState> = Readonly<

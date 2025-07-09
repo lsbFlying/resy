@@ -177,11 +177,10 @@ export abstract class ComponentWithStore<
           const isComputed = key.toString().startsWith(__COMPUTED_PREFIX__);
           if (isComputed) {
             this.#computedSubscribers.add(boundFnValue);
+            return computed.bind(null, boundFnValue);
           }
 
-          return !isComputed
-            ? boundFnValue
-            : computed.bind(null, boundFnValue);
+          return boundFnValue;
         }
 
         return (store as any as StoreMeta<S>)[key as keyof StoreMeta<S>];

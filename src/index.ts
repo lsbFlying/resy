@@ -1,5 +1,5 @@
 export { createStore } from "./store";
-export * from "./store/hook";
+export { useStore, useConciseState } from "./store/hook";
 export { defineStore } from "./store/macro";
 
 export type {
@@ -20,5 +20,8 @@ export { useSubscription } from "./subscribe/hook";
 export type { UseSubscriptionType, Unsubscribe } from "./subscribe/types";
 
 export type { RestoreType } from "./restore/types";
+
+export { useComputed } from "./computer/hook";
+export { computed } from "./computer/utils";
 
 export * from "./types";

@@ -1,7 +1,7 @@
 import type {
   InitialState, InnerStoreOptions, Store, ClassicStore, MacroStore,
 } from "./types";
-import type { AnyFn, PrimitiveState } from "../types";
+import type { PrimitiveState } from "../types";
 import { useState } from "react";
 import { storeErrorProcessing } from "./errors";
 import StoreMeta from "./core";
@@ -46,13 +46,4 @@ export const useConciseState = <S extends PrimitiveState>(
     } as InnerStoreOptions
   ));
   return storeMeta._$engineStore_ as MacroStore<S>;
-};
-
-// computed hook
-export const useComputed = <S extends PrimitiveState, T extends AnyFn>(
-  store: Store<S>,
-  computed: T,
-) => {
-  storeErrorProcessing(store, "useComputed");
-  return store.useComputed(computed as T) as ReturnType<T>;
 };

@@ -119,14 +119,15 @@ export abstract class ComponentWithStore<
     this.#stores.add(store as any);
 
     const updater = (store as any as StoreMeta<S>)._updater_;
-    updater.classInstanceStack.add(this as any);
+    const { updateStateMeta, classInstanceStack } = updater;
+    classInstanceStack.add(this as any as ComponentWithStore<P, S, SS>);
 
     const computer = (store as any as StoreMeta<S>)._computer_;
     const { computed, computedDeps } = computer;
 
     // Data agents for use by class components
     const classEngineStore = new Proxy({} as ClassStoreType<S>, {
-      get: (_: S, key: keyof S) => {
+      get: (_, key: keyof S) => {
         // const sourceFrom$State = !firstLevelKey;
         // computer.computing && sourceFrom$State && computedDeps.add(key);
         // TODO waiting upgrade
@@ -160,8 +161,9 @@ export abstract class ComponentWithStore<
         return (store as any as StoreMeta<S>)[key as keyof StoreMeta<S>];
       },
       // TODO classEngineStore可能需要递归代理生成proxy，像StoreMeta的createProxy方法那样，以便于链式更新
-      set: (_: ClassStoreType<S>, key: keyof S, value: ValueOf<S>) => updater.updateStateMeta(
-        key, value, false,
+      set: (_, key: keyof S, value: ValueOf<S>) => updateStateMeta(key, value),
+      deleteProperty: (_, key: keyof S) => updateStateMeta(
+        key, undefined as ValueOf<S>, true,
       ),
       // TODO delete methods waiting upgrade
     } as ProxyHandler<ClassStoreType<S>>);

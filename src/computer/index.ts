@@ -90,6 +90,11 @@ export default class Computer<S extends PrimitiveState> {
   };
 
   // TODO waiting upgrade optimize (暂时应该没有属性依赖记录收集销毁的逻辑问题)
+  /**
+   * @desc This hook-based state update design prevents rendering issues
+   * where computed properties might use hook component states
+   * that weren't destructured in useStore, ensuring proper updates.
+   */
   useComputed = <A = any>(fn: AnyBoundFn, ...args: A[]) => {
     const { computedDeps } = this;
 

@@ -139,7 +139,23 @@ export abstract class ComponentWithStore<
         // TODO waiting upgrade
         // const sourceFrom$State = !firstLevelKey;
         // computer.computing && sourceFrom$State && computedDeps.add(key);
-        computer.computing && computedDeps.add(key);
+        if (computer.computing) {
+          computedDeps.add(key);
+          /**
+           * @desc This ensures that even if a class component doesn't
+           * directly use the state needed in computed, a state reference is tracked,
+           * allowing the classUpdater to trigger proper re-renders.
+           * 🌟 This implementation accounts for cases where the computed method
+           * within the class could potentially read data through this.store:
+           * @example
+           * const { count, text } = this.store;
+           * const countPro = computed(store, () => {
+           *   console.log("computed");
+           *   return this.store.testComputedCount * 2;
+           * });
+           */
+          this._$stateRefs_.add(key as (string | number));
+        }
 
         const sourceFromThis = hasOwnKey(key);
         const state = (store as any as StoreMeta<S>)._$state_;

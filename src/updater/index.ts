@@ -254,8 +254,7 @@ export default class Updater<S extends PrimitiveState> {
          * At the same time, when a hidden attribute is discovered by a new rendering,
          * it will immediately generate a new state attribute reference.
          * Therefore, this is always safe, and it can avoid unnecessary re-renders.
-         * 🌟 Adding "?.has" is to prevent some class components from making an empty connection,
-         * that is, connecting to the store but not using it. Generally speaking, this is not done,
+         * 🌟 `?.has()` for granular updates - skips re-renders for unused state.
          */
         ? classInstanceItem._$stateRefs_?.has(key)
           && classInstanceItem.setState({ [key]: value } as Pick<S, keyof S>)

@@ -35,8 +35,8 @@ export default class Restorer<S extends PrimitiveState> {
    * it is important to re-execute the function to acquire the most up-to-date initialization data.
    * Such caution ensures the precision of data recovery.
    */
-  retrieveReducerState = () => {
-    const { _initialState_ } = this.$storeMeta;
+  retrieveReducerState = (st: StoreMeta<S>) => {
+    const { _initialState_ } = st;
     return typeof _initialState_ === "function"
       ? (_initialState_() as S)
       : (_initialState_ ?? ({} as S));
@@ -44,7 +44,7 @@ export default class Restorer<S extends PrimitiveState> {
 
   // Logic of recovery processing
   restoreProcessing = () => {
-    this.$storeMeta._$state_ = { ...this.retrieveReducerState() } as S;
+    this.$storeMeta._$state_ = { ...this.retrieveReducerState(this.$storeMeta) } as S;
 
     // this.#freezing = true;
   };
@@ -123,8 +123,7 @@ export default class Restorer<S extends PrimitiveState> {
 
     this.$subscriber.willUpdatingProcessing();
 
-    const reducerState = this.retrieveReducerState();
-    console.log("reducerState:", reducerState);
+    const reducerState = this.retrieveReducerState(this.$storeMeta);
 
     /**
      * @description Get all the properties

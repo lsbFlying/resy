@@ -184,8 +184,7 @@ export abstract class ComponentWithStore<
 
         // Handle cases where computed properties in class components
         // may reference state attributes not destructured from `this.store`.
-        key === "computed" && !computer.stateRefsHook
-        && (computer.stateRefsHook = deps => {
+        key === "computed" && (computer.stateRefsHook = deps => {
           deps.forEach(key => {
             this._$stateRefs_.add(key as (string | number));
           });

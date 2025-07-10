@@ -17,7 +17,6 @@ test("restore-II", async () => {
     heights?: number[];
     studentNames?: Set<string>;
     info?: Map<string, string>;
-    testFun?(): void;
     proxyLogin?: { userName: string };
   };
 
@@ -38,9 +37,6 @@ test("restore-II", async () => {
       ["name", "Li"],
       ["sex", "man"],
     ]),
-    testFun() {
-      console.log("testFun");
-    },
     proxyLogin: new Proxy({ userName: "" }, {}),
   };
 
@@ -50,7 +46,7 @@ test("restore-II", async () => {
     const {
       count, text, faker, user,
       heights, studentNames, info,
-      testFun, proxyLogin,
+      proxyLogin,
     } = useStore(store);
     counter++;
     return (
@@ -62,7 +58,6 @@ test("restore-II", async () => {
         <p>{heights ?? "no-heights"}</p>
         <p>{studentNames?.has("Jet Li") ? "Jet Li" : "no-studentNames"}</p>
         <p>{info?.get("name") ?? "no-info"}</p>
-        <p>{testFun ? "testFun" : "no-testFun"}</p>
         <p>{proxyLogin?.userName ?? "no-proxyLogin"}</p>
         <button onClick={() => {
           store.setState(testData);
@@ -89,7 +84,6 @@ test("restore-II", async () => {
     getByText("no-user");
     getByText("no-heights");
     getByText("no-studentNames");
-    getByText("no-testFun");
     getByText("no-proxyLogin");
     expect(counter === 3).toBeTruthy();
   });

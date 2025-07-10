@@ -22,7 +22,7 @@ test("fnReturnsRender-III", async () => {
     },
     text: "ok",
     getTextPro() {
-      const { text } = this.useStore();
+      const { text } = this;
       return `${text}-world`;
     },
     firstName: "Bao",

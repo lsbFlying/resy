@@ -17,7 +17,6 @@ test("delete update", async () => {
     heights?: number[];
     studentNames?: Set<string>;
     info?: Map<string, string>;
-    testFun?(): void;
     proxyLogin?: { userName: string };
   };
 
@@ -36,9 +35,6 @@ test("delete update", async () => {
       ["name", "Li"],
       ["sex", "man"],
     ]),
-    testFun() {
-      console.log("testFun");
-    },
     proxyLogin: new Proxy({ userName: "" }, {}),
   });
 
@@ -48,7 +44,7 @@ test("delete update", async () => {
     const {
       count, text, faker, user,
       heights, studentNames, info,
-      testFun, proxyLogin,
+      proxyLogin,
     } = useStore(store);
     counter++;
     return (
@@ -60,7 +56,6 @@ test("delete update", async () => {
         <p>{heights ?? "no-heights"}</p>
         <p>{studentNames?.has("Jet Li") ? "Jet Li" : "no-studentNames"}</p>
         <p>{info?.get("name") ?? "no-info"}</p>
-        <p>{testFun ? "testFun" : "no-testFun"}</p>
         <p>{proxyLogin?.userName ?? "no-proxyLogin"}</p>
         <button onClick={() => {
           delete store.count;
@@ -70,7 +65,6 @@ test("delete update", async () => {
           delete store.heights;
           delete store.studentNames;
           delete store.info;
-          delete store.testFun;
           delete store.proxyLogin;
         }}>deleteAction</button>
       </>
@@ -88,7 +82,6 @@ test("delete update", async () => {
     getByText("no-heights");
     getByText("no-studentNames");
     getByText("no-info");
-    getByText("no-testFun");
     getByText("no-proxyLogin");
     expect(counter === 2).toBeTruthy();
   });

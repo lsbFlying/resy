@@ -16,6 +16,8 @@ export abstract class ComponentWithStore<
   SS = any,
 > extends PureComponent<P, S, SS> {
   constructor(props: P) {
+    // Must call super constructor in derived class before accessing 'this'
+    // or returning from derived constructor.
     super(props);
     if (__DEV__ && new.target === ComponentWithStore) {
       throw new Error("This class cannot be instantiated.");

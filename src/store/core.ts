@@ -123,7 +123,7 @@ export default class StoreMeta<S extends PrimitiveState> {
           this._stateMetaMap_[key] ??= new StateMeta<S>(
             key, this._stateMetaMap_, this, this._restorer_,
           )
-        ).useStateMeta(key, this._stateMetaMap_);
+        ).useStateMeta();
       }
 
       if (!sourceFromThis && typeof value === "function") {
@@ -182,7 +182,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     const {
       _computer_: computer,
       _options_: { immutable },
-      _updater_: { updateStateMeta },
+      _updater_: updater,
       _boundFnProcessing_,
     } = this;
     const { computedDeps } = computer;
@@ -246,21 +246,23 @@ export default class StoreMeta<S extends PrimitiveState> {
 
         return !sourceFromThis ? value : this[key as keyof StoreMeta<S>];
       },
-      set: (_: S, key: keyof S, value: ValueOf<S>) => updateStateMeta(
+      set: (_: S, key: keyof S, value: ValueOf<S>) => updater.updateStateMeta(
         key, value, false, target, firstLevelKey,
         new Set(keyChains).add({ key }), applyOriginFunction,
       ),
       // Delete will also play an updating role
-      deleteProperty: (_: S, key: keyof S) => updateStateMeta(
+      deleteProperty: (_: S, key: keyof S) => updater.updateStateMeta(
         key, undefined as ValueOf<S>, true, target, firstLevelKey,
         new Set(keyChains).add({ key }), applyOriginFunction,
       ),
+      // TODO waiting develop
       // The `apply` here is written specifically for prototype chain functions
       // that are applicable to proxyable types such as `Map`, and `Set`.
       apply: (applyOriginFunction: any, thisArg: any, argArray: any[]) => Reflect.apply(
         __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
           applyOriginFunction, thisArg, this._$state_, parentTarget as (MapType<S> & Set<S>),
-          this.#createProxy, firstLevelKey, keyLevel, keyChains, updateStateMeta,
+          // TODO updateStateMeta的this指向待修改
+          this.#createProxy, firstLevelKey, keyLevel, keyChains, updater.updateStateMeta,
         ),
         thisArg,
         argArray,

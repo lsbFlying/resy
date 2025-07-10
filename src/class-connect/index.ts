@@ -127,8 +127,7 @@ export abstract class ComponentWithStore<
       hasOwnKey, _boundFnProcessing_,
     } = store as any as StoreMeta<S>;
 
-    const { updateStateMeta, classInstanceStack } = updater;
-    classInstanceStack.add(this as any as ComponentWithStore<P, S, SS>);
+    updater.classInstanceStack.add(this as any as ComponentWithStore<P, S, SS>);
 
     const { computed, computedDeps } = computer;
 
@@ -193,8 +192,8 @@ export abstract class ComponentWithStore<
         return (store as any as StoreMeta<S>)[key as keyof StoreMeta<S>];
       },
       // TODO classEngineStore可能需要递归代理生成proxy，像StoreMeta的createProxy方法那样，以便于链式更新
-      set: (_, key: keyof S, value: ValueOf<S>) => updateStateMeta(key, value),
-      deleteProperty: (_, key: keyof S) => updateStateMeta(
+      set: (_, key: keyof S, value: ValueOf<S>) => updater.updateStateMeta(key, value),
+      deleteProperty: (_, key: keyof S) => updater.updateStateMeta(
         key, undefined as ValueOf<S>, true,
       ),
       // TODO delete methods waiting upgrade

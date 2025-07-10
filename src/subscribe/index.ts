@@ -25,13 +25,13 @@ export default class Subscriber<S extends PrimitiveState> {
    * records the prevState beforehand for later comparison
    * when data changes trigger Subscriber.
    */
-  willUpdatingProcessing = () => {
+  willUpdatingProcessing() {
     const scheduler = this.$scheduler;
     if (this.listenerQueue.size > 0 && !scheduler.willUpdating) {
       scheduler.willUpdating = true;
       this.prevBatchState = { ...this.$storeMeta._$state_ } as S;
     }
-  };
+  }
 
   // Subscription function
   subscribe = (

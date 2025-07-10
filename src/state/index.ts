@@ -55,18 +55,20 @@ export default class StateMeta<S extends PrimitiveState> {
     return this.$storeMeta._$state_[this.key];
   };
 
-  updater = () => {
+  useStateMeta() {
+    const { key } = this;
+    const $stateMetaMap = this.$stateMetaMap;
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useSyncExternalStore(
+      $stateMetaMap[key]!.subscribe,
+      $stateMetaMap[key]!.getSnapshot,
+      $stateMetaMap[key]!.getSnapshot,
+    );
+  }
+
+  updater() {
     this.stateChangeQueue.forEach(stateChange => {
       stateChange();
     });
-  };
-
-  useStateMeta(key: keyof S, stateMetaMap: StateMetaMapType<S>) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useSyncExternalStore(
-      stateMetaMap[key]!.subscribe,
-      stateMetaMap[key]!.getSnapshot,
-      stateMetaMap[key]!.getSnapshot,
-    );
   }
 }

@@ -35,23 +35,23 @@ export default class Restorer<S extends PrimitiveState> {
    * it is important to re-execute the function to acquire the most up-to-date initialization data.
    * Such caution ensures the precision of data recovery.
    */
-  retrieveReducerState(st: StoreMeta<S>) {
-    const { _initialState_ } = st;
+  retrieveReducerState() {
+    const { _initialState_ } = this.$storeMeta;
     return typeof _initialState_ === "function"
       ? (_initialState_() as S)
       : (_initialState_ ?? ({} as S));
   };
 
   // Logic of recovery processing
-  restoreProcessing = () => {
-    this.$storeMeta._$state_ = { ...this.retrieveReducerState(this.$storeMeta) } as S;
+  restoreProcessing() {
+    this.$storeMeta._$state_ = { ...this.retrieveReducerState() } as S;
 
     // this.#freezing = true;
   };
 
   /** restore utils start */
   // Retrieve recovery processing when initialState is a function
-  initialStateRetrieve = () => {
+  initialStateRetrieve() {
     // unfreeze for normal rendering updates
     // this.#freezing = undefined;
 
@@ -79,7 +79,7 @@ export default class Restorer<S extends PrimitiveState> {
    * and unmountRestore run smoothly,
    * a microtask can be used to postpone the unmount process.
    */
-  deferRestoreProcessing = (callback?: Callback) => {
+  deferRestoreProcessing(callback?: Callback) {
     const scheduler = this.$scheduler;
     if (!scheduler.deferEffectDestructorExecutable) {
       scheduler.deferEffectDestructorExecutable = Promise.resolve().then(() => {
@@ -116,14 +116,16 @@ export default class Restorer<S extends PrimitiveState> {
   };
   /** restore utils end */
 
+  // TODO prototype function waiting upgrade
   // Reset recovery initialization state data
   restore = (callback?: StateCallback<S>) => {
     const { _$state_ } = this.$storeMeta;
-    const { pushTask, finallyBatchProcessing } = this.$updater;
+    // const { pushTask, finallyBatchProcessing } = this.$updater;
+    const { $updater } = this;
 
     this.$subscriber.willUpdatingProcessing();
 
-    const reducerState = this.retrieveReducerState(this.$storeMeta);
+    const reducerState = this.retrieveReducerState();
 
     /**
      * @description Get all the properties
@@ -151,11 +153,11 @@ export default class Restorer<S extends PrimitiveState> {
       const originValue = reducerState[key];
 
       !Object.is(originValue, _$state_[key])
-      && pushTask(key, originValue, !hasOwnProperty.call(reducerState, key));
+      && $updater.pushTask(key, originValue, !hasOwnProperty.call(reducerState, key));
     });
 
     this.$scheduler.pushCallback({} as S, reducerState, callback);
 
-    finallyBatchProcessing();
+    $updater.finallyBatchProcessing();
   };
 }

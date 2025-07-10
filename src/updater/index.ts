@@ -27,7 +27,7 @@ export default class Updater<S extends PrimitiveState> {
   // The storage stack of this instance for the class component
   readonly classInstanceStack = new Set<ComponentWithStore<{}, S>>();
 
-  pushTask = (key: keyof S, value: ValueOf<S>, isDelete?: boolean) => {
+  pushTask(key: keyof S, value: ValueOf<S>, isDelete?: boolean) {
     const { _$state_ } = this.$storeMeta;
     /**
      * @description The pre-execution of the data changes accumulates
@@ -52,7 +52,7 @@ export default class Updater<S extends PrimitiveState> {
     );
   };
 
-  finallyBatchProcessing = () => {
+  finallyBatchProcessing() {
     const scheduler = this.$scheduler;
     const {
       taskData, taskQueue, callbackQueue,
@@ -178,7 +178,7 @@ export default class Updater<S extends PrimitiveState> {
   };
 
   // Data updates for a single attribute (state-meta)
-  updateStateMeta = (
+  updateStateMeta(
     key: keyof S,
     value: ValueOf<S>,
     isDelete = false,
@@ -187,7 +187,7 @@ export default class Updater<S extends PrimitiveState> {
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _applyOriginFunction?: ApplyOriginFunctionType, // TODO waiting develop
-  ): boolean => {
+  ): boolean {
     // if (this.#freezing) return true;
 
     const state = this.$storeMeta._$state_;

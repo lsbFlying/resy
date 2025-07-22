@@ -120,7 +120,6 @@ export default class Restorer<S extends PrimitiveState> {
   // Reset recovery initialization state data
   restore = (callback?: StateCallback<S>) => {
     const { _$state_ } = this.$storeMeta;
-    // const { pushTask, finallyBatchProcessing } = this.$updater;
     const { $updater } = this;
 
     this.$subscriber.willUpdatingProcessing();

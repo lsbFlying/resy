@@ -47,7 +47,7 @@ export default class StoreMeta<S extends PrimitiveState> {
     this.store = this.#createProxy();
   }
 
-  readonly __RESY_BRAND__ = __RESY_BRAND__;
+  readonly [__RESY_BRAND__] = __RESY_BRAND__;
 
   // Configuration
   readonly _options_;
@@ -135,7 +135,7 @@ export default class StoreMeta<S extends PrimitiveState> {
         return !key.toString().startsWith(__COMPUTED_PREFIX__)
           ? boundFnValue
           // TODO bind产生新的引用，待优化
-          : this.useComputed.bind(null, boundFnValue);
+          : this.useComputed.bind(this._computer_, boundFnValue);
       }
 
       return this[key as keyof StoreMeta<S>];

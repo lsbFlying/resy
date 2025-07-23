@@ -8,5 +8,5 @@ export const useComputed = <S extends PrimitiveState, T extends AnyFn>(
   fn: T,
 ) => {
   storeErrorProcessing(store, "useComputed");
-  return store.useComputed(fn) as ReturnType<T>;
+  return store._computer_.useComputed(fn) as ReturnType<T>;
 };

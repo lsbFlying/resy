@@ -4,6 +4,7 @@ import type { ClassStoreType } from "./types";
 import { PureComponent } from "react";
 import { storeErrorProcessing } from "../store/errors";
 import { __COMPUTED_PREFIX__ } from "../store/static";
+import { __RESY_CWS_BRAND__ } from "./static";
 import StoreMeta from "../store/core";
 
 /**
@@ -93,6 +94,8 @@ export abstract class ComponentWithStore<
   }
 
   static displayName?: string;
+
+  [__RESY_CWS_BRAND__] = __RESY_CWS_BRAND__;
 
   _$store_!: ClassStoreType<any>;
 

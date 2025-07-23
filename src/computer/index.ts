@@ -39,7 +39,8 @@ export default class Computer<S extends PrimitiveState> {
     return false;
   };
 
-  computed = <A = any>(fn: AnyBoundFn, ...args: A[]) => {
+  // TODO waiting developing and upgrade
+  computed<A = any>(fn: AnyBoundFn, ...args: A[]) {
     if (!this.computedArgs) {
       this.computedArgs = args;
     } else {
@@ -92,7 +93,7 @@ export default class Computer<S extends PrimitiveState> {
    * where computed properties might use hook component states
    * that weren't destructured in useStore, ensuring proper updates.
    */
-  useComputed = <A = any>(fn: AnyBoundFn, ...args: A[]) => {
+  useComputed<A = any>(fn: AnyBoundFn, ...args: A[]) {
     const { computedDeps } = this;
 
     // eslint-disable-next-line react-hooks/rules-of-hooks

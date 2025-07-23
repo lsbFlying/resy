@@ -63,6 +63,11 @@ export default class StoreMeta<S extends PrimitiveState> {
   // Subscriber
   readonly _subscriber_ = new Subscriber(this, this._scheduler_);
 
+  useComputed!: UseComputedType["useComputed"];
+  computed!: ComputedType["computed"];
+  // Computer
+  readonly _computer_ = new Computer(this, this._subscriber_);
+
   // The core map meta-structure of stateMeta
   readonly _stateMetaMap_ = {} as StateMetaMapType<S>;
 
@@ -78,11 +83,6 @@ export default class StoreMeta<S extends PrimitiveState> {
   readonly _restorer_ = new Restorer(
     this, this._scheduler_, this._subscriber_, this._updater_,
   );
-
-  useComputed!: UseComputedType["useComputed"];
-  computed!: ComputedType["computed"];
-  // Computer
-  readonly _computer_ = new Computer(this, this._subscriber_);
 
   // After unmount resetting the state (`restoreProcessing` function has been executed),
   // it is in a frozen state where updates are prohibited.

@@ -10,8 +10,8 @@ export default class Computer<S extends PrimitiveState> {
     public $storeMeta: StoreMeta<S>,
     public $subscriber: Subscriber<S>,
   ) {
-    $storeMeta.useComputed = this.useComputed;
     $storeMeta.computed = this.computed;
+    $storeMeta.useComputed = this.useComputed;
   }
 
   // The identifier indicating that the property function body is performing calculations.

@@ -16,6 +16,7 @@ import { hasOwnProperty } from "../utils";
 import { proxyable } from "../immutable/utils";
 import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
 import { useDebugValue } from "react";
+// TODO 这些核心元素组件待整改成全局store的功能，而不是只针对单一store
 import StateMeta from "../state";
 import Scheduler from "../scheduler";
 import Subscriber from "../subscribe";

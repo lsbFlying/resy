@@ -180,6 +180,7 @@ export abstract class ComponentWithStore<
           const isComputed = key.toString().startsWith(__COMPUTED_PREFIX__);
           if (isComputed) {
             this.#computedSubscribers.add(boundFnValue);
+            // TODO bind产生新的引用，待优化
             return computed.bind(null, boundFnValue);
           }
 

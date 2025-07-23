@@ -13,5 +13,5 @@ export const computed = <T extends AnyFn, S extends PrimitiveState>(
   if (__DEV__ && !thisArg[__RESY_CWS_BRAND__]) {
     throw new Error("The this pointer must reference an instance inheriting from ComponentWithStore!");
   }
-  return thisArg._$store_._computer_.computed(fn) as ReturnType<T>;
+  return thisArg._$store_.computed(fn) as ReturnType<T>;
 };

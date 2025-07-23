@@ -134,7 +134,8 @@ export default class StoreMeta<S extends PrimitiveState> {
 
         return !key.toString().startsWith(__COMPUTED_PREFIX__)
           ? boundFnValue
-          : this.useComputed;
+          // TODO bind产生新的引用，待优化
+          : this.useComputed.bind(null, boundFnValue);
       }
 
       return this[key as keyof StoreMeta<S>];

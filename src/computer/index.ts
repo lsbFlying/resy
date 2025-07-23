@@ -10,8 +10,8 @@ export default class Computer<S extends PrimitiveState> {
     public $storeMeta: StoreMeta<S>,
     public $subscriber: Subscriber<S>,
   ) {
-    $storeMeta.computed = this.computed.bind(this);
-    $storeMeta.useComputed = this.useComputed.bind(this);
+    $storeMeta.computed = this.computed;
+    $storeMeta.useComputed = this.useComputed;
   }
 
   // The identifier indicating that the property function body is performing calculations.
@@ -40,7 +40,7 @@ export default class Computer<S extends PrimitiveState> {
   };
 
   // TODO waiting developing and upgrade
-  computed<A = any>(fn: AnyBoundFn, ...args: A[]) {
+  computed = <A = any>(fn: AnyBoundFn, ...args: A[]) => {
     if (!this.computedArgs) {
       this.computedArgs = args;
     } else {
@@ -93,7 +93,7 @@ export default class Computer<S extends PrimitiveState> {
    * where computed properties might use hook component states
    * that weren't destructured in useStore, ensuring proper updates.
    */
-  useComputed<A = any>(fn: AnyBoundFn, ...args: A[]) {
+  useComputed = <A = any>(fn: AnyBoundFn, ...args: A[]) => {
     const { computedDeps } = this;
 
     // eslint-disable-next-line react-hooks/rules-of-hooks

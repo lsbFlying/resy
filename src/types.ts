@@ -1,6 +1,6 @@
 export type Callback = () => void;
 
-export type PrimitiveState = Record<number | string, any>;
+export type PrimitiveState = Record<PropertyKey, any>;
 
 export type AnyFn = (...args: any[]) => any;
 

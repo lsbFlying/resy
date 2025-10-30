@@ -11,10 +11,10 @@ import type { MetaStateMapType } from "../state/types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import type { UseComputedType, ComputedType } from "../computer/types";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
-import { __COMPUTED_PREFIX__, __RESY_BRAND__, DEFAULT_OPTIONS } from "./static";
+import { _COMPUTED_PREFIX_, _RESY_BRAND_, DEFAULT_OPTIONS } from "./static";
 import { hasOwnProperty } from "../utils";
 import { proxyable } from "../immutable/utils";
-import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
+import { _MAP_SET_PROTOTYPE_PROXYABLE_TARGET_ } from "../immutable";
 import { useDebugValue } from "react";
 // TODO 这些核心元素组件待整改成全局store的功能，而不是只针对单一store
 import MetaState from "../state";
@@ -48,7 +48,7 @@ export default class MetaStore<S extends PrimitiveState> {
     this.store = this.#createProxy();
   }
 
-  readonly [__RESY_BRAND__] = __RESY_BRAND__;
+  readonly [_RESY_BRAND_] = _RESY_BRAND_;
 
   // Configuration
   readonly _options_;
@@ -129,11 +129,11 @@ export default class MetaStore<S extends PrimitiveState> {
 
       if (!sourceFromThis && typeof value === "function") {
         // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
-        !(value as AnyBoundFn).__bound__ && this._boundFnProcessing_(key, value);
+        !(value as AnyBoundFn)._bound_ && this._boundFnProcessing_(key, value);
 
         const boundFnValue = state[key];
 
-        return !key.toString().startsWith(__COMPUTED_PREFIX__)
+        return !key.toString().startsWith(_COMPUTED_PREFIX_)
           ? boundFnValue
           // TODO bind产生新的引用，待优化
           : this.useComputed.bind(null, boundFnValue);
@@ -158,8 +158,8 @@ export default class MetaStore<S extends PrimitiveState> {
       (...args: unknown[]) => (value as AnyFn).apply(thisArg, args)
     ) as AnyBoundFn;
 
-    boundFn.__bound__ = true;
-    boundFn.__name__ = value.name;
+    boundFn._bound_ = true;
+    boundFn._name_ = value.name;
 
     state[key] = boundFn as ValueOf<S>;
 
@@ -240,7 +240,7 @@ export default class MetaStore<S extends PrimitiveState> {
           !sourceFromThis
           && typeof value === "function"
           && sourceFrom$State
-          && !(value as AnyBoundFn).__bound__
+          && !(value as AnyBoundFn)._bound_
         ) {
           return _boundFnProcessing_(key, value);
         }
@@ -260,7 +260,7 @@ export default class MetaStore<S extends PrimitiveState> {
       // The `apply` here is written specifically for prototype chain functions
       // that are applicable to proxyable types such as `Map`, and `Set`.
       apply: (applyOriginFunction: any, thisArg: any, argArray: any[]) => Reflect.apply(
-        __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
+        _MAP_SET_PROTOTYPE_PROXYABLE_TARGET_.get(applyOriginFunction)!(
           applyOriginFunction, thisArg, this._$state_, parentTarget as (MapType<S> & Set<S>),
           // TODO updateMetaState的this指向待修改
           this.#createProxy, firstLevelKey, keyLevel, keyChains, updater.updateMetaState,

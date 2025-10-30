@@ -5,7 +5,7 @@ import type {
 import applyMapPrototypeFactory from "./map";
 import applySetPrototypeFactory from "./set";
 
-export const __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ = new Map<
+export const _MAP_SET_PROTOTYPE_PROXYABLE_TARGET_ = new Map<
   | MapPrototypeProxyableValueType
   | SetPrototypeProxyableValueType,
   | MapPrototypeProxyableFactoryType

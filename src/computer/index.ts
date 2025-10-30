@@ -55,7 +55,7 @@ export default class Computer<S extends PrimitiveState> {
       return this.computedCache;
     }
 
-    fn.__unsubscribe__?.();
+    fn._unsubscribe_?.();
 
     const { computedDeps } = this;
     computedDeps.clear();
@@ -67,7 +67,7 @@ export default class Computer<S extends PrimitiveState> {
 
     const stateKeys = Array.from(computedDeps);
 
-    fn.__unsubscribe__ =  this.$subscriber.subscribe(() => {
+    fn._unsubscribe_ =  this.$subscriber.subscribe(() => {
       /**
        * @desc Since the `fn` function is already bound to the `this` instance of the class component,
        * and the state rendering of class components does not have
@@ -130,7 +130,7 @@ export default class Computer<S extends PrimitiveState> {
     const { namespace } = this.$metaStore._options_;
     // eslint-disable-next-line react-hooks/rules-of-hooks
     __DEV__ && useDebugValue({
-      [fn.__name__!]: result,
+      [fn._name_!]: result,
       ...(
         namespace
           ? { namespace }

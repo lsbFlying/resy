@@ -3,8 +3,8 @@ import type { AnyBoundFn, Store } from "../store/types";
 import type { ClassStoreType } from "./types";
 import { PureComponent } from "react";
 import { storeErrorProcessing } from "../store/errors";
-import { __COMPUTED_PREFIX__ } from "../store/static";
-import { __RESY_CWS_BRAND__ } from "./static";
+import { _COMPUTED_PREFIX_ } from "../store/static";
+import { _RESY_CWS_BRAND_ } from "./static";
 import MetaStore from "../store/core";
 
 /**
@@ -69,7 +69,7 @@ export abstract class ComponentWithStore<
         if (!this._$isMounted_) {
           // Clear the computed subscription for class
           this.#computedSubscribers.forEach(abf => {
-            abf.__unsubscribe__?.();
+            abf._unsubscribe_?.();
           });
           this.#computedSubscribers.clear();
 
@@ -95,7 +95,7 @@ export abstract class ComponentWithStore<
 
   static displayName?: string;
 
-  [__RESY_CWS_BRAND__] = __RESY_CWS_BRAND__;
+  [_RESY_CWS_BRAND_] = _RESY_CWS_BRAND_;
 
   _$store_!: ClassStoreType<any>;
 
@@ -172,12 +172,12 @@ export abstract class ComponentWithStore<
         }
 
         if (!sourceFromStore && typeof value === "function") {
-          !(value as AnyBoundFn).__bound__
+          !(value as AnyBoundFn)._bound_
           && _boundFnProcessing_(key, value, classEngineStore);
 
           const boundFnValue = state[key];
 
-          const isComputed = key.toString().startsWith(__COMPUTED_PREFIX__);
+          const isComputed = key.toString().startsWith(_COMPUTED_PREFIX_);
           if (isComputed) {
             this.#computedSubscribers.add(boundFnValue);
             // TODO bind产生新的引用，待优化

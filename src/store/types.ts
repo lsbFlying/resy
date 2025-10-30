@@ -36,7 +36,7 @@ export interface InnerStoreOptions extends StoreOptions {
    * @description Call name of function, used for internal processing of error message prompts.
    * @default "createStore"
    */
-  readonly __callerName__?: string;
+  readonly _callerName_?: string;
 }
 
 /** Some of the core tool method types of store */
@@ -120,9 +120,9 @@ export type AnyBoundFn = AnyFn & {
   /**
    * @description The flag attribute bound to the internal processing function attribute.
    */
-  __bound__?: boolean;
+  _bound_?: boolean;
   /** The bound function name */
-  __name__?: string;
+  _name_?: string;
   /** Unsubscribe computed class components */
-  __unsubscribe__?: Unsubscribe;
+  _unsubscribe_?: Unsubscribe;
 };

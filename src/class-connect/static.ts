@@ -1,2 +1,2 @@
 // A special identifier for ComponentWithStore
-export const __RESY_CWS_BRAND__ = Symbol.for("__resy_cws_brand__");
+export const _RESY_CWS_BRAND_ = Symbol.for("_resy_cws_brand_");

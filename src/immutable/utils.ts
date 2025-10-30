@@ -4,7 +4,7 @@ import type {
   ApplyOriginFunctionType, IteratorsType, CreateProxyType,
   KeyChainsSourceItemType, ArrayMapSetIteratorType, IteratorsParentType,
 } from "./types";
-import { __ITERATOR_META_PROCESSING_KEY__ } from "./static";
+import { _ITERATOR_META_PROCESSING_KEY_ } from "./static";
 
 // A collection of functions that can be executed by proxies for Maps、 Set prototype chains.
 const mapSetPrototypeProxyableSet = new Set<ApplyOriginFunctionType>()
@@ -69,7 +69,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
   applyOriginFunction?: ApplyOriginFunctionType,
   entriesFlag?: boolean,
 ) => {
-  if (parentTarget[__ITERATOR_META_PROCESSING_KEY__]) return;
+  if (parentTarget[_ITERATOR_META_PROCESSING_KEY_]) return;
   const type = whatsType(iterator);
 
   const AM_IteratorFlag = type === "Array Iterator" || type === "Map Iterator";
@@ -135,7 +135,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
       };
     };
     AM_IteratorFlag && (iterator.next = iterator[Symbol.iterator]().next);
-    parentTarget[__ITERATOR_META_PROCESSING_KEY__] = true;
+    parentTarget[_ITERATOR_META_PROCESSING_KEY_] = true;
   }
 };
 
@@ -191,6 +191,6 @@ export const reduceChanged = <S extends PrimitiveState>(
    */
   // TODO waiting considering
   // applyOriginFunction && storeProxyMap.delete(
-  //   (applyOriginFunction as ProxyTargetType)[__PROXY_TARGET_KEY_PREFIX__]
+  //   (applyOriginFunction as ProxyTargetType)[_PROXY_TARGET_KEY_PREFIX_]
   // );
 };

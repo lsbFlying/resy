@@ -42,7 +42,7 @@ export type MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   firstLevelKey?: keyof S,
   keyLevel?: number,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
-  stateMetaUpdate?: (
+  updateMetaState?: (
     key: keyof S,
     value: ValueOf<S>,
     isDelete: boolean,
@@ -88,7 +88,7 @@ export type SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   firstLevelKey?: keyof S,
   keyLevel?: number,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
-  stateMetaUpdate?: (
+  updateMetaState?: (
     key: keyof S,
     value: ValueOf<S>,
     isDelete: boolean,

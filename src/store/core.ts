@@ -7,7 +7,7 @@ import type { ClassStoreType } from "../class-connect/types";
 import type { SetStateType, SyncUpdateType } from "../updater/types";
 import type { SubscribeType, UseSubscriptionType } from "../subscribe/types";
 import type { RestoreType } from "../restore/types";
-import type { StateMetaMapType } from "../state/types";
+import type { MetaStateMapType } from "../state/types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import type { UseComputedType, ComputedType } from "../computer/types";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
@@ -17,7 +17,7 @@ import { proxyable } from "../immutable/utils";
 import { __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__ } from "../immutable";
 import { useDebugValue } from "react";
 // TODO 这些核心元素组件待整改成全局store的功能，而不是只针对单一store
-import StateMeta from "../state";
+import MetaState from "../state";
 import Scheduler from "../scheduler";
 import Subscriber from "../subscribe";
 import Updater from "../updater";
@@ -69,14 +69,14 @@ export default class StoreMeta<S extends PrimitiveState> {
   // Computer
   readonly _computer_ = new Computer(this, this._subscriber_);
 
-  // The core map meta-structure of stateMeta
-  readonly _stateMetaMap_ = {} as StateMetaMapType<S>;
+  // The core map meta-structure of MetaState
+  readonly _metaStateMap_ = {} as MetaStateMapType<S>;
 
   setState!: SetStateType<S>["setState"];
   syncUpdate!: SyncUpdateType<S>["syncUpdate"];
   // Updater
   readonly _updater_ = new Updater(
-    this, this._scheduler_, this._subscriber_, this._stateMetaMap_,
+    this, this._scheduler_, this._subscriber_, this._metaStateMap_,
   );
 
   restore!: RestoreType<S>["restore"];
@@ -121,10 +121,10 @@ export default class StoreMeta<S extends PrimitiveState> {
         });
 
         return (
-          this._stateMetaMap_[key] ??= new StateMeta<S>(
-            key, this._stateMetaMap_, this, this._restorer_,
+          this._metaStateMap_[key] ??= new MetaState<S>(
+            key, this._metaStateMap_, this, this._restorer_,
           )
-        ).useStateMeta();
+        ).useMetaState();
       }
 
       if (!sourceFromThis && typeof value === "function") {
@@ -247,12 +247,12 @@ export default class StoreMeta<S extends PrimitiveState> {
 
         return !sourceFromThis ? value : this[key as keyof StoreMeta<S>];
       },
-      set: (_: S, key: keyof S, value: ValueOf<S>) => updater.updateStateMeta(
+      set: (_: S, key: keyof S, value: ValueOf<S>) => updater.updateMetaState(
         key, value, false, target, firstLevelKey,
         new Set(keyChains).add({ key }), applyOriginFunction,
       ),
       // Delete will also play an updating role
-      deleteProperty: (_: S, key: keyof S) => updater.updateStateMeta(
+      deleteProperty: (_: S, key: keyof S) => updater.updateMetaState(
         key, undefined as ValueOf<S>, true, target, firstLevelKey,
         new Set(keyChains).add({ key }), applyOriginFunction,
       ),
@@ -262,8 +262,8 @@ export default class StoreMeta<S extends PrimitiveState> {
       apply: (applyOriginFunction: any, thisArg: any, argArray: any[]) => Reflect.apply(
         __MAP_SET_PROTOTYPE_PROXYABLE_TARGET__.get(applyOriginFunction)!(
           applyOriginFunction, thisArg, this._$state_, parentTarget as (MapType<S> & Set<S>),
-          // TODO updateStateMeta的this指向待修改
-          this.#createProxy, firstLevelKey, keyLevel, keyChains, updater.updateStateMeta,
+          // TODO updateMetaState的this指向待修改
+          this.#createProxy, firstLevelKey, keyLevel, keyChains, updater.updateMetaState,
         ),
         thisArg,
         argArray,

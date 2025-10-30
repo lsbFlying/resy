@@ -20,7 +20,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
   firstLevelKey?: keyof S,
   keyLevel?: number,
   keyChains?: Set<KeyChainsSourceItemType<S>>,
-  stateMetaUpdate?: (
+  updateMetaState?: (
     key: keyof S,
     value: ValueOf<S>,
     isDelete: boolean,
@@ -56,7 +56,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
         const firstLevelValue = state[firstLevelKey!];
         reduceChanged(value as ValueOf<S>, new Set(keyChains).add({ key, }), firstLevelValue);
 
-        stateMetaUpdate!(
+        updateMetaState!(
           firstLevelKey!,
           createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
@@ -73,7 +73,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
         const firstLevelValue = state[firstLevelKey!];
         reduceChanged(newValue as ValueOf<S>, new Set(keyChains).add({ key, }), firstLevelValue);
 
-        stateMetaUpdate!(
+        updateMetaState!(
           firstLevelKey!,
           createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,
@@ -88,7 +88,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
         const firstLevelValue = state[firstLevelKey!];
         reduceChanged(new Map() as ValueOf<S>, keyChains!, firstLevelValue);
 
-        stateMetaUpdate!(
+        updateMetaState!(
           firstLevelKey!,
           createNewRefValue(firstLevelValue) as ValueOf<S>,
           false,

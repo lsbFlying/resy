@@ -17,7 +17,7 @@ export default class Restorer<S extends PrimitiveState> {
   }
 
   // Tag counters for data references of store
-  stateMetaRefCounter = 0;
+  metaStateRefCounter = 0;
 
   /**
    * @description Flag indicating that the initialStateRetrieve function is executable.
@@ -65,7 +65,7 @@ export default class Restorer<S extends PrimitiveState> {
   /**
    * @description In order to prevent the double rendering in React's StrictMode
    * from causing issues with the registration function returned in useEffect,
-   * it happens to be opportune for stateMetaMap to release memory preemptively
+   * it happens to be opportune for metaStateMap to release memory preemptively
    * during the first unmount execution.
    * (with memory release being performed in the callback).
    * This early release of memory removes the previous state-meta,
@@ -84,9 +84,9 @@ export default class Restorer<S extends PrimitiveState> {
     if (!scheduler.deferEffectDestructorExecutable) {
       scheduler.deferEffectDestructorExecutable = Promise.resolve().then(() => {
         scheduler.deferEffectDestructorExecutable = undefined;
-        const { stateMetaRefCounter } = this;
+        const { metaStateRefCounter } = this;
         const classInstanceStack = this.$updater.classInstanceStack;
-        if (!stateMetaRefCounter && !classInstanceStack.size) {
+        if (!metaStateRefCounter && !classInstanceStack.size) {
           /**
            * By using "stateRefCounter" and "classInstanceStack",
            * we determine whether the store still has component references.
@@ -95,7 +95,7 @@ export default class Restorer<S extends PrimitiveState> {
            * and does not constitute a complete unmount.
            * The complete unmount cycle corresponds to the entire usage cycle of the store.
            */
-          const noRef = !classInstanceStack.size && !stateMetaRefCounter;
+          const noRef = !classInstanceStack.size && !metaStateRefCounter;
           const initialState = this.$storeMeta._initialState_;
           /**
            * When initialState is a function,

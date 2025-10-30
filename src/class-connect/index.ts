@@ -198,8 +198,8 @@ export abstract class ComponentWithStore<
         return (store as any as StoreMeta<S>)[key as keyof StoreMeta<S>];
       },
       // TODO classEngineStore可能需要递归代理生成proxy，像StoreMeta的createProxy方法那样，以便于链式更新
-      set: (_, key: keyof S, value: ValueOf<S>) => updater.updateStateMeta(key, value),
-      deleteProperty: (_, key: keyof S) => updater.updateStateMeta(
+      set: (_, key: keyof S, value: ValueOf<S>) => updater.updateMetaState(key, value),
+      deleteProperty: (_, key: keyof S) => updater.updateMetaState(
         key, undefined as ValueOf<S>, true,
       ),
       // TODO delete methods waiting upgrade

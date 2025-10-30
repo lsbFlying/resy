@@ -1,5 +1,5 @@
 import type { Callback, PrimitiveState } from "../types";
-import type { StateMetaMapType } from "./types";
+import type { MetaStateMapType } from "./types";
 import type StoreMeta from "../store/core";
 import type Restorer from "../restore";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
@@ -13,10 +13,10 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
 /**
  * @description The core meta-structure of state
  */
-export default class StateMeta<S extends PrimitiveState> {
+export default class MetaState<S extends PrimitiveState> {
   constructor(
     public key: keyof S,
-    public $stateMetaMap: StateMetaMapType<S>,
+    public $metaStateMap: MetaStateMapType<S>,
     public $storeMeta: StoreMeta<S>,
     public $restorer: Restorer<S>,
   ) {
@@ -34,17 +34,17 @@ export default class StateMeta<S extends PrimitiveState> {
     this.stateChangeQueue.add(onStateChange);
 
     // Increment the reference count by 1 if the component is referenced
-    $restorer.stateMetaRefCounter++;
+    $restorer.metaStateRefCounter++;
 
     return () => {
       this.stateChangeQueue.delete(onStateChange);
-      $restorer.stateMetaRefCounter--;
+      $restorer.metaStateRefCounter--;
 
       $restorer.deferRestoreProcessing(
         () => {
           // Release memory if there are no component references
           if (!this.stateChangeQueue.size) {
-            delete this.$stateMetaMap[this.key];
+            delete this.$metaStateMap[this.key];
           }
         },
       );
@@ -55,8 +55,8 @@ export default class StateMeta<S extends PrimitiveState> {
     return this.$storeMeta._$state_[this.key];
   };
 
-  useStateMeta() {
-    const { subscribe, getSnapshot } = this.$stateMetaMap[this.key];
+  useMetaState() {
+    const { subscribe, getSnapshot } = this.$metaStateMap[this.key];
     // eslint-disable-next-line react-hooks/rules-of-hooks
     return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   }

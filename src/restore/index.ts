@@ -128,16 +128,16 @@ export default class Restorer<S extends PrimitiveState> {
 
     /**
      * @description Get all the properties
-     * Here we merge the data attributes of the current "$state" and the initial "reducerState"
+     * Here we merge the data attributes of the current "_$state_" and the initial "reducerState"
      * in order to count all the new or deleted attributes.
      * It is convenient to use the hasOwnProperty method
      * to check whether the 'reducerState' has a specific data attribute before restoring the data.。
      * Thinking backwards,
      * if we don't aggregate all the keys,
-     * then we can only perform the traversal of keys based on either 'reducerState' or '$state',
+     * then we can only perform the traversal of keys based on either 'reducerState' or '_$state_',
      * and restore them based on whether they have properties confirmed by the hasOwnProperty method.
      * If we choose reducerState, we will not be able to control the newly added key,
-     * and if we choose $state, we will not be able to delete the key.
+     * and if we choose _$state_, we will not be able to delete the key.
      * Neither of them is perfect, so we must merge both sets of results.
      */
     Array.from(

@@ -194,13 +194,13 @@ export default class MetaStore<S extends PrimitiveState> {
         computer.computing && sourceFrom$State && computedDeps.add(key);
 
         /**
-         * @description `this.$state` is writable, so we need to check here,
+         * @description `this._$state_` is writable, so we need to check here,
          * if the data originates from `$state`,
-         * the latest value should be re-fetched from this.$state.
+         * the latest value should be re-fetched from this._$state_.
          * If `target[key]` is used directly,
          * it may lead to incorrect changes due to discrepancies
          * between the initially referenced address and the updated reference address
-         * of `this.$state` after modifications.
+         * of `this._$state_` after modifications.
          */
         const value = sourceFrom$State ? this._$state_[key] : (target as S)[key];
 
@@ -224,7 +224,7 @@ export default class MetaStore<S extends PrimitiveState> {
         }
 
         /**
-         * @description Only bind functions that handle `this.$state`,
+         * @description Only bind functions that handle `this._$state_`,
          * Processing this-binding for functions nested beyond the second level
          * is practically unnecessary for several reasons:
          * First, such complex and unmaintainable coding patterns are uncommon in practice.

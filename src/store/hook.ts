@@ -39,11 +39,11 @@ export const useStore = <S extends PrimitiveState>(
 export const useConciseState = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
 ) => {
-  const [metaStore] = useState(() => new MetaStore<S>(
+  const [ms] = useState(() => new MetaStore<S>(
     initialState,
     {
       _callerName_: "useConciseState",
     } as InnerStoreOptions
   ));
-  return metaStore._$engineStore_ as MacroStore<S>;
+  return ms._$engineStore_ as MacroStore<S>;
 };

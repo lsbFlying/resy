@@ -56,14 +56,9 @@ export default class StateMeta<S extends PrimitiveState> {
   };
 
   useStateMeta() {
-    const { key } = this;
-    const $stateMetaMap = this.$stateMetaMap;
+    const { subscribe, getSnapshot } = this.$stateMetaMap[this.key];
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useSyncExternalStore(
-      $stateMetaMap[key]!.subscribe,
-      $stateMetaMap[key]!.getSnapshot,
-      $stateMetaMap[key]!.getSnapshot,
-    );
+    return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   }
 
   updater() {

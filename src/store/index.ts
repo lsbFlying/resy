@@ -7,7 +7,7 @@
  */
 import type { StoreOptions, InitialState, Store } from "./types";
 import type { PrimitiveState } from "../types";
-import StoreMeta from "./core";
+import MetaStore from "./core";
 
 /**
  * createStore
@@ -23,4 +23,4 @@ import StoreMeta from "./core";
 export const createStore = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
   options?: StoreOptions,
-) => new StoreMeta(initialState, options).store as Store<S>;
+) => new MetaStore(initialState, options).store as Store<S>;

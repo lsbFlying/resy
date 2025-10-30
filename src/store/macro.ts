@@ -1,6 +1,6 @@
 import type { InitialState, InnerStoreOptions, StoreOptions, UseMacroStore } from "./types";
 import type { PrimitiveState } from "../types";
-import StoreMeta from "./core";
+import MetaStore from "./core";
 
 /**
  * @description Define the preprocessed store type for the createStore macro,
@@ -55,7 +55,7 @@ import StoreMeta from "./core";
 export const defineStore = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
   options?: StoreOptions,
-) => new StoreMeta(
+) => new MetaStore(
   initialState,
     {
       ...options,

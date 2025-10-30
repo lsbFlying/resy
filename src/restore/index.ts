@@ -1,6 +1,6 @@
 import type { Callback, PrimitiveState } from "../types";
 import type { StateCallback } from "../updater/types";
-import type StoreMeta from "../store/core";
+import type MetaStore from "../store/core";
 import type Scheduler from "../scheduler";
 import type Subscriber from "../subscribe";
 import type Updater from "../updater";
@@ -8,12 +8,12 @@ import { hasOwnProperty } from "../utils";
 
 export default class Restorer<S extends PrimitiveState> {
   constructor(
-    public $storeMeta: StoreMeta<S>,
+    public $metaStore: MetaStore<S>,
     public $scheduler: Scheduler<S>,
     public $subscriber: Subscriber<S>,
     public $updater: Updater<S>,
   ) {
-    $storeMeta.restore = this.restore;
+    $metaStore.restore = this.restore;
   }
 
   // Tag counters for data references of store
@@ -36,7 +36,7 @@ export default class Restorer<S extends PrimitiveState> {
    * Such caution ensures the precision of data recovery.
    */
   retrieveReducerState() {
-    const { _initialState_ } = this.$storeMeta;
+    const { _initialState_ } = this.$metaStore;
     return typeof _initialState_ === "function"
       ? (_initialState_() as S)
       : (_initialState_ ?? ({} as S));
@@ -44,7 +44,7 @@ export default class Restorer<S extends PrimitiveState> {
 
   // Logic of recovery processing
   restoreProcessing() {
-    this.$storeMeta._$state_ = { ...this.retrieveReducerState() } as S;
+    this.$metaStore._$state_ = { ...this.retrieveReducerState() } as S;
 
     // this.#freezing = true;
   };
@@ -68,12 +68,12 @@ export default class Restorer<S extends PrimitiveState> {
    * it happens to be opportune for metaStateMap to release memory preemptively
    * during the first unmount execution.
    * (with memory release being performed in the callback).
-   * This early release of memory removes the previous state-meta,
-   * and any subsequent updates or renderings will regenerate a new state-meta.
+   * This early release of memory removes the previous meta-state,
+   * and any subsequent updates or renderings will regenerate a new meta-state.
    * However, this process leads to the updater function's stateChangeQueue
-   * within state-meta referencing the address of the previously outdated state-meta.
+   * within meta-state referencing the address of the previously outdated meta-state.
    * Meanwhile, that old stateChangeQueue has already been deleted.
-   * and cleared with the early release of the state-meta's memory,
+   * and cleared with the early release of the meta-state's memory,
    * leading to the updater function's incapability to make valid updates.
    * Here, to ensure operations such as unmount, freeing memory,
    * and unmountRestore run smoothly,
@@ -96,14 +96,14 @@ export default class Restorer<S extends PrimitiveState> {
            * The complete unmount cycle corresponds to the entire usage cycle of the store.
            */
           const noRef = !classInstanceStack.size && !metaStateRefCounter;
-          const initialState = this.$storeMeta._initialState_;
+          const initialState = this.$metaStore._initialState_;
           /**
            * When initialState is a function,
            * it does not have to be executed at unmount time,
            * because initialization time is sure to reset execution,
            * thus optimizing code execution efficiency.
            */
-          this.$storeMeta._options_.unmountRestore
+          this.$metaStore._options_.unmountRestore
           && noRef
           && typeof initialState !== "function"
           && this.restoreProcessing();
@@ -119,7 +119,7 @@ export default class Restorer<S extends PrimitiveState> {
   // TODO prototype function waiting upgrade
   // Reset recovery initialization state data
   restore = (callback?: StateCallback<S>) => {
-    const { _$state_ } = this.$storeMeta;
+    const { _$state_ } = this.$metaStore;
     const { $updater } = this;
 
     this.$subscriber.willUpdatingProcessing();

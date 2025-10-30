@@ -1,6 +1,6 @@
 import type { Callback, PrimitiveState } from "../types";
 import type { MetaStateMapType } from "./types";
-import type StoreMeta from "../store/core";
+import type MetaStore from "../store/core";
 import type Restorer from "../restore";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 
@@ -17,7 +17,7 @@ export default class MetaState<S extends PrimitiveState> {
   constructor(
     public key: keyof S,
     public $metaStateMap: MetaStateMapType<S>,
-    public $storeMeta: StoreMeta<S>,
+    public $metaStore: MetaStore<S>,
     public $restorer: Restorer<S>,
   ) {
     // Perform refresh recovery logic if initialState is a function
@@ -52,7 +52,7 @@ export default class MetaState<S extends PrimitiveState> {
   };
 
   getSnapshot = () => {
-    return this.$storeMeta._$state_[this.key];
+    return this.$metaStore._$state_[this.key];
   };
 
   useMetaState() {

@@ -1,17 +1,17 @@
 import type { PrimitiveState } from "../types";
 import type { AnyBoundFn } from "../store/types";
-import type StoreMeta from "../store/core";
+import type MetaStore from "../store/core";
 import type Subscriber from "../subscribe";
 import { useDebugValue, useEffect, useRef, useState } from "react";
 
 /** @desc class of computed */
 export default class Computer<S extends PrimitiveState> {
   constructor(
-    public $storeMeta: StoreMeta<S>,
+    public $metaStore: MetaStore<S>,
     public $subscriber: Subscriber<S>,
   ) {
-    $storeMeta.computed = this.computed;
-    $storeMeta.useComputed = this.useComputed;
+    $metaStore.computed = this.computed;
+    $metaStore.useComputed = this.useComputed;
   }
 
   // The identifier indicating that the property function body is performing calculations.
@@ -127,7 +127,7 @@ export default class Computer<S extends PrimitiveState> {
       };
     });
 
-    const { namespace } = this.$storeMeta._options_;
+    const { namespace } = this.$metaStore._options_;
     // eslint-disable-next-line react-hooks/rules-of-hooks
     __DEV__ && useDebugValue({
       [fn.__name__!]: result,

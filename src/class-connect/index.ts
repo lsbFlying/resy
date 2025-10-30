@@ -5,7 +5,7 @@ import { PureComponent } from "react";
 import { storeErrorProcessing } from "../store/errors";
 import { __COMPUTED_PREFIX__ } from "../store/static";
 import { __RESY_CWS_BRAND__ } from "./static";
-import StoreMeta from "../store/core";
+import MetaStore from "../store/core";
 
 /**
  * @class ComponentWithStore
@@ -85,8 +85,8 @@ export abstract class ComponentWithStore<
              * firstly, removing this proxy instance of class from the internal classInstanceStack of the store,
              * and secondly, resetting the data to it`s initial state
              */
-            (store as any as StoreMeta<S>)._updater_.classInstanceStack.delete(this);
-            (store as any as StoreMeta<S>)._restorer_.deferRestoreProcessing();
+            (store as any as MetaStore<S>)._updater_.classInstanceStack.delete(this);
+            (store as any as MetaStore<S>)._restorer_.deferRestoreProcessing();
           });
         }
       });
@@ -117,20 +117,20 @@ export abstract class ComponentWithStore<
    */
   #stores: Set<Store<S>> = new Set();
 
-  #getState<S extends PrimitiveState>(key: keyof S, store: StoreMeta<S>) {
+  #getState<S extends PrimitiveState>(key: keyof S, store: MetaStore<S>) {
     this._$stateRefs_.add(key as (string | number));
     return store._$state_[key];
   };
 
   connectStore<S extends PrimitiveState>(store: Store<S>) {
     storeErrorProcessing(store, "connectStore");
-    (store as any as StoreMeta<S>)._restorer_.initialStateRetrieve();
+    (store as any as MetaStore<S>)._restorer_.initialStateRetrieve();
     this.#stores.add(store as any);
 
     const {
       _updater_: updater, _computer_: computer,
       hasOwnKey, _boundFnProcessing_,
-    } = store as any as StoreMeta<S>;
+    } = store as any as MetaStore<S>;
 
     updater.classInstanceStack.add(this as any as ComponentWithStore<P, S, SS>);
 
@@ -163,12 +163,12 @@ export abstract class ComponentWithStore<
         }
 
         const sourceFromStore = hasOwnKey(key);
-        const state = (store as any as StoreMeta<S>)._$state_;
+        const state = (store as any as MetaStore<S>)._$state_;
 
         const value = state[key];
 
         if (!sourceFromStore && typeof value !== "function") {
-          return this.#getState(key, store as any as StoreMeta<S>);
+          return this.#getState(key, store as any as MetaStore<S>);
         }
 
         if (!sourceFromStore && typeof value === "function") {
@@ -195,9 +195,9 @@ export abstract class ComponentWithStore<
           });
         });
 
-        return (store as any as StoreMeta<S>)[key as keyof StoreMeta<S>];
+        return (store as any as MetaStore<S>)[key as keyof MetaStore<S>];
       },
-      // TODO classEngineStore可能需要递归代理生成proxy，像StoreMeta的createProxy方法那样，以便于链式更新
+      // TODO classEngineStore可能需要递归代理生成proxy，像MetaStore的createProxy方法那样，以便于链式更新
       set: (_, key: keyof S, value: ValueOf<S>) => updater.updateMetaState(key, value),
       deleteProperty: (_, key: keyof S) => updater.updateMetaState(
         key, undefined as ValueOf<S>, true,

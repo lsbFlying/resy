@@ -4,7 +4,7 @@ import type {
 import type { PrimitiveState } from "../types";
 import { useState } from "react";
 import { storeErrorProcessing } from "./errors";
-import StoreMeta from "./core";
+import MetaStore from "./core";
 
 /**
  * useStore api
@@ -39,11 +39,11 @@ export const useStore = <S extends PrimitiveState>(
 export const useConciseState = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
 ) => {
-  const [storeMeta] = useState(() => new StoreMeta<S>(
+  const [metaStore] = useState(() => new MetaStore<S>(
     initialState,
     {
       __callerName__: "useConciseState",
     } as InnerStoreOptions
   ));
-  return storeMeta._$engineStore_ as MacroStore<S>;
+  return metaStore._$engineStore_ as MacroStore<S>;
 };

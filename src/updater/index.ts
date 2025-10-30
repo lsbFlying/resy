@@ -2,7 +2,7 @@ import type { PrimitiveState, ValueOf } from "../types";
 import type { State, StateCallback, StateFnType } from "./types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import type { ComponentWithStore } from "../class-connect";
-import type StoreMeta from "../store/core";
+import type MetaStore from "../store/core";
 import type Scheduler from "../scheduler";
 import type Subscriber from "../subscribe";
 import type { MetaStateMapType } from "../state/types";
@@ -11,24 +11,24 @@ import { stateErrorProcessing } from "../store/errors";
 import { createNewRefValue, reduceChanged } from "../immutable/utils";
 
 /**
- * @description Update mechanism of `state-meta`
+ * @description Update mechanism of `meta-state`
  */
 export default class Updater<S extends PrimitiveState> {
   constructor(
-    public $storeMeta: StoreMeta<S>,
+    public $metaStore: MetaStore<S>,
     public $scheduler: Scheduler<S>,
     public $subscriber: Subscriber<S>,
     public $metaStateMap: MetaStateMapType<S>,
   ) {
-    $storeMeta.setState = this.setState;
-    $storeMeta.syncUpdate = this.syncUpdate;
+    $metaStore.setState = this.setState;
+    $metaStore.syncUpdate = this.syncUpdate;
   }
 
   // The storage stack of this instance for the class component
   readonly classInstanceStack = new Set<ComponentWithStore<{}, S>>();
 
   pushTask(key: keyof S, value: ValueOf<S>, isDelete?: boolean) {
-    const { _$state_ } = this.$storeMeta;
+    const { _$state_ } = this.$metaStore;
     /**
      * @description The pre-execution of the data changes accumulates
      * the logic of the correct execution of the final update,
@@ -110,7 +110,7 @@ export default class Updater<S extends PrimitiveState> {
                  * making it easier to trace the old taskData as a snapshot variable.
                  */
                 effectState: taskData,
-                nextState: this.$storeMeta._$state_,
+                nextState: this.$metaStore._$state_,
                 prevState: this.$subscriber.prevBatchState,
               });
             });
@@ -123,7 +123,7 @@ export default class Updater<S extends PrimitiveState> {
   setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
     this.$subscriber.willUpdatingProcessing();
 
-    const _state_ = this.$storeMeta._$state_;
+    const _state_ = this.$metaStore._$state_;
 
     let stateTemp = state;
 
@@ -152,7 +152,7 @@ export default class Updater<S extends PrimitiveState> {
    * to meet the needs of normal text input, it synchronizes React's update scheduling.
    */
   syncUpdate = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    const { _$state_ } = this.$storeMeta;
+    const { _$state_ } = this.$metaStore;
 
     let stateTemp = state;
 
@@ -182,7 +182,7 @@ export default class Updater<S extends PrimitiveState> {
     key: keyof S,
     value: ValueOf<S>,
     isDelete = false,
-    target: object | S = this.$storeMeta._$state_,
+    target: object | S = this.$metaStore._$state_,
     firstLevelKey?: keyof S,
     keyChains?: Set<KeyChainsSourceItemType<S>>,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -190,7 +190,7 @@ export default class Updater<S extends PrimitiveState> {
   ): boolean {
     // if (this.#freezing) return true;
 
-    const state = this.$storeMeta._$state_;
+    const state = this.$metaStore._$state_;
 
     // mutate chain update
     if (firstLevelKey) {

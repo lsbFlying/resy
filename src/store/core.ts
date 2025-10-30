@@ -27,7 +27,7 @@ import Computer from "../computer";
 /**
  * @description The core meta-structure of store
  */
-export default class StoreMeta<S extends PrimitiveState> {
+export default class MetaStore<S extends PrimitiveState> {
   constructor(initialState?: InitialState<S>, options?: StoreOptions) {
     this._initialState_ = initialState;
 
@@ -139,7 +139,7 @@ export default class StoreMeta<S extends PrimitiveState> {
           : this.useComputed.bind(null, boundFnValue);
       }
 
-      return this[key as keyof StoreMeta<S>];
+      return this[key as keyof MetaStore<S>];
     },
   } as ProxyHandler<MacroStore<S>>);
 
@@ -245,7 +245,7 @@ export default class StoreMeta<S extends PrimitiveState> {
           return _boundFnProcessing_(key, value);
         }
 
-        return !sourceFromThis ? value : this[key as keyof StoreMeta<S>];
+        return !sourceFromThis ? value : this[key as keyof MetaStore<S>];
       },
       set: (_: S, key: keyof S, value: ValueOf<S>) => updater.updateMetaState(
         key, value, false, target, firstLevelKey,

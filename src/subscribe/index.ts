@@ -1,17 +1,17 @@
 import type { PrimitiveState } from "../types";
 import type { ListenerType, SubscriptionRefType, Unsubscribe } from "./types";
-import type StoreMeta from "../store/core";
+import type MetaStore from "../store/core";
 import type Scheduler from "../scheduler";
 import { subscribeErrorProcessing } from "../store/errors";
 import { useDebugValue, useEffect, useRef, useState } from "react";
 
 export default class Subscriber<S extends PrimitiveState> {
   constructor(
-    public $storeMeta: StoreMeta<S>,
+    public $metaStore: MetaStore<S>,
     public $scheduler: Scheduler<S>,
   ) {
-    $storeMeta.subscribe = this.subscribe;
-    $storeMeta.useSubscription = this.useSubscription;
+    $metaStore.subscribe = this.subscribe;
+    $metaStore.useSubscription = this.useSubscription;
   }
 
   // Data status of the previous update batch for subscriber
@@ -29,7 +29,7 @@ export default class Subscriber<S extends PrimitiveState> {
     const scheduler = this.$scheduler;
     if (this.listenerQueue.size > 0 && !scheduler.willUpdating) {
       scheduler.willUpdating = true;
-      this.prevBatchState = { ...this.$storeMeta._$state_ } as S;
+      this.prevBatchState = { ...this.$metaStore._$state_ } as S;
     }
   }
 
@@ -40,7 +40,7 @@ export default class Subscriber<S extends PrimitiveState> {
     immediate?: boolean,
   ): Unsubscribe => {
     if (immediate) {
-      const nextState = this.$storeMeta._$state_;
+      const nextState = this.$metaStore._$state_;
       const effectState = {} as Partial<S>;
       stateKeys?.forEach(key => {
         effectState[key] = nextState[key];
@@ -92,7 +92,7 @@ export default class Subscriber<S extends PrimitiveState> {
     subscribeErrorProcessing(listener, stateKeys);
 
     if (__DEV__) {
-      const namespace = this.$storeMeta._options_.namespace;
+      const namespace = this.$metaStore._options_.namespace;
       const store_namespace = namespace
         ? { namespace }
         : null;

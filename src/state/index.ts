@@ -2,6 +2,7 @@ import type { Callback, PrimitiveState } from "../types";
 import type { MetaStateMapType } from "./types";
 import type MetaStore from "../store/core";
 import type Restorer from "../restore";
+import { useDebugValue } from "react";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 
 /**
@@ -56,7 +57,22 @@ export default class MetaState<S extends PrimitiveState> {
   };
 
   useMetaState() {
-    const { subscribe, getSnapshot } = this.$metaStateMap[this.key];
+    const key = this.key;
+    const { subscribe, getSnapshot } = this.$metaStateMap[key];
+
+    const { _options_: { namespace }, _$state_ } = this.$metaStore;
+    const value = _$state_[key];
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    __DEV__ && useDebugValue({
+      [key]: value,
+      ...(
+        namespace
+          ? { namespace }
+          : null
+      ),
+    });
+
     // eslint-disable-next-line react-hooks/rules-of-hooks
     return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   }

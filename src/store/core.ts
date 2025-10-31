@@ -15,7 +15,6 @@ import { _COMPUTED_PREFIX_, _RESY_BRAND_, DEFAULT_OPTIONS } from "./static";
 import { hasOwnProperty } from "../utils";
 import { proxyable } from "../immutable/utils";
 import { _MAP_SET_PROTOTYPE_PROXYABLE_TARGET_ } from "../immutable";
-import { useDebugValue } from "react";
 import MetaState from "../state";
 import Scheduler from "../scheduler";
 import Subscriber from "../subscribe";
@@ -106,19 +105,7 @@ export default class MetaStore<S extends PrimitiveState> {
 
       const sourceFromThis = hasOwnProperty.call(this, key);
 
-      const { namespace } = this._options_;
-
       if (!sourceFromThis && typeof value !== "function") {
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        __DEV__ && useDebugValue({
-          [key]: value,
-          ...(
-            namespace
-              ? { namespace }
-              : null
-          ),
-        });
-
         return (
           this._metaStateMap_[key] ??= new MetaState<S>(
             key, this._metaStateMap_, this, this._restorer_,

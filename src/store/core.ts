@@ -89,10 +89,12 @@ export default class MetaStore<S extends PrimitiveState> {
   // A proxy object with the capabilities of updating and data tracking.
   readonly store: Store<S>;
 
+  _$engineStore_!: MacroStore<S>;
+
   useStore: UseMacroStore<S> = () => {
     const snapshot = this._metaState_.useMetaState();
 
-    return new Proxy(snapshot, {
+    return this._$engineStore_ ??= new Proxy(snapshot, {
       get: (_: S, key: keyof S) => {
         const state = this._$state_;
 

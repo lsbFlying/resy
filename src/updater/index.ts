@@ -3,9 +3,6 @@ import type { State, StateCallback, StateFnType } from "./types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import type { ComponentWithStore } from "../class-connect";
 import type MetaStore from "../store/core";
-import type Scheduler from "../scheduler";
-import type Subscriber from "../subscribe";
-import type { MetaStateMapType } from "../state/types";
 import { batchUpdate } from "../static";
 import { stateErrorProcessing } from "../store/errors";
 import { createNewRefValue, reduceChanged } from "../immutable/utils";
@@ -14,12 +11,7 @@ import { createNewRefValue, reduceChanged } from "../immutable/utils";
  * @description Update mechanism of `meta-state`
  */
 export default class Updater<S extends PrimitiveState> {
-  constructor(
-    public $metaStore: MetaStore<S>,
-    public $scheduler: Scheduler<S>,
-    public $subscriber: Subscriber<S>,
-    public $metaStateMap: MetaStateMapType<S>,
-  ) {
+  constructor(public $metaStore: MetaStore<S>) {
     $metaStore.setState = this.setState;
     $metaStore.syncUpdate = this.syncUpdate;
   }
@@ -34,9 +26,19 @@ export default class Updater<S extends PrimitiveState> {
      * the logic of the correct execution of the final update,
      * which lays the foundation for subsequent batch updates.
      */
-    !isDelete ? (_$state_[key] = value) : delete _$state_[key];
+    if (!isDelete) {
+      this.$metaStore._$state_ = {
+        ..._$state_,
+        [key]: value,
+      };
+    } else {
+      delete _$state_[key];
+      this.$metaStore._$state_ = {
+        ..._$state_,
+      };
+    }
 
-    this.$scheduler.pushTask(
+    this.$metaStore._scheduler_.pushTask(
       key,
       value,
       () => {
@@ -47,13 +49,13 @@ export default class Updater<S extends PrimitiveState> {
          * is to preserve the simplicity of the update scheduling for both hook and class components.
          */
         // State updates for hook components
-        this.$metaStateMap[key]?.updater();
+        this.$metaStore._metaState_.updater();
       },
     );
   };
 
   finallyBatchProcessing() {
-    const scheduler = this.$scheduler;
+    const scheduler = this.$metaStore._scheduler_;
     const {
       taskData, taskQueue, callbackQueue,
     } = scheduler;
@@ -61,7 +63,7 @@ export default class Updater<S extends PrimitiveState> {
     if ((taskQueue.size > 0 || callbackQueue.size > 0) && !scheduler.isUpdating) {
       // Reduce the generation of redundant microtasks through the isUpdating flag
       scheduler.isUpdating = Promise.resolve().then(() => {
-        const listenerQueue = this.$subscriber.listenerQueue;
+        const listenerQueue = this.$metaStore._subscriber_.listenerQueue;
 
         /**
          * @description Reset the isUpdating and willUpdating flags
@@ -111,7 +113,7 @@ export default class Updater<S extends PrimitiveState> {
                  */
                 effectState: taskData,
                 nextState: this.$metaStore._$state_,
-                prevState: this.$subscriber.prevBatchState,
+                prevState: this.$metaStore._subscriber_.prevBatchState,
               });
             });
           }
@@ -121,7 +123,7 @@ export default class Updater<S extends PrimitiveState> {
   };
 
   setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
-    this.$subscriber.willUpdatingProcessing();
+    this.$metaStore._subscriber_.willUpdatingProcessing();
 
     const _state_ = this.$metaStore._$state_;
 
@@ -142,7 +144,7 @@ export default class Updater<S extends PrimitiveState> {
       });
     }
 
-    this.$scheduler.pushCallback(_state_, stateTemp as State<S>, callback);
+    this.$metaStore._scheduler_.pushCallback(_state_, stateTemp as State<S>, callback);
 
     this.finallyBatchProcessing();
   };
@@ -164,15 +166,18 @@ export default class Updater<S extends PrimitiveState> {
         Object.keys(stateTemp as NonNullable<State<S>>).forEach((key: keyof S) => {
           const value = (stateTemp as S)[key];
           if (!Object.is(_$state_[key], value)) {
-            _$state_[key] = value;
+            this.$metaStore._$state_ = {
+              ..._$state_,
+              [key]: value,
+            };
             this.classUpdater(key, value);
-            this.$metaStateMap[key]?.updater();
+            this.$metaStore._metaState_.updater();
           }
         });
       });
     }
 
-    this.$scheduler.pushCallback(_$state_, stateTemp as State<S>, callback);
+    this.$metaStore._scheduler_.pushCallback(_$state_, stateTemp as State<S>, callback);
 
     this.finallyBatchProcessing();
   };
@@ -226,7 +231,7 @@ export default class Updater<S extends PrimitiveState> {
         : true;
     } else {
       if (!Object.is(value, state[key])) {
-        this.$subscriber.willUpdatingProcessing();
+        this.$metaStore._subscriber_.willUpdatingProcessing();
         this.pushTask(key, value, isDelete);
         this.finallyBatchProcessing();
       }

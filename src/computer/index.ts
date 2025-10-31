@@ -1,15 +1,11 @@
 import type { PrimitiveState } from "../types";
 import type { AnyBoundFn } from "../store/types";
 import type MetaStore from "../store/core";
-import type Subscriber from "../subscribe";
 import { useDebugValue, useEffect, useRef, useState } from "react";
 
 /** @desc class of computed */
 export default class Computer<S extends PrimitiveState> {
-  constructor(
-    public $metaStore: MetaStore<S>,
-    public $subscriber: Subscriber<S>,
-  ) {
+  constructor(public $metaStore: MetaStore<S>) {
     $metaStore.computed = this.computed;
     $metaStore.useComputed = this.useComputed;
   }
@@ -67,7 +63,7 @@ export default class Computer<S extends PrimitiveState> {
 
     const stateKeys = Array.from(computedDeps);
 
-    fn._unsubscribe_ =  this.$subscriber.subscribe(() => {
+    fn._unsubscribe_ =  this.$metaStore._subscriber_.subscribe(() => {
       /**
        * @desc Since the `fn` function is already bound to the `this` instance of the class component,
        * and the state rendering of class components does not have
@@ -139,7 +135,7 @@ export default class Computer<S extends PrimitiveState> {
     });
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useEffect(() => this.$subscriber.subscribe(() => {
+    useEffect(() => this.$metaStore._subscriber_.subscribe(() => {
       /**
        * Perform dependency collection and processing again to
        * prevent dependency changes caused by conditional logic

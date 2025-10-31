@@ -7,7 +7,6 @@ import type { ClassStoreType } from "../class-connect/types";
 import type { SetStateType, SyncUpdateType } from "../updater/types";
 import type { SubscribeType, UseSubscriptionType } from "../subscribe/types";
 import type { RestoreType } from "../restore/types";
-import type { MetaStateMapType } from "../state/types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import type { UseComputedType, ComputedType } from "../computer/types";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
@@ -60,28 +59,23 @@ export default class MetaStore<S extends PrimitiveState> {
   subscribe!: SubscribeType<S>["subscribe"];
   useSubscription!: UseSubscriptionType<S>["useSubscription"];
   // Subscriber
-  readonly _subscriber_ = new Subscriber(this, this._scheduler_);
+  readonly _subscriber_ = new Subscriber(this);
 
   useComputed!: UseComputedType["useComputed"];
   computed!: ComputedType["computed"];
   // Computer
-  readonly _computer_ = new Computer(this, this._subscriber_);
-
-  // The core map meta-structure of MetaState
-  readonly _metaStateMap_ = {} as MetaStateMapType<S>;
+  readonly _computer_ = new Computer(this);
 
   setState!: SetStateType<S>["setState"];
   syncUpdate!: SyncUpdateType<S>["syncUpdate"];
   // Updater
-  readonly _updater_ = new Updater(
-    this, this._scheduler_, this._subscriber_, this._metaStateMap_,
-  );
+  readonly _updater_ = new Updater(this);
 
   restore!: RestoreType<S>["restore"];
   // Restorer
-  readonly _restorer_ = new Restorer(
-    this, this._scheduler_, this._subscriber_, this._updater_,
-  );
+  readonly _restorer_ = new Restorer(this);
+
+  readonly _metaState_ = new MetaState<S>(this, this._restorer_);
 
   // After unmount resetting the state (`restoreProcessing` function has been executed),
   // it is in a frozen state where updates are prohibited.
@@ -95,48 +89,45 @@ export default class MetaStore<S extends PrimitiveState> {
   // A proxy object with the capabilities of updating and data tracking.
   readonly store: Store<S>;
 
-  // Proxy of driver update re-render for useStore
-  readonly _$engineStore_ = new Proxy({} as MacroStore<S>, {
-    get: (_: S, key: keyof S) => {
-      const state = this._$state_;
+  useStore: UseMacroStore<S> = () => {
+    const snapshot = this._metaState_.useMetaState();
 
-      // Get the latest value
-      const value = state[key];
+    return new Proxy(snapshot, {
+      get: (_: S, key: keyof S) => {
+        const state = this._$state_;
 
-      const sourceFromThis = hasOwnProperty.call(this, key);
+        // Get the latest value
+        const value = state[key];
 
-      if (!sourceFromThis && typeof value !== "function") {
-        return (
-          this._metaStateMap_[key] ??= new MetaState<S>(
-            key, this._metaStateMap_, this, this._restorer_,
-          )
-        ).useMetaState();
-      }
+        const sourceFromThis = hasOwnProperty.call(this, key);
 
-      if (!sourceFromThis && typeof value === "function") {
-        // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
-        !(value as AnyBoundFn)._bound_ && this._boundFnProcessing_(key, value);
+        if (!sourceFromThis && typeof value !== "function") {
+          return snapshot[key];
+        }
 
-        const boundFnValue = state[key];
+        if (!sourceFromThis && typeof value === "function") {
+          // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
+          !(value as AnyBoundFn)._bound_ && this._boundFnProcessing_(key, value);
 
-        return !key.toString().startsWith(_COMPUTED_PREFIX_)
-          ? boundFnValue
-          // TODO bind产生新的引用，待优化
-          : this.useComputed.bind(null, boundFnValue);
-      }
+          const boundFnValue = state[key];
 
-      return this[key as keyof MetaStore<S>];
-    },
-    // set: (_: S, key: keyof S, value: ValueOf<S>) => this._updater_.updateMetaState(
-    //   key, value, false,
-    // ),
-    // // Delete will also play an updating role
-    // deleteProperty: (_: S, key: keyof S) => this._updater_.updateMetaState(
-    //   key, undefined as ValueOf<S>, true,
-    // ),
-  } as ProxyHandler<MacroStore<S>>);
+          return !key.toString().startsWith(_COMPUTED_PREFIX_)
+            ? boundFnValue
+            // TODO bind产生新的引用，待优化
+            : this.useComputed.bind(null, boundFnValue);
+        }
 
-  useStore: UseMacroStore<S> = () => this._$engineStore_;
+        return this[key as keyof MetaStore<S>];
+      },
+      set: (_: S, key: keyof S, value: ValueOf<S>) => this._updater_.updateMetaState(
+        key, value, false,
+      ),
+      // Delete will also play an updating role
+      deleteProperty: (_: S, key: keyof S) => this._updater_.updateMetaState(
+        key, undefined as ValueOf<S>, true,
+      ),
+    }) as MacroStore<S>;
+  };
   /** ============================== For Core Render Element end ============================== */
 
   /** Helper function for binding function properties  */

@@ -1,15 +1,11 @@
 import type { PrimitiveState } from "../types";
 import type { ListenerType, SubscriptionRefType, Unsubscribe } from "./types";
 import type MetaStore from "../store/core";
-import type Scheduler from "../scheduler";
 import { subscribeErrorProcessing } from "../store/errors";
 import { useDebugValue, useEffect, useRef, useState } from "react";
 
 export default class Subscriber<S extends PrimitiveState> {
-  constructor(
-    public $metaStore: MetaStore<S>,
-    public $scheduler: Scheduler<S>,
-  ) {
+  constructor(public $metaStore: MetaStore<S>) {
     $metaStore.subscribe = this.subscribe;
     $metaStore.useSubscription = this.useSubscription;
   }
@@ -26,7 +22,7 @@ export default class Subscriber<S extends PrimitiveState> {
    * when data changes trigger Subscriber.
    */
   willUpdatingProcessing() {
-    const scheduler = this.$scheduler;
+    const scheduler = this.$metaStore._scheduler_;
     if (this.listenerQueue.size > 0 && !scheduler.willUpdating) {
       scheduler.willUpdating = true;
       this.prevBatchState = { ...this.$metaStore._$state_ } as S;

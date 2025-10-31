@@ -45,5 +45,5 @@ export const useConciseState = <S extends PrimitiveState>(
       _callerName_: "useConciseState",
     } as InnerStoreOptions
   ));
-  return ms._$engineStore_ as MacroStore<S>;
+  return ms.useStore() as MacroStore<S>;
 };

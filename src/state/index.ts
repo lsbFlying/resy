@@ -1,5 +1,4 @@
 import type { Callback, PrimitiveState } from "../types";
-import type { MetaStateMapType } from "./types";
 import type MetaStore from "../store/core";
 import type Restorer from "../restore";
 import { useDebugValue } from "react";
@@ -16,8 +15,6 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  */
 export default class MetaState<S extends PrimitiveState> {
   constructor(
-    public key: keyof S,
-    public $metaStateMap: MetaStateMapType<S>,
     public $metaStore: MetaStore<S>,
     public $restorer: Restorer<S>,
   ) {
@@ -45,7 +42,7 @@ export default class MetaState<S extends PrimitiveState> {
         () => {
           // Release memory if there are no component references
           if (!this.stateChangeQueue.size) {
-            delete this.$metaStateMap[this.key];
+            // delete this.$metaStateMap[this.key];
           }
         },
       );
@@ -53,19 +50,17 @@ export default class MetaState<S extends PrimitiveState> {
   };
 
   getSnapshot = () => {
-    return this.$metaStore._$state_[this.key];
+    return this.$metaStore._$state_;
   };
 
   useMetaState() {
-    const key = this.key;
-    const { subscribe, getSnapshot } = this.$metaStateMap[key];
+    const { subscribe, getSnapshot } = this;
 
     const { _options_: { namespace }, _$state_ } = this.$metaStore;
-    const value = _$state_[key];
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     __DEV__ && useDebugValue({
-      [key]: value,
+      state: _$state_,
       ...(
         namespace
           ? { namespace }

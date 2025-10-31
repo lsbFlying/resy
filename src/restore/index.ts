@@ -1,18 +1,10 @@
 import type { Callback, PrimitiveState } from "../types";
 import type { StateCallback } from "../updater/types";
 import type MetaStore from "../store/core";
-import type Scheduler from "../scheduler";
-import type Subscriber from "../subscribe";
-import type Updater from "../updater";
 import { hasOwnProperty } from "../utils";
 
 export default class Restorer<S extends PrimitiveState> {
-  constructor(
-    public $metaStore: MetaStore<S>,
-    public $scheduler: Scheduler<S>,
-    public $subscriber: Subscriber<S>,
-    public $updater: Updater<S>,
-  ) {
+  constructor(public $metaStore: MetaStore<S>) {
     $metaStore.restore = this.restore;
   }
 
@@ -80,12 +72,12 @@ export default class Restorer<S extends PrimitiveState> {
    * a microtask can be used to postpone the unmount process.
    */
   deferRestoreProcessing(callback?: Callback) {
-    const scheduler = this.$scheduler;
+    const scheduler = this.$metaStore._scheduler_;
     if (!scheduler.deferEffectDestructorExecutable) {
       scheduler.deferEffectDestructorExecutable = Promise.resolve().then(() => {
         scheduler.deferEffectDestructorExecutable = undefined;
         const { metaStateRefCounter } = this;
-        const classInstanceStack = this.$updater.classInstanceStack;
+        const classInstanceStack = this.$metaStore._updater_.classInstanceStack;
         if (!metaStateRefCounter && !classInstanceStack.size) {
           /**
            * By using "stateRefCounter" and "classInstanceStack",
@@ -119,10 +111,9 @@ export default class Restorer<S extends PrimitiveState> {
   // TODO prototype function waiting upgrade
   // Reset recovery initialization state data
   restore = (callback?: StateCallback<S>) => {
-    const { _$state_ } = this.$metaStore;
-    const { $updater } = this;
+    const { _$state_, _updater_, _subscriber_, _scheduler_ } = this.$metaStore;
 
-    this.$subscriber.willUpdatingProcessing();
+    _subscriber_.willUpdatingProcessing();
 
     const reducerState = this.retrieveReducerState();
 
@@ -152,11 +143,11 @@ export default class Restorer<S extends PrimitiveState> {
       const originValue = reducerState[key];
 
       !Object.is(originValue, _$state_[key])
-      && $updater.pushTask(key, originValue, !hasOwnProperty.call(reducerState, key));
+      && _updater_.pushTask(key, originValue, !hasOwnProperty.call(reducerState, key));
     });
 
-    this.$scheduler.pushCallback({} as S, reducerState, callback);
+    _scheduler_.pushCallback({} as S, reducerState, callback);
 
-    $updater.finallyBatchProcessing();
+    _updater_.finallyBatchProcessing();
   };
 }

@@ -91,10 +91,12 @@ export default class MetaStore<S extends PrimitiveState> {
 
   _$engineStore_!: MacroStore<S>;
 
-  useStore: UseMacroStore<S> = () => {
-    const snapshot = this._metaState_.useMetaState();
+  _$snapshot_!: S;
 
-    return this._$engineStore_ ??= new Proxy(snapshot, {
+  useStore: UseMacroStore<S> = () => {
+    this._$snapshot_ = this._metaState_.useMetaState();
+
+    return this._$engineStore_ ??= new Proxy(this._$snapshot_, {
       get: (_: S, key: keyof S) => {
         const state = this._$state_;
 
@@ -104,7 +106,7 @@ export default class MetaStore<S extends PrimitiveState> {
         const sourceFromThis = hasOwnProperty.call(this, key);
 
         if (!sourceFromThis && typeof value !== "function") {
-          return snapshot[key];
+          return this._$snapshot_[key];
         }
 
         if (!sourceFromThis && typeof value === "function") {

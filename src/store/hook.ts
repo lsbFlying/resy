@@ -16,7 +16,7 @@ export const useStore = <S extends PrimitiveState>(
   store: Store<S>,
 ) => {
   storeErrorProcessing(store, "useStore");
-  return store._$engineStore_ as ClassicStore<S>;
+  return store.useStore() as ClassicStore<S>;
 };
 
 /**

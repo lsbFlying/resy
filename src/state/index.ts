@@ -27,17 +27,17 @@ export default class MetaState<S extends PrimitiveState> {
   // The Set memory of the update function of a single attribute
   readonly stateChangeQueue = new Set<Callback>();
 
-  subscribe = (onStateChange: Callback) => {
+  subscribe = (stateChange: Callback) => {
     const $restorer = this.$restorer;
 
     // If a component references the data, the update function will be added to stateChangeSet
-    this.stateChangeQueue.add(onStateChange);
+    this.stateChangeQueue.add(stateChange);
 
     // Increment the reference count by 1 if the component is referenced
     $restorer.metaStateRefCounter++;
 
     return () => {
-      this.stateChangeQueue.delete(onStateChange);
+      this.stateChangeQueue.delete(stateChange);
       $restorer.metaStateRefCounter--;
 
       $restorer.deferRestoreProcessing(

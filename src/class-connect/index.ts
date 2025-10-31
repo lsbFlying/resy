@@ -125,12 +125,9 @@ export abstract class ComponentWithStore<
   connectStore<S extends PrimitiveState>(store: Store<S>) {
     storeErrorProcessing(store, "connectStore");
     (store as any as MetaStore<S>)._restorer_.initialStateRetrieve();
-    this.#stores.add(store as any);
+    this.#stores.add(store);
 
-    const {
-      _updater_: updater, _computer_: computer,
-      hasOwnKey, _boundFnProcessing_,
-    } = store as any as MetaStore<S>;
+    const { _updater_: updater, _computer_: computer } = store as any as MetaStore<S>;
 
     updater.classInstanceStack.add(this as any as ComponentWithStore<P, S, SS>);
 
@@ -162,7 +159,8 @@ export abstract class ComponentWithStore<
           this._$stateRefs_.add(key as (string | number));
         }
 
-        const sourceFromStore = hasOwnKey(key);
+        const sourceFromStore = Reflect.has((store as any as MetaStore<S>), key);
+
         const state = (store as any as MetaStore<S>)._$state_;
 
         const value = state[key];
@@ -173,7 +171,7 @@ export abstract class ComponentWithStore<
 
         if (!sourceFromStore && typeof value === "function") {
           !(value as AnyBoundFn)._bound_
-          && _boundFnProcessing_(key, value, classEngineStore);
+          && (store as any as MetaStore<S>)._boundFnProcessing_(key, value, classEngineStore);
 
           const boundFnValue = state[key];
 

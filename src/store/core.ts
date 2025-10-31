@@ -16,7 +16,6 @@ import { hasOwnProperty } from "../utils";
 import { proxyable } from "../immutable/utils";
 import { _MAP_SET_PROTOTYPE_PROXYABLE_TARGET_ } from "../immutable";
 import { useDebugValue } from "react";
-// TODO 这些核心元素组件待整改成全局store的功能，而不是只针对单一store
 import MetaState from "../state";
 import Scheduler from "../scheduler";
 import Subscriber from "../subscribe";
@@ -141,17 +140,24 @@ export default class MetaStore<S extends PrimitiveState> {
 
       return this[key as keyof MetaStore<S>];
     },
+    // set: (_: S, key: keyof S, value: ValueOf<S>) => this._updater_.updateMetaState(
+    //   key, value, false,
+    // ),
+    // // Delete will also play an updating role
+    // deleteProperty: (_: S, key: keyof S) => this._updater_.updateMetaState(
+    //   key, undefined as ValueOf<S>, true,
+    // ),
   } as ProxyHandler<MacroStore<S>>);
 
   useStore: UseMacroStore<S> = () => this._$engineStore_;
   /** ============================== For Core Render Element end ============================== */
 
   /** Helper function for binding function properties  */
-  _boundFnProcessing_ = (
+  _boundFnProcessing_(
     key: keyof S,
     value: AnyBoundFn,
     thisArg: Store<S> | ClassStoreType<S> = this.store,
-  ) => {
+  ) {
     const state = this._$state_;
 
     const boundFn = (
@@ -164,12 +170,7 @@ export default class MetaStore<S extends PrimitiveState> {
     state[key] = boundFn as ValueOf<S>;
 
     return boundFn as ValueOf<S>;
-  };
-
-  // for class classEngineStore getter internal judgment
-  hasOwnKey = (key: PropertyKey) => {
-    return hasOwnProperty.call(this, key);
-  };
+  }
 
   /** Create Store Proxy */
   #createProxy(
@@ -184,7 +185,6 @@ export default class MetaStore<S extends PrimitiveState> {
       _computer_: computer,
       _options_: { immutable },
       _updater_: updater,
-      _boundFnProcessing_,
     } = this;
     const { computedDeps } = computer;
     return new Proxy(target, {
@@ -242,7 +242,7 @@ export default class MetaStore<S extends PrimitiveState> {
           && sourceFrom$State
           && !(value as AnyBoundFn)._bound_
         ) {
-          return _boundFnProcessing_(key, value);
+          return this._boundFnProcessing_(key, value);
         }
 
         return !sourceFromThis ? value : this[key as keyof MetaStore<S>];

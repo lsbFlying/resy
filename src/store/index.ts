@@ -6,7 +6,7 @@
  * @name createStore
  */
 import type { StoreOptions, InitialState, Store } from "./types";
-import type { PrimitiveState } from "../types";
+import type { PrimitiveState, ValueOf } from "../types";
 import MetaStore from "./core";
 
 /**
@@ -23,4 +23,20 @@ import MetaStore from "./core";
 export const createStore = <S extends PrimitiveState>(
   initialState?: InitialState<S>,
   options?: StoreOptions,
-) => new MetaStore(initialState, options).store as Store<S>;
+) => {
+  const ms = new MetaStore(initialState, options);
+  return new Proxy(ms as any as Store<S>, {
+    get: (_, key: keyof S) => {
+      return !Reflect.has(ms, key)
+        ? ms.store[key]
+        : (ms as any as Store<S>)[key];
+    },
+    set: (_: S, key: keyof S, value: ValueOf<S>) => ms._updater_.updateMetaState(
+      key, value, false,
+    ),
+    // Delete will also play an updating role
+    deleteProperty: (_: S, key: keyof S) => ms._updater_.updateMetaState(
+      key, undefined as ValueOf<S>, true,
+    ),
+  } as ProxyHandler<Store<S>>) as Store<S>;
+};

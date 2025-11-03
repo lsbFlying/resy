@@ -115,7 +115,7 @@ export default class MetaStore<S extends PrimitiveState> {
         const sourceFromThis = hasOwnProperty.call(this, key);
 
         if (!sourceFromThis && typeof value !== "function") {
-          return this._$isRendering_ ? this._$snapshot_[key] : this._$state_[key];
+          return this._$isRendering_ ? this._$snapshot_[key] : state[key];
         }
 
         if (!sourceFromThis && typeof value === "function") {

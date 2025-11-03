@@ -18,11 +18,11 @@ export default class MetaState<S extends PrimitiveState> {
   // eslint-disable-next-line no-empty-function
   constructor(public $metaStore: MetaStore<S>) {}
 
-  engineStore: MacroStore<S> | null = null;
+  engineStore?: MacroStore<S>;
 
-  currentState: S | null = null;
+  currentState?: S;
 
-  isRendering: boolean | null = null;
+  isRendering?: boolean;
 
   // The Set memory of the update function of a single attribute
   readonly stateChangeQueue = new Set<Callback>();
@@ -44,9 +44,9 @@ export default class MetaState<S extends PrimitiveState> {
         () => {
           // Release memory if there are no component references
           if (!this.stateChangeQueue.size) {
-            this.engineStore = null;
-            this.currentState = null;
-            this.isRendering = null;
+            this.engineStore = undefined;
+            this.currentState = undefined;
+            this.isRendering = undefined;
           }
         },
       );

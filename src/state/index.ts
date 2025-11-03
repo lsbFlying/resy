@@ -1,6 +1,5 @@
 import type { Callback, PrimitiveState, ValueOf } from "../types";
 import type MetaStore from "../store/core";
-import type Restorer from "../restore";
 import type { AnyBoundFn, MacroStore } from "../store/types";
 import { useDebugValue, useLayoutEffect } from "react";
 import { _COMPUTED_PREFIX_ } from "../store/static";
@@ -16,11 +15,8 @@ const { useSyncExternalStore } = useSyncExternalStoreExports;
  * @description The core meta-structure of state
  */
 export default class MetaState<S extends PrimitiveState> {
-  constructor(
-    public $metaStore: MetaStore<S>,
-    public $restorer: Restorer<S>,
-    // eslint-disable-next-line no-empty-function
-  ) {}
+  // eslint-disable-next-line no-empty-function
+  constructor(public $metaStore: MetaStore<S>) {}
 
   _$engineStore_: MacroStore<S> | null = null;
 
@@ -32,7 +28,7 @@ export default class MetaState<S extends PrimitiveState> {
   readonly stateChangeQueue = new Set<Callback>();
 
   subscribe = (stateChange: Callback) => {
-    const $restorer = this.$restorer;
+    const $restorer = this.$metaStore._restorer_;
 
     // If a component references the data, the update function will be added to stateChangeSet
     this.stateChangeQueue.add(stateChange);
@@ -63,7 +59,7 @@ export default class MetaState<S extends PrimitiveState> {
 
   useMetaState() {
     // Perform refresh recovery logic if initialState is a function
-    this.$restorer.initialStateRetrieve();
+    this.$metaStore._restorer_.initialStateRetrieve();
 
     const { subscribe, getSnapshot, $metaStore } = this;
 

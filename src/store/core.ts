@@ -92,12 +92,12 @@ export default class MetaStore<S extends PrimitiveState> {
 
   _$engineStore_!: MacroStore<S>;
 
-  _$snapshot_!: S;
+  _$currentState_!: S;
 
   _$isRendering_ = false;
 
   useStore: UseMacroStore<S> = () => {
-    this._$snapshot_ = this._metaState_.useMetaState();
+    this._$currentState_ = this._metaState_.useMetaState();
 
     this._$isRendering_ = true;
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -105,7 +105,7 @@ export default class MetaStore<S extends PrimitiveState> {
       this._$isRendering_ = false;
     });
 
-    return this._$engineStore_ ??= new Proxy(this._$snapshot_, {
+    return this._$engineStore_ ??= new Proxy(this._$currentState_, {
       get: (_: S, key: keyof S) => {
         const state = this._$state_;
 
@@ -115,7 +115,7 @@ export default class MetaStore<S extends PrimitiveState> {
         const sourceFromThis = hasOwnProperty.call(this, key);
 
         if (!sourceFromThis && typeof value !== "function") {
-          return this._$isRendering_ ? this._$snapshot_[key] : state[key];
+          return this._$isRendering_ ? this._$currentState_[key] : state[key];
         }
 
         if (!sourceFromThis && typeof value === "function") {

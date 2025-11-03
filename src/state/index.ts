@@ -1,7 +1,7 @@
 import type { Callback, PrimitiveState, ValueOf } from "../types";
 import type MetaStore from "../store/core";
 import type { AnyBoundFn, MacroStore } from "../store/types";
-import { useDebugValue } from "react";
+import { useDebugValue, useLayoutEffect } from "react";
 import { _COMPUTED_PREFIX_ } from "../store/static";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 
@@ -19,6 +19,10 @@ export default class MetaState<S extends PrimitiveState> {
   constructor(public $metaStore: MetaStore<S>) {}
 
   engineStore?: MacroStore<S>;
+
+  isRendering?: boolean;
+
+  stateKeyRefs = new Set<keyof S>();
 
   // The Set memory of the update function of a single attribute
   readonly stateChangeQueue = new Set<Callback>();
@@ -52,6 +56,8 @@ export default class MetaState<S extends PrimitiveState> {
   };
 
   useMetaState() {
+    this.isRendering = true;
+
     const { subscribe, getSnapshot, $metaStore } = this;
 
     const { _options_: { namespace }, _$state_, _restorer_ } = $metaStore;
@@ -72,6 +78,11 @@ export default class MetaState<S extends PrimitiveState> {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useLayoutEffect(() => {
+      this.isRendering = false;
+    });
+
     return this.engineStore ??= new Proxy({} as S, {
       // todo 这里需要完善后续的immutable功能，在get做惰性proxy代理，类似MetaStore的createProxy
       get: (_: S, key: keyof S) => {
@@ -84,6 +95,7 @@ export default class MetaState<S extends PrimitiveState> {
         const sourceFromStore = Reflect.has($metaStore, key);
 
         if (!sourceFromStore && typeof value !== "function") {
+          this.isRendering && this.stateKeyRefs.add(key);
           return state[key];
         }
 

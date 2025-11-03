@@ -1,7 +1,7 @@
 import type { Callback, PrimitiveState, ValueOf } from "../types";
 import type MetaStore from "../store/core";
 import type { AnyBoundFn, MacroStore } from "../store/types";
-import { useDebugValue, useLayoutEffect } from "react";
+import { useDebugValue } from "react";
 import { _COMPUTED_PREFIX_ } from "../store/static";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 
@@ -19,10 +19,6 @@ export default class MetaState<S extends PrimitiveState> {
   constructor(public $metaStore: MetaStore<S>) {}
 
   engineStore?: MacroStore<S>;
-
-  currentState?: S;
-
-  isRendering?: boolean;
 
   // The Set memory of the update function of a single attribute
   readonly stateChangeQueue = new Set<Callback>();
@@ -45,8 +41,6 @@ export default class MetaState<S extends PrimitiveState> {
           // Release memory if there are no component references
           if (!this.stateChangeQueue.size) {
             this.engineStore = undefined;
-            this.currentState = undefined;
-            this.isRendering = undefined;
           }
         },
       );
@@ -76,13 +70,7 @@ export default class MetaState<S extends PrimitiveState> {
     });
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    this.currentState = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-
-    this.isRendering = true;
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useLayoutEffect(() => {
-      this.isRendering = false;
-    });
+    useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
     return this.engineStore ??= new Proxy({} as S, {
       // todo 这里需要完善后续的immutable功能，在get做惰性proxy代理，类似MetaStore的createProxy
@@ -96,8 +84,7 @@ export default class MetaState<S extends PrimitiveState> {
         const sourceFromStore = Reflect.has($metaStore, key);
 
         if (!sourceFromStore && typeof value !== "function") {
-          // todo 如果这里getSnapshot最终返回的快照状态仍然是metaState，那么这里就可以直接使用state[key]，不用区分isRendering状态
-          return this.isRendering ? this.currentState![key] : state[key];
+          return state[key];
         }
 
         if (!sourceFromStore && typeof value === "function") {

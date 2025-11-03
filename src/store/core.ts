@@ -20,6 +20,7 @@ import Subscriber from "../subscribe";
 import Updater from "../updater";
 import Restorer from "../restore";
 import Computer from "../computer";
+import {useLayoutEffect} from "react";
 
 /**
  * @description The core meta-structure of store
@@ -93,8 +94,16 @@ export default class MetaStore<S extends PrimitiveState> {
 
   _$snapshot_!: S;
 
+  _$isRendering_ = false;
+
   useStore: UseMacroStore<S> = () => {
     this._$snapshot_ = this._metaState_.useMetaState();
+
+    this._$isRendering_ = true;
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useLayoutEffect(() => {
+      this._$isRendering_ = false;
+    });
 
     return this._$engineStore_ ??= new Proxy(this._$snapshot_, {
       get: (_: S, key: keyof S) => {
@@ -106,7 +115,7 @@ export default class MetaStore<S extends PrimitiveState> {
         const sourceFromThis = hasOwnProperty.call(this, key);
 
         if (!sourceFromThis && typeof value !== "function") {
-          return this._$snapshot_[key];
+          return this._$isRendering_ ? this._$snapshot_[key] : this._$state_[key];
         }
 
         if (!sourceFromThis && typeof value === "function") {

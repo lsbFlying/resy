@@ -94,6 +94,7 @@ export default class MetaState<S extends PrimitiveState> {
         const sourceFromStore = Reflect.has($metaStore, key);
 
         if (!sourceFromStore && typeof value !== "function") {
+          // todo 如果这里getSnapshot最终返回的快照状态仍然是metaState，那么这里就可以直接使用state[key]，不用区分isRendering状态
           return this.isRendering ? this.currentState![key] : state[key];
         }
 

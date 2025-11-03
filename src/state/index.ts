@@ -58,12 +58,12 @@ export default class MetaState<S extends PrimitiveState> {
   };
 
   useMetaState() {
-    // Perform refresh recovery logic if initialState is a function
-    this.$metaStore._restorer_.initialStateRetrieve();
-
     const { subscribe, getSnapshot, $metaStore } = this;
 
-    const { _options_: { namespace }, _$state_ } = $metaStore;
+    const { _options_: { namespace }, _$state_, _restorer_ } = $metaStore;
+
+    // Perform refresh recovery logic if initialState is a function
+    _restorer_.initialStateRetrieve();
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     __DEV__ && useDebugValue({
@@ -87,7 +87,8 @@ export default class MetaState<S extends PrimitiveState> {
     return this.engineStore ??= new Proxy({} as S, {
       // todo 这里需要完善后续的immutable功能，在get做惰性proxy代理，类似MetaStore的createProxy
       get: (_: S, key: keyof S) => {
-        const state = $metaStore._$state_;
+        // get latest _$state_
+        const state = this.$metaStore._$state_;
 
         // Get the latest value
         const value = state[key];

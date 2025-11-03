@@ -1,6 +1,6 @@
 import type {
   AnyBoundFn, InitialState, StateWithThisType, Store,
-  StoreOptions, MacroStore, UseMacroStore, InnerStoreOptions,
+  StoreOptions, UseMacroStore, InnerStoreOptions,
 } from "./types";
 import type { AnyFn, MapType, PrimitiveState, ValueOf } from "../types";
 import type { ClassStoreType } from "../class-connect/types";
@@ -10,7 +10,7 @@ import type { RestoreType } from "../restore/types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import type { UseComputedType, ComputedType } from "../computer/types";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
-import { _COMPUTED_PREFIX_, _RESY_BRAND_, DEFAULT_OPTIONS } from "./static";
+import { _RESY_BRAND_, DEFAULT_OPTIONS } from "./static";
 import { hasOwnProperty } from "../utils";
 import { proxyable } from "../immutable/utils";
 import { _MAP_SET_PROTOTYPE_PROXYABLE_TARGET_ } from "../immutable";
@@ -20,7 +20,6 @@ import Subscriber from "../subscribe";
 import Updater from "../updater";
 import Restorer from "../restore";
 import Computer from "../computer";
-import {useLayoutEffect} from "react";
 
 /**
  * @description The core meta-structure of store
@@ -90,57 +89,7 @@ export default class MetaStore<S extends PrimitiveState> {
   // A proxy object with the capabilities of updating and data tracking.
   readonly store: Store<S>;
 
-  _$engineStore_!: MacroStore<S>;
-
-  _$currentState_!: S;
-
-  _$isRendering_ = false;
-
-  useStore: UseMacroStore<S> = () => {
-    this._$currentState_ = this._metaState_.useMetaState();
-
-    this._$isRendering_ = true;
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useLayoutEffect(() => {
-      this._$isRendering_ = false;
-    });
-
-    return this._$engineStore_ ??= new Proxy(this._$currentState_, {
-      get: (_: S, key: keyof S) => {
-        const state = this._$state_;
-
-        // Get the latest value
-        const value = state[key];
-
-        const sourceFromThis = hasOwnProperty.call(this, key);
-
-        if (!sourceFromThis && typeof value !== "function") {
-          return this._$isRendering_ ? this._$currentState_[key] : state[key];
-        }
-
-        if (!sourceFromThis && typeof value === "function") {
-          // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
-          !(value as AnyBoundFn)._bound_ && this._boundFnProcessing_(key, value);
-
-          const boundFnValue = state[key];
-
-          return !key.toString().startsWith(_COMPUTED_PREFIX_)
-            ? boundFnValue
-            // TODO bind产生新的引用，待优化
-            : this.useComputed.bind(null, boundFnValue);
-        }
-
-        return this[key as keyof MetaStore<S>];
-      },
-      set: (_: S, key: keyof S, value: ValueOf<S>) => this._updater_.updateMetaState(
-        key, value, false,
-      ),
-      // Delete will also play an updating role
-      deleteProperty: (_: S, key: keyof S) => this._updater_.updateMetaState(
-        key, undefined as ValueOf<S>, true,
-      ),
-    }) as MacroStore<S>;
-  };
+  useStore: UseMacroStore<S> = () => this._metaState_.useMetaState();
   /** ============================== For Core Render Element end ============================== */
 
   /** Helper function for binding function properties  */

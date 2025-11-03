@@ -57,7 +57,7 @@ export default class Restorer<S extends PrimitiveState> {
   /**
    * @description In order to prevent the double rendering in React's StrictMode
    * from causing issues with the registration function returned in useEffect,
-   * it happens to be opportune for metaStateMap to release memory preemptively
+   * it happens to be opportune for metaState to release memory preemptively
    * during the first unmount execution.
    * (with memory release being performed in the callback).
    * This early release of memory removes the previous meta-state,

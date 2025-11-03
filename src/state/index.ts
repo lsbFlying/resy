@@ -28,8 +28,6 @@ export default class MetaState<S extends PrimitiveState> {
 
   _$isRendering_: boolean | null = null;
 
-  _$stateKeyRefs_ = new Set<keyof S>();
-
   // The Set memory of the update function of a single attribute
   readonly stateChangeQueue = new Set<Callback>();
 
@@ -100,7 +98,6 @@ export default class MetaState<S extends PrimitiveState> {
         const sourceFromStore = Reflect.has($metaStore, key);
 
         if (!sourceFromStore && typeof value !== "function") {
-          this._$isRendering_ && this._$stateKeyRefs_.add(key);
           return this._$isRendering_ ? this._$currentState_![key] : state[key];
         }
 

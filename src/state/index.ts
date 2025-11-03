@@ -18,11 +18,11 @@ export default class MetaState<S extends PrimitiveState> {
   // eslint-disable-next-line no-empty-function
   constructor(public $metaStore: MetaStore<S>) {}
 
-  _$engineStore_: MacroStore<S> | null = null;
+  engineStore: MacroStore<S> | null = null;
 
-  _$currentState_: S | null = null;
+  currentState: S | null = null;
 
-  _$isRendering_: boolean | null = null;
+  isRendering: boolean | null = null;
 
   // The Set memory of the update function of a single attribute
   readonly stateChangeQueue = new Set<Callback>();
@@ -44,9 +44,9 @@ export default class MetaState<S extends PrimitiveState> {
         () => {
           // Release memory if there are no component references
           if (!this.stateChangeQueue.size) {
-            this._$engineStore_ = null;
-            this._$currentState_ = null;
-            this._$isRendering_ = null;
+            this.engineStore = null;
+            this.currentState = null;
+            this.isRendering = null;
           }
         },
       );
@@ -76,15 +76,15 @@ export default class MetaState<S extends PrimitiveState> {
     });
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    this._$currentState_ = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+    this.currentState = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-    this._$isRendering_ = true;
+    this.isRendering = true;
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useLayoutEffect(() => {
-      this._$isRendering_ = false;
+      this.isRendering = false;
     });
 
-    return this._$engineStore_ ??= new Proxy({} as S, {
+    return this.engineStore ??= new Proxy({} as S, {
       get: (_: S, key: keyof S) => {
         const state = $metaStore._$state_;
 
@@ -94,7 +94,7 @@ export default class MetaState<S extends PrimitiveState> {
         const sourceFromStore = Reflect.has($metaStore, key);
 
         if (!sourceFromStore && typeof value !== "function") {
-          return this._$isRendering_ ? this._$currentState_![key] : state[key];
+          return this.isRendering ? this.currentState![key] : state[key];
         }
 
         if (!sourceFromStore && typeof value === "function") {

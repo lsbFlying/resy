@@ -75,6 +75,7 @@ export default class MetaStore<S extends PrimitiveState> {
   // Restorer
   readonly _restorer_ = new Restorer(this);
 
+  // MetaState for driving rendering
   readonly _metaState_ = new MetaState<S>(this);
 
   // After unmount resetting the state (`restoreProcessing` function has been executed),

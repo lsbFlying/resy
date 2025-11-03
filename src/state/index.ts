@@ -88,7 +88,7 @@ export default class MetaState<S extends PrimitiveState> {
       this._$isRendering_ = false;
     });
 
-    return this._$engineStore_ ??= new Proxy(this._$currentState_, {
+    return this._$engineStore_ ??= new Proxy({} as S, {
       get: (_: S, key: keyof S) => {
         const state = $metaStore._$state_;
 

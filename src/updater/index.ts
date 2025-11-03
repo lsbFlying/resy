@@ -167,7 +167,7 @@ export default class Updater<S extends PrimitiveState> {
           const value = (stateTemp as S)[key];
           if (!Object.is(_$state_[key], value)) {
             this.$metaStore._$state_ = {
-              ..._$state_,
+              ...this.$metaStore._$state_,
               [key]: value,
             };
             this.classUpdater(key, value);

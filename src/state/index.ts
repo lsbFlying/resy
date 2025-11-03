@@ -85,6 +85,7 @@ export default class MetaState<S extends PrimitiveState> {
     });
 
     return this.engineStore ??= new Proxy({} as S, {
+      // todo 这里需要完善后续的immutable功能，在get做惰性proxy代理，类似MetaStore的createProxy
       get: (_: S, key: keyof S) => {
         const state = $metaStore._$state_;
 

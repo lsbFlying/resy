@@ -17,10 +17,8 @@ export default class MetaState<S extends PrimitiveState> {
   constructor(
     public $metaStore: MetaStore<S>,
     public $restorer: Restorer<S>,
-  ) {
-    // Perform refresh recovery logic if initialState is a function
-    $restorer.initialStateRetrieve();
-  }
+    // eslint-disable-next-line no-empty-function
+  ) {}
 
   // The Set memory of the update function of a single attribute
   readonly stateChangeQueue = new Set<Callback>();
@@ -54,6 +52,9 @@ export default class MetaState<S extends PrimitiveState> {
   };
 
   useMetaState() {
+    // Perform refresh recovery logic if initialState is a function
+    this.$restorer.initialStateRetrieve();
+
     const { subscribe, getSnapshot } = this;
 
     const { _options_: { namespace }, _$state_ } = this.$metaStore;

@@ -9,7 +9,7 @@ export default class Scheduler<S extends PrimitiveState> {
   // task data of updated
   taskData = {} as S;
   // task queue of updated
-  readonly taskQueue: Map<keyof S, Callback> = new Map();
+  taskQueue = new Map<keyof S, Callback>();
   // Callback function queue
   readonly callbackQueue = new Set<StateCallbackItem<S>>();
 
@@ -37,6 +37,6 @@ export default class Scheduler<S extends PrimitiveState> {
   // Flush and clear the task data and task queue
   flushTask() {
     this.taskData = {} as S;
-    this.taskQueue.clear();
+    this.taskQueue = new Map<keyof S, Callback>();
   };
 }

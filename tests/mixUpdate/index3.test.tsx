@@ -141,11 +141,15 @@ test("mixUpdateAndSubscribe", async () => {
      */
     expect(counter === 3).toBeTruthy();
     // console.log("subscribeCounter-add1-out", subscribeCounter);
-    const id = setTimeout(() => {
-      clearTimeout(id);
-      // console.log("subscribeCounter-add1-inner", subscribeCounter);
-      expect(subscribeCounter === 2).toBeTruthy();
-    }, 0);
+    // TODO 整个测试文件夹的setTimeout待移除，否则宏任务内部的报错vitest无法捕捉
+    // const id = setTimeout(() => {
+    //   clearTimeout(id);
+    //   // console.log("subscribeCounter-add1-inner", subscribeCounter);
+    //   expect(subscribeCounter === 2).toBeTruthy();
+    // }, 0);
+
+    // console.log("subscribeCounter-add1-inner", subscribeCounter);
+    expect(subscribeCounter === 2).toBeTruthy();
   });
 
   fireEvent.click(getByText("add2"));

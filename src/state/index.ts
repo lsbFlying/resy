@@ -1,7 +1,8 @@
 import type { Callback, PrimitiveState, ValueOf } from "../types";
 import type MetaStore from "../store/core";
 import type { AnyBoundFn, MacroStore } from "../store/types";
-import { useDebugValue, useLayoutEffect } from "react";
+import type { MetaStateSubscriberType } from "./types";
+import { useDebugValue, useEffect, useLayoutEffect, useRef } from "react";
 import { _COMPUTED_PREFIX_ } from "../store/static";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 
@@ -18,36 +19,25 @@ export default class MetaState<S extends PrimitiveState> {
   // eslint-disable-next-line no-empty-function
   constructor(public $metaStore: MetaStore<S>) {}
 
-  engineStore?: MacroStore<S>;
-
   isRendering?: boolean;
 
   stateKeyRefs = new Set<keyof S>();
 
-  // The Set memory of the update function of a single attribute
-  readonly stateChangeQueue = new Set<Callback>();
+  subscribe: MetaStateSubscriberType<S> = (stateChange: Callback) => {
+    const { $metaStore } = this;
+    const { _restorer_, _subscriber_ } = $metaStore;
 
-  subscribe = (stateChange: Callback) => {
-    const $restorer = this.$metaStore._restorer_;
-
-    // If a component references the data, the update function will be added to stateChangeSet
-    this.stateChangeQueue.add(stateChange);
+    const unsub = _subscriber_.subscribe(stateChange, this.subscribe["stateKeys"]);
 
     // Increment the reference count by 1 if the component is referenced
-    $restorer.metaStateRefCounter++;
+    _restorer_.metaStateRefCounter++;
 
     return () => {
-      this.stateChangeQueue.delete(stateChange);
-      $restorer.metaStateRefCounter--;
+      unsub();
 
-      $restorer.deferRestoreProcessing(
-        () => {
-          // Release memory if there are no component references
-          if (!this.stateChangeQueue.size) {
-            this.engineStore = undefined;
-          }
-        },
-      );
+      _restorer_.metaStateRefCounter--;
+
+      _restorer_.deferRestoreProcessing();
     };
   };
 
@@ -56,6 +46,8 @@ export default class MetaState<S extends PrimitiveState> {
   };
 
   useMetaState() {
+    this.stateKeyRefs.clear();
+
     this.isRendering = true;
 
     const { subscribe, getSnapshot, $metaStore } = this;
@@ -76,6 +68,13 @@ export default class MetaState<S extends PrimitiveState> {
     });
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
+    const ref = useRef({ stateKeys: [] as (keyof S)[] });
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useEffect(() => {
+      this.subscribe["stateKeys"] = ref.current.stateKeys;
+    }, []);
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -83,35 +82,39 @@ export default class MetaState<S extends PrimitiveState> {
       this.isRendering = false;
     });
 
-    return this.engineStore ??= new Proxy({} as S, {
+    return new Proxy({} as S, {
       // todo 这里需要完善后续的immutable功能，在get做惰性proxy代理，类似MetaStore的createProxy
       get: (_: S, key: keyof S) => {
-        // get latest _$state_
-        const state = this.$metaStore._$state_;
+        try {
+          // get latest _$state_
+          const state = this.$metaStore._$state_;
 
-        // Get the latest value
-        const value = state[key];
+          // Get the latest value
+          const value = state[key];
 
-        const sourceFromStore = Reflect.has($metaStore, key);
+          const sourceFromStore = Reflect.has($metaStore, key);
 
-        if (!sourceFromStore && typeof value !== "function") {
-          this.isRendering && this.stateKeyRefs.add(key);
-          return state[key];
+          if (!sourceFromStore && typeof value !== "function") {
+            this.isRendering && this.stateKeyRefs.add(key);
+            return state[key];
+          }
+
+          if (!sourceFromStore && typeof value === "function") {
+            // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
+            !(value as AnyBoundFn)._bound_ && $metaStore._boundFnProcessing_(key, value);
+
+            const boundFnValue = state[key];
+
+            return !key.toString().startsWith(_COMPUTED_PREFIX_)
+              ? boundFnValue
+              // TODO bind产生新的引用，待优化
+              : $metaStore.useComputed.bind(null, boundFnValue);
+          }
+
+          return $metaStore[key as keyof MetaStore<S>];
+        } finally {
+          ref.current.stateKeys = Array.from(this.stateKeyRefs);
         }
-
-        if (!sourceFromStore && typeof value === "function") {
-          // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
-          !(value as AnyBoundFn)._bound_ && $metaStore._boundFnProcessing_(key, value);
-
-          const boundFnValue = state[key];
-
-          return !key.toString().startsWith(_COMPUTED_PREFIX_)
-            ? boundFnValue
-            // TODO bind产生新的引用，待优化
-            : $metaStore.useComputed.bind(null, boundFnValue);
-        }
-
-        return $metaStore[key as keyof MetaStore<S>];
       },
       set: (_: S, key: keyof S, value: ValueOf<S>) => $metaStore._updater_.updateMetaState(
         key, value, false,
@@ -121,11 +124,5 @@ export default class MetaState<S extends PrimitiveState> {
         key, undefined as ValueOf<S>, true,
       ),
     }) as MacroStore<S>;
-  }
-
-  updater() {
-    this.stateChangeQueue.forEach(stateChange => {
-      stateChange();
-    });
   }
 }

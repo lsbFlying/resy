@@ -1,4 +1,4 @@
-import type { Callback, PrimitiveState } from "../types";
+import type { PrimitiveState } from "../types";
 import type { StateCallback } from "../updater/types";
 import type MetaStore from "../store/core";
 import { hasOwnProperty } from "../utils";
@@ -70,14 +70,23 @@ export default class Restorer<S extends PrimitiveState> {
    * Here, to ensure operations such as unmount, freeing memory,
    * and unmountRestore run smoothly,
    * a microtask can be used to postpone the unmount process.
+   * todo 新的实现方式了，是否还需要延迟，待后续确认
    */
-  deferRestoreProcessing(callback?: Callback) {
-    const scheduler = this.$metaStore._scheduler_;
-    if (!scheduler.deferEffectDestructorExecutable) {
-      scheduler.deferEffectDestructorExecutable = Promise.resolve().then(() => {
-        scheduler.deferEffectDestructorExecutable = undefined;
-        const { metaStateRefCounter } = this;
-        const classInstanceStack = this.$metaStore._updater_.classInstanceStack;
+  deferRestoreProcessing() {
+    const { _scheduler_ } = this.$metaStore;
+    if (!_scheduler_.deferEffectDestructorExecutable) {
+      _scheduler_.deferEffectDestructorExecutable = Promise.resolve().then(() => {
+        const {
+          metaStateRefCounter,
+          $metaStore: {
+            _updater_: { classInstanceStack },
+            _options_: { unmountRestore },
+            _initialState_,
+          }
+        } = this;
+
+        _scheduler_.deferEffectDestructorExecutable = undefined;
+
         if (!metaStateRefCounter && !classInstanceStack.size) {
           /**
            * By using "stateRefCounter" and "classInstanceStack",
@@ -88,21 +97,19 @@ export default class Restorer<S extends PrimitiveState> {
            * The complete unmount cycle corresponds to the entire usage cycle of the store.
            */
           const noRef = !classInstanceStack.size && !metaStateRefCounter;
-          const initialState = this.$metaStore._initialState_;
           /**
            * When initialState is a function,
            * it does not have to be executed at unmount time,
            * because initialization time is sure to reset execution,
            * thus optimizing code execution efficiency.
            */
-          this.$metaStore._options_.unmountRestore
+          unmountRestore
           && noRef
-          && typeof initialState !== "function"
+          && typeof _initialState_ !== "function"
           && this.restoreProcessing();
 
-          typeof initialState === "function" && noRef && (this.initialFunctionExecutable = true);
+          typeof _initialState_ === "function" && noRef && (this.initialFunctionExecutable = true);
         }
-        callback?.();
       });
     }
   };

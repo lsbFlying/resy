@@ -32,7 +32,7 @@ export default class Subscriber<S extends PrimitiveState> {
   // Subscription function
   subscribe = (
     listener: ListenerType<S>,
-    stateKeys?: (keyof S)[],
+    stateKeys?: (keyof S)[] | Set<keyof S>,
     immediate?: boolean,
   ): Unsubscribe => {
     if (immediate) {
@@ -52,19 +52,21 @@ export default class Subscriber<S extends PrimitiveState> {
     subscribeErrorProcessing(listener, stateKeys);
 
     const listenerWrap: ListenerType<S> = data => {
-      Object.keys(data.effectState).some(key => stateKeys!.includes(key)) && listener(data);
+      Object.keys(data.effectState).some(key => {
+        return stateKeys instanceof Set ? stateKeys.has(key) : stateKeys!.includes(key);
+      }) && listener(data);
     };
 
-    const hasListenerKeys = !stateKeys?.length;
+    const noneListenerKeys = !((stateKeys as Set<keyof S>)?.size || (stateKeys as (keyof S)[])?.length);
 
-    hasListenerKeys
+    noneListenerKeys
       ? listenerQueue.add(listener)
       : listenerQueue.add(listenerWrap);
 
     // Returns the unsubscribing function, which allows the user to choose whether or not to unsubscribe,
     // because it is also possible that the user wants the subscription to remain in effect.
     return () => {
-      hasListenerKeys
+      noneListenerKeys
         ? listenerQueue.delete(listener)
         : listenerQueue.delete(listenerWrap);
     };

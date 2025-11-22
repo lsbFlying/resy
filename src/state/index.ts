@@ -1,8 +1,8 @@
-import type { Callback, PrimitiveState, ValueOf } from "../types";
-import type MetaStore from "../store/core";
+import type { Callback, PrimitiveState } from "../types";
 import type { AnyBoundFn, MacroStore } from "../store/types";
-import type { MetaStateSubscriberType } from "./types";
-import { useDebugValue, useEffect, useLayoutEffect, useRef } from "react";
+import type { SubscriberRefType } from "./types";
+import type MetaStore from "../store/core";
+import { useCallback, useDebugValue, useLayoutEffect, useRef, useState } from "react";
 import { _COMPUTED_PREFIX_ } from "../store/static";
 import useSyncExternalStoreExports from "use-sync-external-store/shim";
 
@@ -21,38 +21,19 @@ export default class MetaState<S extends PrimitiveState> {
 
   isRendering?: boolean;
 
-  stateKeyRefs = new Set<keyof S>();
-
-  subscribe: MetaStateSubscriberType<S> = (stateChange: Callback) => {
-    const { $metaStore } = this;
-    const { _restorer_, _subscriber_ } = $metaStore;
-
-    const unsub = _subscriber_.subscribe(stateChange, this.subscribe["stateKeys"]);
-
-    // Increment the reference count by 1 if the component is referenced
-    _restorer_.metaStateRefCounter++;
-
-    return () => {
-      unsub();
-
-      _restorer_.metaStateRefCounter--;
-
-      _restorer_.deferRestoreProcessing();
-    };
-  };
-
   getSnapshot = () => {
     return this.$metaStore._$state_;
   };
 
   useMetaState() {
-    this.stateKeyRefs.clear();
-
     this.isRendering = true;
 
-    const { subscribe, getSnapshot, $metaStore } = this;
+    const { getSnapshot, $metaStore } = this;
 
-    const { _options_: { namespace }, _$state_, _restorer_ } = $metaStore;
+    const {
+      _options_: { namespace }, _$state_,
+      _restorer_, _subscriber_, store,
+    } = $metaStore;
 
     // Perform refresh recovery logic if initialState is a function
     _restorer_.initialStateRetrieve();
@@ -68,10 +49,38 @@ export default class MetaState<S extends PrimitiveState> {
     });
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    const ref = useRef({ stateKeys: [] as (keyof S)[] });
+    const subscriberRef = useRef<SubscriberRefType<S>>({
+      stateKeys: { oldKeys: new Set<keyof S>(), newKeys: new Set<keyof S>() },
+      resubscriber: null,
+    });
+
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    useEffect(() => {
-      this.subscribe["stateKeys"] = ref.current.stateKeys;
+    const subscribe = useCallback((onStateChange: Callback) => {
+      const unsub = _subscriber_.subscribe(onStateChange, subscriberRef.current.stateKeys.newKeys);
+
+      subscriberRef.current.resubscriber = {
+        resubscribe() {
+          // todo 先接触订阅
+          unsub();
+          // todo 再重新订阅
+          subscriberRef.current.resubscriber!.newUnsub = _subscriber_.subscribe(
+            onStateChange,
+            subscriberRef.current.stateKeys.newKeys,
+          );
+        },
+      };
+
+      // Increment the reference count by 1 if the component is referenced
+      _restorer_.metaStateRefCounter++;
+
+      return () => {
+        unsub();
+        subscriberRef.current.resubscriber?.newUnsub?.();
+
+        _restorer_.metaStateRefCounter--;
+        _restorer_.deferRestoreProcessing();
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -82,8 +91,8 @@ export default class MetaState<S extends PrimitiveState> {
       this.isRendering = false;
     });
 
-    return new Proxy({} as S, {
-      // todo 这里需要完善后续的immutable功能，在get做惰性proxy代理，类似MetaStore的createProxy
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useState(() => new Proxy({} as S, {
       get: (_: S, key: keyof S) => {
         try {
           // get latest _$state_
@@ -95,8 +104,9 @@ export default class MetaState<S extends PrimitiveState> {
           const sourceFromStore = Reflect.has($metaStore, key);
 
           if (!sourceFromStore && typeof value !== "function") {
-            this.isRendering && this.stateKeyRefs.add(key);
-            return state[key];
+            this.isRendering && subscriberRef.current.stateKeys.newKeys.add(key);
+            // todo 借用store本身具备的链式更新能力
+            return store[key];
           }
 
           if (!sourceFromStore && typeof value === "function") {
@@ -113,16 +123,22 @@ export default class MetaState<S extends PrimitiveState> {
 
           return $metaStore[key as keyof MetaStore<S>];
         } finally {
-          ref.current.stateKeys = Array.from(this.stateKeyRefs);
+          /**
+           * @desc
+           * todo 检查新的订阅属性是否有增多，有则解除之前的订阅，重新订阅新属性，
+           *  旧的属性集必然是新的属性集的子集，因为新的属性集的产生必然是要执行旧的属性集产生的逻辑代码，
+           *  而这个逻辑代码的执行必然是拥有所有的旧属性的。
+           */
+          const { stateKeys, resubscriber } = subscriberRef.current;
+          const { oldKeys, newKeys } = stateKeys;
+          if (newKeys.size > oldKeys.size) {
+            // todo 更新一下oldKeys
+            stateKeys.oldKeys = new Set(newKeys);
+            // todo 解除之前的订阅，重新订阅新的属性
+            resubscriber?.resubscribe?.();
+          }
         }
       },
-      set: (_: S, key: keyof S, value: ValueOf<S>) => $metaStore._updater_.updateMetaState(
-        key, value, false,
-      ),
-      // Delete will also play an updating role
-      deleteProperty: (_: S, key: keyof S) => $metaStore._updater_.updateMetaState(
-        key, undefined as ValueOf<S>, true,
-      ),
-    }) as MacroStore<S>;
+    }) as MacroStore<S>)[0];
   }
 }

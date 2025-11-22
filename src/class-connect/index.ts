@@ -1,11 +1,11 @@
-import type { PrimitiveState, ValueOf } from "../types";
+import type { PrimitiveState } from "../types";
 import type { AnyBoundFn, Store } from "../store/types";
 import type { ClassStoreType } from "./types";
+import MetaStore from "../store/core";
 import { PureComponent } from "react";
 import { storeErrorProcessing } from "../store/errors";
 import { _COMPUTED_PREFIX_ } from "../store/static";
 import { _RESY_CWS_BRAND_ } from "./static";
-import MetaStore from "../store/core";
 
 /**
  * @class ComponentWithStore
@@ -119,7 +119,8 @@ export abstract class ComponentWithStore<
 
   #getState<S extends PrimitiveState>(key: keyof S, store: MetaStore<S>) {
     this._$stateRefs_.add(key as (string | number));
-    return store._$state_[key];
+    // todo 借用store本身具备的链式更新能力
+    return store.store[key];
   };
 
   connectStore<S extends PrimitiveState>(store: Store<S>) {
@@ -135,6 +136,7 @@ export abstract class ComponentWithStore<
 
     // Data agents for use by class components
     const classEngineStore = new Proxy({} as ClassStoreType<S>, {
+      // todo 后续完善computer，这块的get内容应该会更简化完善一点
       get: (_, key: keyof S) => {
         // TODO waiting upgrade
         // const sourceFrom$State = !firstLevelKey;
@@ -195,16 +197,8 @@ export abstract class ComponentWithStore<
 
         return (store as any as MetaStore<S>)[key as keyof MetaStore<S>];
       },
-      // TODO classEngineStore可能需要递归代理生成proxy，像MetaStore的createProxy方法那样，以便于链式更新
-      set: (_, key: keyof S, value: ValueOf<S>) => updater.updateMetaState(key, value),
-      deleteProperty: (_, key: keyof S) => updater.updateMetaState(
-        key, undefined as ValueOf<S>, true,
-      ),
-      // TODO delete methods waiting upgrade
     } as ProxyHandler<ClassStoreType<S>>);
 
-    this._$store_ = classEngineStore;
-
-    return classEngineStore;
+    return this._$store_ = classEngineStore;
   };
 }

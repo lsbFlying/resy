@@ -1,5 +1,15 @@
-import { Callback, PrimitiveState } from "../types";
+import type { PrimitiveState } from "../types";
+import type { Unsubscribe } from "../subscribe/types";
 
-export type MetaStateSubscriberType<S extends PrimitiveState> = ((onStateChange: Callback) => Callback) & {
-  stateKeys?: (keyof S)[];
+type ResubscriberType = {
+  newUnsub?: Unsubscribe;
+  resubscribe?(): void;
+};
+
+export type SubscriberRefType<S extends PrimitiveState> = {
+  stateKeys: {
+    oldKeys: Set<keyof S>;
+    newKeys: Set<keyof S>;
+  };
+  resubscriber?: null | ResubscriberType;
 };

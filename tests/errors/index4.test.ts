@@ -73,9 +73,6 @@ test("subscribe-error-scene", async () => {
   expect(() => store.subscribe(() => {}, new Map())).toThrowError();
   // @ts-ignore
   // eslint-disable-next-line no-empty-function
-  expect(() => store.subscribe(() => {}, new Set())).toThrowError();
-  // @ts-ignore
-  // eslint-disable-next-line no-empty-function
   expect(() => store.subscribe(() => {}, new WeakMap())).toThrowError();
   // @ts-ignore
   // eslint-disable-next-line no-empty-function

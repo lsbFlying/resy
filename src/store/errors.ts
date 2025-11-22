@@ -82,7 +82,7 @@ export const subscribeErrorProcessing = (
       + `Instead received: ${listenerType.toLocaleLowerCase()}.`
     );
   }
-  if (__DEV__ && stateKeysType !== "Undefined" && stateKeysType !== "Array") {
+  if (__DEV__ && stateKeysType !== "Undefined" && (stateKeysType !== "Array" && stateKeysType !== "Set")) {
     throw new Error(
       "resy's subscribe(...): Expected the last optional 'stateKeys' argument to be a array. "
       + `Instead received: ${stateKeysType.toLocaleLowerCase()}.`

@@ -56,12 +56,14 @@ export default class MetaState<S extends PrimitiveState> {
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const subscribe = useCallback((onStateChange: Callback) => {
-      const unsub = _subscriber_.subscribe(onStateChange, subscriberRef.current.stateKeys.newKeys);
+      const unsub = subscriberRef.current.stateKeys.newKeys.size
+        ? _subscriber_.subscribe(onStateChange, subscriberRef.current.stateKeys.newKeys)
+        : undefined;
 
       subscriberRef.current.resubscriber = {
         resubscribe() {
           // todo 先接触订阅
-          unsub();
+          unsub?.();
           // todo 再重新订阅
           subscriberRef.current.resubscriber!.newUnsub = _subscriber_.subscribe(
             onStateChange,
@@ -74,7 +76,7 @@ export default class MetaState<S extends PrimitiveState> {
       _restorer_.metaStateRefCounter++;
 
       return () => {
-        unsub();
+        unsub?.();
         subscriberRef.current.resubscriber?.newUnsub?.();
 
         _restorer_.metaStateRefCounter--;

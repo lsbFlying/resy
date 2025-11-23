@@ -20,7 +20,51 @@ export default class Updater<S extends PrimitiveState> {
   // The storage stack of this instance for the class component
   readonly classInstanceStack = new Set<ComponentWithStore<{}, S>>();
 
-  batchUpdateProcessingCore(effectState?: S) {
+  callbackAndSubscribeProcessing(effectState: S) {
+    const {
+      _scheduler_, _$state_,
+      _subscriber_: { listenerQueue, prevBatchState },
+    } = this.$metaStore;
+
+    const { callbackQueue } = _scheduler_;
+
+    if (callbackQueue.size > 0) {
+      callbackQueue.forEach(item => {
+        const { callback, nextState } = item;
+        /**
+         * @desc In order to prevent a synchronous endless loop caused by the execution
+         * of the callback function in the `syncUpdate` synchronous update function
+         * from generating new states updates, here we first talk about temporarily storing the callback function,
+         * and the immediately removing the current callbackQueue element.
+         */
+        const callbackTemp = callback;
+        callbackQueue.delete(item);
+        callbackTemp(nextState);
+      });
+    }
+
+    /**
+     * @desc 🌟 As logically,
+     * the listener in subscribe needs to be executed after the callback has been executed.
+     * Trigger the execution of subscription snooping
+     */
+    if (listenerQueue.size > 0 && !isEmptyPureObject(effectState)) {
+      listenerQueue.forEach(item => {
+        item({
+          /**
+           * @desc Even if 'scheduler. flushTask()' clears taskData,
+           * it directly assigns new values to taskData within the scheduler,
+           * making it easier to trace the old taskData as a snapshot variable.
+           */
+          effectState,
+          nextState: _$state_,
+          prevState: prevBatchState,
+        });
+      });
+    }
+  }
+
+  batchUpdateProcessingCore() {
     const { $metaStore } = this;
     const { _scheduler_ } = $metaStore;
 
@@ -32,11 +76,9 @@ export default class Updater<S extends PrimitiveState> {
     _scheduler_.willUpdating = undefined;
 
     batchUpdate(() => {
-      const { _subscriber_: { listenerQueue, prevBatchState }, _$state_ } = $metaStore;
-      const { taskData, callbackQueue } = _scheduler_;
+      const { taskData } = _scheduler_;
 
-      // Perform update task（update class component）
-      this.classUpdater(taskData);
+      this.update(taskData);
 
       /**
        * @description So far, the task of this round of data updates is complete.
@@ -50,41 +92,7 @@ export default class Updater<S extends PrimitiveState> {
        */
       _scheduler_.flushTask();
 
-      if (callbackQueue.size > 0) {
-        callbackQueue.forEach(item => {
-          const { callback, nextState } = item;
-          /**
-           * @desc In order to prevent a synchronous endless loop caused by the execution
-           * of the callback function in the `syncUpdate` synchronous update function
-           * from generating new states updates, here we first talk about temporarily storing the callback function,
-           * and the immediately removing the current callbackQueue element.
-           */
-          const callbackTemp = callback;
-          callbackQueue.delete(item);
-          callbackTemp(nextState);
-        });
-      }
-
-      /**
-       * @desc 🌟 As logically,
-       * the listener in subscribe needs to be executed after the callback has been executed.
-       * Trigger the execution of subscription snooping
-       */
-      const effectStateTemp = effectState ?? taskData;
-      if (listenerQueue.size > 0 && !isEmptyPureObject(effectStateTemp)) {
-        listenerQueue.forEach(item => {
-          item({
-            /**
-             * @desc Even if 'scheduler. flushTask()' clears taskData,
-             * it directly assigns new values to taskData within the scheduler,
-             * making it easier to trace the old taskData as a snapshot variable.
-             */
-            effectState: effectStateTemp,
-            nextState: _$state_,
-            prevState: prevBatchState,
-          });
-        });
-      }
+      this.callbackAndSubscribeProcessing(taskData);
     });
   }
 
@@ -156,11 +164,11 @@ export default class Updater<S extends PrimitiveState> {
           }
         });
 
-        this.classUpdater(effectState);
+        this.update(effectState);
 
         _scheduler_.pushCallback(_$state_, stateTemp as State<S>, callback);
 
-        this.batchUpdateProcessingCore(effectState);
+        this.callbackAndSubscribeProcessing(effectState);
       });
     }
   };
@@ -222,8 +230,13 @@ export default class Updater<S extends PrimitiveState> {
     }
   }
 
-  // For class components
-  classUpdater(effectState: S) {
+  update(effectState: S) {
+    const { _subscriber_: { onStateChangeQueue } } = this.$metaStore;
+    // Perform update task（update hook component）
+    onStateChangeQueue.forEach(stateChangeWrap => {
+      stateChangeWrap(effectState);
+    });
+
     const classInstanceStack = this.classInstanceStack;
     classInstanceStack.forEach(classInstanceItem => {
       /**
@@ -246,12 +259,15 @@ export default class Updater<S extends PrimitiveState> {
          * 🌟 `.has()` for granular updates - skips re-renders for unused state.
          */
         const curClassCompEffectState = {} as S;
+        const effectKeys = Object.keys(effectState);
+        const effectKeysLength = effectKeys.length;
 
-        Object.keys(effectState).forEach((key: keyof S) => {
+        for (let i = 0; i < effectKeysLength; i++) {
+          const key = effectKeys[i] as keyof S;
           if (_$stateRefs_.has(key)) {
             curClassCompEffectState[key] = effectState[key];
           }
-        });
+        }
 
         !isEmptyPureObject(curClassCompEffectState) && classInstanceItem.setState(curClassCompEffectState);
       } else {

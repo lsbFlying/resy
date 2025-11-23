@@ -1,12 +1,15 @@
-import type { PrimitiveState } from "../types";
-import type { ListenerType, SubscriptionRefType, Unsubscribe } from "./types";
 import type MetaStore from "../store/core";
+import type { PrimitiveState } from "../types";
+import type {
+  ListenerAndStateChangeType, ListenerParams, ListenerType,
+  SubscribeType, SubscriptionRefType, Unsubscribe,
+} from "./types";
 import { subscribeErrorProcessing } from "../store/errors";
 import { useDebugValue, useEffect, useRef, useState } from "react";
 
 export default class Subscriber<S extends PrimitiveState> {
   constructor(public $metaStore: MetaStore<S>) {
-    $metaStore.subscribe = this.subscribe;
+    $metaStore.subscribe = this.subscribe as SubscribeType<S>["subscribe"];
     $metaStore.useSubscription = this.useSubscription;
   }
 
@@ -15,6 +18,8 @@ export default class Subscriber<S extends PrimitiveState> {
 
   // Subscription listener queue
   readonly listenerQueue = new Set<ListenerType<S>>();
+  // The state subscription listening function queue of useSyncExternalStore
+  readonly onStateChangeQueue = new Set<ListenerAndStateChangeType<S>>();
 
   /**
    * @description Pre-update processing
@@ -29,9 +34,13 @@ export default class Subscriber<S extends PrimitiveState> {
     }
   }
 
-  // Subscription function
+  /**
+   * @desc Subscription function.
+   * When the stateKey parameter type is Set,
+   * it is prepared for `onStateChangeQueue` subscription listening.
+   */
   subscribe = (
-    listener: ListenerType<S>,
+    listener: ListenerAndStateChangeType<S>,
     stateKeys?: (keyof S)[] | Set<keyof S>,
     immediate?: boolean,
   ): Unsubscribe => {
@@ -41,31 +50,40 @@ export default class Subscriber<S extends PrimitiveState> {
       stateKeys?.forEach(key => {
         effectState[key] = nextState[key];
       });
-      listener({
+      (listener as ListenerType<S>)({
         effectState,
         nextState,
         prevState: this.prevBatchState,
       });
     }
+
+    const stateChangeSubscribeFlag = stateKeys instanceof Set;
     const listenerQueue = this.listenerQueue;
+    const onStateChangeQueue = this.onStateChangeQueue;
 
     subscribeErrorProcessing(listener, stateKeys);
 
-    const listenerWrap: ListenerType<S> = data => {
-      const effectKeys = Object.keys(data.effectState);
+    // todo 作为stateChange的订阅函数的时候，只传effectState（类型即`Readonly<Partial<S>>`）参数即可
+    const listenerWrap = (data: ListenerParams<S> | Readonly<Partial<S>>) => {
+      const effectKeys = Object.keys(
+        stateChangeSubscribeFlag
+          ? (data as Readonly<Partial<S>>)
+          : (data.effectState as ListenerParams<S>["effectState"])
+      );
 
       let changed = false;
       const keysLength = effectKeys.length;
 
       for (let i = 0; i < keysLength; i++) {
         const key = effectKeys[i];
-        if (stateKeys instanceof Set ? stateKeys.has(key) : stateKeys!.includes(key)) {
+        if (stateChangeSubscribeFlag ? stateKeys.has(key) : stateKeys!.includes(key)) {
           changed = true;
           break;
         }
       }
 
-      changed && listener(data);
+      // todo stateChange的订阅函数没有参数，所以这里传了也无妨
+      changed && (listener as ListenerType<S>)(data as ListenerParams<S>);
     };
 
     const noneListenerKeys = !((stateKeys as Set<keyof S>)?.size || (stateKeys as (keyof S)[])?.length);
@@ -74,12 +92,16 @@ export default class Subscriber<S extends PrimitiveState> {
       ? listenerQueue.add(listener)
       : listenerQueue.add(listenerWrap);
 
+    stateChangeSubscribeFlag && onStateChangeQueue.add(listenerWrap);
+
     // Returns the unsubscribing function, which allows the user to choose whether or not to unsubscribe,
     // because it is also possible that the user wants the subscription to remain in effect.
     return () => {
       noneListenerKeys
         ? listenerQueue.delete(listener)
         : listenerQueue.delete(listenerWrap);
+
+      onStateChangeQueue.delete(listenerWrap);
     };
   };
 
@@ -147,7 +169,7 @@ export default class Subscriber<S extends PrimitiveState> {
          * and execute the correct data logic internally.
          */
         Promise.resolve().then(() => {
-          ref.current!.listener(data);
+          ref.current!.listener(data as ListenerParams<S>);
         });
       }, deps, immediate);
       // eslint-disable-next-line react-hooks/exhaustive-deps

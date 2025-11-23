@@ -18,6 +18,10 @@ export type ListenerParams<S extends PrimitiveState> = {
 
 /** Type of monitoring callback for subscription */
 export type ListenerType<S extends PrimitiveState> = (data: ListenerParams<S>) => void;
+/** The state subscription listening function queue of useSyncExternalStore */
+export type ListenerAndStateChangeType<S extends PrimitiveState> = (
+  data: ListenerParams<S> | Readonly<Partial<S>>
+) => void;
 
 /** Type of subscribe */
 export type SubscribeType<S extends PrimitiveState> = {

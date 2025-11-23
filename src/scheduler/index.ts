@@ -1,11 +1,13 @@
 import type { PrimitiveState, ValueOf } from "../types";
 import type { StateCallbackItem, State, StateCallback } from "../updater/types";
+import MetaStore from "../store/core";
 import { stateCallbackErrorProcessing } from "../store/errors";
 
 /**
  * @description Scheduler class for update.
  */
 export default class Scheduler<S extends PrimitiveState> {
+  constructor(public $metaStore: MetaStore<S>) {}
   // task data of updated
   taskData = {} as S;
   // Callback function queue
@@ -19,7 +21,26 @@ export default class Scheduler<S extends PrimitiveState> {
   deferEffectDestructorExecutable?: Promise<void>;
 
   // Push both the updated data (in key/value pairs) and the update task queue
-  pushTask(key: keyof S, value: ValueOf<S>) {
+  pushTask(key: keyof S, value: ValueOf<S>, isDelete?: boolean) {
+    const { $metaStore } = this;
+    const { _$state_ } = $metaStore;
+    /**
+     * @description The pre-execution of the data changes accumulates
+     * the logic of the correct execution of the final update,
+     * which lays the foundation for subsequent batch updates.
+     */
+    if (!isDelete) {
+      $metaStore._$state_ = {
+        ..._$state_,
+        [key]: value,
+      };
+    } else {
+      delete _$state_[key];
+      $metaStore._$state_ = {
+        ..._$state_,
+      };
+    }
+
     this.taskData[key] = value;
   };
 

@@ -20,29 +20,6 @@ export default class Updater<S extends PrimitiveState> {
   // The storage stack of this instance for the class component
   readonly classInstanceStack = new Set<ComponentWithStore<{}, S>>();
 
-  pushTask(key: keyof S, value: ValueOf<S>, isDelete?: boolean) {
-    const { $metaStore } = this;
-    const { _$state_, _scheduler_ } = $metaStore;
-    /**
-     * @description The pre-execution of the data changes accumulates
-     * the logic of the correct execution of the final update,
-     * which lays the foundation for subsequent batch updates.
-     */
-    if (!isDelete) {
-      $metaStore._$state_ = {
-        ..._$state_,
-        [key]: value,
-      };
-    } else {
-      delete _$state_[key];
-      $metaStore._$state_ = {
-        ..._$state_,
-      };
-    }
-
-    _scheduler_.pushTask(key, value);
-  }
-
   batchUpdateProcessingCore(effectState?: S) {
     const { $metaStore } = this;
     const { _scheduler_ } = $metaStore;
@@ -139,7 +116,7 @@ export default class Updater<S extends PrimitiveState> {
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         const value = (stateTemp as S)[key];
         if (!Object.is(value, _$state_[key])) {
-          this.pushTask(key, value);
+          _scheduler_.pushTask(key, value);
         }
       });
     }
@@ -201,7 +178,7 @@ export default class Updater<S extends PrimitiveState> {
   ): boolean {
     // if (this.#freezing) return true;
 
-    const { $metaStore: { _$state_, _subscriber_ } } = this;
+    const { $metaStore: { _$state_, _scheduler_, _subscriber_ } } = this;
 
     // mutate chain update
     if (firstLevelKey) {
@@ -238,7 +215,7 @@ export default class Updater<S extends PrimitiveState> {
     } else {
       if (!Object.is(value, _$state_[key])) {
         _subscriber_.willUpdatingProcessing();
-        this.pushTask(key, value, isDelete);
+        _scheduler_.pushTask(key, value, isDelete);
         this.finallyBatchProcessing();
       }
       return true;

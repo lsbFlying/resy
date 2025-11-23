@@ -150,7 +150,7 @@ export default class Restorer<S extends PrimitiveState> {
       const originValue = reducerState[key];
 
       !Object.is(originValue, _$state_[key])
-      && _updater_.pushTask(key, originValue, !hasOwnProperty.call(reducerState, key));
+      && _scheduler_.pushTask(key, originValue, !hasOwnProperty.call(reducerState, key));
     });
 
     _scheduler_.pushCallback({} as S, reducerState, callback);

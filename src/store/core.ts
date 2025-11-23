@@ -54,7 +54,7 @@ export default class MetaStore<S extends PrimitiveState> {
 
   /** ============================== For Core Component Element start ============================== */
   // Scheduler
-  readonly _scheduler_ = new Scheduler<S>();
+  readonly _scheduler_ = new Scheduler<S>(this);
 
   subscribe!: SubscribeType<S>["subscribe"];
   useSubscription!: UseSubscriptionType<S>["useSubscription"];

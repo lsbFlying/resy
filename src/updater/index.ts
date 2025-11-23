@@ -6,6 +6,7 @@ import type MetaStore from "../store/core";
 import { batchUpdate } from "../static";
 import { stateErrorProcessing } from "../store/errors";
 import { createNewRefValue, reduceChanged } from "../immutable/utils";
+import { isEmptyPureObject } from "../utils";
 
 /**
  * @description Update mechanism of `meta-state`
@@ -39,14 +40,7 @@ export default class Updater<S extends PrimitiveState> {
       };
     }
 
-    _scheduler_.pushTask(
-      key,
-      value,
-      () => {
-        // State updates for class components
-        this.classUpdater(key, value);
-      },
-    );
+    _scheduler_.pushTask(key, value);
   }
 
   batchUpdateProcessingCore(effectState?: S) {
@@ -62,12 +56,10 @@ export default class Updater<S extends PrimitiveState> {
 
     batchUpdate(() => {
       const { _subscriber_: { listenerQueue, prevBatchState }, _$state_ } = $metaStore;
-      const { taskData, taskQueue, callbackQueue } = _scheduler_;
+      const { taskData, callbackQueue } = _scheduler_;
 
-      // Perform update task
-      taskQueue.forEach(task => {
-        task();
-      });
+      // Perform update task（update class component）
+      this.classUpdater(taskData);
 
       /**
        * @description So far, the task of this round of data updates is complete.
@@ -102,8 +94,7 @@ export default class Updater<S extends PrimitiveState> {
        * Trigger the execution of subscription snooping
        */
       const effectStateTemp = effectState ?? taskData;
-      // todo 判断 effectStateTemp 是否为空对象待优化
-      if (listenerQueue.size > 0 && Object.keys(effectStateTemp).length) {
+      if (listenerQueue.size > 0 && !isEmptyPureObject(effectStateTemp)) {
         listenerQueue.forEach(item => {
           item({
             /**
@@ -122,9 +113,9 @@ export default class Updater<S extends PrimitiveState> {
 
   finallyBatchProcessing() {
     const scheduler = this.$metaStore._scheduler_;
-    const { taskQueue, callbackQueue } = scheduler;
+    const { taskData, callbackQueue } = scheduler;
 
-    if ((taskQueue.size > 0 || callbackQueue.size > 0) && !scheduler.isUpdating) {
+    if ((!isEmptyPureObject(taskData) || callbackQueue.size > 0) && !scheduler.isUpdating) {
       // Reduce the generation of redundant microtasks through the isUpdating flag
       scheduler.isUpdating = Promise.resolve().then(() => {
         this.batchUpdateProcessingCore();
@@ -185,10 +176,10 @@ export default class Updater<S extends PrimitiveState> {
             };
 
             effectState[key] = value;
-
-            this.classUpdater(key, value);
           }
         });
+
+        this.classUpdater(effectState);
 
         _scheduler_.pushCallback(_$state_, stateTemp as State<S>, callback);
 
@@ -255,7 +246,7 @@ export default class Updater<S extends PrimitiveState> {
   }
 
   // For class components
-  classUpdater(key: keyof S, value: ValueOf<S>) {
+  classUpdater(effectState: S) {
     const classInstanceStack = this.classInstanceStack;
     classInstanceStack.forEach(classInstanceItem => {
       /**
@@ -264,7 +255,8 @@ export default class Updater<S extends PrimitiveState> {
        * If it is in "React.StrictMode" mode,
        * React will discard the first generated instance and the instance will not be mounted.
        */
-      classInstanceItem._$isMounted_
+      const { _$isMounted_, _$stateRefs_ } = classInstanceItem;
+      if (_$isMounted_) {
         /**
          * @description Determine whether the currently updated data property
          * is used in the class component, and if not, do not update it.
@@ -276,9 +268,18 @@ export default class Updater<S extends PrimitiveState> {
          * Therefore, this is always safe, and it can avoid unnecessary re-renders.
          * 🌟 `.has()` for granular updates - skips re-renders for unused state.
          */
-        ? classInstanceItem._$stateRefs_.has(key)
-          && classInstanceItem.setState({ [key]: value } as Pick<S, keyof S>)
-        : classInstanceStack.delete(classInstanceItem);
+        const curClassCompEffectState = {} as S;
+
+        Object.keys(effectState).forEach((key: keyof S) => {
+          if (_$stateRefs_.has(key)) {
+            curClassCompEffectState[key] = effectState[key];
+          }
+        });
+
+        !isEmptyPureObject(curClassCompEffectState) && classInstanceItem.setState(curClassCompEffectState);
+      } else {
+        classInstanceStack.delete(classInstanceItem);
+      }
     });
   }
 }

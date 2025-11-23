@@ -61,6 +61,7 @@ test("fine-grained-IV", async () => {
   fireEvent.click(getByText("countChange"));
   await waitFor(() => {
     getByText("1");
+    console.log("fineGrainedCounter", fineGrainedCounter);
     expect(fineGrainedCounter === 4).toBeTruthy();
   });
 

@@ -52,9 +52,20 @@ export default class Subscriber<S extends PrimitiveState> {
     subscribeErrorProcessing(listener, stateKeys);
 
     const listenerWrap: ListenerType<S> = data => {
-      Object.keys(data.effectState).some(key => {
-        return stateKeys instanceof Set ? stateKeys.has(key) : stateKeys!.includes(key);
-      }) && listener(data);
+      const effectKeys = Object.keys(data.effectState);
+
+      let changed = false;
+      const keysLength = effectKeys.length;
+
+      for (let i = 0; i < keysLength; i++) {
+        const key = effectKeys[i];
+        if (stateKeys instanceof Set ? stateKeys.has(key) : stateKeys!.includes(key)) {
+          changed = true;
+          break;
+        }
+      }
+
+      changed && listener(data);
     };
 
     const noneListenerKeys = !((stateKeys as Set<keyof S>)?.size || (stateKeys as (keyof S)[])?.length);

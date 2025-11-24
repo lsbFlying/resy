@@ -25,9 +25,9 @@ export default class Scheduler<S extends PrimitiveState> {
     const { $metaStore } = this;
     const { _$state_ } = $metaStore;
     /**
-     * @description The pre-execution of the data changes accumulates
-     * the logic of the correct execution of the final update,
-     * which lays the foundation for subsequent batch updates.
+     * @description Pre execution of internal state updates
+     * facilitates the execution of synchronized code for each update step,
+     * and the latest data state is obtained when retrieving the state again.
      */
     if (!isDelete) {
       $metaStore._$state_ = {

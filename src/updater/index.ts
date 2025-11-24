@@ -237,6 +237,7 @@ export default class Updater<S extends PrimitiveState> {
       stateChangeWrap(effectState);
     });
 
+    // Perform update task（update class component）
     const classInstanceStack = this.classInstanceStack;
     classInstanceStack.forEach(classInstanceItem => {
       /**

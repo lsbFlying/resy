@@ -7,7 +7,9 @@ import { stateCallbackErrorProcessing } from "../store/errors";
  * @description Scheduler class for update.
  */
 export default class Scheduler<S extends PrimitiveState> {
+  // eslint-disable-next-line no-empty-function
   constructor(public $metaStore: MetaStore<S>) {}
+
   // task data of updated
   taskData = {} as S;
   // Callback function queue

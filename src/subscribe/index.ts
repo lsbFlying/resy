@@ -1,9 +1,6 @@
 import type MetaStore from "../store/core";
 import type { PrimitiveState } from "../types";
-import type {
-  ListenerAndStateChangeType, ListenerParams, ListenerType,
-  SubscribeType, SubscriptionRefType, Unsubscribe,
-} from "./types";
+import type { ListenerParams, ListenerType, SubscribeType, SubscriptionRefType, Unsubscribe } from "./types";
 import { subscribeErrorProcessing } from "../store/errors";
 import { useDebugValue, useEffect, useRef, useState } from "react";
 
@@ -19,7 +16,7 @@ export default class Subscriber<S extends PrimitiveState> {
   // Subscription listener queue
   readonly listenerQueue = new Set<ListenerType<S>>();
   // The state subscription listening function queue of useSyncExternalStore
-  readonly onStateChangeQueue = new Set<ListenerAndStateChangeType<S>>();
+  readonly onStateChangeQueue = new Set<ListenerType<S>>();
 
   /**
    * @description Pre-update processing
@@ -40,7 +37,7 @@ export default class Subscriber<S extends PrimitiveState> {
    * it is prepared for `onStateChangeQueue` subscription listening.
    */
   subscribe = (
-    listener: ListenerAndStateChangeType<S>,
+    listener: ListenerType<S>,
     stateKeys?: (keyof S)[] | Set<keyof S>,
     immediate?: boolean,
   ): Unsubscribe => {
@@ -50,7 +47,7 @@ export default class Subscriber<S extends PrimitiveState> {
       stateKeys?.forEach(key => {
         effectState[key] = nextState[key];
       });
-      (listener as ListenerType<S>)({
+      listener({
         effectState,
         nextState,
         prevState: this.prevBatchState,
@@ -58,18 +55,12 @@ export default class Subscriber<S extends PrimitiveState> {
     }
 
     const stateChangeSubscribeFlag = stateKeys instanceof Set;
-    const listenerQueue = this.listenerQueue;
-    const onStateChangeQueue = this.onStateChangeQueue;
+    const listenerQueue = stateChangeSubscribeFlag ? this.onStateChangeQueue : this.listenerQueue;
 
     subscribeErrorProcessing(listener, stateKeys);
 
-    // todo 作为stateChange的订阅函数的时候，只传effectState（类型即`Readonly<Partial<S>>`）参数即可
-    const listenerWrap = (data: ListenerParams<S> | Readonly<Partial<S>>) => {
-      const effectKeys = Object.keys(
-        stateChangeSubscribeFlag
-          ? (data as Readonly<Partial<S>>)
-          : (data.effectState as ListenerParams<S>["effectState"])
-      );
+    const listenerWrap = (data: ListenerParams<S>) => {
+      const effectKeys = Object.keys(data.effectState);
 
       let changed = false;
       const keysLength = effectKeys.length;
@@ -82,8 +73,7 @@ export default class Subscriber<S extends PrimitiveState> {
         }
       }
 
-      // todo stateChange的订阅函数没有参数，所以这里传了也无妨
-      changed && (listener as ListenerType<S>)(data as ListenerParams<S>);
+      changed && listener(data);
     };
 
     const noneListenerKeys = !((stateKeys as Set<keyof S>)?.size || (stateKeys as (keyof S)[])?.length);
@@ -92,16 +82,12 @@ export default class Subscriber<S extends PrimitiveState> {
       ? listenerQueue.add(listener)
       : listenerQueue.add(listenerWrap);
 
-    stateChangeSubscribeFlag && onStateChangeQueue.add(listenerWrap);
-
     // Returns the unsubscribing function, which allows the user to choose whether or not to unsubscribe,
     // because it is also possible that the user wants the subscription to remain in effect.
     return () => {
       noneListenerKeys
         ? listenerQueue.delete(listener)
         : listenerQueue.delete(listenerWrap);
-
-      onStateChangeQueue.delete(listenerWrap);
     };
   };
 

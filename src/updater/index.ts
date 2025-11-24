@@ -2,6 +2,7 @@ import type { PrimitiveState, ValueOf } from "../types";
 import type { State, StateCallback, StateFnType } from "./types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import type { ComponentWithStore } from "../class-connect";
+import type { ListenerParams } from "../subscribe/types";
 import type MetaStore from "../store/core";
 import { batchUpdate } from "../static";
 import { stateErrorProcessing } from "../store/errors";
@@ -234,7 +235,9 @@ export default class Updater<S extends PrimitiveState> {
     const { _subscriber_: { onStateChangeQueue } } = this.$metaStore;
     // Perform update task（update hook component）
     onStateChangeQueue.forEach(stateChangeWrap => {
-      stateChangeWrap(effectState);
+      // StateChangeWrap is not a regular subscription function
+      // and can skip passing the prevState and NextState parameters
+      stateChangeWrap({ effectState } as ListenerParams<S>);
     });
 
     // Perform update task（update class component）

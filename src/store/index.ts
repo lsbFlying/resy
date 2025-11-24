@@ -25,17 +25,15 @@ export const createStore = <S extends PrimitiveState>(
   options?: StoreOptions,
 ) => {
   const ms = new MetaStore(initialState, options);
+  const { _updater_ } = ms;
   return new Proxy(ms as any as Store<S>, {
     get: (_, key: keyof S) => {
       return !Reflect.has(ms, key)
         ? ms.store[key]
         : (ms as any as Store<S>)[key];
     },
-    set: (_: S, key: keyof S, value: ValueOf<S>) => ms._updater_.updateMetaState(
-      key, value, false,
-    ),
-    // Delete will also play an updating role
-    deleteProperty: (_: S, key: keyof S) => ms._updater_.updateMetaState(
+    set: (_: S, key: keyof S, value: ValueOf<S>) => _updater_.updateMetaState(key, value),
+    deleteProperty: (_: S, key: keyof S) => _updater_.updateMetaState(
       key, undefined as ValueOf<S>, true,
     ),
   } as ProxyHandler<Store<S>>) as Store<S>;

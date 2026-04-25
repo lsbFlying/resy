@@ -37,9 +37,6 @@ test("batchUpdateBasic-IV", async () => {
   await waitFor(() => {
     getByText("7");
     console.log("countChange-counter", counter);
-    // 🌟 Will be updated 7 times in react17
-    // expect(counter === 8).toBeTruthy();
-    // 🌟 Will be updated 2 times in react18
     expect(counter === 3).toBeTruthy();
   });
 });

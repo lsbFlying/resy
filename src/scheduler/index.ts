@@ -1,7 +1,5 @@
 import type { PrimitiveState, ValueOf } from "../types";
-import type { StateCallbackItem, State, StateCallback } from "../updater/types";
 import MetaStore from "../store/core";
-import { stateCallbackErrorProcessing } from "../store/errors";
 
 /**
  * @description Scheduler class for update.
@@ -12,8 +10,6 @@ export default class Scheduler<S extends PrimitiveState> {
 
   // task data of updated
   taskData = {} as S;
-  // Callback function queue
-  readonly callbackQueue = new Set<StateCallbackItem<S>>();
 
   // Flag for ongoing update
   isUpdating?: Promise<void>;
@@ -44,14 +40,6 @@ export default class Scheduler<S extends PrimitiveState> {
     }
 
     this.taskData[key] = value;
-  };
-
-  // Push the callback and wait for subsequent execution
-  pushCallback($state: S, state: State<S>, callback?: StateCallback<S>) {
-    if (callback !== undefined) {
-      stateCallbackErrorProcessing(callback);
-      this.callbackQueue.add({ nextState: { ...$state, ...state }, callback });
-    }
   };
 
   // Flush and clear the task data and task queue

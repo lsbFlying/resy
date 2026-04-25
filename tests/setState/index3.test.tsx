@@ -19,21 +19,6 @@ test("setState-III", async () => {
         <button onClick={() => {
           store.setState({
             count: store.count + 1,
-          }, () => {
-            console.log("one");
-            store.setState({
-              count: store.count + 1,
-            }, () => {
-              console.log("two");
-              store.setState({
-                count: store.count + 1,
-              }, () => {
-                console.log("three");
-                store.setState({
-                  count: store.count + 1,
-                });
-              });
-            });
           });
         }}>countChange</button>
       </>
@@ -44,7 +29,7 @@ test("setState-III", async () => {
 
   fireEvent.click(getByText("countChange"));
   await waitFor(() => {
-    getByText("4");
+    getByText("1");
     console.log("counter", counter);
     expect(counter === 2).toBeTruthy();
   });

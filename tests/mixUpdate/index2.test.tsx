@@ -2,35 +2,7 @@ import React from "react";
 import { expect, test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { createStore, useStore } from "../../src";
-
-/** Permutation and combination */
-export function permute(input: number[]) {
-  const permArr: number[][] = [],
-    usedChars: number[] = [];
-  function permuteHelper(input: number[]) {
-    for (let i = 0; i < input.length; i++) {
-      const ch = input.splice(i, 1)[0];
-      usedChars.push(ch);
-      if (input.length === 0) {
-        permArr.push(usedChars.slice());
-      }
-      permuteHelper(input);
-      input.splice(i, 0, ch);
-      usedChars.pop();
-    }
-  }
-  permuteHelper(input);
-  return permArr;
-}
-export const eventLoop = ["sync", "promise", "setTimeout"];
-/**
- * Because direct and setState are a coordinated batch processing mechanism shared internally by Resy,
- * it is necessary to observe both situations where syncUpdate is not included in batch testing
- * and when it is included in batch testing
- */
-export const mixMethodsNoSyncUpdate = ["direct", "setState", "setState"];
-export const mixMethods = ["direct", "setState", "syncUpdate"];
-export const combinations = permute([0, 1, 2]);
+import { eventLoop, mixMethods, mixMethodsNoSyncUpdate, combinations } from "./constant";
 
 /** Mixed use of update methods */
 test("mixUpdate-II", async () => {
@@ -115,8 +87,7 @@ test("mixUpdate-II", async () => {
                      * 🌟 If it is react17, then sync and promise are treated as two batch updates.
                      * setTimeout are updated 6 times each, which meets expectations
                      */
-                    const name = mixMethodsNoSyncUpdate[item];
-                    matchedAndEventLoopUpdate(name);
+                    matchedAndEventLoopUpdate(mixMethodsNoSyncUpdate[item]);
                   });
                 });
               });
@@ -140,8 +111,7 @@ test("mixUpdate-II", async () => {
                      * Despite this, the overall batch update scheduling mechanism of
                      * Resy is more comprehensive and optimized compared to React.
                      */
-                    const name = mixMethods[item];
-                    matchedAndEventLoopUpdate(name);
+                    matchedAndEventLoopUpdate(mixMethods[item]);
                   });
                 });
               });
@@ -162,7 +132,7 @@ test("mixUpdate-II", async () => {
 
   fireEvent.click(getByText("add1"));
   await waitFor(() => {
-    console.log(counter, store.count);
+    console.log("add1", counter, store.count);
     /**
      * 🌟 The test results may not be consistent with the reality,
      * which may be related to the update processing mechanism within react.
@@ -173,22 +143,13 @@ test("mixUpdate-II", async () => {
 
   fireEvent.click(getByText("add2"));
   await waitFor(() => {
-    const id = setTimeout(() => {
-      clearTimeout(id);
-      console.log("add2", counter, store.count);
-      // in react18
-      expect(counter === 10).toBeTruthy();
-      // 🌟 in react17
-      // expect(counter === 11).toBeTruthy();
-    }, 0);
+    console.log("add2", counter, store.count);
+    expect(counter === 10).toBeTruthy();
   });
 
   fireEvent.click(getByText("add3"));
   await waitFor(() => {
-    const id = setTimeout(() => {
-      clearTimeout(id);
-      console.log("add3", counter, store.count);
-      expect(counter === 18).toBeTruthy();
-    }, 0);
+    console.log("add3", counter, store.count);
+    expect(counter === 18).toBeTruthy();
   });
 });

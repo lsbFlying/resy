@@ -20,18 +20,6 @@ export type SetStateType<S extends PrimitiveState> = {
   setState(state: SetStateAction<S>): void;
 };
 
-/**
- * Type of callback functions for setState, syncUpdate, and restore
- * @description The existence of the nextState parameter in the callback is also necessary for reasons similar to prevState.
- */
-export type StateCallback<S extends PrimitiveState> = (nextState: Readonly<S>) => void;
-
-// Element types of setState, syncUpdate, restore callback execution
-export type StateCallbackItem<S extends PrimitiveState> = {
-  nextState: S;
-  callback: StateCallback<S>;
-};
-
 /** Type of syncUpdate */
 export type SyncUpdateType<S extends PrimitiveState> = {
   syncUpdate(state: SetStateAction<S>): void;

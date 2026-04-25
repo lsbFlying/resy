@@ -1,5 +1,5 @@
 import React from "react";
-import { expect, test } from "vitest";
+import { test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { useConciseState } from "../../src";
 
@@ -24,10 +24,6 @@ test("useConciseState-IV", async () => {
         <button onClick={() => {
           store.setState({
             count: 9,
-          }, nextState => {
-            store.setState({
-              count: nextState.count + 1,
-            });
           });
         }}>add3</button>
         <button onClick={() => {
@@ -46,16 +42,10 @@ test("useConciseState-IV", async () => {
         <button onClick={() => {
           store.syncUpdate({
             count: 99,
-          }, nextState => {
-            store.syncUpdate({
-              count: nextState.count + 1,
-            });
           });
         }}>add7</button>
         <button onClick={() => {
-          store.restore(nextState => {
-            expect(nextState.count === 0).toBeTruthy();
-          });
+          store.restore();
         }}>restoreAction</button>
       </>
     );
@@ -75,27 +65,27 @@ test("useConciseState-IV", async () => {
 
   fireEvent.click(getByText("add3"));
   await waitFor(() => {
-    getByText("10");
+    getByText("9");
   });
 
   fireEvent.click(getByText("add4"));
   await waitFor(() => {
-    getByText("11");
+    getByText("10");
   });
 
   fireEvent.click(getByText("add5"));
   await waitFor(() => {
-    getByText("12");
+    getByText("11");
   });
 
   fireEvent.click(getByText("add6"));
   await waitFor(() => {
-    getByText("13");
+    getByText("12");
   });
 
   fireEvent.click(getByText("add7"));
   await waitFor(() => {
-    getByText("100");
+    getByText("99");
   });
 
   fireEvent.click(getByText("restoreAction"));

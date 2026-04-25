@@ -43,7 +43,7 @@ export interface InnerStoreOptions extends StoreOptions {
 export type StoreCoreUtils<S extends PrimitiveState> = Readonly<
   & SetStateType<S>
   & SyncUpdateType<S>
-  & RestoreType<S>
+  & RestoreType
   & SubscribeType<S>
   & ComputedType
 >;

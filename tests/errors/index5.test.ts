@@ -1,44 +1,49 @@
 import { expect, test } from "vitest";
 import { createStore } from "../../src";
 
-test("restore-error-scene", async () => {
+test("syncUpdate-error-scene", async () => {
 
   const store = createStore({ count: 0 });
 
   // @ts-ignore
-  expect(() => store.restore(0)).toThrowError();
+  expect(() => store.syncUpdate(0)).toThrowError();
   // @ts-ignore
-  expect(() => store.restore(1)).toThrowError();
+  expect(() => store.syncUpdate(1)).toThrowError();
   // @ts-ignore
-  expect(() => store.restore("")).toThrowError();
+  expect(() => store.syncUpdate("")).toThrowError();
   // @ts-ignore
-  expect(() => store.restore("hello")).toThrowError();
+  expect(() => store.syncUpdate("999")).toThrowError();
   // @ts-ignore
-  expect(() => store.restore(NaN)).toThrowError();
+  expect(() => store.syncUpdate(NaN)).toThrowError();
   // @ts-ignore
-  expect(() => store.restore(Symbol("not object"))).toThrowError();
+  expect(() => store.syncUpdate(undefined)).toThrowError();
   // @ts-ignore
-  expect(() => store.restore(true)).toThrowError();
+  expect(() => store.syncUpdate(Symbol("not object"))).toThrowError();
   // @ts-ignore
-  expect(() => store.restore(false)).toThrowError();
+  expect(() => store.syncUpdate(true)).toThrowError();
   // @ts-ignore
-  expect(() => store.restore(new Map())).toThrowError();
+  expect(() => store.syncUpdate(false)).toThrowError();
   // @ts-ignore
-  expect(() => store.restore(new Set())).toThrowError();
+  expect(() => store.syncUpdate(new Map())).toThrowError();
   // @ts-ignore
-  expect(() => store.restore(new WeakMap())).toThrowError();
+  expect(() => store.syncUpdate(new Set())).toThrowError();
   // @ts-ignore
-  expect(() => store.restore(new WeakSet())).toThrowError();
+  expect(() => store.syncUpdate(new WeakMap())).toThrowError();
   // @ts-ignore
-  expect(() => store.restore([])).toThrowError();
+  expect(() => store.syncUpdate(new WeakSet())).toThrowError();
   // @ts-ignore
-  expect(() => store.restore(new WeakRef({}))).toThrowError();
+  expect(() => store.syncUpdate([])).toThrowError();
   // @ts-ignore
-  expect(() => store.restore(new RegExp())).toThrowError();
+  // eslint-disable-next-line no-empty-function
+  expect(() => store.syncUpdate(() => {})).toThrowError();
   // @ts-ignore
-  expect(() => store.restore(new Date())).toThrowError();
+  expect(() => store.syncUpdate(new WeakRef({}))).toThrowError();
   // @ts-ignore
-  expect(() => store.restore(BigInt("837456834658437"))).toThrowError();
+  expect(() => store.syncUpdate(new RegExp())).toThrowError();
   // @ts-ignore
-  expect(() => store.restore(window)).toThrowError();
+  expect(() => store.syncUpdate(new Date())).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(BigInt("827348436586436"))).toThrowError();
+  // @ts-ignore
+  expect(() => store.syncUpdate(window)).toThrowError();
 });

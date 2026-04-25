@@ -24,10 +24,6 @@ test("useConciseState-II", async () => {
         <button onClick={() => {
           syncUpdate({
             count: 9,
-          }, nextState => {
-            syncUpdate({
-              count: nextState.count + 1,
-            });
           });
         }}>add3</button>
       </>
@@ -48,6 +44,6 @@ test("useConciseState-II", async () => {
 
   fireEvent.click(getByText("add3"));
   await waitFor(() => {
-    getByText("10");
+    getByText("9");
   });
 });

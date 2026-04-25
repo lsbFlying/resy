@@ -1,5 +1,5 @@
 import type { PrimitiveState, ValueOf } from "../types";
-import type { State, StateCallback, StateFnType } from "./types";
+import type { State, StateFnType } from "./types";
 import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
 import type { ComponentWithStore } from "../class-connect";
 import type { ListenerParams } from "../subscribe/types";
@@ -21,28 +21,10 @@ export default class Updater<S extends PrimitiveState> {
   // The storage stack of this instance for the class component
   readonly classInstanceStack = new Set<ComponentWithStore<{}, S>>();
 
-  callbackAndSubscribeProcessing(effectState: S) {
+  subscribeProcessing(effectState: S) {
     const {
-      _scheduler_, _$state_,
-      _subscriber_: { listenerQueue, prevBatchState },
+      _$state_, _subscriber_: { listenerQueue, prevBatchState },
     } = this.$metaStore;
-
-    const { callbackQueue } = _scheduler_;
-
-    if (callbackQueue.size > 0) {
-      callbackQueue.forEach(item => {
-        const { callback, nextState } = item;
-        /**
-         * @desc In order to prevent a synchronous endless loop caused by the execution
-         * of the callback function in the `syncUpdate` synchronous update function
-         * from generating new states updates, here we first talk about temporarily storing the callback function,
-         * and the immediately removing the current callbackQueue element.
-         */
-        const callbackTemp = callback;
-        callbackQueue.delete(item);
-        callbackTemp(nextState);
-      });
-    }
 
     /**
      * @desc 🌟 As logically,
@@ -93,15 +75,15 @@ export default class Updater<S extends PrimitiveState> {
        */
       _scheduler_.flushTask();
 
-      this.callbackAndSubscribeProcessing(taskData);
+      this.subscribeProcessing(taskData);
     });
   }
 
   finallyBatchProcessing() {
     const scheduler = this.$metaStore._scheduler_;
-    const { taskData, callbackQueue } = scheduler;
+    const { taskData } = scheduler;
 
-    if ((!isEmptyPureObject(taskData) || callbackQueue.size > 0) && !scheduler.isUpdating) {
+    if ((!isEmptyPureObject(taskData)) && !scheduler.isUpdating) {
       // Reduce the generation of redundant microtasks through the isUpdating flag
       scheduler.isUpdating = Promise.resolve().then(() => {
         this.batchUpdateProcessingCore();
@@ -109,7 +91,7 @@ export default class Updater<S extends PrimitiveState> {
     }
   }
 
-  setState = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
+  setState = (state: State<S> | StateFnType<S>) => {
     const { $metaStore: { _$state_, _subscriber_, _scheduler_ } } = this;
     _subscriber_.willUpdatingProcessing();
 
@@ -130,8 +112,6 @@ export default class Updater<S extends PrimitiveState> {
       });
     }
 
-    _scheduler_.pushCallback(_$state_, stateTemp as State<S>, callback);
-
     this.finallyBatchProcessing();
   };
 
@@ -139,9 +119,9 @@ export default class Updater<S extends PrimitiveState> {
    * @description syncUpdate primarily exists to address issues with normal text input.
    * to meet the needs of normal text input, it synchronizes React's update scheduling.
    */
-  syncUpdate = (state: State<S> | StateFnType<S>, callback?: StateCallback<S>) => {
+  syncUpdate = (state: State<S> | StateFnType<S>) => {
     const { $metaStore } = this;
-    const { _$state_, _scheduler_ } = $metaStore;
+    const { _$state_ } = $metaStore;
 
     let stateTemp = state;
 
@@ -167,9 +147,7 @@ export default class Updater<S extends PrimitiveState> {
 
         this.update(effectState);
 
-        _scheduler_.pushCallback(_$state_, stateTemp as State<S>, callback);
-
-        this.callbackAndSubscribeProcessing(effectState);
+        this.subscribeProcessing(effectState);
       });
     }
   };

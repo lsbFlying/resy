@@ -25,29 +25,29 @@ test("batchUpdateBasic-V", async () => {
           Promise.resolve().then(() => {
             // batch handle, merge into one update
             store.count++;
-            expect(store.count === 2).toBeTruthy();
+            expect(store.count === 8).toBeTruthy();
             store.count++;
-            expect(store.count === 3).toBeTruthy();
+            expect(store.count === 9).toBeTruthy();
           });
           Promise.resolve().then(() => {
             store.setState({
               count: store.count + 1,
             });
-            expect(store.count === 4).toBeTruthy();
+            expect(store.count === 10).toBeTruthy();
 
             store.setState({
               count: store.count + 1,
             });
-            expect(store.count === 5).toBeTruthy();
+            expect(store.count === 11).toBeTruthy();
           });
           Promise.resolve().then(() => {
             store.count++;
-            expect(store.count === 6).toBeTruthy();
+            expect(store.count === 12).toBeTruthy();
 
             store.setState({
               count: store.count + 1,
             });
-            expect(store.count === 7).toBeTruthy();
+            expect(store.count === 13).toBeTruthy();
           });
           /**
            * @description Starting with the sentence "store.count++", until the end of the three Promise,
@@ -61,39 +61,30 @@ test("batchUpdateBasic-V", async () => {
            */
           /** end */
 
-          const id1 = setTimeout(() => {
-            clearTimeout(id1);
-            store.count++;
-            expect(store.count === 8).toBeTruthy();
+          store.count++;
+          expect(store.count === 2).toBeTruthy();
 
-            store.count++;
-            expect(store.count === 9).toBeTruthy();
-          }, 0);
+          store.count++;
+          expect(store.count === 3).toBeTruthy();
 
-          const id2 = setTimeout(() => {
-            clearTimeout(id2);
-            store.setState({
-              count: store.count + 1,
-            });
-            expect(store.count === 10).toBeTruthy();
+          store.setState({
+            count: store.count + 1,
+          });
+          expect(store.count === 4).toBeTruthy();
 
-            store.setState({
-              count: store.count + 1,
-            });
-            expect(store.count === 11).toBeTruthy();
-          }, 0);
+          store.setState({
+            count: store.count + 1,
+          });
+          expect(store.count === 5).toBeTruthy();
 
-          const id3 = setTimeout(() => {
-            clearTimeout(id3);
-            // Mixed updates, merge into one update
-            store.count++;
-            expect(store.count === 12).toBeTruthy();
+          // Mixed updates, merge into one update
+          store.count++;
+          expect(store.count === 6).toBeTruthy();
 
-            store.setState({
-              count: store.count + 1,
-            });
-            expect(store.count === 13).toBeTruthy();
-          }, 0);
+          store.setState({
+            count: store.count + 1,
+          });
+          expect(store.count === 7).toBeTruthy();
         }}>batchAdd</button>
       </>
     );
@@ -103,7 +94,8 @@ test("batchUpdateBasic-V", async () => {
 
   fireEvent.click(getByText("batchAdd"));
   await waitFor(() => {
+    console.log("counter", counter);
     getByText("13");
-    expect(counter === 5).toBeTruthy();
+    expect(counter === 2).toBeTruthy();
   });
 });

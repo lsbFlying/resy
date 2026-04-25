@@ -21,26 +21,6 @@ test("setState-IV", async () => {
           console.log("start");
           store.setState({
             count: store.count + 1,
-          }, () => {
-            console.log("one", store.count);
-            // It can be seen that the callback of setState is executed collectively and then uniformly.
-            expect(store.count === 9).toBeTruthy();
-            store.setState({
-              count: store.count + 1,
-            }, () => {
-              console.log("two", store.count);
-              expect(store.count === 10).toBeTruthy();
-              store.setState({
-                count: store.count + 1,
-              }, () => {
-                console.log("three", store.count);
-                expect(store.count === 11).toBeTruthy();
-                store.setState({
-                  count: store.count + 1,
-                });
-                expect(store.count === 12).toBeTruthy();
-              });
-            });
           });
           console.log("temp");
           expect(store.count === 1).toBeTruthy();
@@ -71,7 +51,7 @@ test("setState-IV", async () => {
 
   fireEvent.click(getByText("countChange"));
   await waitFor(() => {
-    getByText("12");
+    getByText("9");
     // console.log("counter", counter, store.count);
     expect(counter === 2).toBeTruthy();
   });

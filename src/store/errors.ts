@@ -1,6 +1,4 @@
-import type { PrimitiveState } from "../types";
 import type { InnerStoreOptions } from "./types";
-import type { StateCallback } from "../updater/types";
 import type MetaStore from "./core";
 import { whatsType } from "../utils";
 import { _RESY_BRAND_ } from "./static";
@@ -86,17 +84,6 @@ export const subscribeErrorProcessing = (
     throw new Error(
       "resy's subscribe(...): Expected the last optional 'stateKeys' argument to be a array. "
       + `Instead received: ${stateKeysType.toLocaleLowerCase()}.`
-    );
-  }
-};
-
-// Callback function type error processing
-export const stateCallbackErrorProcessing = <S extends PrimitiveState>(callback?: StateCallback<S>) => {
-  const callbackType = whatsType(callback);
-  if (__DEV__ && callbackType !== "Undefined" && callbackType !== "Function") {
-    throw new Error(
-      "resy's stateCallback(...): Expected the last optional 'callback' argument to be a function. "
-      + `Instead received: ${callbackType.toLocaleLowerCase()}.`
     );
   }
 };

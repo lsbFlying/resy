@@ -1,5 +1,4 @@
 import type { PrimitiveState } from "../types";
-import type { StateCallback } from "../updater/types";
 import type MetaStore from "../store/core";
 import { hasOwnProperty } from "../utils";
 
@@ -117,7 +116,7 @@ export default class Restorer<S extends PrimitiveState> {
 
   // TODO prototype function waiting upgrade
   // Reset recovery initialization state data
-  restore = (callback?: StateCallback<S>) => {
+  restore = () => {
     const { _$state_, _updater_, _subscriber_, _scheduler_ } = this.$metaStore;
 
     _subscriber_.willUpdatingProcessing();
@@ -152,8 +151,6 @@ export default class Restorer<S extends PrimitiveState> {
       !Object.is(originValue, _$state_[key])
       && _scheduler_.assignMergeState(key, originValue, !hasOwnProperty.call(reducerState, key));
     });
-
-    _scheduler_.pushCallback({} as S, reducerState, callback);
 
     _updater_.finallyBatchProcessing();
   };

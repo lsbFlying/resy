@@ -60,8 +60,6 @@ test("setState-I", async () => {
         <button onClick={() => {
           store.setState({
             count: 0,
-          }, () => {
-            store.count = 999;
           });
         }}>sameChangeAndCallback</button>
       </>
@@ -102,6 +100,6 @@ test("setState-I", async () => {
 
   fireEvent.click(getByText("sameChangeAndCallback"));
   await waitFor(() => {
-    getByText("999");
+    getByText("0");
   });
 });

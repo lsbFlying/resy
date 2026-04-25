@@ -9,7 +9,7 @@ export type {
 } from "./store/types";
 
 export type {
-  State, StateFnType, SetStateAction, SetStateType, StateCallback, SyncUpdateType,
+  State, StateFnType, SetStateAction, SetStateType, SyncUpdateType,
 } from "./updater/types";
 
 export { ComponentWithStore } from "./class-connect";

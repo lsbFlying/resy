@@ -17,14 +17,7 @@ export type SetStateAction<S extends PrimitiveState> = State<S> | StateFnType<S>
 
 /** Type of setState */
 export type SetStateType<S extends PrimitiveState> = {
-  /**
-   * @param state
-   * @param callback
-   */
-  setState(
-    state: SetStateAction<S>,
-    callback?: StateCallback<S>,
-  ): void;
+  setState(state: SetStateAction<S>): void;
 };
 
 /**
@@ -41,12 +34,5 @@ export type StateCallbackItem<S extends PrimitiveState> = {
 
 /** Type of syncUpdate */
 export type SyncUpdateType<S extends PrimitiveState> = {
-  /**
-   * @param state
-   * @param callback
-   */
-  syncUpdate(
-    state: SetStateAction<S>,
-    callback?: StateCallback<S>,
-  ): void;
+  syncUpdate(state: SetStateAction<S>): void;
 };

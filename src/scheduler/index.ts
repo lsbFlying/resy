@@ -22,8 +22,8 @@ export default class Scheduler<S extends PrimitiveState> {
   // Flag to delay the execution of the return registration function in useEffect
   deferEffectDestructorExecutable?: Promise<void>;
 
-  // Push both the updated data (in key/value pairs) and the update task queue
-  pushTask(key: keyof S, value: ValueOf<S>, isDelete?: boolean) {
+  // Assign and merge to update data
+  assignMergeState(key: keyof S, value: ValueOf<S>, isDelete?: boolean) {
     const { $metaStore } = this;
     const { _$state_ } = $metaStore;
     /**

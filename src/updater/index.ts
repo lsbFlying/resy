@@ -125,7 +125,7 @@ export default class Updater<S extends PrimitiveState> {
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         const value = (stateTemp as S)[key];
         if (!Object.is(value, _$state_[key])) {
-          _scheduler_.pushTask(key, value);
+          _scheduler_.assignMergeState(key, value);
         }
       });
     }
@@ -224,7 +224,7 @@ export default class Updater<S extends PrimitiveState> {
     } else {
       if (!Object.is(value, _$state_[key])) {
         _subscriber_.willUpdatingProcessing();
-        _scheduler_.pushTask(key, value, isDelete);
+        _scheduler_.assignMergeState(key, value, isDelete);
         this.finallyBatchProcessing();
       }
       return true;

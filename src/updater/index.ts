@@ -21,35 +21,14 @@ export default class Updater<S extends PrimitiveState> {
   // The storage stack of this instance for the class component
   readonly classInstanceStack = new Set<ComponentWithStore<{}, S>>();
 
-  subscribeProcessing(effectState: S) {
-    const {
-      _$state_, _subscriber_: { listenerQueue, prevBatchState },
-    } = this.$metaStore;
-
-    /**
-     * @desc 🌟 As logically,
-     * the listener in subscribe needs to be executed after the callback has been executed.
-     * Trigger the execution of subscription snooping
-     */
-    if (listenerQueue.size > 0 && !isEmptyPureObject(effectState)) {
-      listenerQueue.forEach(item => {
-        item({
-          /**
-           * @desc Even if 'scheduler. flushTask()' clears taskData,
-           * it directly assigns new values to taskData within the scheduler,
-           * making it easier to trace the old taskData as a snapshot variable.
-           */
-          effectState,
-          nextState: _$state_,
-          prevState: prevBatchState,
-        });
-      });
-    }
-  }
-
   batchUpdateProcessingCore() {
-    const { $metaStore } = this;
-    const { _scheduler_ } = $metaStore;
+    const {
+      $metaStore: {
+        _scheduler_,  _$state_,
+        _subscriber_: { listenerQueue, prevBatchState }
+      }
+    } = this;
+    const { taskData } = _scheduler_;
 
     /**
      * @description Reset the isUpdating and willUpdating flags
@@ -59,8 +38,6 @@ export default class Updater<S extends PrimitiveState> {
     _scheduler_.willUpdating = undefined;
 
     batchUpdate(() => {
-      const { taskData } = _scheduler_;
-
       this.update(taskData);
 
       /**
@@ -75,7 +52,25 @@ export default class Updater<S extends PrimitiveState> {
        */
       _scheduler_.flushTask();
 
-      this.subscribeProcessing(taskData);
+      /**
+       * @desc 🌟 As logically,
+       * the listener in subscribe needs to be executed after the callback has been executed.
+       * Trigger the execution of subscription snooping
+       */
+      if (listenerQueue.size > 0 && !isEmptyPureObject(taskData)) {
+        listenerQueue.forEach(item => {
+          item({
+            /**
+             * @desc Even if 'scheduler. flushTask()' clears taskData,
+             * it directly assigns new values to taskData within the scheduler,
+             * making it easier to trace the old taskData as a snapshot variable.
+             */
+            effectState: taskData,
+            nextState: _$state_,
+            prevState: prevBatchState,
+          });
+        });
+      }
     });
   }
 
@@ -91,7 +86,9 @@ export default class Updater<S extends PrimitiveState> {
     }
   }
 
-  setState = (state: State<S> | StateFnType<S>) => {
+  setState = (state: State<S> | StateFnType<S>, opts?: { sync: boolean }) => {
+    const { sync } = opts || {};
+
     const { $metaStore: { _$state_, _subscriber_, _scheduler_ } } = this;
     _subscriber_.willUpdatingProcessing();
 
@@ -102,6 +99,7 @@ export default class Updater<S extends PrimitiveState> {
 
     if (stateTemp !== null) {
       stateErrorProcessing({ state: stateTemp, fnName: "setState" });
+
       // The update of hook is an independent update dispatch action,
       // and traversal processing is needed to unify the stack.
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
@@ -112,7 +110,11 @@ export default class Updater<S extends PrimitiveState> {
       });
     }
 
-    this.finallyBatchProcessing();
+    if (!sync) {
+      this.finallyBatchProcessing();
+    } else {
+      this.batchUpdateProcessingCore();
+    }
   };
 
   /**
@@ -120,36 +122,7 @@ export default class Updater<S extends PrimitiveState> {
    * to meet the needs of normal text input, it synchronizes React's update scheduling.
    */
   syncUpdate = (state: State<S> | StateFnType<S>) => {
-    const { $metaStore } = this;
-    const { _$state_ } = $metaStore;
-
-    let stateTemp = state;
-
-    typeof state === "function" && (stateTemp = (state as StateFnType<S>)({ ..._$state_ }));
-
-    if (stateTemp !== null) {
-      stateErrorProcessing({ state: stateTemp, fnName: "syncUpdate" });
-
-      batchUpdate(() => {
-        const effectState = {} as S;
-
-        Object.keys(stateTemp as NonNullable<State<S>>).forEach((key: keyof S) => {
-          const value = (stateTemp as S)[key];
-          if (!Object.is(_$state_[key], value)) {
-            $metaStore._$state_ = {
-              ...$metaStore._$state_,
-              [key]: value,
-            };
-
-            effectState[key] = value;
-          }
-        });
-
-        this.update(effectState);
-
-        this.subscribeProcessing(effectState);
-      });
-    }
+    this.setState(state, { sync: true });
   };
 
   // Data updates for a single attribute (meta-state)

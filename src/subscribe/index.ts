@@ -28,6 +28,7 @@ export default class Subscriber<S extends PrimitiveState> {
     if (this.listenerQueue.size > 0 && !scheduler.willUpdating) {
       scheduler.willUpdating = true;
       this.prevBatchState = { ...this.$metaStore._$state_ } as S;
+      console.log(123, this.prevBatchState);
     }
   }
 

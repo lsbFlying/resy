@@ -198,12 +198,6 @@ export default class MetaStore<S extends PrimitiveState> {
          * object, so the host is cloned as well and any previously held snapshot
          * keeps sharing neither the array nor the host.
          */
-        /**
-         * @description A repeated read of an unchanged location must return the
-         * same wrapper. Commits replace the objects on the path, so a new
-         * target simply has no cache entry yet — no explicit invalidation is
-         * needed, and stale entries die with their objects.
-         */
         if (Array.isArray(target)) {
           /**
            * @description Read from `target` once a commit has left this wrapper

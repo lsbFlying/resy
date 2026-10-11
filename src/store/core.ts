@@ -71,7 +71,7 @@ export default class MetaStore<S extends PrimitiveState> {
   // Updater
   readonly _updater_ = new Updater(this);
 
-  restore!: RestoreType<S>["restore"];
+  restore!: RestoreType["restore"];
   // Restorer
   readonly _restorer_ = new Restorer(this);
 

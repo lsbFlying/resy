@@ -24,9 +24,15 @@ export type UpdateMetaStateType<S extends PrimitiveState> = (
   isDelete?: boolean,
 ) => boolean;
 
+/**
+ * @description Signature of the recursive proxy factory handed to the `Map`/`Set`
+ * prototype-method factories.
+ *
+ * There is no `parentTarget` parameter: the path alone locates the value, so a
+ * nested proxy never needs to know which object it was reached through.
+ */
 export type CreateProxyType<S extends PrimitiveState> = (
   target: ProxyableType<S>,
-  parentTarget: ProxyableType<S>,
   path: StatePath,
   applyOriginFunction?: ApplyOriginFunctionType,
 ) => Store<S>;

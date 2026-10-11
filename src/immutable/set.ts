@@ -6,7 +6,7 @@ import type {
   CreateProxyType, IteratorsType, ProxyableType, SetPrototypeProxyableFactoryType,
   SetPrototypeProxyableValueType, StatePath, UpdateMetaStateType,
 } from "./types";
-import { commitPath, iteratorProcessing, proxyable } from "./utils";
+import { iteratorProcessing, proxyable, readAtPath } from "./utils";
 
 /**
  * @description Prototype-method factories for `Set`.
@@ -33,22 +33,33 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
   path: StatePath,
   updateMetaState: UpdateMetaStateType<S>,
 ) => {
-  const firstLevelKey = path[0] as keyof S;
-
-  /** Publish a new set on the set's own path, cloning its host objects too. */
-  const commitSet = (nextSet: Set<S>, value: unknown) => {
-    commitPath(state, path, nextSet);
-    updateMetaState([firstLevelKey], value as ValueOf<S>, false);
+  /**
+   * @description Publish a new set on the set's own path.
+   *
+   * Mirrors the `Map` factory: a single commit through `updateMetaState`, so the
+   * first-level entry is never overwritten by the container itself.
+   */
+  const commitSet = (nextSet: Set<S>) => {
+    updateMetaState(path, nextSet as unknown as ValueOf<S>, false);
   };
 
   switch (applyOriginFunction.name) {
+    case "has":
+      return (value: S): boolean => {
+        /**
+         * @description See the `Map` factory: the membership test must run on
+         * the raw container, not on the proxy.
+         */
+        const source = readAtPath(state, path);
+        return source instanceof Set ? source.has(value) : false;
+      };
     case "add":
       return (value: S) => {
         if (parentTarget.has(value)) return parentTarget;
 
         const newValue = new Set(parentTarget) as Set<S>;
         newValue.add(value);
-        commitSet(newValue, value);
+        commitSet(newValue);
         return newValue;
       };
     case "delete":
@@ -57,14 +68,14 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
 
         const newValue = new Set(parentTarget) as Set<S>;
         const result = newValue.delete(value);
-        commitSet(newValue, undefined);
+        commitSet(newValue);
         return result;
       };
     case "clear":
       return () => {
         if (!parentTarget.size) return;
 
-        commitSet(new Set() as Set<S>, undefined);
+        commitSet(new Set() as Set<S>);
       };
     case "forEach":
       return (callback: (value: S, value2: S, set: Set<S>) => void) => {
@@ -76,7 +87,6 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
               ? (
                 createProxy(
                   value as ProxyableType<S>,
-                  parentTarget,
                   [...path, index],
                   applyOriginFunction,
                 ) as ValueOf<S>
@@ -86,7 +96,6 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
               ? (
                 createProxy(
                   value2 as ProxyableType<S>,
-                  parentTarget,
                   [...path, index],
                   applyOriginFunction,
                 ) as ValueOf<S>

@@ -241,7 +241,7 @@ test("leaf: array elements can be written through", () => {
   expect(beforeList[1].id).toBe(2);
 });
 
-test("leaf: a class instance is proxyable but not penetrable, and writes are reported", () => {
+test("leaf: writes into a non-penetrable host are reported, not dropped", () => {
   class Box {
     constructor(public value: number) {}
     bump() { this.value++; }
@@ -256,13 +256,29 @@ test("leaf: a class instance is proxyable but not penetrable, and writes are rep
   // created around it …
   expect(store.box).not.toBe(box);
 
-  // … but it is not penetrable, so committing through it is impossible. In
-  // development that is reported instead of being dropped silently.
-  expect(() => store.box.bump()).toThrowError(/不可穿透/);
+  // … but it is not penetrable, so committing through it is impossible. The
+  // contract under test is that this is *reported* rather than dropped in
+  // silence. The wording is deliberately not pinned here: this path is only
+  // reachable for types the library does not model, and asserting its text would
+  // turn a diagnostic message into a stable API.
+  expect(() => store.box.bump()).toThrowError(/updateMetaState/);
 
   // Nothing was written anywhere: no tree change, and the raw instance keeps
   // its own value because the mutation never reached it.
   expect(ms._$state_).toBe(before);
   expect(before.box.value).toBe(1);
+});
+
+test("leaf: writing into a Map member is reported with the path and the type", () => {
+  const store = createStore<{ m: Map<string, number> }>(
+    { m: new Map([["k", 1]]) },
+    { immutable: true },
+  );
+
+  // `Map` reaches the same guard and IS a type the library models, so here the
+  // diagnostic content is worth pinning.
+  expect(() => { (store.m as any).foo = 1; }).toThrowError(
+    /write path "m\.foo" to be a plain object or an array, Instead received: map/,
+  );
 });
 

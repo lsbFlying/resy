@@ -354,6 +354,22 @@ if (next !== _$state_ || hasTask) {
 
 **与 D9 的关系**：数组提交也走 `commitPath` 与 `assignMergeState`，因此批内记账规则一致 —— 同一同步块内多次数组操作各自提交，`taskData` 按第一层键合并。
 
+
+### D13：`Map`/`Set` 方法调用与提交（实现中修复的既有缺陷）
+
+**修复前**（`immutable: true`，本次改动之前即如此）：`Map.get`/`Map.set` 抛 `parentTarget.get is not a function`；`Map.has`/`Set.has`/`Map.keys` 抛 `incompatible receiver`；`delete`/`clear` 把容器本身覆盖成成员值（`{ m: new Map() }` 变成 `{ m: 2 }`）。`Map.size`/`Set.size` 与 `forEach`/`entries`/`values` 正常。
+
+**四个独立根因**：
+
+1. **`apply` 陷阱传错了 `parentTarget`**。`get` 陷阱会把 `Map.prototype.get` 这类方法包成代理以便进入 `apply` 陷阱；而该函数代理的 `target` **就是那个函数**，于是陷阱里的 `proxy` 指的是函数而非容器。工厂因此拿到函数，`parentTarget.get` 不存在。修法：容器按路径取（`readAtPath(_$state_, path)`），`thisArg` 作为内建方法的 receiver，二者不再是同一个变量。
+2. **工厂提交了两次**。`commitPath(state, path, nextMap)` 之后又调用 `updateMetaState([path[0]], value)`，第二次把**成员值**写到第一层键上，覆盖掉刚提交的容器。修法：统一为一次 `updateMetaState(path, nextContainer)`，由 `commitPath` 构建根、`assignMergeState` 赋值。
+3. **方法不在路由表里**。`has` 与 `Map.keys` 既不在 `_MAP_SET_PROTOTYPE_PROXYABLE_TARGET_`（决定走哪个工厂），也不在 `mapSetPrototypeProxyableSet`（决定是否包装）。前者导致 `apply` 陷阱不介入、内建方法直接以代理为 receiver 而 `incompatible receiver`；后者导致方法根本不进工厂。两处都补齐。
+4. **成员判断写在了代理上**。`delete`/`clear` 里用 `parentTarget.has(...)`/`parentTarget.size`，而 `parentTarget` 是容器代理，Map 内建方法对代理无 `[[MapData]]`。改为在克隆出的真实 `Map` 上判断。
+
+**新增覆盖**：`Map.prototype.has`、`Map.prototype.keys`、`Set.prototype.has` 纳入路由表与判定集合；两个工厂新增 `has` 分支（在原始容器上做成员测试）。
+
+**验证**：19 个方法/迭代器操作全部通过，且嵌套路径（`store.deep.m.set(...)`）正确替换每一层并冻结旧快照。
+
 ## Risks / Trade-offs
 
 - [同时改动写入侧与读取侧，回归面覆盖渲染、订阅、类组件三条链] → 先落地写入侧（D1/D2/D7/D8）并回归现有测试，再落地读取侧缓存（D3）；两步各自可独立验证。
@@ -374,7 +390,8 @@ if (next !== _$state_ || hasTask) {
 4. 落地 class 侧写入：D5，并补充类组件写入的测试覆盖。
 5. 重写 `tests/immutable/` 中失效的断言（现有断言以函数为参数，恒为真），改为逐条对应 `specs/` 中的 scenario。
 6. 落地数组方案：D12（通用包装、提交路径含宿主、`pop`/`shift` 回归点），并补充数组场景的测试。
-7. 更新文档中关于链式更新的说明，明确 `immutable: true` 前提与叶节点边界。
+7. 修复 `Map`/`Set`（D13）：`parentTarget` 来源、单次提交、补齐 `has`/`keys` 路由、成员判断落在真实容器上。
+8. 更新文档中关于链式更新的说明，明确 `immutable: true` 前提与叶节点边界。
 
 回滚策略：本变更以独立提交落地，各步可单独回退。写入侧与读取侧之间无强依赖（读取侧缓存在写入侧正确时收益最大，但回退写入侧不会导致缓存失效错误）。
 

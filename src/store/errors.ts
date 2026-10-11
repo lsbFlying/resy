@@ -87,3 +87,19 @@ export const subscribeErrorProcessing = (
     );
   }
 };
+
+// Error processing of a write whose target path is not writable
+export const pathErrorProcessing = (
+  path: PropertyKey[],
+  host: unknown,
+) => {
+  if (__DEV__) {
+    throw new Error(
+      `resy's updateMetaState(...): Expected the host of the write path "${path.map(String).join(".")}"`
+      + " to be a plain object or an array,"
+      + ` Instead received: ${whatsType(host).toLocaleLowerCase()}.`
+      + " Types other than plain objects and arrays can only be replaced as a whole,"
+      + " not written through."
+    );
+  }
+};

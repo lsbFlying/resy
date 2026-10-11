@@ -11,8 +11,9 @@ import type { ApplyOriginFunctionType, StatePath } from "../immutable/types";
 import type { UseComputedType, ComputedType } from "../computer/types";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
 import { _RESY_BRAND_, DEFAULT_OPTIONS } from "./static";
+import { pathKey } from "./utils";
 import { hasOwnProperty } from "../utils";
-import { proxyable, readAtPath } from "../immutable/utils";
+import { mapSetPrototypeProxyable, proxyable, readAtPath } from "../immutable/utils";
 import { _MAP_SET_PROTOTYPE_PROXYABLE_TARGET_ } from "../immutable";
 import MetaState from "../state";
 import Scheduler from "../scheduler";
@@ -20,32 +21,6 @@ import Subscriber from "../subscribe";
 import Updater from "../updater";
 import Restorer from "../restore";
 import Computer from "../computer";
-
-/**
- * @description Encode a state path into a cache key.
- *
- * A plain `join` cannot separate segments unambiguously: `['a\u0001b']` and
- * `['a', 'b']` would produce the same string. Each segment is therefore encoded
- * as a type prefix plus its text with the separator escaped
- * (`\u0001` becomes `\u0001\u0001`), so a single separator can only ever mark a
- * boundary between segments and distinct paths cannot collide.
- *
- * Symbol segments fall back to their description, which is a deliberate
- * approximation recorded in `design.md` (Open Questions).
- */
-const SEPARATOR = "\u0001";
-
-const encodeSegment = (key: PropertyKey): string => {
-  const prefixed = typeof key === "string"
-    ? `s${key}`
-    : typeof key === "number"
-      ? `n${key}`
-      : `y${key.description ?? String(key)}`;
-  return prefixed.split(SEPARATOR).join(SEPARATOR + SEPARATOR);
-};
-
-export const pathKey = (path: StatePath): string =>
-  path.map(encodeSegment).join(SEPARATOR);
 
 /**
  * @description The core meta-structure of store
@@ -183,8 +158,7 @@ export default class MetaStore<S extends PrimitiveState> {
     const cached = cacheForTarget?.get(cacheKey);
     if (cached !== undefined) return cached;
 
-    let proxy: Store<S>;
-    proxy = new Proxy(target, {
+    const proxy = new Proxy(target, {
       get: (_: S, key: keyof S) => {
         const sourceFrom$State = path.length === 0;
 
@@ -300,7 +274,40 @@ export default class MetaStore<S extends PrimitiveState> {
           };
         }
 
-        if (!sourceFromThis && immutable && proxyable(value)) {
+        /**
+         * @description Container reads get a nested proxy.
+         *
+         * `proxyable` also reports `Map`/`Set` prototype methods
+         * (`Map.prototype.get`, …). Those must be wrapped as well: the wrapper's
+         * `apply` trap is what routes the call into the matching factory with
+         * the container as the receiver. Calling the built-in directly would
+         * throw `incompatible receiver`, because a proxy has no `[[MapData]]`.
+         *
+         * Ordinary function properties are excluded: they are values, not
+         * containers, and must be returned verbatim.
+         */
+        const isContainerMethod = typeof value === "function"
+          && !(value as AnyBoundFn)._bound_
+          && mapSetPrototypeProxyable(value);
+
+        if (isContainerMethod) {
+          /**
+           * @description Wrap a `Map`/`Set` prototype method so that calling it
+           * enters the `apply` trap, which routes the call into the matching
+           * factory.
+           *
+           * The wrapper inherits the *container's* path rather than appending
+           * the method name: the call operates on the container, and a path such
+           * as `['m', 'get']` does not exist in the state tree.
+           */
+          return this.#createProxy(
+            value as object,
+            path,
+            applyOriginFunction,
+          );
+        }
+
+        if (!sourceFromThis && immutable && typeof value !== "function" && proxyable(value)) {
           return this.#createProxy(
             value as object,
             [...path, key],
@@ -339,26 +346,40 @@ export default class MetaStore<S extends PrimitiveState> {
       deleteProperty: (_: S, key: keyof S) => updater.updateMetaState(
         [...path, key], undefined as ValueOf<S>, true,
       ),
-      // TODO waiting develop
-      // The `apply` here is written specifically for prototype chain functions
-      // that are applicable to proxyable types such as `Map`, and `Set`.
+      /**
+       * @description `Map`/`Set` prototype methods reach here because the `get`
+       * trap wraps them in a proxy.
+       *
+       * Two distinct objects matter and they must not be confused:
+       *
+       * - `thisArg` is the **container proxy** (`store.m`). The built-in methods
+       *   reject any receiver without a `[[MapData]]`/`[[SetData]]` slot, so the
+       *   factory cannot call them on it directly — it clones into a real
+       *   `Map`/`Set` and commits that instead.
+       * - `parentTarget` is also the container proxy, resolved from the path.
+       *   It is what the factory reads the current container from and what it
+       *   uses to proxy the values it returns. Using this trap's own `proxy`
+       *   here would be wrong: that variable refers to the wrapped *method*
+       *   function, which is how the factory previously ended up holding a
+       *   function instead of a `Map`.
+       */
       apply: (applyOriginFunction: any, thisArg: any, argArray: any[]) => Reflect.apply(
         _MAP_SET_PROTOTYPE_PROXYABLE_TARGET_.get(applyOriginFunction)!(
-          applyOriginFunction, thisArg, this._$state_, target as (MapType<S> & Set<S>),
-          /**
-           * @description The recursive proxy factory is passed to the Map/Set
-           * factories as a plain callback, so wrapping it in an arrow function
-           * keeps the private `this` of `MetaStore` bound. Passing the method
-           * itself would detach `this` and make every nested Map/Set read throw.
-           */
+          applyOriginFunction,
+          thisArg,
+          this._$state_,
+          readAtPath(this._$state_, path) as MapType<object> & Set<object>,
           (
             nestedTarget: object,
-            _parentTarget: object,
             nestedPath: StatePath,
             nestedApplyOriginFunction?: ApplyOriginFunctionType,
           ) => this.#createProxy(nestedTarget, nestedPath, nestedApplyOriginFunction),
           path,
-          updater.updateMetaState,
+          (
+            nestedPath: StatePath,
+            value: ValueOf<S>,
+            isDelete?: boolean,
+          ) => updater.updateMetaState(nestedPath, value, isDelete),
         ),
         thisArg,
         argArray,

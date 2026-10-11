@@ -6,6 +6,15 @@ export const _RESY_BRAND_ = Symbol.for("_resy_brand_");
 // prefix for computed
 export const _COMPUTED_PREFIX_ = "$";
 
+/**
+ * @description Segment separator of the proxy cache key built by `pathKey`.
+ *
+ * A control character is used so it cannot appear in an ordinary property name,
+ * which keeps the encoded key readable while still allowing a collision-free
+ * encoding. See `pathKey` in `./utils` for how it is applied.
+ */
+export const _PATH_KEY_SEPARATOR_ = "\u0001";
+
 export const DEFAULT_OPTIONS: InnerStoreOptions = {
   unmountRestore: true,
   namespace: undefined,

@@ -10,6 +10,8 @@ import { _ITERATOR_META_PROCESSING_KEY_ } from "./static";
 const mapSetPrototypeProxyableSet = new Set<ApplyOriginFunctionType>()
   // map
   .add(Map.prototype.get)
+  .add(Map.prototype.has)
+  .add(Map.prototype.keys)
   .add(Map.prototype.clear)
   .add(Map.prototype.delete)
   .add(Map.prototype.set)
@@ -18,6 +20,7 @@ const mapSetPrototypeProxyableSet = new Set<ApplyOriginFunctionType>()
   .add(Map.prototype.entries)
   // map
   .add(Set.prototype.add)
+  .add(Set.prototype.has)
   .add(Set.prototype.clear)
   .add(Set.prototype.delete)
   .add(Set.prototype.forEach)
@@ -31,6 +34,17 @@ export const proxyable = (value: unknown) => {
   return proxyableSet.has(typeString.call(value))
     || mapSetPrototypeProxyableSet.has(value as ApplyOriginFunctionType);
 };
+
+/**
+ * @description Whether a value is a `Map`/`Set` prototype method.
+ *
+ * Such a method has to be wrapped in a proxy so that calling it enters the
+ * `apply` trap, which is what routes it into the matching factory. Calling the
+ * built-in directly on the proxy throws `incompatible receiver`, because a
+ * proxy does not carry the internal `[[MapData]]`/`[[SetData]]` slot.
+ */
+export const mapSetPrototypeProxyable = (value: unknown): boolean =>
+  mapSetPrototypeProxyableSet.has(value as ApplyOriginFunctionType);
 
 /**
  * @description Whether a value can be written through by a chained update.
@@ -186,7 +200,6 @@ export const iteratorProcessing = <S extends PrimitiveState>(
                   proxyable(value)
                     ? createProxy(
                       value,
-                      parentTarget,
                       [...path, key],
                       applyOriginFunction,
                     )
@@ -195,7 +208,6 @@ export const iteratorProcessing = <S extends PrimitiveState>(
                 : proxyable(value)
                   ? createProxy(
                     value,
-                    parentTarget,
                     [...path, key],
                     applyOriginFunction,
                   )

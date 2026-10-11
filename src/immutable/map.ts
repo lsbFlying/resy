@@ -7,7 +7,7 @@ import type {
   MapPrototypeProxyableFactoryType, MapPrototypeProxyableValueType,
   ProxyableType, StatePath, UpdateMetaStateType,
 } from "./types";
-import { commitPath, iteratorProcessing, proxyable } from "./utils";
+import { iteratorProcessing, proxyable, readAtPath } from "./utils";
 
 /**
  * @description Prototype-method factories for `Map`.
@@ -30,17 +30,17 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
   path: StatePath,
   updateMetaState: UpdateMetaStateType<S>,
 ) => {
-  const firstLevelKey = path[0] as keyof S;
-
   /**
    * @description Publish a new map on the map's own path.
    *
-   * `commitPath` clones the whole path, so the map's host object is replaced
-   * too and any previously held snapshot stays frozen.
+   * This delegates to `updateMetaState` instead of committing twice: an earlier
+   * version called `commitPath` here *and* then `updateMetaState([path[0]], …)`,
+   * and the second call overwrote the whole first-level entry with the map
+   * object — `store.deep.m.set(x, y)` left `state.deep` as a `Map` and
+   * `state.deep.m` as `undefined`.
    */
-  const commitMap = (nextMap: MapType<S>, value: unknown) => {
-    commitPath(state, path, nextMap);
-    updateMetaState([firstLevelKey], value as ValueOf<S>, false);
+  const commitMap = (nextMap: MapType<S>) => {
+    updateMetaState(path, nextMap as unknown as ValueOf<S>, false);
   };
 
   switch (applyOriginFunction.name) {
@@ -50,11 +50,20 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
         return proxyable(value)
           ? createProxy(
             value as ProxyableType<S>,
-            parentTarget,
             [...path, key],
             applyOriginFunction,
           ) as ValueOf<S>
           : value;
+      };
+    case "has":
+      return (key: keyof S): boolean => {
+        /**
+         * @description `parentTarget` is the container *proxy*, so the built-in
+         * `Map.prototype.has` cannot run on it (`incompatible receiver`). The
+         * raw source is the right receiver for a membership test.
+         */
+        const source = readAtPath(state, path);
+        return source instanceof Map ? source.has(key) : false;
       };
     case "set":
       return (key: keyof S, value: ValueOf<S>) => {
@@ -63,23 +72,29 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
 
         const newValue = new Map(parentTarget) as MapType<S>;
         newValue.set(key, value);
-        commitMap(newValue, value);
+        commitMap(newValue);
         return newValue;
       };
     case "delete":
       return (key: keyof S) => {
-        if (!parentTarget.has(key)) return false;
-
+        /**
+         * @description `parentTarget` is the container *proxy*, so its own
+         * `Map` methods cannot be called on it (`incompatible receiver`). The
+         * clone into a real `Map` is both the receiver and the value that gets
+         * committed, so it is used for the membership test as well.
+         */
         const newValue = new Map(parentTarget) as MapType<S>;
+        if (!newValue.has(key)) return false;
+
         const result = newValue.delete(key);
-        commitMap(newValue, undefined);
+        commitMap(newValue);
         return result;
       };
     case "clear":
       return () => {
-        if (!parentTarget.size) return;
+        if (!new Map(parentTarget).size) return;
 
-        commitMap(new Map() as MapType<S>, undefined);
+        commitMap(new Map() as MapType<S>);
       };
     case "forEach":
       return (callback: (value: ValueOf<S>, key: keyof S, map: Map<keyof S, ValueOf<S>>) => void) => {
@@ -89,7 +104,6 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
               ? (
                 createProxy(
                   value as ProxyableType<S>,
-                  parentTarget,
                   [...path, key],
                   applyOriginFunction,
                 ) as ValueOf<S>
@@ -106,6 +120,15 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
             thisArg,
           );
         });
+      };
+    case "keys":
+      return () => {
+        const iterators = parentTarget.keys();
+        iteratorProcessing(
+          iterators as any as IteratorsType<S>, parentTarget, createProxy,
+          path, applyOriginFunction,
+        );
+        return iterators;
       };
     case "values":
       return () => {

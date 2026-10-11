@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { createStore } from "../../src";
-import { pathKey } from "../../src/store/core";
+import { pathKey } from "../../src/store/utils";
 import { rawState } from "../__utils__";
 
 /**
@@ -103,10 +103,16 @@ test("read-identity: a stale wrapper writes to its path's current location", () 
 });
 
 test("pathKey: distinct paths never collide", () => {
+  // The pair that a naive `join` gets wrong: a separator *between* two segments
+  // and a separator *inside* one segment name produce the same plain-join
+  // string. Escaping each segment keeps them apart.
+  expect(pathKey(["a", "sb"])).not.toBe(pathKey(["a\u0001sb"]));
+
   const keys = [
-    pathKey(["a", "b"]),
+    pathKey(["a", "sb"]),
     pathKey(["a\u0001sb"]),
     pathKey(["a\u0001", "b"]),
+    pathKey(["a", "b"]),
     pathKey([1]),
     pathKey(["1"]),
     pathKey([Symbol.for("x")]),
@@ -115,4 +121,6 @@ test("pathKey: distinct paths never collide", () => {
   expect(new Set(keys).size).toBe(keys.length);
   // Same path still yields the same key.
   expect(pathKey(["a", "b"])).toBe(pathKey(["a", "b"]));
+  // Symbols sharing a description do collide: a recorded approximation.
+  expect(pathKey([Symbol.for("x")])).toBe(pathKey([Symbol.for("x")]));
 });

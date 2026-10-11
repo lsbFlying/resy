@@ -5,9 +5,9 @@ import type { ComponentWithStore } from "../class-connect";
 import type { ListenerParams } from "../subscribe/types";
 import type MetaStore from "../store/core";
 import { batchUpdate } from "../static";
-import { stateErrorProcessing } from "../store/errors";
+import { pathErrorProcessing, stateErrorProcessing } from "../store/errors";
 import { commitPath, isPenetrable, readAtPath } from "../immutable/utils";
-import { isEmptyPureObject } from "../utils";
+import { isEmptyPureObject, hasOwnProperty } from "../utils";
 
 /**
  * @description Update mechanism of `meta-state`
@@ -138,7 +138,7 @@ export default class Updater<S extends PrimitiveState> {
    * assign the root built earlier in that batch.
    */
   hasTask(key: keyof S): boolean {
-    return Object.prototype.hasOwnProperty.call(this.$metaStore._scheduler_.taskData, key);
+    return hasOwnProperty.call(this.$metaStore._scheduler_.taskData, key);
   }
 
   /**
@@ -146,23 +146,17 @@ export default class Updater<S extends PrimitiveState> {
    *
    * A path whose host object is not penetrable (a `Date`, a class instance, a
    * `Map`/`Set` member, …) cannot be committed. In development that is reported
-   * as an error, because silently dropping the write is the hardest failure to
-   * diagnose; in production the write is a no-op, which keeps the leaf-node
-   * contract of the published build. A `Date`'s own mutators are not affected:
+   * as an error by `pathErrorProcessing`, because silently dropping the write is
+   * the hardest failure to diagnose; in production the write is a no-op, which
+   * keeps the leaf-node contract of the published build. A `Date`'s own mutators are not affected:
    * a non-proxyable built-in is returned raw, so such a call never reaches here.
    */
-  #nextRoot(path: StatePath, value: ValueOf<S>, isDelete: boolean): S {
+  nextRoot(path: StatePath, value: ValueOf<S>, isDelete: boolean): S {
     const root = this.$metaStore._$state_;
     const host = readAtPath(root, path.slice(0, -1));
 
     if (host !== undefined && !isPenetrable(host)) {
-      if (__DEV__) {
-        throw new Error(
-          `[resy] 无法写入路径 "${path.map(String).join(".")}"：`
-          + `其宿主对象不是可穿透的纯对象或数组（收到 ${Object.prototype.toString.call(host)}）。`
-          + "不可穿透的类型只能整体替换，不能写入其内部字段。",
-        );
-      }
+      pathErrorProcessing(path, host);
       return root;
     }
 
@@ -203,7 +197,7 @@ export default class Updater<S extends PrimitiveState> {
     const { $metaStore: { _$state_ } } = this;
     const key = path[0] as keyof S;
 
-    const newRoot = this.#nextRoot(path, value, isDelete);
+    const newRoot = this.nextRoot(path, value, isDelete);
 
     /**
      * @description D9 — commit when this write changed something, or when the

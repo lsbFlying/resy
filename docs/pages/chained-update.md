@@ -1,6 +1,6 @@
 # 链式更新的实现
 
-> 本文面向贡献者，讲解 `immutable: true` 下链式更新（`store.userInfo.name = 'x'`）的实现。使用方式见 [不可变更新与链式写入](./immutable.md)。
+> 本文面向开发者，讲解 `immutable: true` 下链式更新（`store.userInfo.name = 'x'`）的实现。使用方式见 [不可变更新与链式写入](./immutable.md)。
 
 ## 一、它要解决的问题
 

@@ -3,8 +3,16 @@ import { expect, test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { defineStore } from "../../src";
 
-/** The configuration item of `defineStore` named `enableMarcoActionStateful` */
-test("defineStore-enableMarcoActionStateful", async () => {
+/**
+ * @description `actions` are plain functions, not state slots.
+ *
+ * They are the way state is *documented and changed* — synchronous setters or
+ * async workflows — and they update through `this.x = ...`. They are deliberately
+ * not addressable state: the old `enableMarcoActionStateful` option used to make
+ * a function property update-and-render like state, and it was removed together
+ * with that behaviour. No option is needed for `this`-based updates.
+ */
+test("defineStore-actions-update-state-through-this", async () => {
   type CounterStore = {
     count: number;
     increaseOrReduce(): void;
@@ -12,14 +20,11 @@ test("defineStore-enableMarcoActionStateful", async () => {
 
   const useCounterStore = defineStore<CounterStore>({
     count: 0,
-    /**
-     * The enableMarcoActionStateful is configured to be true,
-     * so that the action here has the ability to update the rendering
-     */
+    // `this.count++` is the intended update path and needs no configuration.
     increaseOrReduce() {
       this.count++;
     },
-  }, { enableMarcoActionStateful: true });
+  });
 
   type TextStore = {
     text: string;
@@ -28,10 +33,6 @@ test("defineStore-enableMarcoActionStateful", async () => {
 
   const useTextStore = defineStore<TextStore>({
     text: "hello world",
-    /**
-     * If enableMarcoActionStateful is not configured to be true,
-     * then the action will only process events as an action and will not have the ability to update the rendering.
-     */
     changeWorld() {
       this.text = "change the world";
     },
@@ -69,27 +70,9 @@ test("defineStore-enableMarcoActionStateful", async () => {
           increaseOrReduce
         </button>
         <button
-          onClick={() => {
-            counterStore.increaseOrReduce = () => {
-              counterStore.count--;
-            };
-          }}
-        >
-          actionPropUpdateEffect
-        </button>
-        <button
           onClick={changeWorld}
         >
           changeWorld
-        </button>
-        <button
-          onClick={() => {
-            textStore.changeWorld = () => {
-              textStore.text = "no effect, invalid update!";
-            };
-          }}
-        >
-          actionPropUpdateNoEffect
         </button>
       </>
     );
@@ -112,20 +95,52 @@ test("defineStore-enableMarcoActionStateful", async () => {
     getByText("4");
   });
 
-  fireEvent.click(getByText("actionPropUpdateEffect"));
-  fireEvent.click(getByText("increaseOrReduce"));
-  await waitFor(() => {
-    getByText("5");
-    expect(() => getByText("3")).toThrowError();
-  });
-
   fireEvent.click(getByText("changeWorld"));
   await waitFor(() => {
     getByText("change the world");
   });
+});
 
-  fireEvent.click(getByText("actionPropUpdateNoEffect"));
+test("defineStore-actions-are-not-addressable-state", async () => {
+  /**
+   * The counterpart of the contract above: assigning a new function onto an
+   * action property must not become a state update. Before the option was
+   * removed this needed `enableMarcoActionStateful: false`; now it is simply the
+   * only behaviour.
+   */
+  type Model = { text: string; changeWorld(): void };
+
+  const useStore = defineStore<Model>({
+    text: "hello world",
+    changeWorld() {
+      this.text = "change the world";
+    },
+  });
+
+  const App = () => {
+    const { text, store, changeWorld } = useStore();
+    return (
+      <>
+        <p>{text}</p>
+        <button
+          onClick={() => {
+            store.changeWorld = () => {
+              store.text = "no effect, invalid update!";
+            };
+          }}
+        >
+          replaceAction
+        </button>
+        <button onClick={changeWorld}>changeWorld</button>
+      </>
+    );
+  };
+
+  const { getByText } = render(<App />);
+
+  fireEvent.click(getByText("replaceAction"));
   fireEvent.click(getByText("changeWorld"));
+
   await waitFor(() => {
     getByText("change the world");
     expect(() => getByText("no effect, invalid update!")).toThrowError();

@@ -21,8 +21,6 @@ test("syncUpdate-basic-II", async () => {
           store.count = 9;
           store.syncUpdate({
             count: store.count + 1,
-          }, nextState => {
-            expect(nextState.count === 10).toBeTruthy();
           });
         }}>btn1</button>
         <button onClick={() => {
@@ -40,8 +38,6 @@ test("syncUpdate-basic-II", async () => {
           });
           store.syncUpdate({
             count: store.count + 1,
-          }, nextState => {
-            expect(nextState.count === 20).toBeTruthy();
           });
         }}>btn3</button>
         <button onClick={() => {
@@ -65,6 +61,8 @@ test("syncUpdate-basic-II", async () => {
   await waitFor(() => {
     getByText("10");
   });
+  // btn1 set count to 9 and then synced to 9 + 1.
+  expect(store.count).toBe(10);
 
   fireEvent.click(getByText("btn2"));
   await waitFor(() => {
@@ -75,6 +73,8 @@ test("syncUpdate-basic-II", async () => {
   await waitFor(() => {
     getByText("20");
   });
+  // btn3 set count via setState to 19 and then synced to 19 + 1.
+  expect(store.count).toBe(20);
 
   fireEvent.click(getByText("btn4"));
   await waitFor(() => {

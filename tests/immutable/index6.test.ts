@@ -1,13 +1,24 @@
 import { expect, test } from "vitest";
+import type { PrimitiveState } from "../../src/types";
+import type { CommitResult } from "../../src/immutable/utils";
 import { commitPath, readAtPath } from "../../src/immutable/utils";
 
 /**
- * Narrow a commit result to the new root, failing loudly when the commit was
- * refused. The union exists so callers cannot read a root that was never built.
+ * Unwrap a commit result, failing loudly when the commit was refused. The union
+ * exists so a caller cannot read a root that was never built.
  */
-const appliedRoot = <T>(result: ReturnType<typeof commitPath<T>>): T => {
+const appliedRoot = <S extends PrimitiveState>(result: CommitResult<S>): S => {
   if (!result.committed) throw new Error(`expected a commit, got ${result.reason}`);
   return result.root;
+};
+
+/** Assert the commit was refused with the given reason. */
+const expectRefusal = <S extends PrimitiveState>(
+  result: CommitResult<S>,
+  reason: "noop" | "leaf",
+) => {
+  expect(result.committed).toBe(false);
+  expect(result.committed === false ? result.reason : null).toBe(reason);
 };
 
 /**
@@ -56,7 +67,7 @@ test("commitPath: an equal value returns the same root reference", () => {
   expect(readAtPath(root, ["userInfo", "name"])).toBe("a");
   const result = commitPath(root, ["userInfo", "name"], "a");
 
-  expect(result.committed).toBe(false);
+  expectRefusal(result, "noop");
   expect(result).toEqual({ committed: false, reason: "noop" });
 });
 
@@ -79,7 +90,7 @@ test("commitPath: a path through a non-penetrable leaf is a no-op", () => {
 
   // `Date` is a leaf: the write is refused and the offending host is reported
   // so the caller can name it without walking the path again.
-  expect(result).toMatchObject({ committed: false, reason: "leaf" });
+  expectRefusal(result, "leaf");
   expect((result as { host: unknown }).host).toBe(root.when);
 });
 
@@ -115,5 +126,6 @@ test("commitPath: a missing intermediate segment is a no-op", () => {
   const result = commitPath(root, ["nope", "deeper"], 1);
 
   // An unresolvable path is an ordinary no-op, not a refusal.
+  expectRefusal(result, "noop");
   expect(result).toEqual({ committed: false, reason: "noop" });
 });

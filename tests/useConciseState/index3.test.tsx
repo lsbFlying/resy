@@ -1,5 +1,5 @@
 import React from "react";
-import { expect, test } from "vitest";
+import { test } from "vitest";
 import { render, fireEvent, waitFor } from "@testing-library/react";
 import { useConciseState } from "../../src";
 
@@ -17,9 +17,7 @@ test("useConciseState-III", async () => {
           });
         }}>add1</button>
         <button onClick={() => {
-          restore(nextState => {
-            expect(nextState.count === 0).toBeTruthy();
-          });
+          restore();
         }}>restoreAction</button>
       </>
     );

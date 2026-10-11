@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import { act, waitFor } from "@testing-library/react";
 import { createStore } from "../../src";
 import { rawMetaStore, rawState } from "../__utils__";
 
@@ -79,7 +80,8 @@ test("write-side: an equal value produces no new references and no notification"
   store.userInfo.name = "a";
   store.userInfo.address.city = "bj";
 
-  await new Promise((resolve) => setTimeout(resolve, 20));
+  // Negative assertion: same-value writes must not commit or notify.
+  await act(async () => {});
 
   expect(ms._$state_).toBe(before);
   expect(ms._$state_.userInfo).toBe(before.userInfo);
@@ -96,9 +98,8 @@ test("write-side: a changed value notifies exactly once per batch", async () => 
   store.userInfo.name = "b";
   store.userInfo.address.city = "sh";
 
-  await new Promise((resolve) => setTimeout(resolve, 20));
+  await waitFor(() => expect(effectStates.length).toBe(1));
 
-  expect(effectStates.length).toBe(1);
   expect(ms._$state_.userInfo.name).toBe("b");
   expect(ms._$state_.userInfo.address.city).toBe("sh");
 });
@@ -117,10 +118,9 @@ test("write-side: prevState is the tree from before the batch", async () => {
   store.userInfo.name = "b";
   store.userInfo.age = 20;
 
-  await new Promise((resolve) => setTimeout(resolve, 20));
+  await waitFor(() => expect(captured).not.toBeNull());
 
   // Scenario: prevState reflects the value before the batch's writes.
-  expect(captured).not.toBeNull();
   expect(captured!.prev.userInfo.name).toBe("a");
   expect(captured!.prev.userInfo.age).toBe(1);
   expect(captured!.next.userInfo.name).toBe("b");
@@ -190,9 +190,9 @@ test("leaf: mutating a Date in place produces no update and is visible in the ol
   // `Date` is a leaf, so its own mutator is not intercepted.
   store.when.setFullYear(2021);
 
-  await new Promise((resolve) => setTimeout(resolve, 20));
+  // Negative assertion: a leaf mutator must not commit or notify.
+  await act(async () => {});
 
-  // No new state tree and no update …
   expect(ms._$state_).toBe(before);
   expect(notified).toBe(0);
   // … and the mutation is visible wherever the reference is held, including

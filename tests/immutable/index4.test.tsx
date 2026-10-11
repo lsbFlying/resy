@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import { act, waitFor } from "@testing-library/react";
 import { createStore } from "../../src";
 import { rawMetaStore, rawState } from "../__utils__";
 
@@ -122,16 +123,15 @@ test("array: every call commits exactly once, regardless of internal writes", as
 
   // `push` performs two internal writes (index + length); one commit expected.
   store.list.push(4);
-  await new Promise((resolve) => setTimeout(resolve, 20));
+  await waitFor(() => expect(ms._$state_.list).toEqual([3, 1, 2, 4]));
   expect(notifications).toBe(1);
 
   // Three mutators inside one synchronous block collapse into a single batch.
   store.list.push(5);
   store.list.sort((a, b) => a - b);
   store.list.pop();
-  await new Promise((resolve) => setTimeout(resolve, 20));
+  await waitFor(() => expect(ms._$state_.list).toEqual([1, 2, 3, 4]));
   expect(notifications).toBe(2);
-  expect(ms._$state_.list).toEqual([1, 2, 3, 4]);
 });
 
 test("array: a method that does not exist yet is covered without name enumeration", async () => {
@@ -178,9 +178,11 @@ test("array: read-only methods return native results and produce no update", asy
   expect(store.list.includes(2)).toBe(true);
   expect(store.list.reduce((acc, x) => acc + x, 0)).toBe(6);
 
-  await new Promise((resolve) => setTimeout(resolve, 20));
+  // A negative assertion: nothing observable should happen. `act` drains the
+  // pending React/store update queue without pretending to wait for a
+  // condition; a pointless `waitFor(() => {})` would resolve on its first poll.
+  await act(async () => {});
 
-  // No new tree, no re-derived array, no pending task, no notification.
   expect(rawState<ListState>(store)).toBe(before);
   expect(rawState<ListState>(store).list).toBe(beforeList);
   expect(ms._scheduler_.taskData).toEqual({});

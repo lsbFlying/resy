@@ -1,6 +1,6 @@
 import React from "react";
 import { expect, test } from "vitest";
-import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, waitFor } from "@testing-library/react";
 import { ComponentWithStore, createStore } from "../../src";
 import { rawMetaStore } from "../__utils__";
 
@@ -8,8 +8,6 @@ import { rawMetaStore } from "../__utils__";
  * @description Class-side connection contract (tasks 6.2 – 6.4), mirroring the
  * scenarios of `specs/class-store-connection`.
  */
-
-const flush = () => new Promise((resolve) => setTimeout(resolve, 30));
 
 test("class-store: this.store writes reach the state and re-render", async () => {
   const store = createStore<{ count: number; text: string }>(
@@ -42,8 +40,9 @@ test("class-store: this.store writes reach the state and re-render", async () =>
 
   // Deleting a first-level key goes through the same entry point.
   fireEvent.click(getByText("delText"));
-  await flush();
-  expect(Object.prototype.hasOwnProperty.call(ms._$state_, "text")).toBe(false);
+  await waitFor(() => {
+    expect(Object.prototype.hasOwnProperty.call(ms._$state_, "text")).toBe(false);
+  });
 });
 
 test("class-store: a nested write through this.store freezes the old snapshot", async () => {
@@ -115,7 +114,9 @@ test("class-store: re-render is filtered by the keys the component registered", 
   // A key the component never read must not re-render it.
   const beforeText = renderCount;
   fireEvent.click(getByText("text"));
-  await flush();
+  // A negative assertion: nothing observable should happen. `act` drains the
+  // pending update queue; there is no condition to wait for here.
+  await act(async () => {});
   expect(renderCount).toBe(beforeText);
 
   // A registered key must re-render it.
@@ -126,7 +127,7 @@ test("class-store: re-render is filtered by the keys the component registered", 
   // A nested write under an unread top-level key must not re-render either.
   const beforeNested = renderCount;
   fireEvent.click(getByText("nested"));
-  await flush();
+  await act(async () => {});
   expect(renderCount).toBe(beforeNested);
 });
 
@@ -174,12 +175,13 @@ test("class-store: an unmounted component stops receiving updates", async () => 
   expect(ms._updater_.classInstanceStack.size).toBe(1);
 
   unmount();
-  await flush();
+  await waitFor(() => {
+    expect(ms._updater_.classInstanceStack.size).toBe(0);
+  });
 
   // The connection was released and its registered references cleared.
-  expect(ms._updater_.classInstanceStack.size).toBe(0);
   expect(() => { store.count = 1; }).not.toThrow();
-  await flush();
+  await act(async () => {});
 });
 
 test("class-store: class and hook components observe the same state", async () => {

@@ -30,8 +30,6 @@ test("syncUpdate-basic-I", async () => {
         <button onClick={() => {
           store.syncUpdate({
             count: store.count + 1,
-          }, nextState => {
-            expect(nextState.count === 3).toBeTruthy();
           });
         }}>btn3</button>
         <button onClick={() => {
@@ -62,6 +60,8 @@ test("syncUpdate-basic-I", async () => {
   await waitFor(() => {
     getByText("3");
   });
+  // btn3 read `store.count` at call time, so the result must be 2 + 1.
+  expect(store.count).toBe(3);
 
   fireEvent.click(getByText("btn4"));
   await waitFor(() => {

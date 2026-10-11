@@ -35,9 +35,7 @@ test("classConnect-II", async () => {
             store.text = "ok";
           }}>change</button>
           <button onClick={() => {
-            store.restore(nextState => {
-              console.log(nextState);
-            });
+            store.restore();
           }}>restore</button>
         </>
       );

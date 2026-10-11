@@ -1,4 +1,5 @@
 import { expect, test } from "vitest";
+import { waitFor } from "@testing-library/react";
 import { createStore } from "../../src";
 import { rawState } from "../__utils__";
 
@@ -9,9 +10,10 @@ import { rawState } from "../__utils__";
  * batch. Because every commit is copy-on-write, that tree is never written to
  * again, so the reference stays a true historical snapshot — including across
  * later batches and across nested writes.
+ *
+ * Waits poll the subscriber payload rather than sleeping for a fixed delay, so a
+ * failure reports the state that never arrived instead of a bare timeout.
  */
-
-const flush = () => new Promise((resolve) => setTimeout(resolve, 20));
 
 test("prevState: the captured snapshot survives later batches", async () => {
   const store = createStore(
@@ -26,14 +28,12 @@ test("prevState: the captured snapshot survives later batches", async () => {
 
   // Batch 1
   store.userInfo.name = "b";
-  await flush();
+  await waitFor(() => expect(snapshots.length).toBe(1));
 
   // Batch 2 — must not rewrite the snapshot published by batch 1.
   store.userInfo.name = "c";
   store.userInfo.age = 30;
-  await flush();
-
-  expect(snapshots.length).toBe(2);
+  await waitFor(() => expect(snapshots.length).toBe(2));
 
   // Batch 1 payload.
   expect(snapshots[0].prev.userInfo.name).toBe("a");
@@ -58,14 +58,13 @@ test("prevState: a nested write does not rewrite an already published snapshot",
   );
 
   let firstPrev: any = null;
-  let calls = 0;
   store.subscribe(({ prevState }) => {
-    calls++;
-    if (calls === 1) firstPrev = prevState;
+    if (firstPrev === null) firstPrev = prevState;
   });
 
   store.userInfo.address.city = "sh";
-  await flush();
+
+  await waitFor(() => expect(firstPrev).not.toBeNull());
 
   // The snapshot from before the write still shows the old nested value, which
   // is exactly what the old shallow copy failed to guarantee.
@@ -90,9 +89,8 @@ test("prevState: setState and chained writes share one batch snapshot", async ()
   store.count = 1;
   store.setState({ text: "world" });
 
-  await flush();
+  await waitFor(() => expect(payload).toBeDefined());
 
-  expect(payload).toBeDefined();
   expect(payload!.prev.count).toBe(0);
   expect(payload!.prev.text).toBe("hello");
   expect(payload!.next.count).toBe(1);

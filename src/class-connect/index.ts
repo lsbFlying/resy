@@ -117,9 +117,21 @@ export abstract class ComponentWithStore<
    */
   #stores: Set<Store<S>> = new Set();
 
+  /**
+   * @description Read a first-level state key for a class component.
+   *
+   * Reading is delegated to `store.store`, the base proxy. That single
+   * delegation is what gives class components the whole chained-update
+   * behaviour for free: the base proxy wraps nested objects lazily and routes
+   * every write through `commitPath`, so `this.store.userInfo.address.city` and
+   * `this.store.list.push(x)` work without a second implementation here.
+   *
+   * 🌟 The key is registered for re-render filtering at the same time. Only
+   * first-level keys are registered, which matches the granularity of the hook
+   * side.
+   */
   #getState<S extends PrimitiveState>(key: keyof S, store: MetaStore<S>) {
     this._$stateRefs_.add(key as (string | number));
-    // todo 借用store本身具备的链式更新能力
     return store.store[key];
   };
 
@@ -135,12 +147,17 @@ export abstract class ComponentWithStore<
     const { computed, computedDeps } = computer;
 
     // Data agents for use by class components
+    /**
+     * @description The read-only face of the store for class components.
+     *
+     * It handles exactly the three things the base proxy cannot: dependency
+     * registration for computed and re-render filtering, `this`-binding for
+     * action functions, and forwarding store utility methods. Everything below
+     * the first level is delegated to `store.store` (see `#getState`), which is
+     * where nested wrapping and chained writes happen.
+     */
     const classEngineStore = new Proxy({} as ClassStoreType<S>, {
-      // todo 后续完善computer，这块的get内容应该会更简化完善一点
       get: (_, key: keyof S) => {
-        // TODO waiting upgrade
-        // const sourceFrom$State = !firstLevelKey;
-        // computer.computing && sourceFrom$State && computedDeps.add(key);
         if (computer.computing) {
           computedDeps.add(key);
           /**

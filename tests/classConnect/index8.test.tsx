@@ -223,3 +223,65 @@ test("class-store: class and hook components observe the same state", async () =
 
   cleanup();
 });
+
+test("class-store: nested reads and chained writes go through the base proxy", async () => {
+  type Model = {
+    userInfo: { name: string; address: { city: string } };
+    list: number[];
+    m: Map<string, number>;
+  };
+
+  const store = createStore<Model>(
+    {
+      userInfo: { name: "a", address: { city: "bj" } },
+      list: [1],
+      m: new Map([["k", 1]]),
+    },
+    { immutable: true },
+  );
+  const ms = rawMetaStore<Model>(store);
+  const raw = () => ms._$state_;
+
+  let engine: any = null;
+
+  class App extends ComponentWithStore {
+    store = this.connectStore(store);
+    render() {
+      engine = this.store;
+      const s: any = this.store;
+      return <p>city:{s.userInfo.address.city}</p>;
+    }
+  }
+
+  const { getByText } = render(<App />);
+  await waitFor(() => getByText("city:bj"));
+
+  // `this.store` only participates at the first level: it registers the key and
+  // then delegates to the base proxy, which is what performs the lazy wrapping.
+  // A nested read must therefore come back as a proxy, not the raw object — and
+  // every level below it must stay reachable through that proxy.
+  expect(engine.userInfo).not.toBe(raw().userInfo);
+  expect(engine.userInfo.address.city).toBe("bj");
+
+  // Chained write through the class face replaces the whole path and leaves the
+  // previous tree frozen.
+  const before = raw();
+  engine.userInfo.address.city = "sh";
+  expect(raw().userInfo.address.city).toBe("sh");
+  expect(raw()).not.toBe(before);
+  expect(raw().userInfo).not.toBe(before.userInfo);
+  expect(before.userInfo.address.city).toBe("bj");
+
+  // Array mutation through the class face commits a new array.
+  const beforeList = raw().list;
+  engine.list.push(2);
+  expect(raw().list).toEqual([1, 2]);
+  expect(raw().list).not.toBe(beforeList);
+  expect(beforeList).toEqual([1]);
+
+  // `Map` methods through the class face (the `apply`-trap path).
+  expect(engine.m.get("k")).toBe(1);
+  engine.m.set("k2", 2);
+  expect(raw().m).toBeInstanceOf(Map);
+  expect(raw().m.get("k2")).toBe(2);
+});

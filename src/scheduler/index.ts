@@ -18,27 +18,15 @@ export default class Scheduler<S extends PrimitiveState> {
   // Flag to delay the execution of the return registration function in useEffect
   deferEffectDestructorExecutable?: Promise<void>;
 
-  // Assign and merge to update data
-  assignMergeState(key: keyof S, value: ValueOf<S>, isDelete?: boolean) {
-    const { $metaStore } = this;
-    const { _$state_ } = $metaStore;
-    /**
-     * @description Pre execution of internal state updates
-     * facilitates the execution of synchronized code for each update step,
-     * and the latest data state is obtained when retrieving the state again.
-     */
-    if (!isDelete) {
-      $metaStore._$state_ = {
-        ..._$state_,
-        [key]: value,
-      };
-    } else {
-      delete _$state_[key];
-      $metaStore._$state_ = {
-        ..._$state_,
-      };
-    }
-
+  /**
+   * @description Record a newly built state root in the current batch.
+   *
+   * The root is built by `commitPath` (copy-on-write), so this method never
+   * copies the state tree itself — it only publishes the root the caller
+   * already produced and records the changed key for the subscriber payload.
+   */
+  assignMergeState(newRoot: S, key: keyof S, value: ValueOf<S>) {
+    this.$metaStore._$state_ = newRoot;
     this.taskData[key] = value;
   };
 

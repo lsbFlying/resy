@@ -3,94 +3,81 @@
  */
 import type { PrimitiveState, ValueOf } from "../types";
 import type {
-  ProxyableType, CreateProxyType, SetPrototypeProxyableValueType,
-  KeyChainsSourceItemType, SetPrototypeProxyableFactoryType,
-  ApplyOriginFunctionType, IteratorsType,
+  CreateProxyType, IteratorsType, ProxyableType, SetPrototypeProxyableFactoryType,
+  SetPrototypeProxyableValueType, StatePath, UpdateMetaStateType,
 } from "./types";
-import { createNewRefValue, iteratorProcessing, proxyable, reduceChanged } from "./utils";
+import { commitPath, iteratorProcessing, proxyable } from "./utils";
 
-// TODO waiting develop sure
+/**
+ * @description Prototype-method factories for `Set`.
+ *
+ * Same shape as the `Map` factories: each mutating method commits once through
+ * `commitPath`, then publishes the root through `updateMetaState`, because
+ * `Set.prototype.add` runs on the raw `Set` and never reaches the proxy `set`
+ * trap.
+ *
+ * 🌟 `Set` entries have no key, so `forEach` addresses its elements by their
+ * numeric position. This is an approximation (a position is not a stable
+ * identity once the set is reordered), but it keeps nested reads through
+ * `forEach` writable instead of routing them to a placeholder path.
+ *
+ * 🌟 The parameter order is dictated by the caller in `src/store/core.ts`
+ * (the `apply` trap) and must be kept in sync with it.
+ */
 const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   applyOriginFunction: SetPrototypeProxyableValueType,
   thisArg: Set<S>,
   state: S,
   parentTarget: Set<S>,
   createProxy: CreateProxyType<S>,
-  firstLevelKey?: keyof S,
-  keyLevel?: number,
-  keyChains?: Set<KeyChainsSourceItemType<S>>,
-  updateMetaState?: (
-    key: keyof S,
-    value: ValueOf<S>,
-    isDelete: boolean,
-    target: object | S,
-    firstLevelKey?: keyof S,
-    keyChains?: Set<KeyChainsSourceItemType<S>>,
-    applyOriginFunction?: ApplyOriginFunctionType,
-  ) => boolean,
+  path: StatePath,
+  updateMetaState: UpdateMetaStateType<S>,
 ) => {
-  const fnName = applyOriginFunction.name;
-  switch (fnName) {
+  const firstLevelKey = path[0] as keyof S;
+
+  /** Publish a new set on the set's own path, cloning its host objects too. */
+  const commitSet = (nextSet: Set<S>, value: unknown) => {
+    commitPath(state, path, nextSet);
+    updateMetaState([firstLevelKey], value as ValueOf<S>, false);
+  };
+
+  switch (applyOriginFunction.name) {
     case "add":
       return (value: S) => {
         if (parentTarget.has(value)) return parentTarget;
 
-        const newValue = createNewRefValue(parentTarget).add(value);
-        const firstLevelValue = state[firstLevelKey!];
-        reduceChanged(newValue as ValueOf<S>, keyChains!, firstLevelValue);
-
-        updateMetaState!(
-          firstLevelKey!,
-          createNewRefValue(firstLevelValue) as ValueOf<S>,
-          false,
-          state,
-        );
+        const newValue = new Set(parentTarget) as Set<S>;
+        newValue.add(value);
+        commitSet(newValue, value);
         return newValue;
       };
     case "delete":
       return (value: S) => {
         if (!parentTarget.has(value)) return false;
 
-        const newValue = createNewRefValue(parentTarget);
+        const newValue = new Set(parentTarget) as Set<S>;
         const result = newValue.delete(value);
-        const firstLevelValue = state[firstLevelKey!];
-        reduceChanged(newValue as ValueOf<S>, keyChains!, firstLevelValue);
-
-        updateMetaState!(
-          firstLevelKey!,
-          createNewRefValue(firstLevelValue) as ValueOf<S>,
-          false,
-          state,
-        );
+        commitSet(newValue, undefined);
         return result;
       };
     case "clear":
       return () => {
         if (!parentTarget.size) return;
 
-        const firstLevelValue = state[firstLevelKey!];
-        reduceChanged(new Set() as ValueOf<S>, keyChains!, firstLevelValue);
-
-        updateMetaState!(
-          firstLevelKey!,
-          createNewRefValue(firstLevelValue) as ValueOf<S>,
-          false,
-          state,
-        );
+        commitSet(new Set() as Set<S>, undefined);
       };
     case "forEach":
       return (callback: (value: S, value2: S, set: Set<S>) => void) => {
+        let index = -1;
         parentTarget.forEach((value, value2) => {
+          index++;
           callback(
             proxyable(value)
               ? (
                 createProxy(
                   value as ProxyableType<S>,
                   parentTarget,
-                  firstLevelKey,
-                  (keyLevel ?? 0) + 1,
-                  // todo waiting modified
-                  new Set(keyChains).add({ key: "?" }),
+                  [...path, index],
                   applyOriginFunction,
                 ) as ValueOf<S>
               )
@@ -100,10 +87,7 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
                 createProxy(
                   value2 as ProxyableType<S>,
                   parentTarget,
-                  firstLevelKey,
-                  (keyLevel ?? 0) + 1,
-                  // todo waiting modified
-                  new Set(keyChains).add({ key: "?" }),
+                  [...path, index],
                   applyOriginFunction,
                 ) as ValueOf<S>
               )
@@ -118,7 +102,7 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
         const iterators = parentTarget.keys();
         iteratorProcessing(
           iterators as any as IteratorsType<S>, parentTarget, createProxy,
-          firstLevelKey, keyLevel, keyChains, applyOriginFunction,
+          path, applyOriginFunction,
         );
         return iterators;
       };
@@ -127,7 +111,7 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
         const iterators = parentTarget.values();
         iteratorProcessing(
           iterators as any as IteratorsType<S>, parentTarget, createProxy,
-          firstLevelKey, keyLevel, keyChains, applyOriginFunction,
+          path, applyOriginFunction,
         );
         return iterators;
       };
@@ -136,7 +120,7 @@ const applySetPrototypeFactory: SetPrototypeProxyableFactoryType = <S extends Pr
         const iterators = parentTarget.entries();
         iteratorProcessing(
           iterators as any as IteratorsType<S>, parentTarget, createProxy,
-          firstLevelKey, keyLevel, keyChains, applyOriginFunction, true,
+          path, applyOriginFunction, true,
         );
         return iterators;
       };

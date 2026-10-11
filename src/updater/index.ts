@@ -1,12 +1,12 @@
 import type { PrimitiveState, ValueOf } from "../types";
 import type { State, StateFnType } from "./types";
-import type { ApplyOriginFunctionType, KeyChainsSourceItemType } from "../immutable/types";
+import type { StatePath } from "../immutable/types";
 import type { ComponentWithStore } from "../class-connect";
 import type { ListenerParams } from "../subscribe/types";
 import type MetaStore from "../store/core";
 import { batchUpdate } from "../static";
 import { stateErrorProcessing } from "../store/errors";
-import { createNewRefValue, reduceChanged } from "../immutable/utils";
+import { commitPath, isPenetrable, readAtPath } from "../immutable/utils";
 import { isEmptyPureObject } from "../utils";
 
 /**
@@ -89,13 +89,15 @@ export default class Updater<S extends PrimitiveState> {
   setState = (state: State<S> | StateFnType<S>, opts?: { sync: boolean }) => {
     const { sync } = opts || {};
 
-    const { $metaStore: { _$state_, _subscriber_, _scheduler_ } } = this;
+    const { $metaStore: { _subscriber_, _scheduler_ } } = this;
     _subscriber_.willUpdatingProcessing();
 
     let stateTemp = state;
 
     // processing of prevState
-    typeof state === "function" && (stateTemp = (state as StateFnType<S>)({ ..._$state_ }));
+    typeof state === "function" && (stateTemp = (state as StateFnType<S>)({
+      ...this.$metaStore._$state_,
+    }));
 
     if (stateTemp !== null) {
       stateErrorProcessing({ state: stateTemp, fnName: "setState" });
@@ -104,8 +106,13 @@ export default class Updater<S extends PrimitiveState> {
       // and traversal processing is needed to unify the stack.
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         const value = (stateTemp as S)[key];
-        if (!Object.is(value, _$state_[key])) {
-          _scheduler_.assignMergeState(key, value);
+        // Read the root fresh on every iteration: `assignMergeState` replaces
+        // it, and committing the next key against the previous root would drop
+        // that key from the batch.
+        const currentRoot = this.$metaStore._$state_;
+        const newRoot = commitPath(currentRoot, [key], value);
+        if (newRoot !== currentRoot) {
+          _scheduler_.assignMergeState(newRoot, key as keyof S, value);
         }
       });
     }
@@ -125,61 +132,90 @@ export default class Updater<S extends PrimitiveState> {
     this.setState(state, { sync: true });
   };
 
-  // Data updates for a single attribute (meta-state)
+  /**
+   * @description Whether the current batch already recorded a change for `key`.
+   * Used by the D9 rule: a later no-op write in the same batch still has to
+   * assign the root built earlier in that batch.
+   */
+  hasTask(key: keyof S): boolean {
+    return Object.prototype.hasOwnProperty.call(this.$metaStore._scheduler_.taskData, key);
+  }
+
+  /**
+   * @description Build the next state tree for a write on `path`.
+   *
+   * A path whose host object is not penetrable (a `Date`, a class instance, a
+   * `Map`/`Set` member, …) cannot be committed. In development that is reported
+   * as an error, because silently dropping the write is the hardest failure to
+   * diagnose; in production the write is a no-op, which keeps the leaf-node
+   * contract of the published build. A `Date`'s own mutators are not affected:
+   * a non-proxyable built-in is returned raw, so such a call never reaches here.
+   */
+  #nextRoot(path: StatePath, value: ValueOf<S>, isDelete: boolean): S {
+    const root = this.$metaStore._$state_;
+    const host = readAtPath(root, path.slice(0, -1));
+
+    if (host !== undefined && !isPenetrable(host)) {
+      if (__DEV__) {
+        throw new Error(
+          `[resy] 无法写入路径 "${path.map(String).join(".")}"：`
+          + `其宿主对象不是可穿透的纯对象或数组（收到 ${Object.prototype.toString.call(host)}）。`
+          + "不可穿透的类型只能整体替换，不能写入其内部字段。",
+        );
+      }
+      return root;
+    }
+
+    return commitPath(root, path, value, isDelete);
+  }
+
+  /**
+   * @description Record a newly built root in the current batch.
+   *
+   * `prevState` must be captured *before* `_$state_` is reassigned, otherwise
+   * the subscriber would receive an already-updated value as its "previous"
+   * state.
+   */
+  mergeState(newRoot: S, key: keyof S, value: ValueOf<S>): void {
+    const { $metaStore: { _scheduler_, _subscriber_ } } = this;
+    _subscriber_.willUpdatingProcessing();
+    _scheduler_.assignMergeState(newRoot, key, value);
+    this.finallyBatchProcessing();
+  }
+
+  /**
+   * @description Data updates for a single value addressed by its path.
+   *
+   * The path is the only source of truth: `path[0]` is the first-level key and
+   * `path[path.length - 1]` is the written key. The previous value is read from
+   * the current root rather than from any proxy closure, so a write performed
+   * through a proxy held across a commit still lands on the live location.
+   *
+   * @returns Always `true`; the return value is retained for the proxy traps.
+   */
   updateMetaState(
-    key: keyof S,
+    path: StatePath,
     value: ValueOf<S>,
     isDelete = false,
-    target: object | S = this.$metaStore._$state_,
-    firstLevelKey?: keyof S,
-    keyChains?: Set<KeyChainsSourceItemType<S>>,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _applyOriginFunction?: ApplyOriginFunctionType, // TODO waiting develop
   ): boolean {
     // if (this.#freezing) return true;
 
-    const { $metaStore: { _$state_, _scheduler_, _subscriber_ } } = this;
+    const { $metaStore: { _$state_ } } = this;
+    const key = path[0] as keyof S;
 
-    // mutate chain update
-    if (firstLevelKey) {
-      // During each update, the target here is the latest target object obtained by the previous agent,
-      // so the PrevValue here is also the latest data before the update.
-      const prevValue = (target as S)[key];
+    const newRoot = this.#nextRoot(path, value, isDelete);
 
-      // Directly compare the PrevValue with the current value to be updated
-      // to see if the data needs to be updated and processed.
-      const changed = !Object.is(prevValue, value);
-
-      const firstLevelValue = _$state_[firstLevelKey!];
-
-      changed && reduceChanged(value, keyChains!, firstLevelValue);
-
-      return changed
-        ? this.updateMetaState(
-          firstLevelKey!,
-          /**
-           * @description When performing updates on the first-level attributes here,
-           * a reference update is required. Without a reference update,
-           * the incremental processing of `noneFirstLevelKeyChains` and `firstLevelValue` in the preceding `reduce` function
-           * will result in no actual change to the references.
-           * Consequently, when reaching the "else" branch
-           * and executing the logic of `if (!Object.is(value, $state[key]))`,
-           * it will show that the previous and current values are equal,
-           * ultimately leading to the update being skipped.
-           */
-          createNewRefValue(firstLevelValue) as ValueOf<S>,
-          isDelete,
-          _$state_,
-        )
-        : true;
-    } else {
-      if (!Object.is(value, _$state_[key])) {
-        _subscriber_.willUpdatingProcessing();
-        _scheduler_.assignMergeState(key, value, isDelete);
-        this.finallyBatchProcessing();
-      }
-      return true;
+    /**
+     * @description D9 — commit when this write changed something, or when the
+     * batch already recorded a change for this key (in which case the root
+     * built earlier in the batch must be re-assigned to keep the batch atomic).
+     * A first no-op write is skipped entirely, so it never triggers listeners.
+     */
+    if (newRoot !== _$state_ || this.hasTask(key)) {
+      this.mergeState(newRoot, key, value);
     }
+
+    return true;
   }
 
   update(effectState: S) {

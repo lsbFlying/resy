@@ -1,6 +1,7 @@
 import type { PrimitiveState } from "../types";
 import type MetaStore from "../store/core";
 import { hasOwnProperty } from "../utils";
+import { commitPath } from "../immutable/utils";
 
 export default class Restorer<S extends PrimitiveState> {
   constructor(public $metaStore: MetaStore<S>) {
@@ -147,9 +148,18 @@ export default class Restorer<S extends PrimitiveState> {
       )
     ).forEach(key => {
       const originValue = reducerState[key];
-
-      !Object.is(originValue, _$state_[key])
-      && _scheduler_.assignMergeState(key, originValue, !hasOwnProperty.call(reducerState, key));
+      const isDelete = !hasOwnProperty.call(reducerState, key);
+      // Restoring follows the same copy-on-write path as any other write, so
+      // the tree that existed before the restore stays frozen.
+      //
+      // 🌟 Read the root fresh on every iteration: `assignMergeState` replaces
+      // it, and committing the next key against the previous root would undo
+      // the keys already restored in this pass.
+      const currentRoot = this.$metaStore._$state_;
+      if (isDelete || !Object.is(originValue, currentRoot[key])) {
+        const newRoot = commitPath(currentRoot, [key], originValue, isDelete);
+        _scheduler_.assignMergeState(newRoot, key, originValue);
+      }
     });
 
     _updater_.finallyBatchProcessing();

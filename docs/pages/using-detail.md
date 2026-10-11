@@ -190,10 +190,81 @@ function App() {
 
 ## options - `immutable` <Badge type="tip" text="^11.2.0" />
 - **描述：**
-  启用不可变状态生成机制，通过简单修改当前状态树，自动创建下一状态树，从而保持数据结构的不可变性。  
-  这种不可变性可以提升状态更新的安全性及性能优化（例如快速比较状态变化）。
-- **默认值：** `undefined`
-- **适用场景：** 适合对状态一致性要求较高的场景，尤其是需要确保状态历史记录或避免直接数据突变时。启用 immutable 属性可以生成新的状态树，增强状态变更的安全性和性能。
+  启用写时复制（copy-on-write）的状态更新机制。开启后，对状态树的任何写入都会**新建**从根到被写字段这条路径上的每一层对象，而不是就地修改原对象，因此更新前产生的状态树始终保持不变。
+  这也是链式更新（如 `store.userInfo.name = 'x'`）生效的前提：未开启时 `store.userInfo` 返回的是原始对象，对其属性的赋值不会经过代理，因此不会触发更新。
+- **默认值：** `undefined`（即关闭）
+- **适用场景：**
+  - 需要保证状态快照不被后续写入改写（状态历史、时间旅行、并发渲染）。
+  - 需要把嵌套对象放进 `useEffect` / `useMemo` 的依赖数组。开启后同一路径在目标未变化时会返回**同一个**代理对象，依赖比较因此可信；关闭时每次读取都是新对象，依赖数组会每次都触发。
+- **边界说明：**
+  - 只有**纯对象与数组**会被写入穿透。`Date`、`RegExp`、类实例、`Map`、`Set` 等被视为不可穿透的叶节点，只能整体替换，不能写入其内部字段。
+  - 其中 `Date` 等不属于可代理类型的对象会**原样返回**，对其调用自身变更方法（如 `setFullYear`）不会产生状态更新，但会就地改写该对象，旧快照也会看到这一修改。
+  - 类实例等会被包装为代理，但在开发环境下尝试写入其内部字段会**抛出错误**（生产环境静默忽略），以避免写入被无声丢弃。
+  - 数组的变异方法（`push` / `pop` / `splice` / `sort` / `reverse` / `fill` / `copyWithin` …）整体可用：每次调用作用于副本后提交一次，旧数组不受影响；只读方法（`slice` / `map` / `filter` / `join` …）不会触发更新。
+
+**示例：**
+
+```tsx
+import React, { useEffect } from "react";
+import { defineStore } from "resy";
+
+type Model = {
+  userInfo: {
+    name: string;
+    address: { city: string };
+  };
+  rename(): void;
+  moveCity(): void;
+  addTag(tag: string): void;
+  tags: string[];
+};
+
+const useStore = defineStore<Model>(
+  {
+    userInfo: {
+      name: "Liu-Shan-Bao",
+      address: { city: "bj" },
+    },
+    tags: ["a"],
+    rename() {
+      // 链式写入：路径上的 userInfo 与根都会获得新引用
+      this.userInfo.name = "LSB";
+    },
+    moveCity() {
+      this.userInfo.address.city = "sh";
+    },
+    addTag(tag) {
+      // 数组变异：作用于副本后一次性提交，旧数组保持不变
+      this.tags.push(tag);
+    },
+  },
+  {
+    immutable: true,
+  },
+);
+
+const App = () => {
+  const { userInfo, tags, rename, moveCity, addTag } = useStore();
+  const { address } = userInfo;
+
+  useEffect(() => {
+    // 只有 address 真正变化时才会执行；
+    // 修改 userInfo.name 不会触发，因为 address 保持同一引用
+    console.log("address changed", address);
+  }, [address]);
+
+  return (
+    <>
+      <p>{userInfo.name}</p>
+      <p>{address.city}</p>
+      <p>{tags.join(",")}</p>
+      <button onClick={rename}>rename</button>
+      <button onClick={moveCity}>moveCity</button>
+      <button onClick={() => addTag("b")}>addTag</button>
+    </>
+  );
+};
+```
 
 ## options - `enableMarcoActionStateful` <Badge type="tip" text="^11.1.0" />
 - **描述：**

@@ -4,18 +4,30 @@ import { _ITERATOR_META_PROCESSING_KEY_ } from "./static";
 
 export type ProxyableType<S extends PrimitiveState> = S | S[] | MapType<S> | Set<S>;
 
-// The collection of attribute chains set as object types is
-// to prevent different levels of attributes from having the same attribute name.
-export type KeyChainsSourceItemType<S extends PrimitiveState> = {
-  key: keyof S;
-};
+/**
+ * @description The ordered path from the root state to a value, expressed as
+ * property keys. `path[0]` is the first-level key of the root state and
+ * `path[path.length - 1]` is the key being read or written.
+ *
+ * 🌟 An ordered array is used instead of a `Set` of `{ key }` wrappers because
+ * a `Set` de-duplicates equal keys, which collapses paths such as
+ * `{ x: { x: { x: 1 } } }`, and because the consumers must drop the first
+ * level (`shift()`/`slice(1)`) — an operation that must not depend on the
+ * iteration order of a collection.
+ */
+export type StatePath = PropertyKey[];
+
+/** Write a single value onto a state path. */
+export type UpdateMetaStateType<S extends PrimitiveState> = (
+  path: StatePath,
+  value: ValueOf<S>,
+  isDelete?: boolean,
+) => boolean;
 
 export type CreateProxyType<S extends PrimitiveState> = (
   target: ProxyableType<S>,
-  parentTarget?: ProxyableType<S>,
-  firstLevelKey?: keyof S,
-  keyLevel?: number,
-  keyChains?: Set<KeyChainsSourceItemType<S>>,
+  parentTarget: ProxyableType<S>,
+  path: StatePath,
   applyOriginFunction?: ApplyOriginFunctionType,
 ) => Store<S>;
 
@@ -39,18 +51,8 @@ export type MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   state: S,
   parentTarget: MapType<S>,
   createProxy: CreateProxyType<S>,
-  firstLevelKey?: keyof S,
-  keyLevel?: number,
-  keyChains?: Set<KeyChainsSourceItemType<S>>,
-  updateMetaState?: (
-    key: keyof S,
-    value: ValueOf<S>,
-    isDelete: boolean,
-    target: object | S,
-    firstLevelKey?: keyof S,
-    keyChains?: Set<KeyChainsSourceItemType<S>>,
-    applyOriginFunction?: ApplyOriginFunctionType,
-  ) => boolean,
+  path: StatePath,
+  updateMetaState: UpdateMetaStateType<S>,
 ) => (
   | MapPrototypeProxyableGetFactoryValueType<S>
   | MapPrototypeProxyableClearFactoryValueType
@@ -85,18 +87,8 @@ export type SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   state: S,
   parentTarget: Set<S>,
   createProxy: CreateProxyType<S>,
-  firstLevelKey?: keyof S,
-  keyLevel?: number,
-  keyChains?: Set<KeyChainsSourceItemType<S>>,
-  updateMetaState?: (
-    key: keyof S,
-    value: ValueOf<S>,
-    isDelete: boolean,
-    target: object | S,
-    firstLevelKey?: keyof S,
-    keyChains?: Set<KeyChainsSourceItemType<S>>,
-    applyOriginFunction?: ApplyOriginFunctionType,
-  ) => boolean,
+  path: StatePath,
+  updateMetaState: UpdateMetaStateType<S>,
 ) => (
   | SetPrototypeProxyableAddFactoryValueType<S>
   | SetPrototypeProxyableClearFactoryValueType

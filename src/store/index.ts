@@ -32,9 +32,9 @@ export const createStore = <S extends PrimitiveState>(
         ? ms.store[key]
         : (ms as any as Store<S>)[key];
     },
-    set: (_: S, key: keyof S, value: ValueOf<S>) => _updater_.updateMetaState(key, value),
+    set: (_: S, key: keyof S, value: ValueOf<S>) => _updater_.updateMetaState([key], value),
     deleteProperty: (_: S, key: keyof S) => _updater_.updateMetaState(
-      key, undefined as ValueOf<S>, true,
+      [key], undefined as ValueOf<S>, true,
     ),
   } as ProxyHandler<Store<S>>) as Store<S>;
 };

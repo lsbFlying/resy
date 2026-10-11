@@ -1,0 +1,225 @@
+import React from "react";
+import { expect, test } from "vitest";
+import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import { ComponentWithStore, createStore } from "../../src";
+import { rawMetaStore } from "../__utils__";
+
+/**
+ * @description Class-side connection contract (tasks 6.2 – 6.4), mirroring the
+ * scenarios of `specs/class-store-connection`.
+ */
+
+const flush = () => new Promise((resolve) => setTimeout(resolve, 30));
+
+test("class-store: this.store writes reach the state and re-render", async () => {
+  const store = createStore<{ count: number; text: string }>(
+    { count: 0, text: "hello" },
+    { immutable: true },
+  );
+  const ms = rawMetaStore<{ count: number; text: string }>(store);
+
+  class App extends ComponentWithStore {
+    store = this.connectStore(store);
+
+    render() {
+      const { count } = this.store;
+      return (
+        <>
+          <p>count:{count}</p>
+          <button onClick={() => { this.store.count = 5; }}>set5</button>
+          <button onClick={() => { delete (this.store as any).text; }}>delText</button>
+        </>
+      );
+    }
+  }
+
+  const { getByText } = render(<App />);
+  await waitFor(() => getByText("count:0"));
+
+  fireEvent.click(getByText("set5"));
+  await waitFor(() => getByText("count:5"));
+  expect(ms._$state_.count).toBe(5);
+
+  // Deleting a first-level key goes through the same entry point.
+  fireEvent.click(getByText("delText"));
+  await flush();
+  expect(Object.prototype.hasOwnProperty.call(ms._$state_, "text")).toBe(false);
+});
+
+test("class-store: a nested write through this.store freezes the old snapshot", async () => {
+  const store = createStore<{ userInfo: { name: string } }>(
+    { userInfo: { name: "a" } },
+    { immutable: true },
+  );
+  const ms = rawMetaStore<{ userInfo: { name: string } }>(store);
+
+  class App extends ComponentWithStore {
+    store = this.connectStore(store);
+
+    render() {
+      const { userInfo } = this.store;
+      return (
+        <>
+          <p>name:{userInfo.name}</p>
+          <button onClick={() => { this.store.userInfo.name = "b"; }}>rename</button>
+        </>
+      );
+    }
+  }
+
+  const { getByText } = render(<App />);
+  await waitFor(() => getByText("name:a"));
+  const before = ms._$state_;
+
+  fireEvent.click(getByText("rename"));
+  await waitFor(() => getByText("name:b"));
+
+  // Copy-on-write holds on the class side too.
+  expect(before.userInfo.name).toBe("a");
+  expect(ms._$state_).not.toBe(before);
+  expect(ms._$state_.userInfo).not.toBe(before.userInfo);
+});
+
+test("class-store: re-render is filtered by the keys the component registered", async () => {
+  let renderCount = 0;
+  const store = createStore<{ count: number; text: string; userInfo: { name: string } }>(
+    { count: 0, text: "hello", userInfo: { name: "a" } },
+    { immutable: true },
+  );
+
+  class App extends ComponentWithStore {
+    store = this.connectStore(store);
+    /** Declared by the test so the button can trigger a sibling write. */
+    bumpText = () => { store.text = "changed"; };
+    bumpCount = () => { store.count = 1; };
+    rename = () => { store.userInfo.name = "b"; };
+
+    render() {
+      renderCount++;
+      // Only `count` is read, so only `count` is registered.
+      const { count } = this.store;
+      return (
+        <>
+          <p>count:{count}</p>
+          <button onClick={this.bumpText}>text</button>
+          <button onClick={this.bumpCount}>count</button>
+          <button onClick={this.rename}>nested</button>
+        </>
+      );
+    }
+  }
+
+  const { getByText } = render(<App />);
+  await waitFor(() => getByText("count:0"));
+
+  // A key the component never read must not re-render it.
+  const beforeText = renderCount;
+  fireEvent.click(getByText("text"));
+  await flush();
+  expect(renderCount).toBe(beforeText);
+
+  // A registered key must re-render it.
+  fireEvent.click(getByText("count"));
+  await waitFor(() => getByText("count:1"));
+  expect(renderCount).toBeGreaterThan(beforeText);
+
+  // A nested write under an unread top-level key must not re-render either.
+  const beforeNested = renderCount;
+  fireEvent.click(getByText("nested"));
+  await flush();
+  expect(renderCount).toBe(beforeNested);
+});
+
+test("class-store: a component that reads a nested object re-renders on nested writes", async () => {
+  const store = createStore<{ userInfo: { name: string } }>(
+    { userInfo: { name: "a" } },
+    { immutable: true },
+  );
+
+  class App extends ComponentWithStore {
+    store = this.connectStore(store);
+    render() {
+      // Reading `userInfo` registers the top-level key.
+      const { userInfo } = this.store;
+      return (
+        <>
+          <p>name:{userInfo.name}</p>
+          <button onClick={() => { store.userInfo.name = "b"; }}>rename</button>
+        </>
+      );
+    }
+  }
+
+  const { getByText } = render(<App />);
+  await waitFor(() => getByText("name:a"));
+
+  fireEvent.click(getByText("rename"));
+  await waitFor(() => getByText("name:b"));
+});
+
+test("class-store: an unmounted component stops receiving updates", async () => {
+  const store = createStore<{ count: number }>({ count: 0 }, { immutable: true });
+  const ms = rawMetaStore<{ count: number }>(store);
+
+  class App extends ComponentWithStore {
+    store = this.connectStore(store);
+    render() {
+      const { count } = this.store;
+      return <p>count:{count}</p>;
+    }
+  }
+
+  const { getByText, unmount } = render(<App />);
+  await waitFor(() => getByText("count:0"));
+  expect(ms._updater_.classInstanceStack.size).toBe(1);
+
+  unmount();
+  await flush();
+
+  // The connection was released and its registered references cleared.
+  expect(ms._updater_.classInstanceStack.size).toBe(0);
+  expect(() => { store.count = 1; }).not.toThrow();
+  await flush();
+});
+
+test("class-store: class and hook components observe the same state", async () => {
+  const store = createStore<{ count: number; label: string }>(
+    { count: 0, label: "shared" },
+    { immutable: true },
+  );
+  const ms = rawMetaStore<{ count: number; label: string }>(store);
+
+  class ClassFace extends ComponentWithStore {
+    store = this.connectStore(store);
+    render() {
+      const { count } = this.store;
+      return <p>class-count:{count}</p>;
+    }
+  }
+
+  const HookFace = () => {
+    // The hook face reads the same store instance.
+    const { count } = store.useStore();
+    return <p>hook-count:{count}</p>;
+  };
+
+  const { getByText } = render(
+    <>
+      <ClassFace />
+      <HookFace />
+    </>,
+  );
+  await waitFor(() => getByText("class-count:0"));
+  await waitFor(() => getByText("hook-count:0"));
+
+  // A single write is observed by the class side …
+  store.count = 7;
+  await waitFor(() => getByText("class-count:7"));
+
+  // … and both faces read the same resulting state.
+  expect(ms._$state_.count).toBe(7);
+  expect(ms._$state_.label).toBe("shared");
+  expect(store.count).toBe(7);
+
+  cleanup();
+});

@@ -3,35 +3,47 @@
  */
 import type { MapType, PrimitiveState, ValueOf } from "../types";
 import type {
-  KeyChainsSourceItemType, ProxyableType, CreateProxyType,
-  MapPrototypeProxyableValueType, ApplyOriginFunctionType,
-  IteratorsType, MapPrototypeProxyableFactoryType,
+  CreateProxyType, IteratorsType,
+  MapPrototypeProxyableFactoryType, MapPrototypeProxyableValueType,
+  ProxyableType, StatePath, UpdateMetaStateType,
 } from "./types";
-import {
-  createNewRefValue, iteratorProcessing, proxyable, reduceChanged,
-} from "./utils";
+import { commitPath, iteratorProcessing, proxyable } from "./utils";
 
+/**
+ * @description Prototype-method factories for `Map`.
+ *
+ * Every mutating method commits once through `commitPath` and then records the
+ * resulting root through `updateMetaState`. Recording is required because
+ * `Map.prototype.set` runs on the raw `Map` and therefore never reaches the
+ * proxy `set` trap, so nothing else would publish the new root or the
+ * changed-key payload for subscribers.
+ *
+ * 🌟 The parameter order is dictated by the caller in `src/store/core.ts`
+ * (the `apply` trap) and must be kept in sync with it.
+ */
 const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
   applyOriginFunction: MapPrototypeProxyableValueType,
   thisArg: MapType<S>,
   state: S,
   parentTarget: MapType<S>,
   createProxy: CreateProxyType<S>,
-  firstLevelKey?: keyof S,
-  keyLevel?: number,
-  keyChains?: Set<KeyChainsSourceItemType<S>>,
-  updateMetaState?: (
-    key: keyof S,
-    value: ValueOf<S>,
-    isDelete: boolean,
-    target: object | S,
-    firstLevelKey?: keyof S,
-    keyChains?: Set<KeyChainsSourceItemType<S>>,
-    applyOriginFunction?: ApplyOriginFunctionType,
-  ) => boolean,
+  path: StatePath,
+  updateMetaState: UpdateMetaStateType<S>,
 ) => {
-  const fnName = applyOriginFunction.name;
-  switch (fnName) {
+  const firstLevelKey = path[0] as keyof S;
+
+  /**
+   * @description Publish a new map on the map's own path.
+   *
+   * `commitPath` clones the whole path, so the map's host object is replaced
+   * too and any previously held snapshot stays frozen.
+   */
+  const commitMap = (nextMap: MapType<S>, value: unknown) => {
+    commitPath(state, path, nextMap);
+    updateMetaState([firstLevelKey], value as ValueOf<S>, false);
+  };
+
+  switch (applyOriginFunction.name) {
     case "get":
       return (key: keyof S): ValueOf<S> | undefined => {
         const value = parentTarget.get(key);
@@ -39,9 +51,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
           ? createProxy(
             value as ProxyableType<S>,
             parentTarget,
-            firstLevelKey,
-            (keyLevel ?? 0) + 1,
-            new Set(keyChains).add({ key }),
+            [...path, key],
             applyOriginFunction,
           ) as ValueOf<S>
           : value;
@@ -49,51 +59,27 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
     case "set":
       return (key: keyof S, value: ValueOf<S>) => {
         const oldValue = parentTarget.get(key);
-
         if (Object.is(oldValue, value)) return parentTarget;
 
-        const newValue = createNewRefValue(parentTarget).set(key, value);
-        const firstLevelValue = state[firstLevelKey!];
-        reduceChanged(value as ValueOf<S>, new Set(keyChains).add({ key, }), firstLevelValue);
-
-        updateMetaState!(
-          firstLevelKey!,
-          createNewRefValue(firstLevelValue) as ValueOf<S>,
-          false,
-          state,
-        );
+        const newValue = new Map(parentTarget) as MapType<S>;
+        newValue.set(key, value);
+        commitMap(newValue, value);
         return newValue;
       };
     case "delete":
       return (key: keyof S) => {
         if (!parentTarget.has(key)) return false;
 
-        const newValue = createNewRefValue(parentTarget);
+        const newValue = new Map(parentTarget) as MapType<S>;
         const result = newValue.delete(key);
-        const firstLevelValue = state[firstLevelKey!];
-        reduceChanged(newValue as ValueOf<S>, new Set(keyChains).add({ key, }), firstLevelValue);
-
-        updateMetaState!(
-          firstLevelKey!,
-          createNewRefValue(firstLevelValue) as ValueOf<S>,
-          false,
-          state,
-        );
+        commitMap(newValue, undefined);
         return result;
       };
     case "clear":
       return () => {
         if (!parentTarget.size) return;
 
-        const firstLevelValue = state[firstLevelKey!];
-        reduceChanged(new Map() as ValueOf<S>, keyChains!, firstLevelValue);
-
-        updateMetaState!(
-          firstLevelKey!,
-          createNewRefValue(firstLevelValue) as ValueOf<S>,
-          false,
-          state,
-        );
+        commitMap(new Map() as MapType<S>, undefined);
       };
     case "forEach":
       return (callback: (value: ValueOf<S>, key: keyof S, map: Map<keyof S, ValueOf<S>>) => void) => {
@@ -104,9 +90,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
                 createProxy(
                   value as ProxyableType<S>,
                   parentTarget,
-                  firstLevelKey,
-                  (keyLevel ?? 0) + 1,
-                  new Set(keyChains).add({ key }),
+                  [...path, key],
                   applyOriginFunction,
                 ) as ValueOf<S>
               )
@@ -128,7 +112,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
         const iterators = parentTarget.values();
         iteratorProcessing(
           iterators as any as IteratorsType<S>, parentTarget, createProxy,
-          firstLevelKey, keyLevel, keyChains, applyOriginFunction,
+          path, applyOriginFunction,
         );
         return iterators;
       };
@@ -137,7 +121,7 @@ const applyMapPrototypeFactory: MapPrototypeProxyableFactoryType = <S extends Pr
         const iterators = parentTarget.entries();
         iteratorProcessing(
           iterators as any as IteratorsType<S>, parentTarget, createProxy,
-          firstLevelKey, keyLevel, keyChains, applyOriginFunction, true,
+          path, applyOriginFunction, true,
         );
         return iterators;
       };

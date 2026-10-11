@@ -27,8 +27,21 @@ export default class Subscriber<S extends PrimitiveState> {
     const scheduler = this.$metaStore._scheduler_;
     if (this.listenerQueue.size > 0 && !scheduler.willUpdating) {
       scheduler.willUpdating = true;
-      this.prevBatchState = { ...this.$metaStore._$state_ } as S;
-      console.log(123, this.prevBatchState);
+      /**
+       * @description Hold the root as-is instead of copying it.
+       *
+       * A shallow copy used to be taken so later writes could not rewrite
+       * `prevState`, but that protection never covered the second level and
+       * below: those entries were shared references, so a chained write
+       * rewrote them and `prevState` reported the new values (measured as
+       * `prevState.userInfo` reading `b/1` while the real historical value was
+       * `a/1`).
+       *
+       * Commits are copy-on-write, so the tree that exists at this moment is
+       * never written to again — holding the reference is both correct and
+       * cheaper, and it cannot lose a first-level key to a later write.
+       */
+      this.prevBatchState = this.$metaStore._$state_;
     }
   }
 

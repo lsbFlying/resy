@@ -1,4 +1,4 @@
-import type { PrimitiveState } from "../types";
+import type { PrimitiveState, ValueOf } from "../types";
 import type { AnyBoundFn, Store } from "../store/types";
 import type { ClassStoreType } from "./types";
 import MetaStore from "../store/core";
@@ -197,6 +197,17 @@ export abstract class ComponentWithStore<
 
         return (store as any as MetaStore<S>)[key as keyof MetaStore<S>];
       },
+      /**
+       * @description Forward first-level writes to the public write entry point.
+       *
+       * Without these traps the proxy had a `get` only, so `this.store.count = 5`
+       * fell through to the default behaviour and landed on the empty proxy
+       * target: no error, no state change, no re-render. Forwarding to the
+       * outer `createStore` proxy keeps `this.store.count = 5` on exactly the
+       * same path as the hook-side `store.count = 5`, so the two cannot drift.
+       */
+      set: (_, key: keyof S, value: ValueOf<S>) => Reflect.set(store, key, value),
+      deleteProperty: (_, key: keyof S) => Reflect.deleteProperty(store, key),
     } as ProxyHandler<ClassStoreType<S>>);
 
     return this._$store_ = classEngineStore;

@@ -1,8 +1,8 @@
 import { whatsType, typeString, slice } from "../utils";
-import type { MapType, PrimitiveState, ValueOf } from "../types";
+import type { PrimitiveState } from "../types";
 import type {
   ApplyOriginFunctionType, IteratorsType, CreateProxyType,
-  KeyChainsSourceItemType, ArrayMapSetIteratorType, IteratorsParentType,
+  StatePath, ArrayMapSetIteratorType, IteratorsParentType,
 } from "./types";
 import { _ITERATOR_META_PROCESSING_KEY_ } from "./static";
 
@@ -33,23 +33,101 @@ export const proxyable = (value: unknown) => {
 };
 
 /**
- * @description Create a new reference type data value with the same content based on the given reference type data.
- * Here, a few of the more common and widely used data types within the ComplexValueType are handled.
+ * @description Whether a value can be written through by a chained update.
+ * Only plain objects and arrays are penetrable; everything else (`Date`,
+ * `Map`, `Set`, class instances, …) is treated as an atomic leaf, because
+ * cloning such an object would have to preserve prototypes, accessors and
+ * private fields, which cannot be done reliably.
  */
-export const createNewRefValue = <T>(value: T): T => {
-  const type = typeString.call(value);
-  switch (type) {
-    case "[object Object]":
-      return { ...value };
-    case "[object Array]":
-      return slice.call(value as unknown[]) as T;
-    case "[object Map]":
-      return new Map(value as Iterable<readonly [unknown, unknown]>) as T;
-    case "[object Set]":
-      return new Set(value as Iterable<unknown>) as T;
-    default:
-      return value;
+export const isPenetrable = (value: unknown): boolean =>
+  Array.isArray(value)
+  || (
+    typeof value === "object"
+    && value !== null
+    && (Object.getPrototypeOf(value) === Object.prototype
+      || Object.getPrototypeOf(value) === null)
+  );
+
+/**
+ * @description Shallow copy of a penetrable value. Arrays use `slice`, plain
+ * objects use spread; anything else is returned unchanged so it stays a leaf.
+ */
+export const cloneShallow = <T>(value: T): T => {
+  if (Array.isArray(value)) return slice.call(value as unknown[]) as T;
+  if (
+    typeof value === "object"
+    && value !== null
+    && (Object.getPrototypeOf(value) === Object.prototype
+      || Object.getPrototypeOf(value) === null)
+  ) {
+    return { ...(value as object) } as T;
   }
+  return value;
+};
+
+/**
+ * @description Create a new reference type data value with the same content.
+ * Retained as an alias of {@link cloneShallow} for the Map/Set update paths.
+ */
+export const createNewRefValue = <T>(value: T): T => cloneShallow(value);
+
+/**
+ * @description Read the value at `path` from `root`. Returns `undefined` as
+ * soon as a segment is not penetrable, which makes any write through a leaf
+ * a no-op instead of an error.
+ */
+export const readAtPath = (root: unknown, path: StatePath): unknown => {
+  let current: unknown = root;
+  for (let i = 0; i < path.length; i++) {
+    if (!isPenetrable(current)) return undefined;
+    current = (current as Record<PropertyKey, unknown>)[path[i]];
+  }
+  return current;
+};
+
+/**
+ * @description Copy-on-write commit of a single value onto a state path.
+ *
+ * Every level from the leaf container up to the root is copied once, so the
+ * tree that existed before the call is never written to; branches outside the
+ * path keep sharing their existing references.
+ *
+ * 🌟 Returns the `root` argument itself when nothing changed, so callers can
+ * detect a no-op with a single reference comparison.
+ *
+ * @param root - The current state root.
+ * @param path - Ordered path; `path[path.length - 1]` is the written key.
+ * @param value - The value to write (ignored when `isDelete`).
+ * @param isDelete - Remove the final key instead of writing it.
+ * @returns The new root, or `root` unchanged.
+ */
+export const commitPath = <S extends PrimitiveState>(
+  root: S,
+  path: StatePath,
+  value: unknown,
+  isDelete = false,
+): S => {
+  const leafKey = path[path.length - 1];
+  const rest = path.slice(0, -1);
+
+  const leafOwner = readAtPath(root, rest);
+  if (!isPenetrable(leafOwner)) return root;
+
+  const ownerRecord = leafOwner as Record<PropertyKey, unknown>;
+  if (!isDelete && Object.is(ownerRecord[leafKey], value)) return root;
+
+  const newLeafOwner = cloneShallow(leafOwner) as Record<PropertyKey, unknown>;
+  if (isDelete) Reflect.deleteProperty(newLeafOwner, leafKey);
+  else newLeafOwner[leafKey] = value;
+
+  let current: unknown = newLeafOwner;
+  for (let i = rest.length - 1; i >= 0; i--) {
+    const next = cloneShallow(readAtPath(root, rest.slice(0, i))) as Record<PropertyKey, unknown>;
+    next[rest[i]] = current;
+    current = next;
+  }
+
+  return current as S;
 };
 
 /**
@@ -63,9 +141,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
   iterator: IteratorsType<S>,
   parentTarget: IteratorsParentType<S>,
   createProxy: CreateProxyType<S>,
-  firstLevelKey?: keyof S,
-  keyLevel?: number,
-  keyChains?: Set<KeyChainsSourceItemType<S>>,
+  path: StatePath,
   applyOriginFunction?: ApplyOriginFunctionType,
   entriesFlag?: boolean,
 ) => {
@@ -111,9 +187,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
                     ? createProxy(
                       value,
                       parentTarget,
-                      firstLevelKey,
-                      (keyLevel ?? 0) + 1,
-                      new Set(keyChains).add({ key }),
+                      [...path, key],
                       applyOriginFunction,
                     )
                     : value,
@@ -122,9 +196,7 @@ export const iteratorProcessing = <S extends PrimitiveState>(
                   ? createProxy(
                     value,
                     parentTarget,
-                    firstLevelKey,
-                    (keyLevel ?? 0) + 1,
-                    new Set(keyChains).add({ key }),
+                    [...path, key],
                     applyOriginFunction,
                   )
                   : value,
@@ -137,60 +209,4 @@ export const iteratorProcessing = <S extends PrimitiveState>(
     AM_IteratorFlag && (iterator.next = iterator[Symbol.iterator]().next);
     parentTarget[_ITERATOR_META_PROCESSING_KEY_] = true;
   }
-};
-
-export const reduceChanged = <S extends PrimitiveState>(
-  value: ValueOf<S>,
-  keyChains: Set<KeyChainsSourceItemType<S>>,
-  firstLevelValue?: ValueOf<S>,
-) => {
-  // No first level attribute chain array
-  const noneFirstLevelKeyChains: (keyof S)[] = [];
-  for (const item of keyChains) {
-    noneFirstLevelKeyChains.push(item.key);
-  }
-  noneFirstLevelKeyChains.shift();
-
-  // TODO 应该可以通过递归循环优化处理
-  noneFirstLevelKeyChains.reduce((
-    previousValue,
-    itemKey,
-    currentIndex,
-    array,
-  ) => {
-    const isMapType = whatsType(previousValue) === "Map";
-
-    // TODO set类型的更新循环还没有完全开发验证完毕，waiting develop
-    currentIndex !== array.length - 1
-      /**
-       * @description Update the attribute chain except for the attribute objects of each layer before the last level,
-       * This is very important. If the update here is ignored,
-       * it will result in the attribute chain's layer by layer properties not being treated as immutable,
-       * which will create a dependency invariant bug on the hook's dependency array.
-       */
-      ? isMapType
-        ? (previousValue as MapType<S>).set(
-          itemKey,
-          createNewRefValue((previousValue as MapType<S>).get(itemKey) as ValueOf<S>)
-        )
-        : ((previousValue as any)[itemKey] = createNewRefValue((previousValue as S)[itemKey]))
-      // Update the attributes of the last level in the attribute chain
-      : isMapType
-        ? (previousValue as MapType<S>).set(itemKey, value)
-        : ((previousValue as S)[itemKey] = value);
-
-    return isMapType
-      ? (previousValue as MapType<S>).get(itemKey)
-      : (previousValue as S)[itemKey];
-  }, firstLevelValue);
-
-  /**
-   * @description The prototype function proxies of the parent object of `Map` and `Set` have been updated.
-   * At this point, it is necessary to remove the previous proxies for the prototype functions;
-   * otherwise, subsequent read and write operations will not be able to access the latest proxied data.
-   */
-  // TODO waiting considering
-  // applyOriginFunction && storeProxyMap.delete(
-  //   (applyOriginFunction as ProxyTargetType)[_PROXY_TARGET_KEY_PREFIX_]
-  // );
 };

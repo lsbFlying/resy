@@ -6,8 +6,8 @@ import type { ListenerParams } from "../subscribe/types";
 import type MetaStore from "../store/core";
 import { batchUpdate } from "../static";
 import { pathErrorProcessing, stateErrorProcessing } from "../store/errors";
-import { commitPath, isPenetrable, readAtPath } from "../immutable/utils";
-import { isEmptyPureObject, hasOwnProperty } from "../utils";
+import { commitPath } from "../immutable/utils";
+import { isEmptyPureObject } from "../utils";
 
 /**
  * @description Update mechanism of `meta-state`
@@ -106,13 +106,12 @@ export default class Updater<S extends PrimitiveState> {
       // and traversal processing is needed to unify the stack.
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
         const value = (stateTemp as S)[key];
-        // Read the root fresh on every iteration: `assignMergeState` replaces
-        // it, and committing the next key against the previous root would drop
-        // that key from the batch.
-        const currentRoot = this.$metaStore._$state_;
-        const newRoot = commitPath(currentRoot, [key], value);
-        if (newRoot !== currentRoot) {
-          _scheduler_.assignMergeState(newRoot, key as keyof S, value);
+        // Read the root fresh on every iteration: `commitRoot` replaces it, and
+        // committing the next key against the previous root would drop that key
+        // from the batch.
+        const result = commitPath(this.$metaStore._$state_, [key], value);
+        if (result.committed) {
+          _scheduler_.commitRoot(result.root, key as keyof S, value);
         }
       });
     }
@@ -133,51 +132,6 @@ export default class Updater<S extends PrimitiveState> {
   };
 
   /**
-   * @description Whether the current batch already recorded a change for `key`.
-   * A later no-op write in the same batch still has to assign the root built
-   * earlier in that batch, so this check decides whether to commit.
-   */
-  hasTask(key: keyof S): boolean {
-    return hasOwnProperty.call(this.$metaStore._scheduler_.taskData, key);
-  }
-
-  /**
-   * @description Build the next state tree for a write on `path`.
-   *
-   * A path whose host object is not penetrable (a `Date`, a class instance, a
-   * `Map`/`Set` member, …) cannot be committed. In development that is reported
-   * as an error by `pathErrorProcessing`, because silently dropping the write is
-   * the hardest failure to diagnose; in production the write is a no-op, which
-   * keeps the leaf-node contract of the published build. A `Date`'s own mutators are not affected:
-   * a non-proxyable built-in is returned raw, so such a call never reaches here.
-   */
-  nextRoot(path: StatePath, value: ValueOf<S>, isDelete: boolean): S {
-    const root = this.$metaStore._$state_;
-    const host = readAtPath(root, path.slice(0, -1));
-
-    if (host !== undefined && !isPenetrable(host)) {
-      pathErrorProcessing(path, host);
-      return root;
-    }
-
-    return commitPath(root, path, value, isDelete);
-  }
-
-  /**
-   * @description Record a newly built root in the current batch.
-   *
-   * `prevState` must be captured *before* `_$state_` is reassigned, otherwise
-   * the subscriber would receive an already-updated value as its "previous"
-   * state.
-   */
-  mergeState(newRoot: S, key: keyof S, value: ValueOf<S>): void {
-    const { $metaStore: { _scheduler_, _subscriber_ } } = this;
-    _subscriber_.willUpdatingProcessing();
-    _scheduler_.assignMergeState(newRoot, key, value);
-    this.finallyBatchProcessing();
-  }
-
-  /**
    * @description Data updates for a single value addressed by its path.
    *
    * The path is the only source of truth: `path[0]` is the first-level key and
@@ -194,21 +148,42 @@ export default class Updater<S extends PrimitiveState> {
   ): boolean {
     // if (this.#freezing) return true;
 
-    const { $metaStore: { _$state_ } } = this;
     const key = path[0] as keyof S;
 
-    const newRoot = this.nextRoot(path, value, isDelete);
+    /**
+     * @description `commitPath` reads the host itself and reports *why* it
+     * refused, so a single call turns a write into a new root.
+     *
+     * A path whose host is not penetrable (a class instance, a `Map`/`Set`
+     * member, …) cannot be committed. Reporting it in development is required
+     * because silently dropping the write is the hardest failure to diagnose;
+     * in production the write is a no-op, which keeps the leaf-node contract of
+     * the published build. A `Date`'s own mutators never reach here at all — a
+     * non-proxyable built-in is returned raw.
+     */
+    const result = commitPath(this.$metaStore._$state_, path, value, isDelete);
+
+    if (!result.committed) {
+      // A write that ran into a value it cannot pass through is reported in
+      // development; a path that simply changed nothing stays silent.
+      if (result.reason === "leaf") pathErrorProcessing(path, result.host);
+      return true;
+    }
 
     /**
-     * @description Commit when this write changed something, or when the batch
-     * already recorded a change for this key. The second case matters because a
-     * later no-op write still has to re-assign the root that was built earlier
-     * in the same batch, otherwise that earlier change would be dropped. A first
-     * no-op write is skipped entirely, so it never triggers listeners.
+     * @description `commitPath` hands back a fresh root only when it applied a
+     * change, so a single `committed` check is enough; the batch merges by
+     * first-level key.
+     *
+     * 🌟 `willUpdatingProcessing()` MUST run before the root is installed:
+     * it captures the tree that existed before the batch, and doing it after
+     * would hand the subscriber an already-updated value as its "previous"
+     * state.
      */
-    if (newRoot !== _$state_ || this.hasTask(key)) {
-      this.mergeState(newRoot, key, value);
-    }
+    const { _scheduler_, _subscriber_ } = this.$metaStore;
+    _subscriber_.willUpdatingProcessing();
+    _scheduler_.commitRoot(result.root, key, value);
+    this.finallyBatchProcessing();
 
     return true;
   }

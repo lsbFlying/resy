@@ -15,7 +15,9 @@ import { rawState } from "../__utils__";
 test("immutable-path: commitPath keeps every segment of a repeated-key path", () => {
   const root = { x: { x: { x: 1 } } } as Record<string, unknown>;
 
-  const next = commitPath(root, ["x", "x", "x"], 42) as typeof root;
+  const result = commitPath(root, ["x", "x", "x"], 42);
+  expect(result.committed).toBe(true);
+  const next = (result as { committed: true; root: typeof root }).root;
 
   // The value lands at the deepest level.
   expect((next.x as any).x.x).toBe(42);
@@ -52,7 +54,9 @@ test("immutable-path: store write through a three-level repeated-key path", () =
 test("immutable-path: a level-one path is honoured as such", () => {
   const root = { count: 1, other: { count: 2 } };
 
-  const next = commitPath(root, ["count"], 5) as typeof root;
+  const result = commitPath(root, ["count"], 5);
+  expect(result.committed).toBe(true);
+  const next = (result as { committed: true; root: typeof root }).root;
 
   expect(next.count).toBe(5);
   // The nested `count` is a different location and must not be touched.

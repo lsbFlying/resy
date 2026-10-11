@@ -118,6 +118,7 @@ export default defineConfig({
         text: "设计",
         collapsed: false,
         items: [
+          { text: "链式更新实现", link: "/pages/chained-update.md" },
           { text: "类型设计", link: "/pages/type-design.md" },
           { text: "层次设计", link: "/pages/level-design.md" },
           { text: "模块化", link: "/pages/modularity.md" },

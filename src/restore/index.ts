@@ -152,13 +152,12 @@ export default class Restorer<S extends PrimitiveState> {
       // Restoring follows the same copy-on-write path as any other write, so
       // the tree that existed before the restore stays frozen.
       //
-      // 🌟 Read the root fresh on every iteration: `assignMergeState` replaces
-      // it, and committing the next key against the previous root would undo
-      // the keys already restored in this pass.
-      const currentRoot = this.$metaStore._$state_;
-      if (isDelete || !Object.is(originValue, currentRoot[key])) {
-        const newRoot = commitPath(currentRoot, [key], originValue, isDelete);
-        _scheduler_.assignMergeState(newRoot, key, originValue);
+      // 🌟 Read the root fresh on every iteration: `commitRoot` replaces it, and
+      // committing the next key against the previous root would undo the keys
+      // already restored in this pass.
+      const result = commitPath(this.$metaStore._$state_, [key], originValue, isDelete);
+      if (result.committed) {
+        _scheduler_.commitRoot(result.root, key, originValue);
       }
     });
 

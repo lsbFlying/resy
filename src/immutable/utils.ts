@@ -53,7 +53,9 @@ export const mapSetPrototypeProxyable = (value: unknown): boolean =>
  * cloning such an object would have to preserve prototypes, accessors and
  * private fields, which cannot be done reliably.
  */
-export const isPenetrable = (value: unknown): boolean =>
+export const isPenetrable = (
+  value: unknown,
+): value is Record<PropertyKey, unknown> =>
   Array.isArray(value)
   || (
     typeof value === "object"
@@ -80,12 +82,6 @@ export const cloneShallow = <T>(value: T): T => {
 };
 
 /**
- * @description Create a new reference type data value with the same content.
- * Retained as an alias of {@link cloneShallow} for the Map/Set update paths.
- */
-export const createNewRefValue = <T>(value: T): T => cloneShallow(value);
-
-/**
  * @description Read the value at `path` from `root`. Returns `undefined` as
  * soon as a segment is not penetrable, which makes any write through a leaf
  * a no-op instead of an error.
@@ -100,37 +96,62 @@ export const readAtPath = (root: unknown, path: StatePath): unknown => {
 };
 
 /**
+ * @description Outcome of {@link commitPath}.
+ *
+ * The union is what lets the caller tell "nothing changed" apart from "this
+ * write was refused", and it carries the offending host for the refusal so the
+ * diagnostic can name it without walking the path a second time.
+ */
+export type CommitResult<S> =
+  | { committed: true; root: S }
+  | { committed: false; reason: "leaf"; host: unknown }
+  | { committed: false; reason: "noop" };
+
+/**
  * @description Copy-on-write commit of a single value onto a state path.
  *
- * Every level from the leaf container up to the root is copied once, so the
- * tree that existed before the call is never written to; branches outside the
- * path keep sharing their existing references.
+ * Every level from the leaf container up to the root is copied once, so the tree
+ * that existed before the call is never written to; branches outside the path
+ * keep sharing their existing references.
  *
- * 🌟 Returns the `root` argument itself when nothing changed, so callers can
- * detect a no-op with a single reference comparison.
+ * 🌟 The returned `root` is a **new object** whenever a change was applied, and
+ * the input `root` itself when there was nothing to do. Callers can therefore
+ * detect a real change with a single reference comparison.
  *
  * @param root - The current state root.
  * @param path - Ordered path; `path[path.length - 1]` is the written key.
  * @param value - The value to write (ignored when `isDelete`).
  * @param isDelete - Remove the final key instead of writing it.
- * @returns The new root, or `root` unchanged.
  */
 export const commitPath = <S extends PrimitiveState>(
   root: S,
   path: StatePath,
   value: unknown,
   isDelete = false,
-): S => {
+): CommitResult<S> => {
   const leafKey = path[path.length - 1];
   const rest = path.slice(0, -1);
 
+  // The host is read once, here, and reused for both the guard and the copy.
   const leafOwner = readAtPath(root, rest);
-  if (!isPenetrable(leafOwner)) return root;
+  if (!isPenetrable(leafOwner)) {
+    /**
+     * @description Two different situations share this branch.
+     *
+     * `undefined` means the path does not resolve (a missing intermediate key),
+     * which is an ordinary no-op. Anything else means the write ran into a value
+     * that cannot be written through, which the caller reports in development.
+     */
+    return leafOwner === undefined
+      ? { committed: false, reason: "noop" }
+      : { committed: false, reason: "leaf", host: leafOwner };
+  }
 
-  const ownerRecord = leafOwner as Record<PropertyKey, unknown>;
-  if (!isDelete && Object.is(ownerRecord[leafKey], value)) return root;
+  if (!isDelete && Object.is(leafOwner[leafKey], value)) {
+    return { committed: false, reason: "noop" };
+  }
 
-  const newLeafOwner = cloneShallow(leafOwner) as Record<PropertyKey, unknown>;
+  const newLeafOwner = cloneShallow(leafOwner);
   if (isDelete) Reflect.deleteProperty(newLeafOwner, leafKey);
   else newLeafOwner[leafKey] = value;
 
@@ -141,7 +162,7 @@ export const commitPath = <S extends PrimitiveState>(
     current = next;
   }
 
-  return current as S;
+  return { committed: true, root: current as S };
 };
 
 /**

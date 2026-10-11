@@ -19,13 +19,16 @@ export default class Scheduler<S extends PrimitiveState> {
   deferEffectDestructorExecutable?: Promise<void>;
 
   /**
-   * @description Record a newly built state root in the current batch.
+   * @description Commit a newly built state root for the current batch.
    *
-   * The root is built by `commitPath` (copy-on-write), so this method never
-   * copies the state tree itself — it only publishes the root the caller
+   * Paired with `commitPath`, which *builds* the root: this method resolves the
+   * other half of the same operation by publishing it. It therefore never copies
+   * the state tree itself — it only swaps `_$state_` to the root the caller
    * already produced and records the changed key for the subscriber payload.
+   * Notification is the caller's concern: it must capture `prevState` *before*
+   * calling this.
    */
-  assignMergeState(newRoot: S, key: keyof S, value: ValueOf<S>) {
+  commitRoot(newRoot: S, key: keyof S, value: ValueOf<S>) {
     this.$metaStore._$state_ = newRoot;
     this.taskData[key] = value;
   };

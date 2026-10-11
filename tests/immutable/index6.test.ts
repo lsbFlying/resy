@@ -2,6 +2,15 @@ import { expect, test } from "vitest";
 import { commitPath, readAtPath } from "../../src/immutable/utils";
 
 /**
+ * Narrow a commit result to the new root, failing loudly when the commit was
+ * refused. The union exists so callers cannot read a root that was never built.
+ */
+const appliedRoot = <T>(result: ReturnType<typeof commitPath<T>>): T => {
+  if (!result.committed) throw new Error(`expected a commit, got ${result.reason}`);
+  return result.root;
+};
+
+/**
  * @description `commitPath` unit tests — the copy-on-write contract.
  *
  * Covers the cases the design enumerates: `path.length === 1`, a no-op write,
@@ -28,7 +37,7 @@ const buildRoot = (): Root => ({
 test("commitPath: path.length === 1 writes a first-level key", () => {
   const root = buildRoot();
 
-  const next = commitPath(root, ["count"], 5);
+  const next = appliedRoot(commitPath(root, ["count"], 5));
 
   expect(next.count).toBe(5);
   expect(next).not.toBe(root);
@@ -45,15 +54,16 @@ test("commitPath: an equal value returns the same root reference", () => {
   // `Object.is` compares the *current* value at the path, so the read has to
   // agree for this to be a genuine no-op.
   expect(readAtPath(root, ["userInfo", "name"])).toBe("a");
-  const next = commitPath(root, ["userInfo", "name"], "a");
+  const result = commitPath(root, ["userInfo", "name"], "a");
 
-  expect(next).toBe(root);
+  expect(result.committed).toBe(false);
+  expect(result).toEqual({ committed: false, reason: "noop" });
 });
 
 test("commitPath: deleting the final key clones the host only", () => {
   const root = buildRoot();
 
-  const next = commitPath(root, ["userInfo", "name"], undefined, true) as Record<string, any>;
+  const next = appliedRoot(commitPath(root, ["userInfo", "name"], undefined, true)) as Record<string, any>;
 
   expect(Object.prototype.hasOwnProperty.call(next.userInfo, "name")).toBe(false);
   expect(next.userInfo.name).toBeUndefined();
@@ -65,16 +75,18 @@ test("commitPath: deleting the final key clones the host only", () => {
 test("commitPath: a path through a non-penetrable leaf is a no-op", () => {
   const root = buildRoot();
 
-  const next = commitPath(root, ["when", "anyKey"], 123);
+  const result = commitPath(root, ["when", "anyKey"], 123);
 
-  // `Date` is a leaf, so the write is ignored and no reference is replaced.
-  expect(next).toBe(root);
+  // `Date` is a leaf: the write is refused and the offending host is reported
+  // so the caller can name it without walking the path again.
+  expect(result).toMatchObject({ committed: false, reason: "leaf" });
+  expect((result as { host: unknown }).host).toBe(root.when);
 });
 
 test("commitPath: nested writes replace every level on the path", () => {
   const root = buildRoot();
 
-  const next = commitPath(root, ["userInfo", "address", "city"], "sh") as Root;
+  const next = appliedRoot(commitPath(root, ["userInfo", "address", "city"], "sh")) as Root;
 
   expect(next.userInfo.address.city).toBe("sh");
   expect(next).not.toBe(root);
@@ -90,7 +102,7 @@ test("commitPath: nested writes replace every level on the path", () => {
 test("commitPath: arrays are penetrable and cloned with slice", () => {
   const root = buildRoot();
 
-  const next = commitPath(root, ["list", 1], 99) as Root;
+  const next = appliedRoot(commitPath(root, ["list", 1], 99)) as Root;
 
   expect(next.list[1]).toBe(99);
   expect(next.list).not.toBe(root.list);
@@ -100,7 +112,8 @@ test("commitPath: arrays are penetrable and cloned with slice", () => {
 test("commitPath: a missing intermediate segment is a no-op", () => {
   const root = buildRoot();
 
-  const next = commitPath(root, ["nope", "deeper"], 1);
+  const result = commitPath(root, ["nope", "deeper"], 1);
 
-  expect(next).toBe(root);
+  // An unresolvable path is an ordinary no-op, not a refusal.
+  expect(result).toEqual({ committed: false, reason: "noop" });
 });

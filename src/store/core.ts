@@ -178,7 +178,7 @@ export default class MetaStore<S extends PrimitiveState> {
         const sourceFromThis = hasOwnProperty.call(this, key);
 
         /**
-         * @description Array branch (D12).
+         * @description Array branch.
          *
          * A mutating array method performs a *sequence* of internal writes
          * (`push` writes the index and then `length`; `pop` deletes the index

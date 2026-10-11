@@ -2,11 +2,11 @@ import { expect, test } from "vitest";
 import { commitPath, readAtPath } from "../../src/immutable/utils";
 
 /**
- * @description `commitPath` unit tests (task 2.1) — the D2 contract.
+ * @description `commitPath` unit tests — the copy-on-write contract.
  *
  * Covers the cases the design enumerates: `path.length === 1`, a no-op write,
  * deleting the final segment, and a path that runs through a non-penetrable
- * leaf. The `Map` case that used to be handled here is now a leaf (D4).
+ * leaf. `Map` used to be handled here and is now a leaf as well.
  */
 
 type Root = {

@@ -3,7 +3,7 @@ import { createStore } from "../../src";
 import { rawState } from "../__utils__";
 
 /**
- * @description `prevState` semantics (task 5.2).
+ * @description `prevState` semantics.
  *
  * `prevState` is published as a reference to the root that existed before the
  * batch. Because every commit is copy-on-write, that tree is never written to

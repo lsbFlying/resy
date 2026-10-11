@@ -134,8 +134,8 @@ export default class Updater<S extends PrimitiveState> {
 
   /**
    * @description Whether the current batch already recorded a change for `key`.
-   * Used by the D9 rule: a later no-op write in the same batch still has to
-   * assign the root built earlier in that batch.
+   * A later no-op write in the same batch still has to assign the root built
+   * earlier in that batch, so this check decides whether to commit.
    */
   hasTask(key: keyof S): boolean {
     return hasOwnProperty.call(this.$metaStore._scheduler_.taskData, key);
@@ -200,10 +200,11 @@ export default class Updater<S extends PrimitiveState> {
     const newRoot = this.nextRoot(path, value, isDelete);
 
     /**
-     * @description D9 — commit when this write changed something, or when the
-     * batch already recorded a change for this key (in which case the root
-     * built earlier in the batch must be re-assigned to keep the batch atomic).
-     * A first no-op write is skipped entirely, so it never triggers listeners.
+     * @description Commit when this write changed something, or when the batch
+     * already recorded a change for this key. The second case matters because a
+     * later no-op write still has to re-assign the root that was built earlier
+     * in the same batch, otherwise that earlier change would be dropped. A first
+     * no-op write is skipped entirely, so it never triggers listeners.
      */
     if (newRoot !== _$state_ || this.hasTask(key)) {
       this.mergeState(newRoot, key, value);

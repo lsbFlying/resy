@@ -3,7 +3,7 @@ import { createStore } from "../../src";
 import { rawMetaStore, rawState } from "../__utils__";
 
 /**
- * @description Write-side semantics (task 2.8), mirroring the scenarios of
+ * @description Write-side semantics, mirroring the scenarios of
  * `specs/state-update-semantics`.
  *
  * All assertions are value/reference comparisons rather than `expect(() => …)`,
@@ -157,7 +157,7 @@ test("write-side: setState also keeps the previous tree frozen", () => {
 });
 
 /* ------------------------------------------------------------------ *
- * Leaf-node boundaries (task 2.9) — spec: "链式写入仅对纯对象与数组生效"
+ * Leaf-node boundaries — spec: "链式写入仅对纯对象与数组生效"
  * ------------------------------------------------------------------ */
 
 test("leaf: replacing a Date as a whole takes effect and replaces references", () => {

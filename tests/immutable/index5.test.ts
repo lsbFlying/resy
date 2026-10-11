@@ -4,7 +4,7 @@ import { commitPath, readAtPath } from "../../src/immutable/utils";
 import { rawState } from "../__utils__";
 
 /**
- * @description Path model tests (task 1.3).
+ * @description Path model tests.
  *
  * The old representation was a `Set<{ key }>`, which de-duplicates equal keys.
  * A path such as `{ x: { x: { x: 1 } } }` therefore collapsed to a single

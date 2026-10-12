@@ -13,3 +13,4 @@ docs/.vitepress/dist
 # local CLI tooling (openspec installed into .tooling/)
 .tooling/
 .dsh
+/openspec

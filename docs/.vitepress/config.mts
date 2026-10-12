@@ -81,7 +81,7 @@ export default defineConfig({
         items: [
           {
             text: "更新日志",
-            link: "https://github.sheincorp.cn/lsbFlying/resy/blob/master/CHANGELOG.md",
+            link: "https://github.com/lsbFlying/resy/blob/master/CHANGELOG.md",
           },
         ]
       },

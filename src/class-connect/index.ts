@@ -189,10 +189,12 @@ export abstract class ComponentWithStore<
         }
 
         if (!sourceFromStore && typeof value === "function") {
-          !(value as AnyBoundFn)._bound_
-          && (store as any as MetaStore<S>)._boundFnProcessing_(key, value, classEngineStore);
-
-          const boundFnValue = state[key];
+          const boundFnValue = (value as AnyBoundFn)._bound_
+            ? value
+            : (store as any as MetaStore<S>)._boundFnProcessing_(
+              value as AnyBoundFn,
+              classEngineStore,
+            );
 
           const isComputed = key.toString().startsWith(_COMPUTED_PREFIX_);
           if (isComputed) {

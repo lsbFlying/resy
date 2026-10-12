@@ -1,2 +1,8 @@
-// The key is a flag indicating whether the `iteratorProcessing` function has completed processing.
-export const _ITERATOR_META_PROCESSING_KEY_ = Symbol("iterator_meta_processing_key");
+/**
+ * Marker brands for the state-path segments that address a `Map`/`Set`
+ * member. A plain property key cannot locate a member inside a container, so
+ * paths carry these boxed markers instead — see `MapMemberMarker` and
+ * `SetMemberMarker` in ./types.
+ */
+export const _MAP_MEMBER_ = Symbol.for("_resy_map_member_");
+export const _SET_MEMBER_ = Symbol.for("_resy_set_member_");

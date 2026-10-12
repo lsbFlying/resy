@@ -1,16 +1,26 @@
-import type { StatePath } from "../immutable/types";
+import type { StatePath, StatePathSegment } from "../immutable/types";
+import { isMapMember, isSetMember } from "../immutable/utils";
 import { _PATH_KEY_SEPARATOR_ } from "./static";
 
 /**
  * @description Encode one path segment.
  *
- * The value is prefixed with the type of the segment (`s` for a string, `n` for
- * a number, `y` for a symbol) so that `1` and `'1'` cannot encode identically,
- * and every separator inside the text is doubled. Because only a *single*
+ * The value is prefixed with the type of the segment (`s` for a string, `n`
+ * for a number, `y` for a symbol, `M` for a Map-member marker, `S` for a
+ * Set-member marker) so that `1` and `'1'` cannot encode identically, and
+ * every separator inside the text is doubled. Because only a *single*
  * separator can then ever separate two segments, the encoding cannot be
  * ambiguous.
+ *
+ * A Map-member marker encodes its inner key recursively, so a key containing
+ * the separator stays collision-free. A Set-member marker encodes the
+ * per-store id of its member — the member itself is an object reference,
+ * which no string can hold — which makes two different members of the same
+ * set resolve to different cache entries.
  */
-const encodeSegment = (key: PropertyKey): string => {
+const encodeSegment = (key: StatePathSegment): string => {
+  if (isMapMember(key)) return `M${encodeSegment(key.key)}`;
+  if (isSetMember(key)) return `S${key.id}`;
   const prefixed = typeof key === "string"
     ? `s${key}`
     : typeof key === "number"
@@ -20,11 +30,11 @@ const encodeSegment = (key: PropertyKey): string => {
 };
 
 /**
- * @description Encode a state path into the key used by the proxy cache.
+ * @description Encode a state path into the key used by the wrapper cache.
  *
- * The proxy cache is keyed by path rather than by target alone: the same object
- * can be reachable through several paths, and a proxy can only carry one path
- * as its writable location. `pathKey` is what makes that key collision-free.
+ * The cache is keyed by path rather than by target alone: the same object
+ * can be reachable through several paths, and a wrapper can only carry one
+ * path as its writable location. `pathKey` is what makes that key collision-free.
  *
  * A plain `Array.prototype.join` cannot do this. Joining with a separator loses
  * the distinction between a separator *between* segments and one *inside* a

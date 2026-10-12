@@ -157,7 +157,7 @@ export default class Restorer<S extends PrimitiveState> {
       // already restored in this pass.
       const result = commitPath(this.$metaStore._$state_, [key], originValue, isDelete);
       if (result.committed) {
-        _scheduler_.commitRoot(result.root, key, originValue);
+        _scheduler_.commitRoot(result.root, key);
       }
     });
 

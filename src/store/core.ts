@@ -2,19 +2,21 @@ import type {
   AnyBoundFn, InitialState, StateWithThisType, Store,
   StoreOptions, UseMacroStore, InnerStoreOptions,
 } from "./types";
-import type { AnyFn, MapType, PrimitiveState, ValueOf } from "../types";
+import type { AnyFn, PrimitiveState, ValueOf } from "../types";
 import type { ClassStoreType } from "../class-connect/types";
 import type { SetStateType, SyncUpdateType } from "../updater/types";
 import type { SubscribeType, UseSubscriptionType } from "../subscribe/types";
 import type { RestoreType } from "../restore/types";
-import type { ApplyOriginFunctionType, StatePath } from "../immutable/types";
+import type { SetMemberMarker, StatePath, StatePathSegment } from "../immutable/types";
 import type { UseComputedType, ComputedType } from "../computer/types";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
 import { _RESY_BRAND_, DEFAULT_OPTIONS } from "./static";
 import { pathKey } from "./utils";
 import { hasOwnProperty } from "../utils";
-import { mapSetPrototypeProxyable, proxyable, readAtPath } from "../immutable/utils";
-import { _MAP_SET_PROTOTYPE_PROXYABLE_TARGET_ } from "../immutable";
+import { proxyable, readAtPath } from "../immutable/utils";
+import { _SET_MEMBER_ } from "../immutable/static";
+import { ResyMap } from "../immutable/resy-map";
+import { ResySet } from "../immutable/resy-set";
 import MetaState from "../state";
 import Scheduler from "../scheduler";
 import Subscriber from "../subscribe";
@@ -89,15 +91,29 @@ export default class MetaStore<S extends PrimitiveState> {
   _$state_: S;
 
   /**
-   * @description Proxy cache keyed by target object, then by encoded path.
+   * @description Cache for every read-side wrapper, keyed by target object and
+   * then by encoded path: nested proxies for plain objects/arrays, subclass
+   * handles for `Map`/`Set`.
    *
    * The inner key MUST be the path rather than the target alone: the same
-   * object can be reachable through several paths, and a proxy can only carry
-   * one path for its writable location. Caching by path also makes repeated
+   * object can be reachable through several paths, and a wrapper can only
+   * carry one path for its writable location. Caching by path also makes repeated
    * reads of an unchanged location return the very same wrapper, which is what
-   * makes a nested object usable as a `useEffect` dependency.
+   * makes a nested object usable as a `useEffect` dependency. Commits replace
+   * the objects on the path, so a new target has no entry yet — no explicit
+   * invalidation is needed, and stale entries die together with their objects.
    */
-  #proxyCache = new WeakMap<object, Map<string, Store<S>>>();
+  #proxyCache = new WeakMap<object, Map<string, unknown>>();
+
+  /**
+   * @description Reverse map from a read-side wrapper (nested proxy or
+   * container handle) back to the raw value it wraps.
+   *
+   * Methods must normalize their arguments through it: identity searches
+   * (indexOf/includes, Set.has) compare against raw elements, and committing
+   * a wrapper into the tree would store the wrapper itself as state data.
+   */
+  #wrapperOrigin = new WeakMap<object, unknown>();
 
   // A proxy object with the capabilities of updating and data tracking.
   readonly store: Store<S>;
@@ -105,13 +121,29 @@ export default class MetaStore<S extends PrimitiveState> {
   useStore: UseMacroStore<S> = () => this._metaState_.useMetaState();
   /** ============================== For Core Render Element end ============================== */
 
+  /**
+   * Cache of bound action functions: outer key is the `thisArg` the action is
+   * bound to, inner key the original function. Keeping the binding out of the
+   * state tree means `_$state_` is never written to just because an action was
+   * read — so a snapshot taken at any moment keeps the original function — and
+   * the same (thisArg, fn) pair holds one stable identity across reads and
+   * commits alike.
+   */
+  _boundFnCache_ = new WeakMap<object, WeakMap<AnyBoundFn, AnyBoundFn>>();
+
   /** Helper function for binding function properties  */
   _boundFnProcessing_(
-    key: keyof S,
     value: AnyBoundFn,
     thisArg: Store<S> | ClassStoreType<S> = this.store,
   ) {
-    const state = this._$state_;
+    let perThisArg = this._boundFnCache_.get(thisArg);
+    if (perThisArg === undefined) {
+      perThisArg = new WeakMap();
+      this._boundFnCache_.set(thisArg, perThisArg);
+    }
+
+    const cached = perThisArg.get(value);
+    if (cached !== undefined) return cached as ValueOf<S>;
 
     const boundFn = (
       (...args: unknown[]) => (value as AnyFn).apply(thisArg, args)
@@ -120,9 +152,133 @@ export default class MetaStore<S extends PrimitiveState> {
     boundFn._bound_ = true;
     boundFn._name_ = value.name;
 
-    state[key] = boundFn as ValueOf<S>;
+    perThisArg.set(value, boundFn);
 
     return boundFn as ValueOf<S>;
+  }
+
+  /**
+   * @description Wrap a container value read at `[...parentPath, indexOrKey]`.
+   *
+   * The one router for every nested read: `Map`/`Set` values get their cached
+   * subclass handles, plain objects and arrays get the nested proxy (so writes
+   * through the reference enter the commit pipeline), functions are values
+   * rather than containers, and everything else is returned unchanged.
+   *
+   * 🌟 Public (`_underscore_` convention, like `_boundFnProcessing_`): the
+   * ResyMap/ResySet handles route their member reads through this method, and
+   * a `#`-private one could not be reached from another class.
+   */
+  _wrapContainerValue_(
+    value: unknown,
+    indexOrKey: StatePathSegment,
+    parentPath: StatePath,
+  ) {
+    if (!this._options_.immutable || typeof value === "function") return value;
+    if (value instanceof Map || value instanceof Set) {
+      return this.#containerHandle(value as object, [...parentPath, indexOrKey]);
+    }
+    if (proxyable(value)) {
+      /**
+       * @description Numeric indices (handed to callbacks and iterators by
+       * native code) are normalized to strings so they match the property
+       * keys the proxy traps produce for the same position — otherwise one
+       * element would get two cache entries and two identities.
+       */
+      const key = typeof indexOrKey === "number" ? String(indexOrKey) : indexOrKey;
+      return this.#createProxy(value as object, [...parentPath, key]);
+    }
+    return value;
+  }
+
+  /**
+   * @description Fetch (or create) the subclass handle for a `Map`/`Set` value
+   * at a path. Handles live in the same cache as the proxies and obey the same
+   * invalidation invariant: a commit replaces the container, the new container
+   * has no entry yet, and a fresh handle is created while the old one dies
+   * together with its container.
+   */
+  #containerHandle(container: object, path: StatePath) {
+    const cacheKey = pathKey(path);
+    const perTarget = this.#proxyCache.get(container);
+    const cached = perTarget?.get(cacheKey);
+    if (cached !== undefined) return cached;
+
+    const handle = container instanceof Map
+      ? new ResyMap<unknown, unknown>(this, path)
+      : new ResySet<unknown>(this, path);
+
+    if (perTarget === undefined) {
+      this.#proxyCache.set(container, new Map([[cacheKey, handle]]));
+    } else {
+      perTarget.set(cacheKey, handle);
+    }
+    this.#wrapperOrigin.set(handle, container);
+    return handle;
+  }
+
+  /**
+   * @description Per-store ids for `Set` members. The id is what makes a
+   * Set-member path segment encodable inside a cache key (the member itself
+   * is an object reference); the WeakMap lets ids die with their members.
+   */
+  #setMemberIdCache = new WeakMap<object, string>();
+  #setMemberIdCounter = 0;
+
+  /**
+   * @description Build the marker that addresses a `Set` member in a state
+   * path.
+   */
+  _setMemberMarker_(ref: object): SetMemberMarker {
+    let id = this.#setMemberIdCache.get(ref);
+    if (id === undefined) {
+      id = `${++this.#setMemberIdCounter}`;
+      this.#setMemberIdCache.set(ref, id);
+    }
+    return { [_SET_MEMBER_]: true, ref, id };
+  }
+
+  /**
+   * @description Resolve a wrapper reference back to the raw value it wraps —
+   * the container handles normalize their method arguments through this;
+   * anything else is returned unchanged.
+   */
+  _unwrapWrapper_(value: unknown): unknown {
+    return typeof value === "object" && value !== null
+      ? this.#wrapperOrigin.get(value) ?? value
+      : value;
+  }
+
+  /**
+   * @description Wrap an array iterator so the elements it yields go through
+   * `_wrapContainerValue_` like any indexed read would.
+   *
+   * Detection at the call site is duck-typed on the returned shape (an object
+   * with a callable `next`), so any method that produces an iterator is
+   * covered without inspecting method names. The only shape special-cased is
+   * the entries pair, identified by method identity: its `[index, value]`
+   * tuples keep the index raw and wrap the value.
+   */
+  #wrapIteratorResult(
+    iterator: { next: () => { done: boolean; value: unknown } },
+    isEntries: boolean,
+    parentPath: StatePath,
+  ) {
+    let index = -1;
+    const wrapped = {
+      next: () => {
+        const step = iterator.next();
+        if (step.done) return step;
+        if (isEntries) {
+          const [i, v] = step.value as [number, unknown];
+          return { done: false, value: [i, this._wrapContainerValue_(v, i, parentPath)] };
+        }
+        index++;
+        return { done: false, value: this._wrapContainerValue_(step.value, index, parentPath) };
+      },
+    };
+    (wrapped as unknown as Record<PropertyKey, unknown>)[Symbol.iterator] = () => wrapped;
+    return wrapped;
   }
 
   /**
@@ -132,13 +288,10 @@ export default class MetaStore<S extends PrimitiveState> {
    * @param path - The ordered path from the root state to `target`. The empty
    * path marks the root state object itself, so `path.length === 0` identifies
    * the first level and `path[0]` is the first-level key of any nested proxy.
-   * @param applyOriginFunction - Carried along the `Map`/`Set` prototype-method
-   * chain so the `apply` trap can route back into the right factory.
    */
   #createProxy(
     target: object = this._$state_,
     path: StatePath = [],
-    applyOriginFunction?: ApplyOriginFunctionType,
   ) {
     const {
       _computer_: computer,
@@ -156,7 +309,7 @@ export default class MetaStore<S extends PrimitiveState> {
     const cacheKey = pathKey(path);
     const cacheForTarget = this.#proxyCache.get(target as object);
     const cached = cacheForTarget?.get(cacheKey);
-    if (cached !== undefined) return cached;
+    if (cached !== undefined) return cached as Store<S>;
 
     const proxy = new Proxy(target, {
       get: (_: S, key: keyof S) => {
@@ -175,7 +328,13 @@ export default class MetaStore<S extends PrimitiveState> {
          */
         const value = sourceFrom$State ? this._$state_[key] : (target as S)[key];
 
-        const sourceFromThis = hasOwnProperty.call(this, key);
+        /**
+         * @description Only the root layer resolves MetaStore's own properties
+         * (subscribe/setState/restore/…). Nested layers are pure user data: a
+         * nested key that happens to collide with one of those names must read
+         * the user's value, not a store utility.
+         */
+        const sourceFromThis = path.length === 0 && hasOwnProperty.call(this, key);
 
         /**
          * @description Array branch.
@@ -200,35 +359,24 @@ export default class MetaStore<S extends PrimitiveState> {
          */
         if (Array.isArray(target)) {
           /**
-           * @description Read from `target` once a commit has left this wrapper
-           * behind, and from the live tree while it is still the current value.
-           *
-           * The object branch reads `target`, which is what makes a reference
-           * obtained before a write a faithful snapshot of it. Reading the live
-           * tree unconditionally would instead make a held array follow every
-           * later commit, so arrays and objects would behave differently.
-           * Comparing the live value against `target` costs one path walk and
-           * keeps both branches consistent.
+           * @description Property reads always come from `target`: while this
+           * proxy is the current value, `target` IS the live array; once a commit
+           * has replaced it, `target` is the snapshot — matching the object
+           * branch exactly. Method calls resolve the live tree by path instead
+           * (see the wrapper below), so the documented rule is: property reads
+           * see the snapshot, method calls act on current state.
            */
-          const live = readAtPath(this._$state_, path);
-          const source = live === target ? live : target;
-          if (!Array.isArray(source)) return undefined;
-
-          const member = (source as unknown as Record<PropertyKey, unknown>)[key as PropertyKey];
+          const member = (target as unknown as Record<PropertyKey, unknown>)[key as PropertyKey];
           if (typeof member !== "function") {
             /**
              * @description Element reads must be wrapped like any other nested
              * read, otherwise `store.list[1].id = 99` would reach the raw
              * element object and bypass the proxy chain entirely.
              */
-            if (immutable && !sourceFromThis && proxyable(member)) {
-              return this.#createProxy(
-                member as object,
-                [...path, key],
-                applyOriginFunction,
-              );
+            if (!sourceFromThis) {
+              return this._wrapContainerValue_(member, key, path);
             }
-            return !sourceFromThis ? member : this[key as keyof MetaStore<S>];
+            return this[key as keyof MetaStore<S>];
           }
 
           return (...args: unknown[]) => {
@@ -236,7 +384,46 @@ export default class MetaStore<S extends PrimitiveState> {
             if (!Array.isArray(current)) return undefined;
 
             const draft = current.slice();
-            const result = Reflect.apply(member, draft, args);
+
+            /**
+             * @description Wrapper references handed back into a method must be
+             * normalized to the raw values they wrap: identity searches
+             * (indexOf/includes/lastIndexOf) compare against the raw draft
+             * elements, and committing a wrapper — e.g. via push or splice —
+             * would store the wrapper itself as state data.
+             */
+            const normalizeArgs = (input: unknown[]) =>
+              input.map(arg => this.#wrapperOrigin.get(arg as object) ?? arg);
+
+            /**
+             * @description A method that hands elements to user code through a
+             * callback (forEach/map/filter/find/some/every/reduce/sort…) must
+             * not hand out the raw references the draft shares with the live
+             * tree: writes through them would bypass the commit pipeline and
+             * mutate the tree in place. Each of the callback's first two
+             * parameters is checked against the *next* parameter as an index —
+             * `draft[i] === arg` proves the reference is the element at `i`,
+             * so the wrapper path is correct no matter which callback signature
+             * produced it. sort comparators and reduce accumulators carry no
+             * usable index and simply stay raw.
+             */
+            const callArgs = typeof args[0] === "function"
+              ? [
+                (...cbArgs: unknown[]) => {
+                  const wrapCbArg = (arg: unknown, index: unknown) =>
+                    typeof index === "number" && index >= 0 && index < draft.length
+                    && draft[index] === arg
+                      ? this._wrapContainerValue_(arg, index, path)
+                      : arg;
+                  cbArgs[0] = wrapCbArg(cbArgs[0], cbArgs[1]);
+                  cbArgs.length > 2 && (cbArgs[1] = wrapCbArg(cbArgs[1], cbArgs[2]));
+                  return (args[0] as AnyFn)(...cbArgs);
+                },
+                ...normalizeArgs(args.slice(1)),
+              ]
+              : normalizeArgs(args);
+
+            const result = Reflect.apply(member, draft, callArgs);
 
             /**
              * @description Commit only when the contents actually changed.
@@ -264,49 +451,52 @@ export default class MetaStore<S extends PrimitiveState> {
             // Methods that return the array itself (`push` returns a length, but
             // `sort`/`reverse`/`splice` return `this`) must hand back this very
             // proxy so that identity comparisons and chaining both hold.
-            return result === draft ? proxy : result;
+            if (result === draft) return proxy;
+
+            /**
+             * @description An iterator handed to user code (for…of, spread,
+             * Array.from, values/keys/entries) must yield wrapped elements for
+             * the same reason as the callback above. Iterator-producing methods
+             * never mutate, and the commit step above already found nothing to
+             * do in that case.
+             */
+            if (
+              result !== null && typeof result === "object"
+              && typeof (result as { next?: unknown }).next === "function"
+            ) {
+              return this.#wrapIteratorResult(
+                result as { next: () => { done: boolean; value: unknown } },
+                member === Array.prototype.entries,
+                path,
+              );
+            }
+
+            /**
+             * @description A method that returns one of the draft's own
+             * elements (`find`/`findLast` and any future lookalike) hands back
+             * the wrapped reference instead of the raw object. Detection is
+             * identity-based against the draft, so no method name is
+             * inspected; detached results (`pop`'s removed element, `splice`'s
+             * removed chunk) are no longer in the draft and stay raw.
+             */
+            const foundIndex = draft.indexOf(result);
+            if (immutable && foundIndex >= 0 && proxyable(result)) {
+              return this._wrapContainerValue_(result, foundIndex, path);
+            }
+
+            return result;
           };
         }
 
         /**
-         * @description Container reads get a nested proxy.
-         *
-         * `proxyable` also reports `Map`/`Set` prototype methods
-         * (`Map.prototype.get`, …). Those must be wrapped as well: the wrapper's
-         * `apply` trap is what routes the call into the matching factory with
-         * the container as the receiver. Calling the built-in directly would
-         * throw `incompatible receiver`, because a proxy has no `[[MapData]]`.
-         *
-         * Ordinary function properties are excluded: they are values, not
-         * containers, and must be returned verbatim.
+         * @description Container reads go through the one router: `Map`/`Set`
+         * values come back as their subclass handles, plain objects/arrays as
+         * the nested proxy, and everything else unchanged. Functions are
+         * values rather than containers and fall through to the branches
+         * below.
          */
-        const isContainerMethod = typeof value === "function"
-          && !(value as AnyBoundFn)._bound_
-          && mapSetPrototypeProxyable(value);
-
-        if (isContainerMethod) {
-          /**
-           * @description Wrap a `Map`/`Set` prototype method so that calling it
-           * enters the `apply` trap, which routes the call into the matching
-           * factory.
-           *
-           * The wrapper inherits the *container's* path rather than appending
-           * the method name: the call operates on the container, and a path such
-           * as `['m', 'get']` does not exist in the state tree.
-           */
-          return this.#createProxy(
-            value as object,
-            path,
-            applyOriginFunction,
-          );
-        }
-
-        if (!sourceFromThis && immutable && typeof value !== "function" && proxyable(value)) {
-          return this.#createProxy(
-            value as object,
-            [...path, key],
-            applyOriginFunction,
-          );
+        if (!sourceFromThis && typeof value !== "function") {
+          return this._wrapContainerValue_(value, key, path);
         }
 
         /**
@@ -328,7 +518,7 @@ export default class MetaStore<S extends PrimitiveState> {
           && sourceFrom$State
           && !(value as AnyBoundFn)._bound_
         ) {
-          return this._boundFnProcessing_(key, value);
+          return this._boundFnProcessing_(value);
         }
 
         return !sourceFromThis ? value : this[key as keyof MetaStore<S>];
@@ -341,43 +531,10 @@ export default class MetaStore<S extends PrimitiveState> {
         [...path, key], undefined as ValueOf<S>, true,
       ),
       /**
-       * @description `Map`/`Set` prototype methods reach here because the `get`
-       * trap wraps them in a proxy.
-       *
-       * Two distinct objects matter and they must not be confused:
-       *
-       * - `thisArg` is the **container proxy** (`store.m`). The built-in methods
-       *   reject any receiver without a `[[MapData]]`/`[[SetData]]` slot, so the
-       *   factory cannot call them on it directly — it clones into a real
-       *   `Map`/`Set` and commits that instead.
-       * - `parentTarget` is also the container proxy, resolved from the path.
-       *   It is what the factory reads the current container from and what it
-       *   uses to proxy the values it returns. Using this trap's own `proxy`
-       *   here would be wrong: that variable refers to the wrapped *method*
-       *   function, which is how the factory previously ended up holding a
-       *   function instead of a `Map`.
+       * @description No `apply` trap: function-valued state members are values,
+       * and `Map`/`Set` containers are served by their subclass handles, whose
+       * methods are plain methods — nothing on the proxy is ever called.
        */
-      apply: (applyOriginFunction: any, thisArg: any, argArray: any[]) => Reflect.apply(
-        _MAP_SET_PROTOTYPE_PROXYABLE_TARGET_.get(applyOriginFunction)!(
-          applyOriginFunction,
-          thisArg,
-          this._$state_,
-          readAtPath(this._$state_, path) as MapType<object> & Set<object>,
-          (
-            nestedTarget: object,
-            nestedPath: StatePath,
-            nestedApplyOriginFunction?: ApplyOriginFunctionType,
-          ) => this.#createProxy(nestedTarget, nestedPath, nestedApplyOriginFunction),
-          path,
-          (
-            nestedPath: StatePath,
-            value: ValueOf<S>,
-            isDelete?: boolean,
-          ) => updater.updateMetaState(nestedPath, value, isDelete),
-        ),
-        thisArg,
-        argArray,
-      ),
     } as ProxyHandler<S>) as Store<S>;
 
     const perTarget = this.#proxyCache.get(target as object);
@@ -386,6 +543,8 @@ export default class MetaStore<S extends PrimitiveState> {
     } else {
       perTarget.set(cacheKey, proxy);
     }
+
+    this.#wrapperOrigin.set(proxy, target);
 
     return proxy;
   }

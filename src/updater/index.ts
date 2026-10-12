@@ -111,7 +111,7 @@ export default class Updater<S extends PrimitiveState> {
         // from the batch.
         const result = commitPath(this.$metaStore._$state_, [key], value);
         if (result.committed) {
-          _scheduler_.commitRoot(result.root, key as keyof S, value);
+          _scheduler_.commitRoot(result.root, key as keyof S);
         }
       });
     }
@@ -182,7 +182,7 @@ export default class Updater<S extends PrimitiveState> {
      */
     const { _scheduler_, _subscriber_ } = this.$metaStore;
     _subscriber_.willUpdatingProcessing();
-    _scheduler_.commitRoot(result.root, key, value);
+    _scheduler_.commitRoot(result.root, key);
     this.finallyBatchProcessing();
 
     return true;

@@ -113,9 +113,9 @@ export default class MetaState<S extends PrimitiveState> {
 
           if (!sourceFromStore && typeof value === "function") {
             // Avoid memory redundancy waste caused by repeated bindings and maintain the function reference address unchanged.
-            !(value as AnyBoundFn)._bound_ && $metaStore._boundFnProcessing_(key, value);
-
-            const boundFnValue = state[key];
+            const boundFnValue = (value as AnyBoundFn)._bound_
+              ? value
+              : $metaStore._boundFnProcessing_(value as AnyBoundFn);
 
             return !key.toString().startsWith(_COMPUTED_PREFIX_)
               ? boundFnValue

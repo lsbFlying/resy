@@ -1,4 +1,4 @@
-import type { PrimitiveState, ValueOf } from "../types";
+import type { PrimitiveState } from "../types";
 import MetaStore from "../store/core";
 
 /**
@@ -25,12 +25,15 @@ export default class Scheduler<S extends PrimitiveState> {
    * other half of the same operation by publishing it. It therefore never copies
    * the state tree itself — it only swaps `_$state_` to the root the caller
    * already produced and records the changed key for the subscriber payload.
+   * The payload value is derived from the published root (`newRoot[key]`), so
+   * the first-level key→value correspondence cannot drift, no matter how deep
+   * the written path was.
    * Notification is the caller's concern: it must capture `prevState` *before*
    * calling this.
    */
-  commitRoot(newRoot: S, key: keyof S, value: ValueOf<S>) {
+  commitRoot(newRoot: S, key: keyof S) {
     this.$metaStore._$state_ = newRoot;
-    this.taskData[key] = value;
+    this.taskData[key] = newRoot[key];
   };
 
   // Flush and clear the task data and task queue

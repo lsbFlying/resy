@@ -1,13 +1,34 @@
-import type { MapType, PrimitiveState, ValueOf } from "../types";
-import type { Store } from "../store/types";
-import { _ITERATOR_META_PROCESSING_KEY_ } from "./static";
+import { _MAP_MEMBER_, _SET_MEMBER_ } from "./static";
 
-export type ProxyableType<S extends PrimitiveState> = S | S[] | MapType<S> | Set<S>;
+/**
+ * @description A path segment that addresses a member of a `Map`: `key` is
+ * the member key inside the container found at the preceding position.
+ */
+export interface MapMemberMarker<K = PropertyKey> {
+  [_MAP_MEMBER_]: true;
+  key: K;
+}
+
+/**
+ * @description A path segment that addresses a member of a `Set`. Sets have no
+ * keys, so the member is located by its object identity; `id` is a per-store
+ * identifier allocated when the marker is created, which keeps the
+ * proxy-cache key encodable as a string and collectable with the member.
+ */
+export interface SetMemberMarker<V = unknown> {
+  [_SET_MEMBER_]: true;
+  ref: V;
+  id: string;
+}
+
+/** One step of a {@link StatePath}: a property key or a member marker. */
+export type StatePathSegment = PropertyKey | MapMemberMarker | SetMemberMarker;
 
 /**
  * @description The ordered path from the root state to a value, expressed as
- * property keys. `path[0]` is the first-level key of the root state and
- * `path[path.length - 1]` is the key being read or written.
+ * property keys and container-member markers. `path[0]` is the first-level
+ * key of the root state and `path[path.length - 1]` is the key (or member
+ * marker) being read or written.
  *
  * 🌟 An ordered array is used instead of a `Set` of `{ key }` wrappers because
  * a `Set` de-duplicates equal keys, which collapses paths such as
@@ -15,117 +36,4 @@ export type ProxyableType<S extends PrimitiveState> = S | S[] | MapType<S> | Set
  * level (`shift()`/`slice(1)`) — an operation that must not depend on the
  * iteration order of a collection.
  */
-export type StatePath = PropertyKey[];
-
-/** Write a single value onto a state path. */
-export type UpdateMetaStateType<S extends PrimitiveState> = (
-  path: StatePath,
-  value: ValueOf<S>,
-  isDelete?: boolean,
-) => boolean;
-
-/**
- * @description Signature of the recursive proxy factory handed to the `Map`/`Set`
- * prototype-method factories.
- *
- * There is no `parentTarget` parameter: the path alone locates the value, so a
- * nested proxy never needs to know which object it was reached through.
- */
-export type CreateProxyType<S extends PrimitiveState> = (
-  target: ProxyableType<S>,
-  path: StatePath,
-  applyOriginFunction?: ApplyOriginFunctionType,
-) => Store<S>;
-
-export type ApplyOriginFunctionType = MapPrototypeProxyableValueType | SetPrototypeProxyableValueType;
-
-export type MapPrototypeProxyableType<T extends PrimitiveState = any> = Pick<
-  Map<keyof T, ValueOf<T>>,
-  | "get"
-  | "clear"
-  | "delete"
-  | "set"
-  | "forEach"
-  | "values"
-  | "entries"
->;
-export type MapPrototypeProxyableValueType = ValueOf<MapPrototypeProxyableType>;
-
-export type MapPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  applyOriginFunction: MapPrototypeProxyableValueType,
-  thisArg: MapType<S>,
-  state: S,
-  parentTarget: MapType<S>,
-  createProxy: CreateProxyType<S>,
-  path: StatePath,
-  updateMetaState: UpdateMetaStateType<S>,
-) => (
-  | MapPrototypeProxyableGetFactoryValueType<S>
-  | MapPrototypeProxyableClearFactoryValueType
-  | MapPrototypeProxyableDeleteFactoryValueType<S>
-  | MapPrototypeProxyableSetFactoryValueType<S>
-  | MapPrototypeProxyableForEachFactoryValueType<S>
-);
-
-export type MapPrototypeProxyableGetFactoryValueType<S extends PrimitiveState> = (key: keyof S) => ValueOf<S> | undefined;
-export type MapPrototypeProxyableClearFactoryValueType = () => void;
-export type MapPrototypeProxyableDeleteFactoryValueType<S extends PrimitiveState> = (key: keyof S) => boolean;
-export type MapPrototypeProxyableSetFactoryValueType<S extends PrimitiveState> = (key: keyof S, value: ValueOf<S>) => MapType<S>;
-export type MapPrototypeProxyableForEachFactoryValueType<S extends PrimitiveState> = (
-  callback: (value: ValueOf<S>, key: keyof S, map: Map<keyof S, ValueOf<S>>) => void
-) => void;
-
-export type SetPrototypeProxyableType<T extends PrimitiveState = any> = Pick<
-  Set<T>,
-  | "add"
-  | "clear"
-  | "delete"
-  | "forEach"
-  | "keys"
-  | "values"
-  | "entries"
->;
-export type SetPrototypeProxyableValueType = ValueOf<SetPrototypeProxyableType>;
-
-export type SetPrototypeProxyableFactoryType = <S extends PrimitiveState>(
-  applyOriginFunction: SetPrototypeProxyableValueType,
-  thisArg: Set<S>,
-  state: S,
-  parentTarget: Set<S>,
-  createProxy: CreateProxyType<S>,
-  path: StatePath,
-  updateMetaState: UpdateMetaStateType<S>,
-) => (
-  | SetPrototypeProxyableAddFactoryValueType<S>
-  | SetPrototypeProxyableClearFactoryValueType
-  | SetPrototypeProxyableDeleteFactoryValueType<S>
-  | SetPrototypeProxyableForEachFactoryValueType<S>
-);
-
-export type SetPrototypeProxyableAddFactoryValueType<S extends PrimitiveState> = (value: S) => Set<S>;
-export type SetPrototypeProxyableClearFactoryValueType = () => void;
-export type SetPrototypeProxyableDeleteFactoryValueType<S extends PrimitiveState> = (value: S) => boolean;
-export type SetPrototypeProxyableForEachFactoryValueType<S extends PrimitiveState> = (
-  callback: (
-    value: S, value2: S, map: Set<S>
-  ) => void
-) => void;
-
-export type IteratorsType<S extends PrimitiveState> = ArrayLike<S> & {
-  [Symbol.iterator]: () => {
-    next(): {
-      value?: ValueOf<S> | S[] | Store<S>;
-      done: boolean;
-    },
-  };
-  next(): {
-    value?: ValueOf<S> | S[] | Store<S>;
-    done: boolean;
-  },
-};
-
-export type IteratorsParentType<S extends PrimitiveState> = ProxyableType<S> & {
-  [_ITERATOR_META_PROCESSING_KEY_]?: boolean;
-};
-
-export type ArrayMapSetIteratorType<S extends PrimitiveState> = ArrayIterator<S> | MapIterator<S> | SetIterator<S>;
+export type StatePath = StatePathSegment[];

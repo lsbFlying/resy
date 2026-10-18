@@ -306,7 +306,7 @@ const source = live === target ? live : target;
 | 值 | 处理方式 | 写入穿透 | 旧快照 |
 | --- | --- | --- | --- |
 | 纯对象 / 数组 | `commitPath` + 数组通用包装 | ✅ | 冻结 |
-| `Map` / `Set` | 专用工厂（`map.ts`/`set.ts`），方法被包装成代理以进入 `apply` 陷阱，工厂以容器为 receiver、克隆真实容器后单次提交 | ✅（成员级） | 冻结 |
+| `Map` / `Set` | 容器句柄（`ResyMap`/`ResySet`），以路径为身份；每次方法调用克隆真实容器后单次提交 | ✅（成员级） | 冻结 |
 | `Date` / `RegExp` | 不满足 `proxyable`，返回原始对象 | ❌ 绕过状态 | **会被就地改** |
 | 类实例 | `proxyable` 为真、`isPenetrable` 为假 | ❌ 开发期报错 | 冻结（写入被拒） |
 
@@ -346,7 +346,9 @@ const source = live === target ? live : target;
 | `src/store/utils.ts` | `pathKey` 路径编码 |
 | `src/updater/index.ts` | `updateMetaState` 编排、`setState` 键循环 |
 | `src/scheduler/index.ts` | `commitRoot` 提交根、`taskData` 批处理记账 |
-| `src/immutable/map.ts` / `set.ts` | `Map`/`Set` 原型方法的工厂 |
-| `src/immutable/index.ts` | 方法名 → 工厂的路由表 |
+| `src/immutable/resy-map.ts` / `resy-set.ts` | `Map`/`Set` 容器句柄（路径身份、克隆后单次提交、活跃判定） |
+| `src/immutable/static.ts` | `Map`/`Set` 成员路径标记 |
 
-对应的验收测试集中在 `tests/immutable/`：`index2`（写入侧语义）、`index3`（读取身份与 `pathKey`）、`index4`（数组）、`index5`/`index6`（路径模型与 `commitPath`）、`index7`（`prevState`）、`index8`（`Map`/`Set`）。
+对应的验收测试集中在 `tests/immutable/`：`index2`（写入侧语义）、`index3`（读取身份、`pathKey`、游离写）、`index4`（数组）、`index5`/`index6`（路径模型与 `commitPath`）、`index7`（`prevState`）、`index8`（`Map`/`Set`）、`index9`（解构后更新）、`index10`（遍历中更新）、`index11`（游离元素）、`index12`（游离写的渲染断言）、`index13`（wrapper 不落盘）。
+
+游离写的实现入口是 `MetaStore._isActiveHandle_`（身份 + 提交血缘）与 `MetaStore._normalizeWriteValue_`（写入口归一化），对应设计文档的 D14 / D15。

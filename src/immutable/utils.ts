@@ -99,8 +99,10 @@ export const readAtPath = (root: unknown, path: StatePath): unknown => {
  * write was refused", and it carries the offending host for the refusal so the
  * diagnostic can name it without walking the path a second time.
  */
+export type ReplacedLevels = Array<[StatePath, object, object]>;
+
 export type CommitResult<S> =
-  | { committed: true; root: S }
+  | { committed: true; root: S; replaced: ReplacedLevels }
   | { committed: false; reason: "leaf"; host: unknown }
   | { committed: false; reason: "noop" };
 
@@ -159,6 +161,27 @@ export const commitPath = <S extends PrimitiveState>(
 ): CommitResult<S> => {
   const leafKey = path[path.length - 1];
   const rest = path.slice(0, -1);
+
+  /**
+   * @description Every level cloned by this commit, as
+   * `[path, previousValue, nextValue]`.
+   *
+   * The updater turns these pairs into read-side lineage: a handle held before
+   * the commit resolves through them to the live location, so a destructured
+   * handle keeps writing across its own commits. A whole-value replacement
+   * clones no old value and therefore leaves no pair — that is exactly what
+   * detaches a handle created for the replaced object.
+   */
+  const replaced: ReplacedLevels = [];
+  const remember = (at: StatePath, before: unknown, after: unknown) => {
+    if (
+      typeof before === "object" && before !== null
+      && typeof after === "object" && after !== null
+      && before !== after
+    ) {
+      replaced.push([at, before, after]);
+    }
+  };
 
   // The host is read once, here, and reused for both the guard and the copy.
   const leafOwner = readAtPath(root, rest);
@@ -221,14 +244,24 @@ export const commitPath = <S extends PrimitiveState>(
   }
 
   /**
+   * @description The leaf container itself was cloned (plain object/array,
+   * `Map` or `Set`); record it before rebuilding its ancestors.
+   */
+  remember(rest, leafOwner, newLeafOwner);
+
+  /**
    * @description Rebuild from the leaf container up to the root, one clone per
    * level. `readAtPath(root, …)` always reads the *old* tree, so every level
    * is copied from the state that existed before this commit.
    */
   let current: unknown = newLeafOwner;
   for (let i = rest.length - 1; i >= 0; i--) {
-    current = setAt(readAtPath(root, rest.slice(0, i)), rest[i], current);
+    const hostPath = rest.slice(0, i);
+    const oldHost = readAtPath(root, hostPath);
+    const nextHost = setAt(oldHost, rest[i], current);
+    remember(hostPath, oldHost, nextHost);
+    current = nextHost;
   }
 
-  return { committed: true, root: current as S };
+  return { committed: true, root: current as S, replaced };
 };

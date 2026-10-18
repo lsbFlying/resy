@@ -18,20 +18,32 @@ type WrappedSetCb<V> = (value: V, value2: V, set: Set<V>) => void;
 export class ResySet<V> extends Set<V> {
   #store: MetaStore<any>;
   #path: StatePath;
+  /** The container this handle last knew about; frozen once detached. */
+  #target: Set<V>;
 
-  constructor(store: MetaStore<any>, path: StatePath) {
+  constructor(store: MetaStore<any>, path: StatePath, target: Set<V>) {
     super();
     this.#store = store;
     this.#path = path;
+    this.#target = target;
   }
 
-  #current(): Set<V> | undefined {
+  /** Whether the handle is still attached to its path. */
+  #isActive(): boolean {
+    return this.#store._isActiveHandle_(this.#target, this.#path);
+  }
+
+  #current(): Set<V> {
     const live = readAtPath(this.#store._$state_, this.#path);
-    return live instanceof Set ? live as Set<V> : undefined;
+    return live === this.#target || this.#isActive()
+      ? (live instanceof Set ? live as Set<V> : this.#target)
+      : this.#target;
   }
 
   #commit(next: Set<V>): void {
+    this.#store._linkClone_(this.#path, this.#target, next, true);
     this.#store._updater_.updateMetaState(this.#path, next as any, false);
+    this.#target = next;
   }
 
   /** Lazy-wrap an object member through the store's container router. */
@@ -56,8 +68,8 @@ export class ResySet<V> extends Set<V> {
   }
 
   add(value: V): this {
+    if (!this.#isActive()) return this;
     const cur = this.#current();
-    if (cur === undefined) return this;
     const raw = this.#store._unwrapWrapper_(value) as V;
     if (cur.has(raw)) return this;
     const next = new Set(cur);
@@ -67,8 +79,8 @@ export class ResySet<V> extends Set<V> {
   }
 
   delete(value: V): boolean {
+    if (!this.#isActive()) return false;
     const cur = this.#current();
-    if (cur === undefined) return false;
     const raw = this.#store._unwrapWrapper_(value) as V;
     if (!cur.has(raw)) return false;
     const next = new Set(cur);
@@ -78,8 +90,9 @@ export class ResySet<V> extends Set<V> {
   }
 
   clear(): void {
+    if (!this.#isActive()) return;
     const cur = this.#current();
-    if (cur === undefined || !cur.size) return;
+    if (!cur.size) return;
     this.#commit(new Set());
   }
 

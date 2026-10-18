@@ -52,6 +52,6 @@ test("classConnect-II", async () => {
   fireEvent.click(getByText("restore"));
   await waitFor(() => {
     getByText("hello");
-    expect(store.text === "hello");
+    expect(store.text).toBe("hello");
   });
 });

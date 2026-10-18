@@ -105,12 +105,13 @@ export default class Updater<S extends PrimitiveState> {
       // The update of hook is an independent update dispatch action,
       // and traversal processing is needed to unify the stack.
       Object.keys(stateTemp as NonNullable<State<S>>).forEach(key => {
-        const value = (stateTemp as S)[key];
+        const value = this.$metaStore._normalizeWriteValue_((stateTemp as S)[key]);
         // Read the root fresh on every iteration: `commitRoot` replaces it, and
         // committing the next key against the previous root would drop that key
         // from the batch.
         const result = commitPath(this.$metaStore._$state_, [key], value);
         if (result.committed) {
+          this.$metaStore._linkReplaced_(result.replaced);
           _scheduler_.commitRoot(result.root, key as keyof S);
         }
       });
@@ -135,9 +136,11 @@ export default class Updater<S extends PrimitiveState> {
    * @description Data updates for a single value addressed by its path.
    *
    * The path is the only source of truth: `path[0]` is the first-level key and
-   * `path[path.length - 1]` is the written key. The previous value is read from
-   * the current root rather than from any proxy closure, so a write performed
-   * through a proxy held across a commit still lands on the live location.
+   * `path[path.length - 1]` is the written key. `owner` is the object the
+   * write goes through (a nested proxy's target); it is used to decide whether
+   * that handle is still attached to its path. A detached handle writes
+   * nothing at all — it must not fall through to whatever object happens to
+   * occupy the path now.
    *
    * @returns Always `true`; the return value is retained for the proxy traps.
    */
@@ -145,10 +148,27 @@ export default class Updater<S extends PrimitiveState> {
     path: StatePath,
     value: ValueOf<S>,
     isDelete = false,
+    owner?: object,
   ): boolean {
     // if (this.#freezing) return true;
 
+    if (
+      owner !== undefined
+      && path.length > 1
+      && !this.$metaStore._isActiveHandle_(owner, path.slice(0, -1))
+    ) {
+      this.$metaStore._warnDetached_(path);
+      return true;
+    }
+
     const key = path[0] as keyof S;
+
+    /**
+     * @description A wrapper must never be committed as state data: normalize
+     * it to the raw value (and normalize one level of arrays/objects/maps so a
+     * shallow spread or an element assignment cannot smuggle a proxy in).
+     */
+    const normalizedValue = this.$metaStore._normalizeWriteValue_(value);
 
     /**
      * @description `commitPath` reads the host itself and reports *why* it
@@ -161,7 +181,7 @@ export default class Updater<S extends PrimitiveState> {
      * the published build. A `Date`'s own mutators never reach here at all — a
      * non-proxyable built-in is returned raw.
      */
-    const result = commitPath(this.$metaStore._$state_, path, value, isDelete);
+    const result = commitPath(this.$metaStore._$state_, path, normalizedValue, isDelete);
 
     if (!result.committed) {
       // A write that ran into a value it cannot pass through is reported in
@@ -181,6 +201,7 @@ export default class Updater<S extends PrimitiveState> {
      * state.
      */
     const { _scheduler_, _subscriber_ } = this.$metaStore;
+    this.$metaStore._linkReplaced_(result.replaced);
     _subscriber_.willUpdatingProcessing();
     _scheduler_.commitRoot(result.root, key);
     this.finallyBatchProcessing();

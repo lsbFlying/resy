@@ -25,22 +25,38 @@ import { _MAP_MEMBER_ } from "./static";
 export class ResyMap<K, V> extends Map<K, V> {
   #store: MetaStore<any>;
   #path: StatePath;
+  /** The container this handle last knew about. It follows this store's own
+   * commits (via lineage), and freezes at the last value once detached. */
+  #target: Map<K, V>;
 
-  constructor(store: MetaStore<any>, path: StatePath) {
+  constructor(store: MetaStore<any>, path: StatePath, target: Map<K, V>) {
     super();
     this.#store = store;
     this.#path = path;
+    this.#target = target;
   }
 
-  /** The container currently at the handle's path, or undefined once the
-   * position stopped holding a `Map` (stale handle). */
-  #current(): Map<K, V> | undefined {
+  /** Whether the handle is still attached to its path. */
+  #isActive(): boolean {
+    return this.#store._isActiveHandle_(this.#target, this.#path);
+  }
+
+  /**
+   * The container to read from: the live one while attached, the last known
+   * one after detachment (a detached handle is a snapshot, like every other
+   * wrapper).
+   */
+  #current(): Map<K, V> {
     const live = readAtPath(this.#store._$state_, this.#path);
-    return live instanceof Map ? live as Map<K, V> : undefined;
+    return live === this.#target || this.#isActive()
+      ? (live instanceof Map ? live as Map<K, V> : this.#target)
+      : this.#target;
   }
 
   #commit(next: Map<K, V>): void {
+    this.#store._linkClone_(this.#path, this.#target, next, true);
     this.#store._updater_.updateMetaState(this.#path, next as any, false);
+    this.#target = next;
   }
 
   /** Lazy-wrap a member value through the store's container router. */
@@ -66,8 +82,8 @@ export class ResyMap<K, V> extends Map<K, V> {
   }
 
   set(key: K, value: V): this {
+    if (!this.#isActive()) return this;
     const cur = this.#current();
-    if (cur === undefined) return this;
     // A wrapper handed out by an earlier read must not be committed into the
     // tree — method arguments resolve back to the raw value they wrap.
     const raw = this.#store._unwrapWrapper_(value) as V;
@@ -79,8 +95,9 @@ export class ResyMap<K, V> extends Map<K, V> {
   }
 
   delete(key: K): boolean {
+    if (!this.#isActive()) return false;
     const cur = this.#current();
-    if (cur === undefined || !cur.has(key)) return false;
+    if (!cur.has(key)) return false;
     const next = new Map(cur);
     const result = next.delete(key);
     this.#commit(next);
@@ -88,8 +105,9 @@ export class ResyMap<K, V> extends Map<K, V> {
   }
 
   clear(): void {
+    if (!this.#isActive()) return;
     const cur = this.#current();
-    if (cur === undefined || !cur.size) return;
+    if (!cur.size) return;
     this.#commit(new Map());
   }
 

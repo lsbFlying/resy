@@ -13,7 +13,7 @@ import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
 import { _RESY_BRAND_, DEFAULT_OPTIONS } from "./static";
 import { pathKey } from "./utils";
 import { hasOwnProperty } from "../utils";
-import { proxyable, readAtPath } from "../immutable/utils";
+import { isPenetrable, proxyable, readAtPath } from "../immutable/utils";
 import { _SET_MEMBER_ } from "../immutable/static";
 import { ResyMap } from "../immutable/resy-map";
 import { ResySet } from "../immutable/resy-set";
@@ -205,8 +205,8 @@ export default class MetaStore<S extends PrimitiveState> {
     if (cached !== undefined) return cached;
 
     const handle = container instanceof Map
-      ? new ResyMap<unknown, unknown>(this, path)
-      : new ResySet<unknown>(this, path);
+      ? new ResyMap<unknown, unknown>(this, path, container as Map<unknown, unknown>)
+      : new ResySet<unknown>(this, path, container as Set<unknown>);
 
     if (perTarget === undefined) {
       this.#proxyCache.set(container, new Map([[cacheKey, handle]]));
@@ -247,6 +247,168 @@ export default class MetaStore<S extends PrimitiveState> {
     return typeof value === "object" && value !== null
       ? this.#wrapperOrigin.get(value) ?? value
       : value;
+  }
+
+  /**
+   * @description Normalize a value that is about to be written into the state.
+   *
+   * Wrappers are read-side objects: committing one would store a proxy (or a
+   * `ResyMap`/`ResySet` handle) inside `_$state_`, where it would poison
+   * serialization, identity comparison and `prevState`. Array methods and the
+   * container handles already normalize their arguments; the public write
+   * entry points go through this method so they cannot drift.
+   *
+   * Only one level is normalized, which is sufficient by construction: reading
+   * a nested value always produces a new wrapper, while the values *inside* a
+   * wrapper are still raw until read.
+   */
+  _normalizeWriteValue_(value: unknown): unknown {
+    const unwrap = (candidate: unknown): unknown =>
+      (typeof candidate === "object" && candidate !== null
+        ? this.#wrapperOrigin.get(candidate) ?? candidate
+        : candidate);
+
+    const raw = unwrap(value);
+    if (raw !== value) return raw;
+
+    if (Array.isArray(value)) {
+      // Scan before copying: the common case is an array of raw values (every
+      // array method commits one), and it must stay allocation-free.
+      const changed = value.some(item => unwrap(item) !== item);
+      return changed ? value.map(item => unwrap(item)) : value;
+    }
+
+    if (value instanceof Map) {
+      let changed = false;
+      value.forEach(member => {
+        changed = changed || unwrap(member) !== member;
+      });
+      if (!changed) return value;
+      const next = new Map<unknown, unknown>();
+      value.forEach((member, key) => { next.set(key, unwrap(member)); });
+      return next;
+    }
+
+    if (value instanceof Set) {
+      let changed = false;
+      value.forEach(member => {
+        changed = changed || unwrap(member) !== member;
+      });
+      if (!changed) return value;
+      const next = new Set<unknown>();
+      value.forEach(member => { next.add(unwrap(member)); });
+      return next;
+    }
+
+    if (isPenetrable(value)) {
+      const record = value as Record<PropertyKey, unknown>;
+      const keys: PropertyKey[] = [
+        ...Object.keys(value as object),
+        ...Object.getOwnPropertySymbols(value as object),
+      ];
+      const changed = keys.some(key => unwrap(record[key]) !== record[key]);
+      if (!changed) return value;
+
+      const next = Object.create(Object.getPrototypeOf(value)) as Record<PropertyKey, unknown>;
+      for (const key of keys) next[key] = unwrap(record[key]);
+      return next;
+    }
+
+    return value;
+  }
+
+  /**
+   * @description Read-side lineage: for a path, the `old → next` links every
+   * commit of that path produced. A handle resolves through them to decide
+   * whether it still denotes the live location (see `_isActiveHandle_`).
+   *
+   * Keyed by path so a shared object at `a.s` and `b.s` cannot cross-talk, and
+   * values are `WeakMap`s so links die with the objects while snapshots still
+   * hold them.
+   */
+  #lineage = new Map<string, WeakMap<object, object>>();
+
+  #warnedDetachedPaths = new Set<string>();
+
+  /**
+   * @description Record that a commit replaced `previous` with `next` at
+   * `path` by cloning it. `force` is used for container self-commits (array
+   * methods, `Map`/`Set` mutators), whose old container may not be in the
+   * proxy cache even though a handle is following the path.
+   */
+  _linkClone_(path: StatePath, previous: unknown, next: unknown, force = false): void {
+    if (path.length === 0) return;
+    if (typeof previous !== "object" || previous === null) return;
+    if (typeof next !== "object" || next === null) return;
+    if (previous === next) return;
+
+    const key = pathKey(path);
+    let lineage = this.#lineage.get(key);
+    if (lineage === undefined) {
+      if (!force && !this.#proxyCache.has(previous)) return;
+      lineage = new WeakMap();
+      this.#lineage.set(key, lineage);
+    }
+    lineage.set(previous, next);
+  }
+
+  /** Record every level a `commitPath` call cloned. */
+  _linkReplaced_(replaced: Array<[StatePath, object, object]>): void {
+    for (const [path, previous, next] of replaced) {
+      this._linkClone_(path, previous, next);
+    }
+  }
+
+  /**
+   * @description Whether a handle created for `target` at `path` may still
+   * write there.
+   *
+   * A handle stays active while the path resolves to the very object it wraps,
+   * or to an object this store produced by cloning that one (destructuring then
+   * updating, or a parent handle surviving a child write). Anything else —
+   * removal, whole-value replacement, an element moved to another index — means
+   * the handle is detached and its writes are ignored.
+   */
+  _isActiveHandle_(target: object, path: StatePath): boolean {
+    if (path.length === 0) return true;
+
+    const live = readAtPath(this._$state_, path);
+    if (live === target) return true;
+
+    const lineage = this.#lineage.get(pathKey(path));
+    if (lineage === undefined) return false;
+
+    let current: object = target;
+    const visited: object[] = [];
+    for (let steps = 0; steps < 10000; steps++) {
+      const next = lineage.get(current);
+      if (next === undefined) break;
+      visited.push(current);
+      current = next;
+      if (current === live) {
+        // Path compression keeps long write chains cheap to resolve.
+        visited.forEach(node => lineage.set(node, current));
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * @description Development-only, once-per-path notice for a write that was
+   * ignored because its handle was detached. Silent in production, matching
+   * the "no-op, never throw" contract for detached writes.
+   */
+  _warnDetached_(path: StatePath): void {
+    if (!__DEV__) return;
+    const key = pathKey(path);
+    if (this.#warnedDetachedPaths.has(key)) return;
+    this.#warnedDetachedPaths.add(key);
+    const text = path.map(segment => String(segment)).join(".");
+    console.warn(
+      `resy: ignored a write through a detached handle at path "${text}". `
+      + "The element is no longer part of the current state; read it again from the store.",
+    );
   }
 
   /**
@@ -380,6 +542,16 @@ export default class MetaStore<S extends PrimitiveState> {
           }
 
           return (...args: unknown[]) => {
+            /**
+             * @description A held array handle may have been detached by a
+             * whole-array replacement. Its methods must then be inert: acting
+             * on the array that now occupies the path would be a write into an
+             * unrelated element of the current tree.
+             */
+            if (path.length > 0 && !this._isActiveHandle_(target as object, path)) {
+              return undefined;
+            }
+
             const current = readAtPath(this._$state_, path);
             if (!Array.isArray(current)) return undefined;
 
@@ -445,6 +617,12 @@ export default class MetaStore<S extends PrimitiveState> {
               }
             }
             if (changed) {
+              /**
+               * @description The commit replaces the array at `path` with the
+               * draft. Linking old→draft keeps the handle (and any handle that
+               * produced this one) following its own commits.
+               */
+              this._linkClone_(path, current, draft, true);
               updater.updateMetaState(path, draft as ValueOf<S>, false);
             }
 
@@ -523,12 +701,20 @@ export default class MetaStore<S extends PrimitiveState> {
 
         return !sourceFromThis ? value : this[key as keyof MetaStore<S>];
       },
+      /**
+       * @description Nested proxies pass themselves as the write owner so the
+       * updater can verify they are still attached to their path. The root
+       * proxy (empty path) is the live entry point by definition and passes
+       * nothing.
+       */
       set: (_: S, key: keyof S, value: ValueOf<S>) => updater.updateMetaState(
         [...path, key], value, false,
+        path.length === 0 ? undefined : target as object,
       ),
       // Delete will also play an updating role
       deleteProperty: (_: S, key: keyof S) => updater.updateMetaState(
         [...path, key], undefined as ValueOf<S>, true,
+        path.length === 0 ? undefined : target as object,
       ),
       /**
        * @description No `apply` trap: function-valued state members are values,

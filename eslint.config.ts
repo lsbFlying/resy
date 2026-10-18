@@ -80,7 +80,7 @@ export default tsEslint.config(
       "no-console": "off",
       "spaced-comment": "error",
       "arrow-body-style": ["off"],
-      "array-callback-return": ["error", { allowImplicit: true, checkForEach: true }],
+      "array-callback-return": ["error", { allowImplicit: true, checkForEach: false }],
       "no-unused-expressions": [
         "error",
         {

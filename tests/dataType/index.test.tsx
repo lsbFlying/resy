@@ -51,6 +51,8 @@ test("dataType", async () => {
     proxyLogin: new Proxy({ userName: "" }, {}),
   });
 
+  const promiseLoginResults: string[] = [];
+
   const App = () => {
     const {
       count, text, faker, textProblem,
@@ -131,13 +133,12 @@ test("dataType", async () => {
         }}>addOrSubtractChange</button>
         <button onClick={async () => {
           const res = await promiseLogin();
-          if (res.userName === "unknown") {
-            store.promiseLogin = async () => (
-              Promise.resolve({ userName: store.user.name })
-            );
-            const res2 = await store.promiseLogin();
-            expect(res2.userName === "Liu").toBeTruthy();
-          }
+          promiseLoginResults.push(res.userName);
+          store.promiseLogin = async () => (
+            Promise.resolve({ userName: store.user.name })
+          );
+          const res2 = await store.promiseLogin();
+          promiseLoginResults.push(res2.userName);
         }}>promiseLoginBtn</button>
         <button onClick={() => {
           store.proxyLogin = new Proxy({ userName: "" }, {
@@ -220,5 +221,11 @@ test("dataType", async () => {
   });
 
   fireEvent.click(getByText("promiseLoginBtn"));
+  // The handler is async: wait for both calls it makes instead of letting the
+  // assertions race the end of the test.
+  await waitFor(() => {
+    expect(promiseLoginResults).toEqual(["unknown", "Liu"]);
+  });
+
   fireEvent.click(getByText("proxyLoginBtn"));
 });

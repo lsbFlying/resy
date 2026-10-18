@@ -40,9 +40,11 @@ export class ResySet<V> extends Set<V> {
       : this.#target;
   }
 
-  #commit(next: Set<V>): void {
-    this.#store._linkClone_(this.#path, this.#target, next, true);
-    this.#store._updater_.updateMetaState(this.#path, next as any, false);
+  #commit(previous: Set<V>, next: Set<V>): void {
+    // Link the live container so handles created for an intermediate clone
+    // keep following after this handle commits.
+    this.#store._linkClone_(this.#path, previous, next, true);
+    this.#store._updater_.updateMetaState(this.#path, next as any, false, undefined, false);
     this.#target = next;
   }
 
@@ -57,24 +59,23 @@ export class ResySet<V> extends Set<V> {
   }
 
   has(value: V): boolean {
-    const cur = this.#current();
     // Members handed out by iteration are wrappers; membership is judged on
     // the raw reference the set actually holds.
-    return cur === undefined ? false : cur.has(this.#store._unwrapWrapper_(value) as V);
+    return this.#current().has(this.#store._unwrapWrapper_(value) as V);
   }
 
   get size(): number {
-    return this.#current()?.size ?? 0;
+    return this.#current().size;
   }
 
   add(value: V): this {
     if (!this.#isActive()) return this;
     const cur = this.#current();
-    const raw = this.#store._unwrapWrapper_(value) as V;
+    const raw = this.#store._normalizeWriteValue_(value) as V;
     if (cur.has(raw)) return this;
     const next = new Set(cur);
     next.add(raw);
-    this.#commit(next);
+    this.#commit(cur, next);
     return this;
   }
 
@@ -85,7 +86,7 @@ export class ResySet<V> extends Set<V> {
     if (!cur.has(raw)) return false;
     const next = new Set(cur);
     const result = next.delete(raw);
-    this.#commit(next);
+    this.#commit(cur, next);
     return result;
   }
 
@@ -93,7 +94,7 @@ export class ResySet<V> extends Set<V> {
     if (!this.#isActive()) return;
     const cur = this.#current();
     if (!cur.size) return;
-    this.#commit(new Set());
+    this.#commit(cur, new Set());
   }
 
   forEach(callback: WrappedSetCb<V>, thisArg?: unknown): void {

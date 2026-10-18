@@ -4,8 +4,9 @@ import { createStore } from "../../src";
 import { rawMetaStore, rawState } from "../__utils__";
 
 /**
- * @description Write-side semantics, mirroring the scenarios of
- * `specs/state-update-semantics`.
+ * @description Write-side semantics of immutable chained updates: old trees stay
+ * frozen, every level on the path gets a new identity, branches outside the path
+ * keep sharing, and `prevState` is a real historical snapshot.
  *
  * All assertions are value/reference comparisons rather than `expect(() => …)`,
  * so they fail when the behaviour regresses.
@@ -32,7 +33,7 @@ test("write-side: the tree that existed before a chained write stays frozen", ()
 
   store.userInfo.name = "b";
 
-  // Scenario: old snapshot frozen.
+  // The reference captured before the write still sees the old value.
   expect(beforeUserInfo.name).toBe("a");
   expect(before.userInfo).toBe(beforeUserInfo);
   // The live state did move on.
@@ -62,9 +63,9 @@ test("write-side: branches outside the path keep sharing their reference", () =>
   store.userInfo.name = "b";
 
   const after = rawState<S>(store);
-  // Scenario: sibling branch keeps identity.
+  // The sibling branch keeps its identity.
   expect(after.other).toBe(before.other);
-  // Scenario: untouched sibling field inside the copied host keeps identity.
+  // The untouched sibling field inside the copied host keeps its identity.
   expect(after.userInfo.address).toBe(before.userInfo.address);
 });
 
@@ -81,7 +82,7 @@ test("write-side: an equal value produces no new references and no notification"
   store.userInfo.address.city = "bj";
 
   // Negative assertion: same-value writes must not commit or notify.
-  await act(async () => {});
+  await act(async () => { /* drain pending updates */ });
 
   expect(ms._$state_).toBe(before);
   expect(ms._$state_.userInfo).toBe(before.userInfo);
@@ -120,7 +121,7 @@ test("write-side: prevState is the tree from before the batch", async () => {
 
   await waitFor(() => expect(captured).not.toBeNull());
 
-  // Scenario: prevState reflects the value before the batch's writes.
+  // prevState reflects the tree before the batch's writes.
   expect(captured!.prev.userInfo.name).toBe("a");
   expect(captured!.prev.userInfo.age).toBe(1);
   expect(captured!.next.userInfo.name).toBe("b");
@@ -191,7 +192,7 @@ test("leaf: mutating a Date in place produces no update and is visible in the ol
   store.when.setFullYear(2021);
 
   // Negative assertion: a leaf mutator must not commit or notify.
-  await act(async () => {});
+  await act(async () => { /* drain pending updates */ });
 
   expect(ms._$state_).toBe(before);
   expect(notified).toBe(0);
@@ -214,8 +215,8 @@ test("leaf: a non-proxyable built-in is returned raw, so its writes bypass state
   // No state tree change and no update …
   expect(ms._$state_).toBe(before);
   // … but there is also no interception: the raw object really was extended and
-  // every holder of that reference sees it. See the paused task for the
-  // contract gap this reveals.
+  // every holder of that reference sees it. This is the documented cost of
+  // treating non-proxyable built-ins as atomic leaves.
   expect(Object.prototype.hasOwnProperty.call(when, "anyKey")).toBe(true);
 });
 
@@ -243,7 +244,7 @@ test("leaf: array elements can be written through", () => {
 
 test("leaf: writes into a non-penetrable host are reported, not dropped", () => {
   class Box {
-    constructor(public value: number) {}
+    constructor(public value: number) { /* atomic leaf */ }
     bump() { this.value++; }
   }
 

@@ -4,8 +4,7 @@ import { createStore } from "../../src";
 import { rawMetaStore, rawState } from "../__utils__";
 
 /**
- * @description Array mutation semantics (tasks 3.2 – 3.8), mirroring the
- * scenarios of `specs/state-update-semantics`.
+ * @description Array mutation semantics under immutable mode.
  *
  * The wrapper is generic (it never inspects a method name), so these tests
  * deliberately assert the *contract* rather than a list of methods: new
@@ -170,8 +169,8 @@ test("array: read-only methods return native results and produce no update", asy
   store.subscribe(() => { notifications.push(1); });
 
   expect(store.list.slice(1)).toEqual([1, 2]);
-  expect(store.list.map((x) => x * 2)).toEqual([6, 2, 4]);
-  expect(store.list.filter((x) => x > 1)).toEqual([3, 2]);
+  expect(store.list.map(x => x * 2)).toEqual([6, 2, 4]);
+  expect(store.list.filter(x => x > 1)).toEqual([3, 2]);
   expect(store.list.concat([9])).toEqual([3, 1, 2, 9]);
   expect(store.list.join("-")).toBe("3-1-2");
   expect(store.list.indexOf(1)).toBe(1);
@@ -181,7 +180,7 @@ test("array: read-only methods return native results and produce no update", asy
   // A negative assertion: nothing observable should happen. `act` drains the
   // pending React/store update queue without pretending to wait for a
   // condition; a pointless `waitFor(() => {})` would resolve on its first poll.
-  await act(async () => {});
+  await act(async () => { /* drain pending updates */ });
 
   expect(rawState<ListState>(store)).toBe(before);
   expect(rawState<ListState>(store).list).toBe(beforeList);

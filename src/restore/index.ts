@@ -36,7 +36,12 @@ export default class Restorer<S extends PrimitiveState> {
 
   // Logic of recovery processing
   restoreProcessing() {
-    this.$metaStore._$state_ = { ...this.retrieveReducerState() } as S;
+    const initialState = { ...this.retrieveReducerState() } as S;
+    for (const key of Object.keys(initialState) as (keyof S)[]) {
+      initialState[key] = this.$metaStore
+        ._normalizeWriteValue_(initialState[key]) as S[keyof S];
+    }
+    this.$metaStore._$state_ = initialState;
 
     // this.#freezing = true;
   };
@@ -147,7 +152,7 @@ export default class Restorer<S extends PrimitiveState> {
         )
       )
     ).forEach(key => {
-      const originValue = reducerState[key];
+      const originValue = this.$metaStore._normalizeWriteValue_(reducerState[key]);
       const isDelete = !hasOwnProperty.call(reducerState, key);
       // Restoring follows the same copy-on-write path as any other write, so
       // the tree that existed before the restore stays frozen.

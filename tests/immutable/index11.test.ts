@@ -4,10 +4,10 @@ import { rawMetaStore, rawState } from "../__utils__";
 
 // Detached writes are reported once per path in development; keep the expected
 // diagnostics out of the test output.
-const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
 /**
- * @description Writes through detached element handles (task 8.4).
+ * @description Writes through detached element handles.
  *
  * Once an element is no longer part of the current state tree, a handle that
  * still points at it must behave as a harmless snapshot: reads keep working,

@@ -5,10 +5,10 @@ import { createStore, useStore } from "../../src";
 
 // Detached writes emit a development warning; the point of this file is the
 // React behaviour, so keep the diagnostics out of the output.
-vi.spyOn(console, "warn").mockImplementation(() => {});
+vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
 /**
- * @description Render-level proof for detached writes (task 8.5).
+ * @description Render-level proof for detached writes.
  *
  * The value assertions live in index11; here the point is that a detached
  * write must not reach React at all — no re-render, no DOM change, and no

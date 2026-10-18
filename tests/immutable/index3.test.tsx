@@ -2,13 +2,13 @@ import { expect, test, vi } from "vitest";
 import { createStore } from "../../src";
 
 // Detached writes are reported in development; this file asserts behaviour.
-vi.spyOn(console, "warn").mockImplementation(() => {});
+vi.spyOn(console, "warn").mockImplementation(() => undefined);
 import { pathKey } from "../../src/store/utils";
 import { rawState } from "../__utils__";
 
 /**
- * @description Read-side identity semantics (tasks 4.1 – 4.5), mirroring the
- * scenarios of `specs/state-read-identity`.
+ * @description Read-side identity semantics: stable wrappers per path, path
+ * isolation for shared objects, and inert writes from detached handles.
  */
 
 test("read-identity: the same path read twice yields the same wrapper", () => {
@@ -100,9 +100,8 @@ test("read-identity: a stale wrapper cannot write into the object that replaced 
 
   stale.name = "written-through-stale";
 
-  // Task 4.5 used to pin the opposite (path semantics). D14 changed the
-  // contract: a handle whose element left the tree writes nothing, so the
-  // object that now occupies the path is untouched.
+  // A handle whose element left the tree writes nothing, so the object that now
+  // occupies the path is untouched.
   expect(rawState<{ userInfo: { name: string } }>(store).userInfo.name).toBe("z");
   // Reading through the detached handle still returns its creation snapshot.
   expect(stale.name).toBe("a");

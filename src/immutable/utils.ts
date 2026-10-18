@@ -1,4 +1,4 @@
-import { typeString, slice } from "../utils";
+import { hasOwnProperty, typeString, slice } from "../utils";
 import type { PrimitiveState } from "../types";
 import type { MapMemberMarker, SetMemberMarker, StatePath, StatePathSegment } from "./types";
 import { _MAP_MEMBER_, _SET_MEMBER_ } from "./static";
@@ -10,8 +10,16 @@ const proxyableSet = new Set(["[object Object]", "[object Array]"]);
  * immutable state: plain objects and arrays only. `Map`/`Set` values are
  * routed to their subclass handles by the store's read router instead, and
  * everything else is a leaf.
+ *
+ * 🌟 Non-extensible values are leaves too. A proxy must return the exact value
+ * for a non-configurable, non-writable own data property, and must not report a
+ * successful write that adds a property to a non-extensible target. Wrapping a
+ * frozen/sealed object or array therefore breaks reads or writes with a
+ * proxy-invariant `TypeError`. Such a branch is already constrained; handing it
+ * back raw keeps native frozen/sealed semantics instead of crashing.
  */
 export const proxyable = (value: unknown) => {
+  if (typeof value === "object" && value !== null && !Object.isExtensible(value)) return false;
   return proxyableSet.has(typeString.call(value));
 };
 
@@ -51,7 +59,9 @@ export const isPenetrable = (
 
 /**
  * @description Shallow copy of a penetrable value. Arrays use `slice`, plain
- * objects use spread; anything else is returned unchanged so it stays a leaf.
+ * objects are copied onto a new object with the *same prototype* (so a
+ * null-prototype object stays null-prototype); anything else is returned
+ * unchanged so it stays a leaf.
  */
 export const cloneShallow = <T>(value: T): T => {
   if (Array.isArray(value)) return slice.call(value as unknown[]) as T;
@@ -61,7 +71,13 @@ export const cloneShallow = <T>(value: T): T => {
     && (Object.getPrototypeOf(value) === Object.prototype
       || Object.getPrototypeOf(value) === null)
   ) {
-    return { ...(value as object) } as T;
+    // A null-prototype object must stay null-prototype, while a normal object
+    // is copied with spread: `Object.assign` would run the `__proto__` setter
+    // for an own `__proto__` data property and silently change the prototype.
+    const proto = Object.getPrototypeOf(value);
+    return (proto === null
+      ? Object.assign(Object.create(null), value)
+      : { ...(value as object) }) as T;
   }
   return value;
 };
@@ -98,6 +114,10 @@ export const readAtPath = (root: unknown, path: StatePath): unknown => {
  * The union is what lets the caller tell "nothing changed" apart from "this
  * write was refused", and it carries the offending host for the refusal so the
  * diagnostic can name it without walking the path a second time.
+ *
+ * `replaced` lists `[path, previous, next]` for every level this commit cloned.
+ * The updater turns those pairs into read-side lineage, so handles follow the
+ * objects their own writes produced (and only those).
  */
 export type ReplacedLevels = Array<[StatePath, object, object]>;
 
@@ -113,6 +133,17 @@ export type CommitResult<S> =
  * uses the ordinary shallow clone. Callers only reach here with levels the
  * walk already validated, so the casts are guaranteed by construction.
  */
+/**
+ * @description Define an own enumerable data property. Plain assignment would
+ * run an inherited setter — most notably `__proto__` — and could change the
+ * prototype of the cloned host instead of writing the state key.
+ */
+const defineData = (target: object, key: PropertyKey, value: unknown) => {
+  Object.defineProperty(target, key, {
+    value, writable: true, enumerable: true, configurable: true,
+  });
+};
+
 const setAt = (parent: unknown, seg: StatePathSegment, child: unknown): unknown => {
   if (isMapMember(seg)) {
     const next = new Map(parent as Map<unknown, unknown>);
@@ -126,7 +157,8 @@ const setAt = (parent: unknown, seg: StatePathSegment, child: unknown): unknown 
     return next;
   }
   const next = cloneShallow(parent);
-  (next as Record<PropertyKey, unknown>)[seg as PropertyKey] = child;
+  if (Array.isArray(next) && seg === "length") (next as unknown as unknown[]).length = child as number;
+  else defineData(next as object, seg as PropertyKey, child);
   return next;
 };
 
@@ -231,6 +263,15 @@ export const commitPath = <S extends PrimitiveState>(
         : { committed: false, reason: "leaf", host: leafOwner };
     }
 
+    /**
+     * @description Deleting a key that does not exist changes nothing. Without
+     * this guard it would still clone the host and the root, producing a new
+     * state tree and a notification for a no-op.
+     */
+    if (isDelete && !hasOwnProperty.call(leafOwner, leafKey as PropertyKey)) {
+      return { committed: false, reason: "noop" };
+    }
+
     if (
       !isDelete
       && Object.is((leafOwner as Record<PropertyKey, unknown>)[leafKey as PropertyKey], value)
@@ -240,7 +281,11 @@ export const commitPath = <S extends PrimitiveState>(
 
     newLeafOwner = cloneShallow(leafOwner);
     if (isDelete) Reflect.deleteProperty(newLeafOwner as object, leafKey as PropertyKey);
-    else (newLeafOwner as Record<PropertyKey, unknown>)[leafKey as PropertyKey] = value;
+    else if (Array.isArray(newLeafOwner) && leafKey === "length") {
+      (newLeafOwner as unknown as unknown[]).length = value as number;
+    } else {
+      defineData(newLeafOwner as object, leafKey as PropertyKey, value);
+    }
   }
 
   /**

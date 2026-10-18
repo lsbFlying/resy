@@ -83,6 +83,14 @@ export default class Updater<S extends PrimitiveState> {
       scheduler.isUpdating = Promise.resolve().then(() => {
         this.batchUpdateProcessingCore();
       });
+    } else if (isEmptyPureObject(taskData) && !scheduler.isUpdating) {
+      /**
+       * @description A no-op batch (`setState` with equal values, `restore`
+       * with nothing to restore) still ran `willUpdatingProcessing()` and set
+       * the flag. No processing round will clear it, so clear it here — the
+       * next real batch must capture a fresh `prevState`.
+       */
+      scheduler.willUpdating = undefined;
     }
   }
 
@@ -141,6 +149,9 @@ export default class Updater<S extends PrimitiveState> {
    * that handle is still attached to its path. A detached handle writes
    * nothing at all — it must not fall through to whatever object happens to
    * occupy the path now.
+   * `deepNormalize` is `false` for container-internal commits (array methods,
+   * `Map`/`Set` mutators): those values are already raw, and walking a whole
+   * pushed array on every call would be pure overhead.
    *
    * @returns Always `true`; the return value is retained for the proxy traps.
    */
@@ -149,6 +160,7 @@ export default class Updater<S extends PrimitiveState> {
     value: ValueOf<S>,
     isDelete = false,
     owner?: object,
+    deepNormalize = true,
   ): boolean {
     // if (this.#freezing) return true;
 
@@ -165,10 +177,10 @@ export default class Updater<S extends PrimitiveState> {
 
     /**
      * @description A wrapper must never be committed as state data: normalize
-     * it to the raw value (and normalize one level of arrays/objects/maps so a
-     * shallow spread or an element assignment cannot smuggle a proxy in).
+     * it to the raw value, including wrappers nested inside user-built objects
+     * (`store.target = { deep: { item: store.list[0] } }`).
      */
-    const normalizedValue = this.$metaStore._normalizeWriteValue_(value);
+    const normalizedValue = this.$metaStore._normalizeWriteValue_(value, deepNormalize);
 
     /**
      * @description `commitPath` reads the host itself and reports *why* it
@@ -181,12 +193,21 @@ export default class Updater<S extends PrimitiveState> {
      * the published build. A `Date`'s own mutators never reach here at all — a
      * non-proxyable built-in is returned raw.
      */
-    const result = commitPath(this.$metaStore._$state_, path, normalizedValue, isDelete);
+    /**
+     * @description A `Set` member is replaced by a clone when any of its
+     * fields is written, so the old marker's ref no longer exists in the
+     * container. Rewrite those markers to the current member (via the lineage)
+     * before walking the path — otherwise the second write would not resolve
+     * its host at all.
+     */
+    const resolvedPath = this.$metaStore._resolveSetMarkers_(path);
+
+    const result = commitPath(this.$metaStore._$state_, resolvedPath, normalizedValue, isDelete);
 
     if (!result.committed) {
       // A write that ran into a value it cannot pass through is reported in
       // development; a path that simply changed nothing stays silent.
-      if (result.reason === "leaf") pathErrorProcessing(path, result.host);
+      if (result.reason === "leaf") pathErrorProcessing(resolvedPath, result.host);
       return true;
     }
 

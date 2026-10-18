@@ -3,11 +3,11 @@ import { createStore } from "../../src";
 import { rawState } from "../__utils__";
 
 // Detached writes are reported in development; this file asserts behaviour.
-vi.spyOn(console, "warn").mockImplementation(() => {});
+vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
 /**
- * @description Destructuring then updating (tasks 8.2, `state-update-semantics`
- * 「活跃句柄必须保持可写」与「已脱离状态树的元素写入必须无效」).
+ * @description Destructuring then updating: a destructured handle is a path
+ * view, not a copy.
  *
  * A destructured handle is a path view, not a copy: it must keep writing while
  * the path still denotes the object it was created from (including clones this

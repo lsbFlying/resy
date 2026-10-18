@@ -27,6 +27,7 @@ const useStore = defineStore({
     nationality: "China",
   },
   updateInfo() {
+    // this.info.personInfo.bodyInfo.heightInfo.reach = Math.floor(Math.random() * 1000);
     // this.info.nationality = `China-${Math.floor(Math.random() * 10000)}`;
     // const hi = this.info.personInfo.bodyInfo.heightInfo;
     // hi.height = Math.floor(Math.random() * 1000);
@@ -34,6 +35,25 @@ const useStore = defineStore({
     console.time("update");
     for (let i = 0; i < 1; i++) {
       // this.info.personInfo.bodyInfo.heightInfo.reach = Math.floor(Math.random() * 1000);
+      this.info.personInfo = {
+        ageInfo: {
+          age: 12,
+          level: "teen",
+        },
+        nameInfo: {
+          name: "Liu-Shan-Bao",
+        },
+        bodyInfo: {
+          heightInfo: {
+            height: 170,
+            reach: Math.floor(Math.random() * 1000),
+          },
+          weightInfo: {
+            weight: 64,
+            level: "bantamweight",
+          },
+        },
+      };
       // this.info = {
       //   ...this.info,
       //   personInfo: {
@@ -47,26 +67,26 @@ const useStore = defineStore({
       //     },
       //   },
       // };
-      this.setState({
-        info: {
-          ...this.info,
-          personInfo: {
-            ...this.info.personInfo,
-            bodyInfo: {
-              ...this.info.personInfo.bodyInfo,
-              heightInfo: {
-                ...this.info.personInfo.bodyInfo.heightInfo,
-                reach: Math.floor(Math.random() * 1000),
-              },
-            },
-          },
-        },
-      });
+      // this.setState({
+      //   info: {
+      //     ...this.info,
+      //     personInfo: {
+      //       ...this.info.personInfo,
+      //       bodyInfo: {
+      //         ...this.info.personInfo.bodyInfo,
+      //         heightInfo: {
+      //           ...this.info.personInfo.bodyInfo.heightInfo,
+      //           reach: Math.floor(Math.random() * 1000),
+      //         },
+      //       },
+      //     },
+      //   },
+      // });
     }
     console.timeEnd("update");
   },
 }, {
-  // immutable: true,
+  immutable: true,
 });
 
 const App = () => {

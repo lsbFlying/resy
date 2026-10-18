@@ -4,7 +4,7 @@ import { createStore } from "../../src";
 import { rawMetaStore, rawState } from "../__utils__";
 
 /**
- * @description Wrappers must never reach the state tree (task 8.6, D15).
+ * @description Wrappers must never reach the state tree.
  *
  * Array methods, `ResyMap.set` and `ResySet.add` already normalize their
  * arguments; the public write entry points (`updateMetaState` / `setState`)

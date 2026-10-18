@@ -2,11 +2,11 @@ import { expect, test, vi } from "vitest";
 import { createStore } from "../../src";
 
 // Detached writes are reported in development; this file asserts behaviour.
-vi.spyOn(console, "warn").mockImplementation(() => {});
+vi.spyOn(console, "warn").mockImplementation(() => undefined);
 import { rawMetaStore, rawState } from "../__utils__";
 
 /**
- * @description Updating while traversing (task 8.3).
+ * @description Updating while traversing the state.
  *
  * Callback arguments are path views, so a write through them must commit; the
  * read side of the same view stays a snapshot. Structural changes during the

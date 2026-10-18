@@ -186,7 +186,7 @@ test("set: every iteration helper works through the proxy", () => {
   const store = setStore();
 
   const forEachSeen: number[] = [];
-  store.s.forEach((value) => { forEachSeen.push(value); });
+  store.s.forEach(value => { forEachSeen.push(value); });
   expect(forEachSeen).toEqual([1, 2]);
 
   expect(drain(store.s.keys())).toEqual([1, 2]);

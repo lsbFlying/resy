@@ -15,6 +15,17 @@ export const _COMPUTED_PREFIX_ = "$";
  */
 export const _PATH_KEY_SEPARATOR_ = "\u0001";
 
+/**
+ * @description Reverse map from a read-side wrapper (nested proxy or container
+ * handle) back to the raw value it wraps.
+ *
+ * 🌟 Module-scoped rather than per store: being a wrapper is intrinsic to the
+ * object, not to the store that created it. A wrapper read from store A can be
+ * assigned into store B (`storeB.x = storeA.user`), and B still has to store
+ * the raw object instead of A's proxy.
+ */
+export const _WRAPPER_ORIGIN_ = new WeakMap<object, unknown>();
+
 export const DEFAULT_OPTIONS: InnerStoreOptions = {
   unmountRestore: true,
   namespace: undefined,

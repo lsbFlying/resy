@@ -5,8 +5,8 @@ import { ComponentWithStore, createStore } from "../../src";
 import { rawMetaStore } from "../__utils__";
 
 /**
- * @description Class-side connection contract (tasks 6.2 – 6.4), mirroring the
- * scenarios of `specs/class-store-connection`.
+ * @description Class-side connection contract: writes, re-render filtering,
+ * unmounting, and sharing one store with hooks.
  */
 
 test("class-store: this.store writes reach the state and re-render", async () => {

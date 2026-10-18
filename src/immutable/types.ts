@@ -3,10 +3,16 @@ import { _MAP_MEMBER_, _SET_MEMBER_ } from "./static";
 /**
  * @description A path segment that addresses a member of a `Map`: `key` is
  * the member key inside the container found at the preceding position.
+ *
+ * `id` is allocated only for keys that cannot be encoded by value — object /
+ * function keys (and, unlike symbols, cannot be distinguished by description).
+ * It keeps `pathKey` collision-free when the same object is reachable under
+ * two different object keys.
  */
-export interface MapMemberMarker<K = PropertyKey> {
+export interface MapMemberMarker<K = unknown> {
   [_MAP_MEMBER_]: true;
   key: K;
+  id?: string;
 }
 
 /**

@@ -1,7 +1,6 @@
 import type MetaStore from "../store/core";
-import type { MapMemberMarker, StatePath } from "./types";
+import type { StatePath } from "./types";
 import { readAtPath } from "./utils";
-import { _MAP_MEMBER_ } from "./static";
 
 /**
  * @description The cached path view over a native `Map` stored in an immutable
@@ -53,9 +52,12 @@ export class ResyMap<K, V> extends Map<K, V> {
       : this.#target;
   }
 
-  #commit(next: Map<K, V>): void {
-    this.#store._linkClone_(this.#path, this.#target, next, true);
-    this.#store._updater_.updateMetaState(this.#path, next as any, false);
+  #commit(previous: Map<K, V>, next: Map<K, V>): void {
+    // Link the *live* container, not this handle's last known one: another
+    // handle may have advanced the path in between, and every handle following
+    // that generation must keep resolving.
+    this.#store._linkClone_(this.#path, previous, next, true);
+    this.#store._updater_.updateMetaState(this.#path, next as any, false, undefined, false);
     this.#target = next;
   }
 
@@ -63,44 +65,49 @@ export class ResyMap<K, V> extends Map<K, V> {
   #wrap(value: unknown, key: K): unknown {
     return this.#store._wrapContainerValue_(
       value,
-      { [_MAP_MEMBER_]: true, key } as MapMemberMarker,
+      this.#store._mapMemberMarker_(key),
       this.#path,
     );
   }
 
   get(key: K): V | undefined {
-    const value = this.#current()?.get(key);
-    return value === undefined ? undefined : this.#wrap(value, key) as V;
+    const rawKey = this.#store._unwrapWrapper_(key) as K;
+    const value = this.#current().get(rawKey);
+    return value === undefined ? undefined : this.#wrap(value, rawKey) as V;
   }
 
   has(key: K): boolean {
-    return this.#current()?.has(key) ?? false;
+    return this.#current().has(this.#store._unwrapWrapper_(key) as K);
   }
 
   get size(): number {
-    return this.#current()?.size ?? 0;
+    return this.#current().size;
   }
 
   set(key: K, value: V): this {
     if (!this.#isActive()) return this;
     const cur = this.#current();
-    // A wrapper handed out by an earlier read must not be committed into the
-    // tree — method arguments resolve back to the raw value they wrap.
-    const raw = this.#store._unwrapWrapper_(value) as V;
-    if (Object.is(cur.get(key), raw)) return this;
+    // Method arguments may be wrappers handed out by an earlier read; both the
+    // key and the value must resolve back to the raw object they wrap. The
+    // value is normalized deeply so a wrapper nested inside a pushed object
+    // cannot reach the state either.
+    const rawKey = this.#store._unwrapWrapper_(key) as K;
+    const raw = this.#store._normalizeWriteValue_(value) as V;
+    if (cur.has(rawKey) && Object.is(cur.get(rawKey), raw)) return this;
     const next = new Map(cur);
-    next.set(key, raw);
-    this.#commit(next);
+    next.set(rawKey, raw);
+    this.#commit(cur, next);
     return this;
   }
 
   delete(key: K): boolean {
     if (!this.#isActive()) return false;
     const cur = this.#current();
-    if (!cur.has(key)) return false;
+    const rawKey = this.#store._unwrapWrapper_(key) as K;
+    if (!cur.has(rawKey)) return false;
     const next = new Map(cur);
-    const result = next.delete(key);
-    this.#commit(next);
+    const result = next.delete(rawKey);
+    this.#commit(cur, next);
     return result;
   }
 
@@ -108,7 +115,7 @@ export class ResyMap<K, V> extends Map<K, V> {
     if (!this.#isActive()) return;
     const cur = this.#current();
     if (!cur.size) return;
-    this.#commit(new Map());
+    this.#commit(cur, new Map());
   }
 
   forEach(

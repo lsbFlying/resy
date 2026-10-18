@@ -19,7 +19,16 @@ import { _PATH_KEY_SEPARATOR_ } from "./static";
  * set resolve to different cache entries.
  */
 const encodeSegment = (key: StatePathSegment): string => {
-  if (isMapMember(key)) return `M${encodeSegment(key.key)}`;
+  if (isMapMember(key)) {
+    /**
+     * @description Object / function keys carry a per-store id: `String(key)`
+     * collapses every object to `[object Object]`, so the same target under two
+     * object keys would otherwise share one cache entry (and one path).
+     */
+    return key.id === undefined
+      ? `M${encodeSegment(key.key as StatePathSegment)}`
+      : `M@${key.id}`;
+  }
   if (isSetMember(key)) return `S${key.id}`;
   const prefixed = typeof key === "string"
     ? `s${key}`
@@ -51,9 +60,17 @@ const encodeSegment = (key: StatePathSegment): string => {
  * `'a' + SEP + SEP + 'sb'`, which no longer matches.
  *
  * Each segment is also type-prefixed, so `[1]` and `['1']` stay distinct.
- * Symbol segments fall back to their description, which is a deliberate
- * approximation recorded in `design.md` (Open Questions): two distinct symbols
- * sharing a description would share a cache entry.
+ * Symbol *property* segments fall back to their description, which is a
+ * deliberate approximation: two distinct symbols sharing a description would
+ * share a cache entry. Symbol *Map keys* carry an id instead.
  */
 export const pathKey = (path: StatePath): string =>
   path.map(encodeSegment).join(_PATH_KEY_SEPARATOR_);
+
+/** Readable rendering of a path for diagnostics. */
+export const formatPath = (path: StatePath): string =>
+  path.map(segment =>
+    isMapMember(segment) ? `:${String(segment.key)}`
+      : isSetMember(segment) ? ":<member>"
+        : String(segment),
+  ).join(".");

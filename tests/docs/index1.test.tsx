@@ -9,9 +9,9 @@ import { rawState } from "../__utils__";
  * `docs/pages/immutable.md` and the `immutable` option section of
  * `docs/pages/using-detail.md`.
  *
- * Task 7.4 requires that documented examples produce the described result, so
- * this file is the guard for that claim: if the docs and the implementation
- * drift apart, this test fails.
+ * The documented examples must produce the described result, so this file is
+ * the guard for that claim: if the docs and the implementation drift apart,
+ * this test fails.
  */
 
 type Model = {

@@ -346,9 +346,10 @@ const source = live === target ? live : target;
 | `src/store/utils.ts` | `pathKey` 路径编码 |
 | `src/updater/index.ts` | `updateMetaState` 编排、`setState` 键循环 |
 | `src/scheduler/index.ts` | `commitRoot` 提交根、`taskData` 批处理记账 |
+| `src/immutable/normalize.ts` | 写入口的 wrapper 归一化（深度扫描、环回退、原型安全） |
 | `src/immutable/resy-map.ts` / `resy-set.ts` | `Map`/`Set` 容器句柄（路径身份、克隆后单次提交、活跃判定） |
 | `src/immutable/static.ts` | `Map`/`Set` 成员路径标记 |
 
-对应的验收测试集中在 `tests/immutable/`：`index2`（写入侧语义）、`index3`（读取身份、`pathKey`、游离写）、`index4`（数组）、`index5`/`index6`（路径模型与 `commitPath`）、`index7`（`prevState`）、`index8`（`Map`/`Set`）、`index9`（解构后更新）、`index10`（遍历中更新）、`index11`（游离元素）、`index12`（游离写的渲染断言）、`index13`（wrapper 不落盘）。
+对应的验收测试集中在 `tests/immutable/`：`index2`（写入侧语义）、`index3`（读取身份、`pathKey`、游离写）、`index4`（数组）、`index5`/`index6`（路径模型与 `commitPath`）、`index7`（`prevState`）、`index8`（`Map`/`Set`）、`index9`（解构后更新）、`index10`（遍历中更新）、`index11`（游离元素）、`index12`（游离写的渲染断言）、`index13`（wrapper 不落盘）、`index14`（Set 血缘、深度归一化、跨 store、no-op delete 等 review 回归）。
 
-游离写的实现入口是 `MetaStore._isActiveHandle_`（身份 + 提交血缘）与 `MetaStore._normalizeWriteValue_`（写入口归一化），对应设计文档的 D14 / D15。
+游离写的实现入口是 `MetaStore._isActiveHandle_`（身份 + 提交血缘，含 Set 成员的 `_resolveSetMarkers_` 路径重写）与 `MetaStore._normalizeWriteValue_`（公共写入口深度归一化，容器内部提交保持浅归一化），对应设计文档的 D14 / D15。

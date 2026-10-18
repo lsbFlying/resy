@@ -7,14 +7,15 @@ import type { ClassStoreType } from "../class-connect/types";
 import type { SetStateType, SyncUpdateType } from "../updater/types";
 import type { SubscribeType, UseSubscriptionType } from "../subscribe/types";
 import type { RestoreType } from "../restore/types";
-import type { SetMemberMarker, StatePath, StatePathSegment } from "../immutable/types";
+import type { MapMemberMarker, SetMemberMarker, StatePath, StatePathSegment } from "../immutable/types";
 import type { UseComputedType, ComputedType } from "../computer/types";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
-import { _RESY_BRAND_, DEFAULT_OPTIONS } from "./static";
-import { pathKey } from "./utils";
+import { _RESY_BRAND_, _WRAPPER_ORIGIN_, DEFAULT_OPTIONS } from "./static";
+import { formatPath, pathKey } from "./utils";
 import { hasOwnProperty } from "../utils";
-import { isPenetrable, proxyable, readAtPath } from "../immutable/utils";
-import { _SET_MEMBER_ } from "../immutable/static";
+import { isSetMember, proxyable, readAtPath } from "../immutable/utils";
+import { _MAP_MEMBER_, _SET_MEMBER_ } from "../immutable/static";
+import { markNestedWrapperCreated, normalizeWriteValue } from "../immutable/normalize";
 import { ResyMap } from "../immutable/resy-map";
 import { ResySet } from "../immutable/resy-set";
 import MetaState from "../state";
@@ -43,7 +44,17 @@ export default class MetaStore<S extends PrimitiveState> {
     this._options_ = opts;
 
     stateErrorProcessing({ state: reducerState, options: opts });
-    this._$state_ = { ...reducerState };
+    /**
+     * @description The initial tree is normalized like any other write: it may
+     * be derived from another store (`createStore({ user: otherStore.user })`),
+     * and a wrapper must not become state data just because it entered through
+     * the constructor.
+     */
+    const normalizedState = { ...reducerState } as S;
+    for (const key of Object.keys(normalizedState) as (keyof S)[]) {
+      normalizedState[key] = this._normalizeWriteValue_(normalizedState[key]) as ValueOf<S>;
+    }
+    this._$state_ = normalizedState;
 
     this.store = this.#createProxy();
   }
@@ -104,16 +115,6 @@ export default class MetaStore<S extends PrimitiveState> {
    * invalidation is needed, and stale entries die together with their objects.
    */
   #proxyCache = new WeakMap<object, Map<string, unknown>>();
-
-  /**
-   * @description Reverse map from a read-side wrapper (nested proxy or
-   * container handle) back to the raw value it wraps.
-   *
-   * Methods must normalize their arguments through it: identity searches
-   * (indexOf/includes, Set.has) compare against raw elements, and committing
-   * a wrapper into the tree would store the wrapper itself as state data.
-   */
-  #wrapperOrigin = new WeakMap<object, unknown>();
 
   // A proxy object with the capabilities of updating and data tracking.
   readonly store: Store<S>;
@@ -213,7 +214,8 @@ export default class MetaStore<S extends PrimitiveState> {
     } else {
       perTarget.set(cacheKey, handle);
     }
-    this.#wrapperOrigin.set(handle, container);
+    markNestedWrapperCreated();
+    _WRAPPER_ORIGIN_.set(handle, container);
     return handle;
   }
 
@@ -239,82 +241,58 @@ export default class MetaStore<S extends PrimitiveState> {
   }
 
   /**
+   * @description Per-store ids for non-primitive `Map` keys. Primitive keys are
+   * encoded by value; object / function keys have no stable textual form, and
+   * `String(key)` would collapse them all to `[object Object]`.
+   */
+  #mapMemberIdCache = new WeakMap<object, string>();
+  /** Symbols cannot be `WeakMap` keys, so their ids live in a regular `Map`. */
+  #mapSymbolIdCache = new Map<symbol, string>();
+  #mapMemberIdCounter = 0;
+
+  /**
+   * @description Build the marker that addresses a `Map` member in a state
+   * path.
+   */
+  _mapMemberMarker_(key: unknown): MapMemberMarker {
+    if (
+      (typeof key === "object" && key !== null)
+      || typeof key === "function"
+    ) {
+      let id = this.#mapMemberIdCache.get(key as object);
+      if (id === undefined) {
+        id = `${++this.#mapMemberIdCounter}`;
+        this.#mapMemberIdCache.set(key as object, id);
+      }
+      return { [_MAP_MEMBER_]: true, key, id };
+    }
+
+    if (typeof key === "symbol") {
+      let id = this.#mapSymbolIdCache.get(key);
+      if (id === undefined) {
+        id = `${++this.#mapMemberIdCounter}`;
+        this.#mapSymbolIdCache.set(key, id);
+      }
+      return { [_MAP_MEMBER_]: true, key, id };
+    }
+
+    return { [_MAP_MEMBER_]: true, key };
+  }
+
+  /**
    * @description Resolve a wrapper reference back to the raw value it wraps —
    * the container handles normalize their method arguments through this;
    * anything else is returned unchanged.
    */
   _unwrapWrapper_(value: unknown): unknown {
     return typeof value === "object" && value !== null
-      ? this.#wrapperOrigin.get(value) ?? value
+      ? _WRAPPER_ORIGIN_.get(value) ?? value
       : value;
   }
 
-  /**
-   * @description Normalize a value that is about to be written into the state.
-   *
-   * Wrappers are read-side objects: committing one would store a proxy (or a
-   * `ResyMap`/`ResySet` handle) inside `_$state_`, where it would poison
-   * serialization, identity comparison and `prevState`. Array methods and the
-   * container handles already normalize their arguments; the public write
-   * entry points go through this method so they cannot drift.
-   *
-   * Only one level is normalized, which is sufficient by construction: reading
-   * a nested value always produces a new wrapper, while the values *inside* a
-   * wrapper are still raw until read.
-   */
-  _normalizeWriteValue_(value: unknown): unknown {
-    const unwrap = (candidate: unknown): unknown =>
-      (typeof candidate === "object" && candidate !== null
-        ? this.#wrapperOrigin.get(candidate) ?? candidate
-        : candidate);
-
-    const raw = unwrap(value);
-    if (raw !== value) return raw;
-
-    if (Array.isArray(value)) {
-      // Scan before copying: the common case is an array of raw values (every
-      // array method commits one), and it must stay allocation-free.
-      const changed = value.some(item => unwrap(item) !== item);
-      return changed ? value.map(item => unwrap(item)) : value;
-    }
-
-    if (value instanceof Map) {
-      let changed = false;
-      value.forEach(member => {
-        changed = changed || unwrap(member) !== member;
-      });
-      if (!changed) return value;
-      const next = new Map<unknown, unknown>();
-      value.forEach((member, key) => { next.set(key, unwrap(member)); });
-      return next;
-    }
-
-    if (value instanceof Set) {
-      let changed = false;
-      value.forEach(member => {
-        changed = changed || unwrap(member) !== member;
-      });
-      if (!changed) return value;
-      const next = new Set<unknown>();
-      value.forEach(member => { next.add(unwrap(member)); });
-      return next;
-    }
-
-    if (isPenetrable(value)) {
-      const record = value as Record<PropertyKey, unknown>;
-      const keys: PropertyKey[] = [
-        ...Object.keys(value as object),
-        ...Object.getOwnPropertySymbols(value as object),
-      ];
-      const changed = keys.some(key => unwrap(record[key]) !== record[key]);
-      if (!changed) return value;
-
-      const next = Object.create(Object.getPrototypeOf(value)) as Record<PropertyKey, unknown>;
-      for (const key of keys) next[key] = unwrap(record[key]);
-      return next;
-    }
-
-    return value;
+  /** @description Normalize a write value; see `normalizeWriteValue`. */
+  _normalizeWriteValue_(value: unknown, deep = true): unknown {
+    return normalizeWriteValue(value, deep);
   }
 
   /**
@@ -368,30 +346,71 @@ export default class MetaStore<S extends PrimitiveState> {
    * updating, or a parent handle surviving a child write). Anything else —
    * removal, whole-value replacement, an element moved to another index — means
    * the handle is detached and its writes are ignored.
+   *
+   * 🌟 `Set` members are addressed by object identity, and a commit replaces
+   * the member object itself. The old marker's ref is then no longer in the
+   * set, so a plain path walk would report "missing" even though the lineage
+   * says this very member became its clone. The path is therefore rewritten
+   * through the lineage before it is read.
    */
   _isActiveHandle_(target: object, path: StatePath): boolean {
     if (path.length === 0) return true;
 
-    const live = readAtPath(this._$state_, path);
+    const resolvedPath = this._resolveSetMarkers_(path);
+    const live = readAtPath(this._$state_, resolvedPath);
+    // The fast path also covers a whole-value replacement that put the original
+    // object back at the path: `live` is the handle's own target again.
     if (live === target) return true;
+    return live === this.#resolveLineage_(path, target);
+  }
 
+  /**
+   * @description Follow the `old → next` clone chain recorded for one path and
+   * return the latest object. Path compression keeps repeated writes through a
+   * long-lived handle O(1) instead of O(writes).
+   */
+  #resolveLineage_(path: StatePath, target: object): object {
     const lineage = this.#lineage.get(pathKey(path));
-    if (lineage === undefined) return false;
+    if (lineage === undefined) return target;
 
-    let current: object = target;
+    let current = target;
     const visited: object[] = [];
     for (let steps = 0; steps < 10000; steps++) {
       const next = lineage.get(current);
       if (next === undefined) break;
       visited.push(current);
       current = next;
-      if (current === live) {
-        // Path compression keeps long write chains cheap to resolve.
-        visited.forEach(node => lineage.set(node, current));
-        return true;
-      }
     }
-    return false;
+    // Path compression keeps long write chains cheap to resolve.
+    visited.forEach(node => lineage.set(node, current));
+    return current;
+  }
+
+  /**
+   * @description Rewrite the `Set` member markers of a path to the member
+   * object the lineage currently points at. Only the marker's `ref` changes;
+   * the marker's id (and therefore the proxy-cache key) stays stable.
+   */
+  _resolveSetMarkers_(path: StatePath): StatePath {
+    let changed = false;
+    const next = path.map((segment, index) => {
+      if (!isSetMember(segment)) return segment;
+      const resolved = this.#resolveLineage_(path.slice(0, index + 1), segment.ref as object);
+      if (resolved === segment.ref) return segment;
+
+      /**
+       * @description Only follow the lineage while the resolved member is
+       * actually in the set. A whole-value replacement can put the *old* ref
+       * back (`store.s = new Set([oldRef])`); blindly rewriting to the clone
+       * would then make a still-present handle look detached.
+       */
+      const container = readAtPath(this._$state_, path.slice(0, index));
+      if (!(container instanceof Set) || !container.has(resolved)) return segment;
+
+      changed = true;
+      return { ...segment, ref: resolved };
+    });
+    return changed ? next : path;
   }
 
   /**
@@ -403,10 +422,11 @@ export default class MetaStore<S extends PrimitiveState> {
     if (!__DEV__) return;
     const key = pathKey(path);
     if (this.#warnedDetachedPaths.has(key)) return;
+    // Bound the notice memory for stores that visit many dynamic paths.
+    if (this.#warnedDetachedPaths.size > 512) this.#warnedDetachedPaths.clear();
     this.#warnedDetachedPaths.add(key);
-    const text = path.map(segment => String(segment)).join(".");
     console.warn(
-      `resy: ignored a write through a detached handle at path "${text}". `
+      `resy: ignored a write through a detached handle at path "${formatPath(path)}". `
       + "The element is no longer part of the current state; read it again from the store.",
     );
   }
@@ -544,15 +564,13 @@ export default class MetaStore<S extends PrimitiveState> {
           return (...args: unknown[]) => {
             /**
              * @description A held array handle may have been detached by a
-             * whole-array replacement. Its methods must then be inert: acting
-             * on the array that now occupies the path would be a write into an
-             * unrelated element of the current tree.
+             * whole-array replacement. Reads (join/slice/map/…) keep working on
+             * the handle's creation snapshot, but nothing may be committed:
+             * acting on the array that now occupies the path would be a write
+             * into an unrelated element of the current tree.
              */
-            if (path.length > 0 && !this._isActiveHandle_(target as object, path)) {
-              return undefined;
-            }
-
-            const current = readAtPath(this._$state_, path);
+            const active = path.length === 0 || this._isActiveHandle_(target as object, path);
+            const current = active ? readAtPath(this._$state_, path) : target as unknown;
             if (!Array.isArray(current)) return undefined;
 
             const draft = current.slice();
@@ -565,7 +583,7 @@ export default class MetaStore<S extends PrimitiveState> {
              * would store the wrapper itself as state data.
              */
             const normalizeArgs = (input: unknown[]) =>
-              input.map(arg => this.#wrapperOrigin.get(arg as object) ?? arg);
+              input.map(arg => this._normalizeWriteValue_(arg));
 
             /**
              * @description A method that hands elements to user code through a
@@ -583,7 +601,8 @@ export default class MetaStore<S extends PrimitiveState> {
               ? [
                 (...cbArgs: unknown[]) => {
                   const wrapCbArg = (arg: unknown, index: unknown) =>
-                    typeof index === "number" && index >= 0 && index < draft.length
+                    active
+                    && typeof index === "number" && index >= 0 && index < draft.length
                     && draft[index] === arg
                       ? this._wrapContainerValue_(arg, index, path)
                       : arg;
@@ -616,20 +635,22 @@ export default class MetaStore<S extends PrimitiveState> {
                 }
               }
             }
-            if (changed) {
+            if (changed && active) {
               /**
                * @description The commit replaces the array at `path` with the
                * draft. Linking old→draft keeps the handle (and any handle that
                * produced this one) following its own commits.
                */
               this._linkClone_(path, current, draft, true);
-              updater.updateMetaState(path, draft as ValueOf<S>, false);
+              updater.updateMetaState(path, draft as ValueOf<S>, false, undefined, false);
             }
 
             // Methods that return the array itself (`push` returns a length, but
             // `sort`/`reverse`/`splice` return `this`) must hand back this very
-            // proxy so that identity comparisons and chaining both hold.
-            if (result === draft) return proxy;
+            // proxy so that identity comparisons and chaining both hold. A
+            // detached handle hands back the local draft instead: nothing will
+            // be committed, so the result should be the array the method acted on.
+            if (result === draft) return active ? proxy : draft;
 
             /**
              * @description An iterator handed to user code (for…of, spread,
@@ -642,11 +663,15 @@ export default class MetaStore<S extends PrimitiveState> {
               result !== null && typeof result === "object"
               && typeof (result as { next?: unknown }).next === "function"
             ) {
-              return this.#wrapIteratorResult(
-                result as { next: () => { done: boolean; value: unknown } },
-                member === Array.prototype.entries,
-                path,
-              );
+              // A detached handle yields its snapshot's raw elements: wrapping
+              // them would hand out paths that now point at other elements.
+              return active
+                ? this.#wrapIteratorResult(
+                  result as { next: () => { done: boolean; value: unknown } },
+                  member === Array.prototype.entries,
+                  path,
+                )
+                : result;
             }
 
             /**
@@ -658,7 +683,7 @@ export default class MetaStore<S extends PrimitiveState> {
              * removed chunk) are no longer in the draft and stay raw.
              */
             const foundIndex = draft.indexOf(result);
-            if (immutable && foundIndex >= 0 && proxyable(result)) {
+            if (active && immutable && foundIndex >= 0 && proxyable(result)) {
               return this._wrapContainerValue_(result, foundIndex, path);
             }
 
@@ -730,7 +755,8 @@ export default class MetaStore<S extends PrimitiveState> {
       perTarget.set(cacheKey, proxy);
     }
 
-    this.#wrapperOrigin.set(proxy, target);
+    if (path.length > 0) markNestedWrapperCreated();
+    _WRAPPER_ORIGIN_.set(proxy, target);
 
     return proxy;
   }

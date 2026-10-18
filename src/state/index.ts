@@ -107,7 +107,12 @@ export default class MetaState<S extends PrimitiveState> {
 
           if (!sourceFromStore && typeof value !== "function") {
             this.isRendering && subscriberRef.current.stateKeys.newKeys.add(key);
-            return immutable ? store[key] : state[key];
+            /**
+             * `store[key]` is the write-through handle in immutable mode. In
+             * non-immutable mode it returns the same raw value, so `value`
+             * avoids the root proxy round-trip and the duplicate read.
+             */
+            return immutable ? store[key] : value;
           }
 
           if (!sourceFromStore && typeof value === "function") {

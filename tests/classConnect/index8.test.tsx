@@ -116,7 +116,7 @@ test("class-store: re-render is filtered by the keys the component registered", 
   fireEvent.click(getByText("text"));
   // A negative assertion: nothing observable should happen. `act` drains the
   // pending update queue; there is no condition to wait for here.
-  await act(async () => {});
+  await act(async () => undefined);
   expect(renderCount).toBe(beforeText);
 
   // A registered key must re-render it.
@@ -127,7 +127,7 @@ test("class-store: re-render is filtered by the keys the component registered", 
   // A nested write under an unread top-level key must not re-render either.
   const beforeNested = renderCount;
   fireEvent.click(getByText("nested"));
-  await act(async () => {});
+  await act(async () => undefined);
   expect(renderCount).toBe(beforeNested);
 });
 
@@ -181,7 +181,7 @@ test("class-store: an unmounted component stops receiving updates", async () => 
 
   // The connection was released and its registered references cleared.
   expect(() => { store.count = 1; }).not.toThrow();
-  await act(async () => {});
+  await act(async () => undefined);
 });
 
 test("class-store: class and hook components observe the same state", async () => {

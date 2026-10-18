@@ -1,4 +1,4 @@
-import type { PrimitiveState, ValueOf } from "../types";
+import type { DeepReadonly, PrimitiveState, ValueOf } from "../types";
 import type { State, StateFnType } from "./types";
 import type { StatePath } from "../immutable/types";
 import type { ComponentWithStore } from "../class-connect";
@@ -7,6 +7,7 @@ import type MetaStore from "../store/core";
 import { batchUpdate } from "../static";
 import { pathErrorProcessing, stateErrorProcessing } from "../store/errors";
 import { commitPath } from "../immutable/utils";
+import { pathKeys } from "../store/utils";
 import { isEmptyPureObject } from "../utils";
 
 /**
@@ -64,10 +65,13 @@ export default class Updater<S extends PrimitiveState> {
              * @desc Even if 'scheduler. flushTask()' clears taskData,
              * it directly assigns new values to taskData within the scheduler,
              * making it easier to trace the old taskData as a snapshot variable.
+             *
+             * The values are raw references; `ListenerParams` promises a deeply
+             * read-only view at the type level, so the assertion belongs here.
              */
-            effectState: taskData,
-            nextState: _$state_,
-            prevState: prevBatchState,
+            effectState: taskData as DeepReadonly<Partial<S>>,
+            nextState: _$state_ as DeepReadonly<S>,
+            prevState: prevBatchState as DeepReadonly<S>,
           });
         });
       }
@@ -105,7 +109,7 @@ export default class Updater<S extends PrimitiveState> {
     // processing of prevState
     typeof state === "function" && (stateTemp = (state as StateFnType<S>)({
       ...this.$metaStore._$state_,
-    }));
+    } as DeepReadonly<S>));
 
     if (stateTemp !== null) {
       stateErrorProcessing({ state: stateTemp, fnName: "setState" });
@@ -164,10 +168,17 @@ export default class Updater<S extends PrimitiveState> {
   ): boolean {
     // if (this.#freezing) return true;
 
+    /**
+     * @description Encode the written path once. The owner check needs the
+     * parent key (`path.length - 1`) and the lineage needs the prefix keys of
+     * every replaced level; both come from this one array.
+     */
+    const keys = pathKeys(path, this.$metaStore._symbolKeyId_);
+
     if (
       owner !== undefined
       && path.length > 1
-      && !this.$metaStore._isActiveHandle_(owner, path.slice(0, -1))
+      && !this.$metaStore._isActiveHandle_(owner, path.slice(0, -1), keys[path.length - 1])
     ) {
       this.$metaStore._warnDetached_(path);
       return true;
@@ -222,7 +233,7 @@ export default class Updater<S extends PrimitiveState> {
      * state.
      */
     const { _scheduler_, _subscriber_ } = this.$metaStore;
-    this.$metaStore._linkReplaced_(result.replaced);
+    this.$metaStore._linkReplaced_(result.replaced, keys);
     _subscriber_.willUpdatingProcessing();
     _scheduler_.commitRoot(result.root, key);
     this.finallyBatchProcessing();

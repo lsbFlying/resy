@@ -725,6 +725,8 @@ function App() {
   );
 }
 ```
+
+> The `prevState` argument of the updater is a deeply read-only snapshot at the TypeScript type level. Return a new object instead of mutating `prevState` (including nested objects, arrays and `Map`/`Set`); the runtime object is still a raw reference, so a nested write would rewrite the current tree in place.
 </details>
 
 <details>
@@ -765,6 +767,8 @@ function App() {
   );
 }
 ```
+
+> `syncUpdate`'s updater `prevState` follows the same deeply read-only contract as `setState`: return a new object instead of mutating it.
 </details>
 
 <details>
@@ -1037,6 +1041,10 @@ const unsub = store.subscribe(() => {
 You can also not add an array of monitoring subscription data keys,
 Both empty keys and no keys mean listening subscriptions to changes in the entire store data.
 </details>
+
+> `effectState`, `prevState`, `nextState` are deeply read-only snapshots at the TypeScript type level. Nested writes (objects, arrays, `Map`/`Set`) do not compile. They are still raw references at runtime, so write through `store`, actions or `setState` instead of mutating them.
+
+> With `immediate: true` the callback runs before any batch, so `prevState` equals `nextState` (the current state). It is never `undefined` and never a stale value from an earlier batch. Batch-triggered callbacks still receive the state from before their batch.
 
 ```tsx
 store.subscribe(() => {

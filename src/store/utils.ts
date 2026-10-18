@@ -2,6 +2,9 @@ import type { StatePath, StatePathSegment } from "../immutable/types";
 import { isMapMember, isSetMember } from "../immutable/utils";
 import { _PATH_KEY_SEPARATOR_ } from "./static";
 
+/** Resolve a symbol property segment to a store-local unique id. */
+export type SymbolSegmentId = (key: symbol) => string;
+
 /**
  * @description Encode one path segment.
  *
@@ -17,8 +20,13 @@ import { _PATH_KEY_SEPARATOR_ } from "./static";
  * per-store id of its member — the member itself is an object reference,
  * which no string can hold — which makes two different members of the same
  * set resolve to different cache entries.
+ *
+ * A symbol property segment has no textual form that is unique by value. Store
+ * paths pass a {@link SymbolSegmentId} so two distinct symbols sharing a
+ * description get different keys; direct callers that omit it fall back to the
+ * description, which keeps the utility usable outside a store.
  */
-const encodeSegment = (key: StatePathSegment): string => {
+export const encodeSegment = (key: StatePathSegment, symbolId?: SymbolSegmentId): string => {
   if (isMapMember(key)) {
     /**
      * @description Object / function keys carry a per-store id: `String(key)`
@@ -26,7 +34,7 @@ const encodeSegment = (key: StatePathSegment): string => {
      * object keys would otherwise share one cache entry (and one path).
      */
     return key.id === undefined
-      ? `M${encodeSegment(key.key as StatePathSegment)}`
+      ? `M${encodeSegment(key.key as StatePathSegment, symbolId)}`
       : `M@${key.id}`;
   }
   if (isSetMember(key)) return `S${key.id}`;
@@ -34,8 +42,37 @@ const encodeSegment = (key: StatePathSegment): string => {
     ? `s${key}`
     : typeof key === "number"
       ? `n${key}`
-      : `y${key.description ?? String(key)}`;
+      : symbolId
+        ? `y@${symbolId(key)}`
+        : `y${key.description ?? String(key)}`;
   return prefixed.split(_PATH_KEY_SEPARATOR_).join(_PATH_KEY_SEPARATOR_ + _PATH_KEY_SEPARATOR_);
+};
+
+/** @description Append one encoded segment to a parent path key. */
+export const appendSegmentKey = (
+  parentKey: string,
+  key: StatePathSegment,
+  symbolId?: SymbolSegmentId,
+): string => {
+  const segmentKey = encodeSegment(key, symbolId);
+  return parentKey === "" ? segmentKey : `${parentKey}${_PATH_KEY_SEPARATOR_}${segmentKey}`;
+};
+
+/**
+ * @description Encode every prefix of a path in one pass.
+ *
+ * The last entry equals {@link pathKey}; the earlier entries are the cache keys
+ * of the ancestors. A commit can therefore encode the written path once and
+ * slice the keys for all replaced levels instead of re-encoding each prefix.
+ */
+export const pathKeys = (path: StatePath, symbolId?: SymbolSegmentId): string[] => {
+  const keys: string[] = [""];
+  let key = "";
+  for (const segment of path) {
+    key = appendSegmentKey(key, segment, symbolId);
+    keys.push(key);
+  }
+  return keys;
 };
 
 /**
@@ -60,12 +97,14 @@ const encodeSegment = (key: StatePathSegment): string => {
  * `'a' + SEP + SEP + 'sb'`, which no longer matches.
  *
  * Each segment is also type-prefixed, so `[1]` and `['1']` stay distinct.
- * Symbol *property* segments fall back to their description, which is a
- * deliberate approximation: two distinct symbols sharing a description would
- * share a cache entry. Symbol *Map keys* carry an id instead.
+ * Symbol *property* segments use the store-local {@link SymbolSegmentId} when
+ * one is supplied; without it they fall back to the description for direct
+ * utility calls. Symbol *Map keys* always carry an id.
  */
-export const pathKey = (path: StatePath): string =>
-  path.map(encodeSegment).join(_PATH_KEY_SEPARATOR_);
+export const pathKey = (path: StatePath, symbolId?: SymbolSegmentId): string => {
+  const keys = pathKeys(path, symbolId);
+  return keys[keys.length - 1];
+};
 
 /** Readable rendering of a path for diagnostics. */
 export const formatPath = (path: StatePath): string =>

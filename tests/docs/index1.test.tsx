@@ -91,6 +91,20 @@ test("docs example: immutable option produces the documented result", async () =
   await waitFor(() => getByText("tags:a,b"));
 });
 
+/** The same model, built through `createStore` for the non-React assertions. */
+function createStoreLike() {
+  return createStore<Model>(
+    {
+      userInfo: { name: "Liu-Shan-Bao", address: { city: "bj" } },
+      tags: ["a"],
+      rename() { this.userInfo.name = "LSB"; },
+      moveCity() { this.userInfo.address.city = "sh"; },
+      addTag(tag: string) { this.tags.push(tag); },
+    },
+    { immutable: true },
+  );
+}
+
 test("docs example: chained writes freeze the snapshot taken before them", () => {
   const store = createStoreLike();
   // The snapshot guarantee applies to objects in the state tree. A reference
@@ -125,20 +139,6 @@ test("docs example: the same nested path reads back as one object", () => {
   expect(store.userInfo.address).toBe(store.userInfo.address);
 });
 
-/** The same model, built through `createStore` for the non-React assertions. */
-function createStoreLike() {
-  return createStore<Model>(
-    {
-      userInfo: { name: "Liu-Shan-Bao", address: { city: "bj" } },
-      tags: ["a"],
-      rename() { this.userInfo.name = "LSB"; },
-      moveCity() { this.userInfo.address.city = "sh"; },
-      addTag(tag: string) { this.tags.push(tag); },
-    },
-    { immutable: true },
-  );
-}
-
 test("docs example: array mutation leaves the previously read array untouched", () => {
   const store = createStore<{ tags: string[] }>({ tags: ["a"] }, { immutable: true });
 
@@ -151,6 +151,6 @@ test("docs example: array mutation leaves the previously read array untouched", 
 
   // Documented guarantee: read-only methods return native results.
   expect(store.tags.slice(0, 1)).toEqual(["a"]);
-  expect(store.tags.map((t) => t + "!")).toEqual(["a!", "b!"]);
+  expect(store.tags.map(t => t + "!")).toEqual(["a!", "b!"]);
   expect(store.tags.join(",")).toBe("a,b");
 });

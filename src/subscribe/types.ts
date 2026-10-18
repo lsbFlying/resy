@@ -1,4 +1,4 @@
-import type { PrimitiveState } from "../types";
+import type { DeepReadonly, PrimitiveState } from "../types";
 
 /** Type of unsubscribe */
 export type Unsubscribe = () => void;
@@ -9,11 +9,15 @@ export type Unsubscribe = () => void;
  * as well as the ability to handle batch updates.
  * effectState is the data state for a batch change,
  * while prevState and nextState represent the data states before and after a batch change.
+ *
+ * 🌟 All three fields are deeply read-only snapshots at the type level. They are
+ * raw references at runtime, so mutating them would rewrite the current tree or
+ * the history instead of committing through the store.
  */
 export type ListenerParams<S extends PrimitiveState> = {
-  effectState: Readonly<Partial<S>>;
-  nextState: Readonly<S>;
-  prevState: Readonly<S>;
+  effectState: DeepReadonly<Partial<S>>;
+  nextState: DeepReadonly<S>;
+  prevState: DeepReadonly<S>;
 };
 
 /** Type of monitoring callback for subscription */

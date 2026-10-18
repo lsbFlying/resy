@@ -57,6 +57,10 @@ store.userInfo.name;                // 'LSB'
 
 这一点在需要状态历史、时间旅行调试或并发渲染时非常重要。同样的保证也适用于 `subscribe` 回调收到的 `prevState`：它表示**该批次开始之前**的状态，不会被后续写入改写。
 
+`prevState`、`nextState`、`effectState` 在 TypeScript 中是**深度只读快照**，对嵌套对象、数组、`Map`/`Set` 的写入会编译报错；它们在运行时仍是原始引用，写入不会经过提交管线，因此需要修改时请使用 `store`、actions 或 `setState`。
+
+`subscribe(..., immediate: true)` 的立即回调没有自己的批次：此时 `prevState` 与 `nextState` 是同一个当前状态对象，不会是 `undefined`，也不会是更早批次留下的值。由批次触发的回调仍使用该批次开始前的 `prevState`。
+
 通过 `store.xxx` 读取同样可用于保存快照——读到的引用指向当时状态树中的那个对象，路径被后续写入替换后，这个引用仍保持原值：
 
 ```ts

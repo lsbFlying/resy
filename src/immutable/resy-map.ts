@@ -24,20 +24,22 @@ import { readAtPath } from "./utils";
 export class ResyMap<K, V> extends Map<K, V> {
   #store: MetaStore<any>;
   #path: StatePath;
+  #cacheKey: string;
   /** The container this handle last knew about. It follows this store's own
    * commits (via lineage), and freezes at the last value once detached. */
   #target: Map<K, V>;
 
-  constructor(store: MetaStore<any>, path: StatePath, target: Map<K, V>) {
+  constructor(store: MetaStore<any>, path: StatePath, target: Map<K, V>, cacheKey: string) {
     super();
     this.#store = store;
     this.#path = path;
+    this.#cacheKey = cacheKey;
     this.#target = target;
   }
 
   /** Whether the handle is still attached to its path. */
   #isActive(): boolean {
-    return this.#store._isActiveHandle_(this.#target, this.#path);
+    return this.#store._isActiveHandle_(this.#target, this.#path, this.#cacheKey);
   }
 
   /**
@@ -56,7 +58,7 @@ export class ResyMap<K, V> extends Map<K, V> {
     // Link the *live* container, not this handle's last known one: another
     // handle may have advanced the path in between, and every handle following
     // that generation must keep resolving.
-    this.#store._linkClone_(this.#path, previous, next, true);
+    this.#store._linkClone_(this.#path, previous, next, true, this.#cacheKey);
     this.#store._updater_.updateMetaState(this.#path, next as any, false, undefined, false);
     this.#target = next;
   }
@@ -67,6 +69,7 @@ export class ResyMap<K, V> extends Map<K, V> {
       value,
       this.#store._mapMemberMarker_(key),
       this.#path,
+      this.#cacheKey,
     );
   }
 

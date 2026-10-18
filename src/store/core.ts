@@ -11,7 +11,7 @@ import type { MapMemberMarker, SetMemberMarker, StatePath, StatePathSegment } fr
 import type { UseComputedType, ComputedType } from "../computer/types";
 import { optionsErrorProcessing, stateErrorProcessing } from "./errors";
 import { _RESY_BRAND_, _WRAPPER_ORIGIN_, DEFAULT_OPTIONS } from "./static";
-import { formatPath, pathKey } from "./utils";
+import { appendSegmentKey, formatPath, pathKey } from "./utils";
 import { hasOwnProperty } from "../utils";
 import { isSetMember, proxyable, readAtPath } from "../immutable/utils";
 import { _MAP_MEMBER_, _SET_MEMBER_ } from "../immutable/static";
@@ -51,7 +51,16 @@ export default class MetaStore<S extends PrimitiveState> {
      * the constructor.
      */
     const normalizedState = { ...reducerState } as S;
-    for (const key of Object.keys(normalizedState) as (keyof S)[]) {
+    /**
+     * Normalize symbol-keyed values too: object spread copies own enumerable
+     * symbols, but `Object.keys` does not, so a wrapper stored under a symbol
+     * key would silently stay a wrapper.
+     */
+    const normalizedKeys = [
+      ...Object.keys(normalizedState),
+      ...Object.getOwnPropertySymbols(normalizedState),
+    ] as (keyof S)[];
+    for (const key of normalizedKeys) {
       normalizedState[key] = this._normalizeWriteValue_(normalizedState[key]) as ValueOf<S>;
     }
     this._$state_ = normalizedState;
@@ -92,10 +101,6 @@ export default class MetaStore<S extends PrimitiveState> {
   // MetaState for driving rendering
   readonly _metaState_ = new MetaState<S>(this);
 
-  // After unmount resetting the state (`restoreProcessing` function has been executed),
-  // it is in a frozen state where updates are prohibited.
-  // TODO waiting considering, the scenes it contains are a bit complex
-  // #freezing: boolean | undefined;
   /** ============================== For Core Component Element  end ============================== */
 
   /** ============================== For Core Render Element start ============================== */
@@ -115,6 +120,36 @@ export default class MetaStore<S extends PrimitiveState> {
    * invalidation is needed, and stale entries die together with their objects.
    */
   #proxyCache = new WeakMap<object, Map<string, unknown>>();
+
+  /**
+   * @description Development-only count of read-side wrappers created by this
+   * store. Benchmarks and regression tests use it to prove that a change does
+   * not add proxy allocations; the counter is not part of the public API.
+   */
+  _proxyCreatedCount_ = 0;
+
+  /**
+   * @description Per-store ids for symbol property keys. Two distinct symbols
+   * can share a description, so the description alone is not a safe cache key;
+   * the id is. Symbols cannot be `WeakMap` keys, so the map lives as long as
+   * the store (which is also the lifetime of any path that can use it).
+   */
+  #symbolKeyIdCache = new Map<symbol, string>();
+  #symbolKeyIdCounter = 0;
+
+  /**
+   * @description Resolve a symbol property key to a store-local unique id used
+   * by path encoding. Public (`_underscore_` convention) because the updater
+   * also encodes paths through the same store.
+   */
+  _symbolKeyId_ = (key: symbol): string => {
+    let id = this.#symbolKeyIdCache.get(key);
+    if (id === undefined) {
+      id = `${++this.#symbolKeyIdCounter}`;
+      this.#symbolKeyIdCache.set(key, id);
+    }
+    return id;
+  };
 
   // A proxy object with the capabilities of updating and data tracking.
   readonly store: Store<S>;
@@ -169,53 +204,80 @@ export default class MetaStore<S extends PrimitiveState> {
    * 🌟 Public (`_underscore_` convention, like `_boundFnProcessing_`): the
    * ResyMap/ResySet handles route their member reads through this method, and
    * a `#`-private one could not be reached from another class.
+   *
+   * 🌟 Leaves (primitives, `Date`, class instances, frozen/sealed objects)
+   * return before the `[...parentPath, key]` copy runs; primitives return
+   * before even the key encoding, so the common leaf read allocates nothing.
    */
   _wrapContainerValue_(
     value: unknown,
     indexOrKey: StatePathSegment,
     parentPath: StatePath,
+    parentKey?: string,
   ) {
     if (!this._options_.immutable || typeof value === "function") return value;
-    if (value instanceof Map || value instanceof Set) {
-      return this.#containerHandle(value as object, [...parentPath, indexOrKey]);
-    }
-    if (proxyable(value)) {
-      /**
-       * @description Numeric indices (handed to callbacks and iterators by
-       * native code) are normalized to strings so they match the property
-       * keys the proxy traps produce for the same position — otherwise one
-       * element would get two cache entries and two identities.
-       */
-      const key = typeof indexOrKey === "number" ? String(indexOrKey) : indexOrKey;
-      return this.#createProxy(value as object, [...parentPath, key]);
-    }
-    return value;
-  }
+    if (typeof value !== "object" || value === null) return value;
 
-  /**
-   * @description Fetch (or create) the subclass handle for a `Map`/`Set` value
-   * at a path. Handles live in the same cache as the proxies and obey the same
-   * invalidation invariant: a commit replaces the container, the new container
-   * has no entry yet, and a fresh handle is created while the old one dies
-   * together with its container.
-   */
-  #containerHandle(container: object, path: StatePath) {
-    const cacheKey = pathKey(path);
-    const perTarget = this.#proxyCache.get(container);
-    const cached = perTarget?.get(cacheKey);
+    const isContainer = value instanceof Map || value instanceof Set;
+
+    /**
+     * @description Numeric indices (handed to callbacks and iterators by
+     * native code) are normalized to strings so they match the property
+     * keys the proxy traps produce for the same position — otherwise one
+     * element would get two cache entries and two identities.
+     */
+    const key = typeof indexOrKey === "number" ? String(indexOrKey) : indexOrKey;
+    const childKey = parentKey === undefined ? undefined : appendSegmentKey(parentKey, key, this._symbolKeyId_);
+
+    if (childKey !== undefined) {
+      const cached = this.#proxyCache.get(value)?.get(childKey);
+      if (cached !== undefined) return cached;
+    }
+
+    /**
+     * `proxyable` is false for `Map`/`Set` and for every leaf object (`Date`,
+     * class instance, frozen/sealed object). Only plain objects and arrays
+     * need a path, so leaves leave before the path is built. The cache lookup
+     * stays above this line so a value that was wrapped while it was still
+     * extensible keeps returning its wrapper if it is later sealed.
+     */
+    if (!isContainer && !proxyable(value)) return value;
+
+    const childPath: StatePath = [...parentPath, key];
+    const resolvedKey = childKey ?? pathKey(childPath, this._symbolKeyId_);
+
+    if (!isContainer) {
+      return this.#createProxy(value, childPath, resolvedKey);
+    }
+
+    /**
+     * @description Fetch (or create) the subclass handle for this `Map`/`Set`.
+     * Handles live in the same cache as the proxies and obey the same
+     * invalidation invariant: a commit replaces the container, the new container
+     * has no entry yet, and a fresh handle is created while the old one dies
+     * together with its container.
+     */
+    const perTarget = this.#proxyCache.get(value);
+    /**
+     * When `childKey` is defined, the lookup above already missed, so a second
+     * lookup is only needed for the `parentKey === undefined` fallback.
+     */
+    const cached = childKey === undefined ? perTarget?.get(resolvedKey) : undefined;
     if (cached !== undefined) return cached;
 
-    const handle = container instanceof Map
-      ? new ResyMap<unknown, unknown>(this, path, container as Map<unknown, unknown>)
-      : new ResySet<unknown>(this, path, container as Set<unknown>);
+    const handle = value instanceof Map
+      ? new ResyMap<unknown, unknown>(this, childPath, value as Map<unknown, unknown>, resolvedKey)
+      : new ResySet<unknown>(this, childPath, value as Set<unknown>, resolvedKey);
+
+    if (__DEV__) this._proxyCreatedCount_++;
 
     if (perTarget === undefined) {
-      this.#proxyCache.set(container, new Map([[cacheKey, handle]]));
+      this.#proxyCache.set(value, new Map([[resolvedKey, handle]]));
     } else {
-      perTarget.set(cacheKey, handle);
+      perTarget.set(resolvedKey, handle);
     }
     markNestedWrapperCreated();
-    _WRAPPER_ORIGIN_.set(handle, container);
+    _WRAPPER_ORIGIN_.set(handle, value);
     return handle;
   }
 
@@ -314,13 +376,19 @@ export default class MetaStore<S extends PrimitiveState> {
    * methods, `Map`/`Set` mutators), whose old container may not be in the
    * proxy cache even though a handle is following the path.
    */
-  _linkClone_(path: StatePath, previous: unknown, next: unknown, force = false): void {
+  _linkClone_(
+    path: StatePath,
+    previous: unknown,
+    next: unknown,
+    force = false,
+    cacheKey?: string,
+  ): void {
     if (path.length === 0) return;
     if (typeof previous !== "object" || previous === null) return;
     if (typeof next !== "object" || next === null) return;
     if (previous === next) return;
 
-    const key = pathKey(path);
+    const key = cacheKey ?? pathKey(path, this._symbolKeyId_);
     let lineage = this.#lineage.get(key);
     if (lineage === undefined) {
       if (!force && !this.#proxyCache.has(previous)) return;
@@ -331,9 +399,12 @@ export default class MetaStore<S extends PrimitiveState> {
   }
 
   /** Record every level a `commitPath` call cloned. */
-  _linkReplaced_(replaced: Array<[StatePath, object, object]>): void {
+  _linkReplaced_(
+    replaced: Array<[StatePath, object, object]>,
+    keys?: string[],
+  ): void {
     for (const [path, previous, next] of replaced) {
-      this._linkClone_(path, previous, next);
+      this._linkClone_(path, previous, next, false, keys?.[path.length]);
     }
   }
 
@@ -353,7 +424,7 @@ export default class MetaStore<S extends PrimitiveState> {
    * says this very member became its clone. The path is therefore rewritten
    * through the lineage before it is read.
    */
-  _isActiveHandle_(target: object, path: StatePath): boolean {
+  _isActiveHandle_(target: object, path: StatePath, cacheKey?: string): boolean {
     if (path.length === 0) return true;
 
     const resolvedPath = this._resolveSetMarkers_(path);
@@ -361,7 +432,7 @@ export default class MetaStore<S extends PrimitiveState> {
     // The fast path also covers a whole-value replacement that put the original
     // object back at the path: `live` is the handle's own target again.
     if (live === target) return true;
-    return live === this.#resolveLineage_(path, target);
+    return live === this.#resolveLineage(path, target, cacheKey);
   }
 
   /**
@@ -369,8 +440,8 @@ export default class MetaStore<S extends PrimitiveState> {
    * return the latest object. Path compression keeps repeated writes through a
    * long-lived handle O(1) instead of O(writes).
    */
-  #resolveLineage_(path: StatePath, target: object): object {
-    const lineage = this.#lineage.get(pathKey(path));
+  #resolveLineage(path: StatePath, target: object, cacheKey?: string): object {
+    const lineage = this.#lineage.get(cacheKey ?? pathKey(path, this._symbolKeyId_));
     if (lineage === undefined) return target;
 
     let current = target;
@@ -395,7 +466,7 @@ export default class MetaStore<S extends PrimitiveState> {
     let changed = false;
     const next = path.map((segment, index) => {
       if (!isSetMember(segment)) return segment;
-      const resolved = this.#resolveLineage_(path.slice(0, index + 1), segment.ref as object);
+      const resolved = this.#resolveLineage(path.slice(0, index + 1), segment.ref as object);
       if (resolved === segment.ref) return segment;
 
       /**
@@ -420,7 +491,7 @@ export default class MetaStore<S extends PrimitiveState> {
    */
   _warnDetached_(path: StatePath): void {
     if (!__DEV__) return;
-    const key = pathKey(path);
+    const key = pathKey(path, this._symbolKeyId_);
     if (this.#warnedDetachedPaths.has(key)) return;
     // Bound the notice memory for stores that visit many dynamic paths.
     if (this.#warnedDetachedPaths.size > 512) this.#warnedDetachedPaths.clear();
@@ -432,48 +503,21 @@ export default class MetaStore<S extends PrimitiveState> {
   }
 
   /**
-   * @description Wrap an array iterator so the elements it yields go through
-   * `_wrapContainerValue_` like any indexed read would.
-   *
-   * Detection at the call site is duck-typed on the returned shape (an object
-   * with a callable `next`), so any method that produces an iterator is
-   * covered without inspecting method names. The only shape special-cased is
-   * the entries pair, identified by method identity: its `[index, value]`
-   * tuples keep the index raw and wrap the value.
-   */
-  #wrapIteratorResult(
-    iterator: { next: () => { done: boolean; value: unknown } },
-    isEntries: boolean,
-    parentPath: StatePath,
-  ) {
-    let index = -1;
-    const wrapped = {
-      next: () => {
-        const step = iterator.next();
-        if (step.done) return step;
-        if (isEntries) {
-          const [i, v] = step.value as [number, unknown];
-          return { done: false, value: [i, this._wrapContainerValue_(v, i, parentPath)] };
-        }
-        index++;
-        return { done: false, value: this._wrapContainerValue_(step.value, index, parentPath) };
-      },
-    };
-    (wrapped as unknown as Record<PropertyKey, unknown>)[Symbol.iterator] = () => wrapped;
-    return wrapped;
-  }
-
-  /**
    * Create Store Proxy
    *
    * @param target - The object the proxy wraps.
    * @param path - The ordered path from the root state to `target`. The empty
    * path marks the root state object itself, so `path.length === 0` identifies
    * the first level and `path[0]` is the first-level key of any nested proxy.
+   * @param inheritedKey - The encoded cache key of this proxy, already built by
+   * the parent from its own key and this segment. Passing it avoids rebuilding
+   * the whole path key on every nested read. Omit it for the root, where it is
+   * derived from `path` — the empty path maps to the empty key.
    */
   #createProxy(
     target: object = this._$state_,
     path: StatePath = [],
+    inheritedKey?: string,
   ) {
     const {
       _computer_: computer,
@@ -488,10 +532,30 @@ export default class MetaStore<S extends PrimitiveState> {
      * has no cache entry yet — no explicit invalidation is needed, and stale
      * entries die together with their objects.
      */
-    const cacheKey = pathKey(path);
+    const cacheKey = inheritedKey ?? pathKey(path, this._symbolKeyId_);
     const cacheForTarget = this.#proxyCache.get(target as object);
     const cached = cacheForTarget?.get(cacheKey);
     if (cached !== undefined) return cached as Store<S>;
+
+    if (__DEV__) this._proxyCreatedCount_++;
+
+    /**
+     * @description A nested proxy wraps one immutable snapshot target, so a
+     * child value it has already wrapped can never become stale for that
+     * proxy. The root proxy is excluded: it reads the latest `_$state_` on
+     * every get, so its children change after a commit.
+     */
+    const childCache = path.length === 0 ? undefined : new Map<PropertyKey, unknown>();
+
+    const wrapChild = (value: unknown, key: PropertyKey) => {
+      if (childCache !== undefined) {
+        const cached = childCache.get(key);
+        if (cached !== undefined) return cached;
+      }
+      const wrapped = this._wrapContainerValue_(value, key, path, cacheKey);
+      if (childCache !== undefined && wrapped !== value) childCache.set(key, wrapped);
+      return wrapped;
+    };
 
     const proxy = new Proxy(target, {
       get: (_: S, key: keyof S) => {
@@ -556,7 +620,7 @@ export default class MetaStore<S extends PrimitiveState> {
              * element object and bypass the proxy chain entirely.
              */
             if (!sourceFromThis) {
-              return this._wrapContainerValue_(member, key, path);
+              return wrapChild(member, key as PropertyKey);
             }
             return this[key as keyof MetaStore<S>];
           }
@@ -569,7 +633,7 @@ export default class MetaStore<S extends PrimitiveState> {
              * acting on the array that now occupies the path would be a write
              * into an unrelated element of the current tree.
              */
-            const active = path.length === 0 || this._isActiveHandle_(target as object, path);
+            const active = path.length === 0 || this._isActiveHandle_(target as object, path, cacheKey);
             const current = active ? readAtPath(this._$state_, path) : target as unknown;
             if (!Array.isArray(current)) return undefined;
 
@@ -604,7 +668,7 @@ export default class MetaStore<S extends PrimitiveState> {
                     active
                     && typeof index === "number" && index >= 0 && index < draft.length
                     && draft[index] === arg
-                      ? this._wrapContainerValue_(arg, index, path)
+                      ? this._wrapContainerValue_(arg, index, path, cacheKey)
                       : arg;
                   cbArgs[0] = wrapCbArg(cbArgs[0], cbArgs[1]);
                   cbArgs.length > 2 && (cbArgs[1] = wrapCbArg(cbArgs[1], cbArgs[2]));
@@ -641,7 +705,7 @@ export default class MetaStore<S extends PrimitiveState> {
                * draft. Linking old→draft keeps the handle (and any handle that
                * produced this one) following its own commits.
                */
-              this._linkClone_(path, current, draft, true);
+              this._linkClone_(path, current, draft, true, cacheKey);
               updater.updateMetaState(path, draft as ValueOf<S>, false, undefined, false);
             }
 
@@ -665,13 +729,39 @@ export default class MetaStore<S extends PrimitiveState> {
             ) {
               // A detached handle yields its snapshot's raw elements: wrapping
               // them would hand out paths that now point at other elements.
-              return active
-                ? this.#wrapIteratorResult(
-                  result as { next: () => { done: boolean; value: unknown } },
-                  member === Array.prototype.entries,
-                  path,
-                )
-                : result;
+              if (!active) return result;
+
+              const iterator = result as { next: () => { done: boolean; value: unknown } };
+              /**
+               * Compare against the array's own prototype instead of
+               * `Array.prototype` so an array from another realm still
+               * identifies `entries()` correctly.
+               */
+              const entries = (Object.getPrototypeOf(target) as { entries?: unknown } | null)?.entries;
+              const isEntries = member === entries;
+              let iteratorIndex = -1;
+              const wrappedIterator = {
+                next: () => {
+                  const step = iterator.next();
+                  if (step.done) return step;
+                  if (isEntries) {
+                    // `entries()` yields [index, value]: keep the index raw and
+                    // wrap the value at that index.
+                    const [i, v] = step.value as [number, unknown];
+                    return {
+                      done: false,
+                      value: [i, this._wrapContainerValue_(v, i, path, cacheKey)],
+                    };
+                  }
+                  iteratorIndex++;
+                  return {
+                    done: false,
+                    value: this._wrapContainerValue_(step.value, iteratorIndex, path, cacheKey),
+                  };
+                },
+              };
+              (wrappedIterator as unknown as Record<PropertyKey, unknown>)[Symbol.iterator] = () => wrappedIterator;
+              return wrappedIterator;
             }
 
             /**
@@ -684,7 +774,7 @@ export default class MetaStore<S extends PrimitiveState> {
              */
             const foundIndex = draft.indexOf(result);
             if (active && immutable && foundIndex >= 0 && proxyable(result)) {
-              return this._wrapContainerValue_(result, foundIndex, path);
+              return this._wrapContainerValue_(result, foundIndex, path, cacheKey);
             }
 
             return result;
@@ -699,7 +789,7 @@ export default class MetaStore<S extends PrimitiveState> {
          * below.
          */
         if (!sourceFromThis && typeof value !== "function") {
-          return this._wrapContainerValue_(value, key, path);
+          return wrapChild(value, key as PropertyKey);
         }
 
         /**
@@ -742,17 +832,59 @@ export default class MetaStore<S extends PrimitiveState> {
         path.length === 0 ? undefined : target as object,
       ),
       /**
+       * @description Only the state-property shape is representable: a plain
+       * data descriptor with all attributes enabled. Attribute changes
+       * (accessors, non-writable/non-enumerable/non-configurable) cannot
+       * survive copy-on-write, so refusing them keeps `Object.defineProperty`
+       * from silently mutating the snapshot target.
+       */
+      defineProperty: (_: S, key: keyof S, descriptor: PropertyDescriptor) => {
+        if (
+          !("value" in descriptor)
+          || descriptor.get !== undefined
+          || descriptor.set !== undefined
+          || descriptor.writable !== true
+          || descriptor.enumerable !== true
+          || descriptor.configurable !== true
+        ) return false;
+
+        if (path.length === 0 && hasOwnProperty.call(this, key)) return false;
+
+        const existing = Object.getOwnPropertyDescriptor(target, key as PropertyKey);
+        if (existing !== undefined && existing.configurable === false) return false;
+        if (!Object.isExtensible(target) && existing === undefined) return false;
+
+        updater.updateMetaState(
+          [...path, key],
+          descriptor.value as ValueOf<S>,
+          false,
+          path.length === 0 ? undefined : target as object,
+        );
+        return true;
+      },
+      /**
+       * @description A prototype change cannot be represented by the state
+       * tree's copy-on-write clone. Allow only the no-op case; a real change
+       * fails loudly instead of mutating the snapshot target.
+       */
+      setPrototypeOf: (_, proto) => Object.getPrototypeOf(target) === proto,
+      /**
+       * @description Extensibility is not tracked by the state tree, so a
+       * `preventExtensions` would be lost on the next clone. Refuse it unless
+       * the target is already non-extensible.
+       */
+      preventExtensions: () => !Object.isExtensible(target),
+      /**
        * @description No `apply` trap: function-valued state members are values,
        * and `Map`/`Set` containers are served by their subclass handles, whose
        * methods are plain methods — nothing on the proxy is ever called.
        */
     } as ProxyHandler<S>) as Store<S>;
 
-    const perTarget = this.#proxyCache.get(target as object);
-    if (perTarget === undefined) {
+    if (cacheForTarget === undefined) {
       this.#proxyCache.set(target as object, new Map([[cacheKey, proxy]]));
     } else {
-      perTarget.set(cacheKey, proxy);
+      cacheForTarget.set(cacheKey, proxy);
     }
 
     if (path.length > 0) markNestedWrapperCreated();

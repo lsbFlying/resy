@@ -1,4 +1,4 @@
-import { PrimitiveState } from "../types";
+import { DeepReadonly, PrimitiveState } from "../types";
 
 /** Update the data type of the parameter */
 export type State<S extends PrimitiveState> = Partial<S> | S | null;
@@ -10,8 +10,10 @@ export type State<S extends PrimitiveState> = Partial<S> | S | null;
  * 可维护性：读代码的人立刻清楚“这里所有更新是基于同一个历史快照一次性推演的”，不用跟踪全局 store 的中间变化。
  * 即使 store.xxx 总能读到最新值，把复杂更新的逻辑写成一个纯变换依然比散落多个“读-写”步骤更容易维护、更少犯错误。
  * 这就是“语义清晰度与安全性”的真正含义，它和闭包问题无关，而和代码的结构有关。
+ *
+ * 🌟 `prevState` 是深度只读快照（类型层）：需要修改时返回新对象，而不是直接改 `prevState`。
  */
-export type StateFnType<S extends PrimitiveState> = (prevState: Readonly<S>) => State<S>;
+export type StateFnType<S extends PrimitiveState> = (prevState: DeepReadonly<S>) => State<S>;
 
 export type SetStateAction<S extends PrimitiveState> = State<S> | StateFnType<S>;
 

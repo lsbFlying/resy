@@ -13,6 +13,7 @@ docs/.vitepress/dist
 # local CLI tooling (openspec installed into .tooling/)
 .tooling/
 .dsh
-/openspec
-/.adev
-/.codefuse
+openspec
+.adev
+.codefuse
+bench

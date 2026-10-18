@@ -18,19 +18,21 @@ type WrappedSetCb<V> = (value: V, value2: V, set: Set<V>) => void;
 export class ResySet<V> extends Set<V> {
   #store: MetaStore<any>;
   #path: StatePath;
+  #cacheKey: string;
   /** The container this handle last knew about; frozen once detached. */
   #target: Set<V>;
 
-  constructor(store: MetaStore<any>, path: StatePath, target: Set<V>) {
+  constructor(store: MetaStore<any>, path: StatePath, target: Set<V>, cacheKey: string) {
     super();
     this.#store = store;
     this.#path = path;
+    this.#cacheKey = cacheKey;
     this.#target = target;
   }
 
   /** Whether the handle is still attached to its path. */
   #isActive(): boolean {
-    return this.#store._isActiveHandle_(this.#target, this.#path);
+    return this.#store._isActiveHandle_(this.#target, this.#path, this.#cacheKey);
   }
 
   #current(): Set<V> {
@@ -43,7 +45,7 @@ export class ResySet<V> extends Set<V> {
   #commit(previous: Set<V>, next: Set<V>): void {
     // Link the live container so handles created for an intermediate clone
     // keep following after this handle commits.
-    this.#store._linkClone_(this.#path, previous, next, true);
+    this.#store._linkClone_(this.#path, previous, next, true, this.#cacheKey);
     this.#store._updater_.updateMetaState(this.#path, next as any, false, undefined, false);
     this.#target = next;
   }
@@ -55,6 +57,7 @@ export class ResySet<V> extends Set<V> {
       value,
       this.#store._setMemberMarker_(value),
       this.#path,
+      this.#cacheKey,
     ) as V;
   }
 

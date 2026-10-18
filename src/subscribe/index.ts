@@ -1,5 +1,5 @@
 import type MetaStore from "../store/core";
-import type { PrimitiveState } from "../types";
+import type { DeepReadonly, PrimitiveState } from "../types";
 import type { ListenerParams, ListenerType, SubscribeType, SubscriptionRefType, Unsubscribe } from "./types";
 import { subscribeErrorProcessing } from "../store/errors";
 import { useDebugValue, useEffect, useRef, useState } from "react";
@@ -62,9 +62,25 @@ export default class Subscriber<S extends PrimitiveState> {
         effectState[key] = nextState[key];
       });
       listener({
-        effectState,
-        nextState,
-        prevState: this.prevBatchState,
+        /**
+         * @description The values are raw references; `ListenerParams` promises
+         * a deeply read-only view at the type level, so the assertion belongs at
+         * this internal boundary rather than at every consumer.
+         *
+         * `prevBatchState` is the tree captured before the *next* batch, so it
+         * only applies to batch callbacks. An immediate call has no batch of its
+         * own: the current state is the only meaningful "before", and reusing a
+         * stale `prevBatchState` here would hand out an undefined or outdated
+         * snapshot.
+         *
+         * Deliberately not `this.prevBatchState ?? nextState`: `prevBatchState`
+         * can be defined yet stale (batches without listeners do not refresh
+         * it), so that fallback would only hide the undefined case, not the
+         * outdated one.
+         */
+        effectState: effectState as DeepReadonly<Partial<S>>,
+        nextState: nextState as DeepReadonly<S>,
+        prevState: nextState as DeepReadonly<S>,
       });
     }
 

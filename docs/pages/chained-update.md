@@ -202,26 +202,40 @@ updateMetaState(path: StatePath, value: ValueOf<S>, isDelete = false): boolean {
 
 ## 七、代理缓存：身份稳定的来源
 
-`src/store/core.ts`：
+`src/store/core.ts` 的缓存结构仍是：
 
 ```ts
-const cacheKey = pathKey(path);
-const cacheForTarget = this.#proxyCache.get(target as object);
-const cached = cacheForTarget?.get(cacheKey);
-if (cached !== undefined) return cached;
-
-const proxy = new Proxy(target, { /* traps */ });
-
-const perTarget = this.#proxyCache.get(target as object);
-if (perTarget === undefined) {
-  this.#proxyCache.set(target as object, new Map([[cacheKey, proxy]]));
-} else {
-  perTarget.set(cacheKey, proxy);
-}
-return proxy;
+#proxyCache: WeakMap<target, Map<pathKey, proxy>>
 ```
 
-结构是 `WeakMap<目标对象, Map<路径键, 代理>>`。
+但读命中时不再重建整条 `pathKey`。每个代理创建时保存自己的完整 `cacheKey`；子键由父键增量拼接，嵌套代理还维护一个 childCache：
+
+```ts
+#createProxy(target, path, cacheKey = pathKey(path)) {
+  const childCache = path.length === 0 ? undefined : new Map<PropertyKey, unknown>();
+
+  const wrapChild = (value, key) => {
+    const cached = childCache?.get(key);
+    if (cached !== undefined) return cached;
+
+    const childKey = appendSegmentKey(cacheKey, key);
+    const child = /* 全局缓存命中，或创建子代理 */;
+    if (wrapped !== value) childCache?.set(key, wrapped);
+    return wrapped;
+  };
+}
+```
+
+**cacheKey 增量传递**：子键 = `appendSegmentKey(parentKey, key)`，不再对整条 path 调 `pathKey`。深度 d 的读从 O(d²) 段编码降为每层一次编码。
+
+**childCache**：代理绑定的是快照 target，`target[key]` 在代理生命周期内不会变，所以子代理缓存无需失效。新提交产生新 target → 新代理；旧代理的 childCache 跟着旧快照一起回收。
+
+两个例外：
+
+- **根代理**：每次 `get` 读的是最新 `_$state_`，子节点会随提交变化，根不缓存子代理。
+- **`Map`/`Set` 句柄**：`#current()` 跟随提交，句柄本身不挂 childCache；成员仍按 `(target, pathKey)` 走全局缓存。
+
+**提交侧前缀 key**：`commitPath` 返回的 `replaced` 路径都是写入路径的前缀。`updateMetaState` 对写入路径调一次 `pathKeys`，`_linkReplaced_` 直接取 `keys[path.length]`，不再每层重算 `pathKey`。数组方法 / `Map` / `Set` 的显式 `_linkClone_` 使用句柄已有的 `cacheKey`。
 
 **内层键为什么必须是路径，不能只用目标对象？** 对象可以被多处共享：`{ a: { s: shared }, b: { s: shared } }`。若只按目标对象缓存，两条路径会拿到同一个代理，而代理只能携带一条路径 —— 写 `store.a.s.x` 就会落到 `b` 上。
 
@@ -229,7 +243,9 @@ return proxy;
 
 ### `pathKey` 的编码
 
-`src/store/utils.ts`。直观做法是拿分隔符把路径 `join` 起来，但那会产生碰撞：
+`src/store/utils.ts`。`pathKey(path)` 现在复用 `pathKeys(path)` 的最后一项；`pathKeys(path)[i] === pathKey(path.slice(0, i))`，同时供提交侧取前缀键。
+
+直观做法是拿分隔符把路径 `join` 起来，但那会产生碰撞：
 
 ```
   ['a', 'sb'].join(SEP)    === 'a' + SEP + 'sb'     // 两个段
@@ -342,14 +358,15 @@ const source = live === target ? live : target;
 | --- | --- |
 | `src/immutable/utils.ts` | `commitPath`、`readAtPath`、`isPenetrable`、`cloneShallow`、`iteratorProcessing` |
 | `src/immutable/types.ts` | `StatePath`、`CreateProxyType`、Map/Set 工厂类型 |
-| `src/store/core.ts` | `#createProxy`（`get`/`set`/`deleteProperty` 陷阱）、`#proxyCache` |
-| `src/store/utils.ts` | `pathKey` 路径编码 |
+| `src/store/core.ts` | `#createProxy`（`get`/`set`/`deleteProperty` 陷阱）、`#proxyCache`、childCache |
+| `src/store/utils.ts` | `pathKey`、`pathKeys`、`appendSegmentKey` 路径编码 |
+| `bench/proxy-cache.mjs` | 读/写/写后读基准与 proxy 分配统计 |
 | `src/updater/index.ts` | `updateMetaState` 编排、`setState` 键循环 |
 | `src/scheduler/index.ts` | `commitRoot` 提交根、`taskData` 批处理记账 |
 | `src/immutable/normalize.ts` | 写入口的 wrapper 归一化（深度扫描、环回退、原型安全） |
 | `src/immutable/resy-map.ts` / `resy-set.ts` | `Map`/`Set` 容器句柄（路径身份、克隆后单次提交、活跃判定） |
 | `src/immutable/static.ts` | `Map`/`Set` 成员路径标记 |
 
-对应的验收测试集中在 `tests/immutable/`：`index2`（写入侧语义）、`index3`（读取身份、`pathKey`、游离写）、`index4`（数组）、`index5`/`index6`（路径模型与 `commitPath`）、`index7`（`prevState`）、`index8`（`Map`/`Set`）、`index9`（解构后更新）、`index10`（遍历中更新）、`index11`（游离元素）、`index12`（游离写的渲染断言）、`index13`（wrapper 不落盘）、`index14`（Set 血缘、深度归一化、跨 store、no-op delete 等 review 回归）。
+对应的验收测试集中在 `tests/immutable/`：`index2`（写入侧语义）、`index3`（读取身份、`pathKey`、游离写）、`index4`（数组）、`index5`/`index6`（路径模型与 `commitPath`）、`index7`（`prevState`）、`index8`（`Map`/`Set`）、`index9`（解构后更新）、`index10`（遍历中更新）、`index11`（游离元素）、`index12`（游离写的渲染断言）、`index13`（wrapper 不落盘）、`index14`（Set 血缘、深度归一化、跨 store、no-op delete 等 review 回归）、`proxyCacheKeys`（前缀 key 一致性）、`proxyCacheChild`（childCache 身份/生命周期）。
 
 游离写的实现入口是 `MetaStore._isActiveHandle_`（身份 + 提交血缘，含 Set 成员的 `_resolveSetMarkers_` 路径重写）与 `MetaStore._normalizeWriteValue_`（公共写入口深度归一化，容器内部提交保持浅归一化），对应设计文档的 D14 / D15。

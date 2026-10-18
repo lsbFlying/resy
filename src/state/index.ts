@@ -31,7 +31,7 @@ export default class MetaState<S extends PrimitiveState> {
     const { getSnapshot, $metaStore } = this;
 
     const {
-      _options_: { namespace }, _$state_,
+      _options_: { namespace, immutable }, _$state_,
       _restorer_, _subscriber_, store,
     } = $metaStore;
 
@@ -107,8 +107,7 @@ export default class MetaState<S extends PrimitiveState> {
 
           if (!sourceFromStore && typeof value !== "function") {
             this.isRendering && subscriberRef.current.stateKeys.newKeys.add(key);
-            // todo 借用store本身具备的链式更新能力
-            return store[key];
+            return immutable ? store[key] : state[key];
           }
 
           if (!sourceFromStore && typeof value === "function") {
